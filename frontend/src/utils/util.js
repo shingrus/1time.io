@@ -1,13 +1,8 @@
-let arr = window.location.href.split("/");
-let proto = process.env.NODE_ENV === 'development' ? "http:" : "https:";
-
-
 export var Constants = {
     randomKeyLen: 12,
     defaultDuration: 7,
-    isDebug: process.env.NODE_ENV === 'development',
-    proto: process.env.NODE_ENV === proto,
-    apiBaseUrl: process.env.NODE_ENV === 'development' ? proto + "//localhost:8080/api/" : proto +"//"+ arr[2] + "/api/",
+    isDebug: import.meta.env.DEV,
+    apiBaseUrl: "/api/",
 };
 
 const chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXTZabcdefghiklmnopqrstuvwxyz";
@@ -23,6 +18,33 @@ export function getRandomString(stringLen) {
     return randomstring;
 }
 
+export async function copyTextToClipboard(text) {
+    if (!text) {
+        return false;
+    }
 
+    if (navigator.clipboard?.writeText) {
+        try {
+            await navigator.clipboard.writeText(text);
+            return true;
+        } catch (error) {}
+    }
 
+    const textArea = document.createElement('textarea');
+    textArea.value = text;
+    textArea.setAttribute('readonly', '');
+    textArea.style.position = 'absolute';
+    textArea.style.left = '-9999px';
 
+    document.body.appendChild(textArea);
+    textArea.select();
+    textArea.setSelectionRange(0, text.length);
+
+    let copied = false;
+    try {
+        copied = document.execCommand('copy');
+    } catch (error) {}
+
+    document.body.removeChild(textArea);
+    return copied;
+}
