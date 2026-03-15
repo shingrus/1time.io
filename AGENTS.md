@@ -5,7 +5,7 @@
 - Go backend lives at the repo root.
 - Redis is required for message storage.
 - React frontend lives in `frontend/` and uses Vite.
-- Server-rendered HTML flows in `templates/` are still active and should not be assumed dead.
+- Server-rendered HTML flows in `templates/` are deprecated. They still exist in the codebase, but they are not part of the default deployment path.
 
 ## Backend
 
@@ -69,17 +69,17 @@ npm run build
 - Public domain is `https://onetimelink.me`.
 - Do not reintroduce old domains such as `1time.it`, `1time.click`, or `sharepass.to`.
 - Template favicon links should stay relative, e.g. `/ico.png`.
-- `templates/result.html` intentionally renders production-host share links for `onetimelink.me`.
+- `templates/result.html` still renders production-host share links for `onetimelink.me`, but the `templates/` flow is deprecated.
 
 ## Deployment
 
 - Frontend production build output: `frontend/build`
 - Backend production binary from `make build`: `bin/1time`
-- Example nginx config: `configs/nginx/1time.conf`
+- Example nginx config: `configs/nginx/onetimelink.conf`
 - nginx is expected to serve the frontend statics and proxy `/api` to the Go app on `127.0.0.1:8080`.
 
 ## Important Behavior
 
 - The React frontend uses the JSON API routes under `/api`.
-- The server-rendered `/view/...` flow is separate from the SPA `/v/...` flow.
-- If changing links, routes, or domains, check both the React frontend and the `templates/` files.
+- The deprecated server-rendered `/view/...` flow is separate from the SPA `/v/...` flow.
+- If changing legacy links, routes, or templates-backed behavior, check both the React frontend and the `templates/` files.

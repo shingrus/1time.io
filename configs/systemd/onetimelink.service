@@ -1,0 +1,18 @@
+[Unit]
+Description=onetimelink backend service
+After=network.target redis-server.service
+Requires=redis-server.service
+
+[Service]
+Type=simple
+User=onetimelink
+Group=onetimelink
+WorkingDirectory=/opt/onetimelink/bin
+Environment=REDISHOST=127.0.0.1:6379
+Environment=REDISPASS=
+ExecStart=/opt/onetimelink/bin/1time
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
