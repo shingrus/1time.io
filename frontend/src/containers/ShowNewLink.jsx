@@ -1,4 +1,4 @@
-import React, {useState} from "react";
+import React, {useEffect, useRef, useState} from "react";
 import {useLocation, useNavigate} from "react-router-dom";
 import {buildSecretLink, copyTextToClipboard} from '../utils/util';
 import '../styles/link.css';
@@ -7,16 +7,51 @@ export default function ShowNewLink() {
     const location = useLocation();
     const navigate = useNavigate();
     const [copied, setCopied] = useState(false);
+    const [didAutoCopy, setDidAutoCopy] = useState(false);
+    const resetCopiedTimeoutRef = useRef(null);
     const routeState = location.state;
     const newLink = routeState?.randomString
         ? buildSecretLink(routeState.randomString, routeState.newId)
         : "";
 
+    useEffect(() => {
+        if (!newLink) {
+            return undefined;
+        }
+
+        let isActive = true;
+
+        const autoCopyLink = async () => {
+            const didCopy = await copyTextToClipboard(newLink);
+            if (didCopy && isActive) {
+                setDidAutoCopy(true);
+            }
+        };
+
+        void autoCopyLink();
+
+        return () => {
+            isActive = false;
+        };
+    }, [newLink]);
+
+    useEffect(() => {
+        return () => {
+            if (resetCopiedTimeoutRef.current) {
+                window.clearTimeout(resetCopiedTimeoutRef.current);
+            }
+        };
+    }, []);
+
     const handleCopy = async () => {
         const didCopy = await copyTextToClipboard(newLink);
         if (didCopy) {
+            setDidAutoCopy(true);
             setCopied(true);
-            setTimeout(() => setCopied(false), 3000);
+            if (resetCopiedTimeoutRef.current) {
+                window.clearTimeout(resetCopiedTimeoutRef.current);
+            }
+            resetCopiedTimeoutRef.current = window.setTimeout(() => setCopied(false), 3000);
         }
     };
 
@@ -44,12 +79,12 @@ export default function ShowNewLink() {
                     type="button"
                 >
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                        {copied
+                        {(copied || didAutoCopy)
                             ? <polyline points="20 6 9 17 4 12"/>
                             : <><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></>
                         }
                     </svg>
-                    {copied ? "Copied!" : "Copy link"}
+                    {copied ? "Copied!" : didAutoCopy ? "Link already copied" : "Copy link"}
                 </button>
                 <button
                     className="btn btn-secondary btn-lg"

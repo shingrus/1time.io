@@ -19,6 +19,12 @@ function renderApp(initialEntries = ['/']) {
 beforeEach(() => {
   vi.clearAllMocks();
   global.fetch = vi.fn();
+  Object.defineProperty(window.navigator, 'clipboard', {
+    configurable: true,
+    value: {
+      writeText: vi.fn().mockResolvedValue(undefined),
+    },
+  });
 });
 
 describe('App routes', () => {
@@ -78,6 +84,7 @@ describe('App routes', () => {
     const secretLinkField = await screen.findByLabelText(/secret one-time link/i);
     expect(secretLinkField.value).toContain('/v/#');
     expect(secretLinkField.value).toContain('abc123');
+    expect(await screen.findByRole('button', { name: /link already copied/i })).toBeInTheDocument();
   });
 
   it('creates a one-time link from the password generator page and shows the standard result screen', async () => {
