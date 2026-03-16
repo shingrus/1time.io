@@ -1,5 +1,5 @@
 import React, {useState, useCallback, useEffect} from "react";
-import {useNavigate} from "react-router-dom";
+import {useNavigate, useLocation, Link} from "react-router-dom";
 import {copyTextToClipboard} from '../utils/util';
 import wordlist from '../utils/wordlist';
 
@@ -9,6 +9,75 @@ const CHARSETS = {
     numbers: '0123456789',
     symbols: '!@#$%^&*()-_=+[]{}|;:,.<>?',
 };
+
+// SEO preset configurations keyed by route path
+const PRESETS = {
+    '/password-generator': {
+        title: 'Password Generator',
+        pageTitle: 'Free Password Generator — onetimelink.me',
+        metaDescription: 'Generate strong, random passwords and passphrases in your browser. Client-side only, nothing sent to a server. Free, fast, and open source.',
+        subtitle: 'Generate strong passwords and passphrases in your browser. Nothing leaves your device.',
+        length: 20,
+        mode: 'password',
+        options: { uppercase: true, lowercase: true, numbers: true, symbols: true },
+        seoHeading: 'Free Online Password Generator',
+        seoText: 'Create secure, random passwords instantly with our free password generator. Every password is generated entirely in your browser using cryptographic randomness — nothing is ever sent to a server. Choose your preferred length, character types, or switch to memorable passphrases. Strong passwords are your first line of defense against unauthorized access to your accounts.',
+    },
+    '/strong-password-generator': {
+        title: 'Strong Password Generator',
+        pageTitle: 'Strong Password Generator — Create Uncrackable Passwords',
+        metaDescription: 'Generate strong 24+ character passwords with uppercase, lowercase, numbers, and symbols. Cryptographically random, generated in your browser.',
+        subtitle: 'Create a strong, uncrackable password with maximum entropy.',
+        length: 24,
+        mode: 'password',
+        options: { uppercase: true, lowercase: true, numbers: true, symbols: true },
+        seoHeading: 'Generate a Strong Password',
+        seoText: 'A strong password uses at least 16 characters with a mix of uppercase letters, lowercase letters, numbers, and special symbols. Our strong password generator creates cryptographically random passwords directly in your browser — no data is transmitted or stored. Security experts recommend using a unique strong password for every account. Pair this generator with a password manager to keep all your credentials safe and accessible.',
+    },
+    '/create-password-14-symbols': {
+        title: 'Create 14-Character Password',
+        pageTitle: 'Create a 14-Character Password with Symbols — Quick & Secure',
+        metaDescription: 'Instantly create a secure 14-character password with letters, numbers, and symbols. Meets most site requirements. Generated locally in your browser.',
+        subtitle: 'Quick 14-character password with letters, numbers, and symbols.',
+        length: 14,
+        mode: 'password',
+        options: { uppercase: true, lowercase: true, numbers: true, symbols: true },
+        seoHeading: 'Create a 14-Character Password with Symbols',
+        seoText: 'A 14-character password with mixed character types provides solid security for most online accounts. Many services require at least 8 characters, but 14 is the minimum recommended by cybersecurity professionals. This generator creates passwords with uppercase and lowercase letters, digits, and symbols — all generated locally in your browser for maximum privacy.',
+    },
+    '/random-password-generator': {
+        title: 'Random Password Generator',
+        pageTitle: 'Random Password Generator — Cryptographically Secure',
+        metaDescription: 'Generate truly random passwords using the Web Crypto API. No server involved — all passwords created locally in your browser with real cryptographic randomness.',
+        subtitle: 'Truly random passwords using browser cryptographic APIs.',
+        length: 16,
+        mode: 'password',
+        options: { uppercase: true, lowercase: true, numbers: true, symbols: false },
+        seoHeading: 'Truly Random Password Generator',
+        seoText: 'Our random password generator uses the Web Crypto API built into your browser to produce genuinely unpredictable passwords. Unlike pseudo-random generators, cryptographic randomness ensures each character is independently and uniformly selected. The result: passwords that resist brute-force attacks, dictionary attacks, and pattern-based cracking. All generation happens client-side — your passwords never touch a server.',
+    },
+    '/passphrase-generator': {
+        title: 'Passphrase Generator',
+        pageTitle: 'Passphrase Generator — Memorable & Secure Multi-Word Passwords',
+        metaDescription: 'Generate memorable multi-word passphrases that are easy to type and hard to crack. Uses cryptographic randomness, runs entirely in your browser.',
+        subtitle: 'Generate memorable multi-word passphrases that are easy to type.',
+        length: 16,
+        mode: 'passphrase',
+        options: { uppercase: true, lowercase: true, numbers: true, symbols: true },
+        wordCount: 5,
+        seoHeading: 'Memorable Passphrase Generator',
+        seoText: 'Passphrases combine multiple random words into a single password that is both highly secure and easy to remember. A 4-5 word passphrase can provide over 50 bits of entropy while remaining human-friendly. Our passphrase generator picks words from a curated list using cryptographic randomness, so every combination is unique. Passphrases are ideal for master passwords, device logins, and any situation where you need to type your password by hand.',
+    },
+};
+
+// All SEO pages to link to (excluding the current page)
+const SEO_LINKS = [
+    { path: '/password-generator', label: 'Password Generator', desc: 'All-purpose password & passphrase tool' },
+    { path: '/strong-password-generator', label: 'Strong Password Generator', desc: '24+ character maximum-strength passwords' },
+    { path: '/create-password-14-symbols', label: '14-Character Password', desc: 'Quick passwords with symbols for most sites' },
+    { path: '/random-password-generator', label: 'Random Password Generator', desc: 'Cryptographically random character passwords' },
+    { path: '/passphrase-generator', label: 'Passphrase Generator', desc: 'Memorable multi-word passphrases' },
+];
 
 function secureRandom(max) {
     const arr = new Uint32Array(1);
@@ -67,24 +136,39 @@ function getStrength(entropy) {
 
 export default function PasswordGenerator() {
     const navigate = useNavigate();
-    const [mode, setMode] = useState('password');
+    const location = useLocation();
+    const preset = PRESETS[location.pathname] || PRESETS['/password-generator'];
+
+    const [mode, setMode] = useState(preset.mode);
     const [copied, setCopied] = useState(false);
     const [generated, setGenerated] = useState('');
 
     // Password options
-    const [length, setLength] = useState(20);
-    const [options, setOptions] = useState({
-        uppercase: true,
-        lowercase: true,
-        numbers: true,
-        symbols: true,
-    });
+    const [length, setLength] = useState(preset.length);
+    const [options, setOptions] = useState(preset.options);
 
     // Passphrase options
-    const [wordCount, setWordCount] = useState(4);
+    const [wordCount, setWordCount] = useState(preset.wordCount || 4);
     const [separator, setSeparator] = useState('-');
     const [capitalize, setCapitalize] = useState(true);
     const [includeNumber, setIncludeNumber] = useState(true);
+
+    // Set page title and meta description for SEO
+    useEffect(() => {
+        document.title = preset.pageTitle || preset.title + ' — onetimelink.me';
+        const metaDesc = document.querySelector('meta[name="description"]');
+        if (metaDesc) {
+            metaDesc.setAttribute('content', preset.metaDescription || '');
+        }
+    }, [preset]);
+
+    // Re-apply presets when route changes
+    useEffect(() => {
+        setMode(preset.mode);
+        setLength(preset.length);
+        setOptions(preset.options);
+        if (preset.wordCount) setWordCount(preset.wordCount);
+    }, [location.pathname]);
 
     const generate = useCallback(() => {
         setCopied(false);
@@ -117,11 +201,13 @@ export default function PasswordGenerator() {
         if (anyOn) setOptions(next);
     };
 
+    const otherPages = SEO_LINKS.filter(l => l.path !== location.pathname);
+
     return (
         <div>
             <div className="gen-header">
-                <h2 className="gen-title">Password Generator</h2>
-                <p className="gen-subtitle">Generate strong passwords and passphrases in your browser.</p>
+                <h1 className="gen-title">{preset.title}</h1>
+                <p className="gen-subtitle">{preset.subtitle}</p>
             </div>
 
             <div className="gen-tabs">
@@ -266,6 +352,25 @@ export default function PasswordGenerator() {
                     </>
                 )}
             </div>
+
+            {/* SEO content section */}
+            <section className="gen-seo">
+                <h2 className="gen-seo-heading">{preset.seoHeading}</h2>
+                <p className="gen-seo-text">{preset.seoText}</p>
+            </section>
+
+            {/* Internal links to other generator pages */}
+            <nav className="gen-related" aria-label="Related password tools">
+                <h3 className="gen-related-heading">More password tools</h3>
+                <div className="gen-related-grid">
+                    {otherPages.map(page => (
+                        <Link key={page.path} to={page.path} className="gen-related-card">
+                            <span className="gen-related-title">{page.label}</span>
+                            <span className="gen-related-desc">{page.desc}</span>
+                        </Link>
+                    ))}
+                </div>
+            </nav>
         </div>
     );
 }

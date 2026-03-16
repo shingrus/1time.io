@@ -18,8 +18,7 @@ export default function App() {
                     <span className="app-logo-text">onetime<span>link</span></span>
                 </Link>
                 <nav className="app-nav">
-                    <Link to="/" className={location.pathname === '/' ? 'active' : ''}>Create</Link>
-                    <Link to="/password-generator" className={location.pathname === '/password-generator' ? 'active' : ''}>Generator</Link>
+                    <Link to="/password-generator" className={location.pathname.includes('password') ? 'active' : ''}>Password Generator</Link>
                     <Link to="/about" className={location.pathname === '/about' ? 'active' : ''}>About</Link>
                 </nav>
             </header>

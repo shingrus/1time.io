@@ -14,6 +14,10 @@ export default function AppRoutes() {
             <Route path="/index.html" element={<NewMessage />} />
             <Route path="/new" element={<ShowNewLink />} />
             <Route path="/password-generator" element={<PasswordGenerator />} />
+            <Route path="/strong-password-generator" element={<PasswordGenerator />} />
+            <Route path="/create-password-14-symbols" element={<PasswordGenerator />} />
+            <Route path="/random-password-generator" element={<PasswordGenerator />} />
+            <Route path="/passphrase-generator" element={<PasswordGenerator />} />
             <Route path="/about" element={<About />} />
             <Route path="/v/*" element={<ViewSecretMessage />} />
             <Route path="*" element={<ViewError />} />
