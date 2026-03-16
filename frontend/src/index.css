@@ -41,7 +41,7 @@ html {
 
 body {
   font-family: var(--font-body);
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 400;
   line-height: 1.6;
   color: var(--text);
@@ -82,7 +82,7 @@ body {
 .app-logo-text {
   font-family: var(--font-display);
   font-weight: 800;
-  font-size: 20px;
+  font-size: 22px;
   letter-spacing: -0.02em;
 }
 
@@ -96,7 +96,7 @@ body {
 }
 
 .app-nav a {
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 500;
   color: var(--text-secondary);
   text-decoration: none;
@@ -125,7 +125,7 @@ body {
 }
 
 .app-footer-text {
-  font-size: 12px;
+  font-size: 13px;
   color: var(--text-muted);
   line-height: 1.5;
 }
@@ -154,7 +154,7 @@ h1, h2, h3 {
 
 .form-label {
   display: block;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
   color: var(--text);
   margin-bottom: 6px;
@@ -165,7 +165,7 @@ h1, h2, h3 {
   width: 100%;
   padding: 14px 16px;
   font-family: var(--font-body);
-  font-size: 15px;
+  font-size: 16px;
   line-height: 1.6;
   color: var(--text);
   background: var(--surface);
@@ -190,7 +190,7 @@ h1, h2, h3 {
   width: 100%;
   padding: 10px 14px;
   font-family: var(--font-body);
-  font-size: 14px;
+  font-size: 15px;
   color: var(--text);
   background: var(--surface);
   border: 1.5px solid var(--border);
@@ -212,7 +212,7 @@ h1, h2, h3 {
   background: var(--bg);
   cursor: pointer;
   font-family: 'SF Mono', 'Fira Code', 'Fira Mono', monospace;
-  font-size: 13px;
+  font-size: 14px;
   letter-spacing: -0.01em;
 }
 
@@ -220,7 +220,7 @@ h1, h2, h3 {
   width: 100%;
   padding: 10px 14px;
   font-family: var(--font-body);
-  font-size: 14px;
+  font-size: 15px;
   color: var(--text);
   background: var(--surface);
   border: 1.5px solid var(--border);
@@ -240,7 +240,7 @@ h1, h2, h3 {
 }
 
 .form-help {
-  font-size: 12px;
+  font-size: 13px;
   color: var(--text-muted);
   margin-top: 4px;
 }
@@ -253,7 +253,7 @@ h1, h2, h3 {
   gap: 6px;
   padding: 10px 20px;
   font-family: var(--font-body);
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 600;
   line-height: 1;
   border: none;
@@ -320,13 +320,13 @@ h1, h2, h3 {
 
 .btn-lg {
   padding: 14px 28px;
-  font-size: 15px;
+  font-size: 16px;
   border-radius: var(--radius);
 }
 
 .btn-sm {
   padding: 7px 14px;
-  font-size: 13px;
+  font-size: 14px;
 }
 
 /* Actions bar */

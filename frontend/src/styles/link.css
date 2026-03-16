@@ -5,7 +5,7 @@
 }
 
 .link-display-label {
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 500;
   color: var(--text-muted);
   text-transform: uppercase;
@@ -17,7 +17,7 @@
   width: 100%;
   padding: 14px 16px;
   font-family: 'SF Mono', 'Fira Code', monospace;
-  font-size: 13px;
+  font-size: 14px;
   color: var(--accent);
   background: var(--accent-light);
   border: 1.5px solid rgba(234, 88, 12, 0.2);
@@ -40,7 +40,7 @@
 }
 
 .link-notice {
-  font-size: 13px;
+  font-size: 14px;
   color: var(--text-muted);
   margin-top: 20px;
   line-height: 1.6;

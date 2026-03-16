@@ -137,23 +137,31 @@ export default function NewMessage() {
 
                 <div className="features-grid">
                     <div className="feature-card">
-                        <div className="feature-card-icon">&#x1f512;</div>
-                        <h4>End-to-end encrypted</h4>
+                        <div className="feature-card-header">
+                            <div className="feature-card-icon" aria-hidden="true">&#x1f512;</div>
+                            <h4>End-to-end encrypted</h4>
+                        </div>
                         <p>AES encryption happens in your browser. The server only stores ciphertext.</p>
                     </div>
                     <div className="feature-card">
-                        <div className="feature-card-icon">&#x1f4a5;</div>
-                        <h4>One-time access</h4>
+                        <div className="feature-card-header">
+                            <div className="feature-card-icon" aria-hidden="true">&#x1f4a5;</div>
+                            <h4>One-time access</h4>
+                        </div>
                         <p>Each link works exactly once. After reading, the data is permanently deleted.</p>
                     </div>
                     <div className="feature-card">
-                        <div className="feature-card-icon">&#x23f1;&#xfe0f;</div>
-                        <h4>Auto-expiry</h4>
+                        <div className="feature-card-header">
+                            <div className="feature-card-icon" aria-hidden="true">&#x23f1;&#xfe0f;</div>
+                            <h4>Auto-expiry</h4>
+                        </div>
                         <p>Links self-destruct after 1 to 30 days, even if nobody opens them.</p>
                     </div>
                     <div className="feature-card">
-                        <div className="feature-card-icon">&#x1f6ab;</div>
-                        <h4>No signup needed</h4>
+                        <div className="feature-card-header">
+                            <div className="feature-card-icon" aria-hidden="true">&#x1f6ab;</div>
+                            <h4>No signup needed</h4>
+                        </div>
                         <p>No accounts, no tracking, no cookies. Just paste and share.</p>
                     </div>
                 </div>

@@ -4,13 +4,13 @@
 }
 
 .gen-title {
-  font-size: 24px;
+  font-size: 28px;
   margin-bottom: 4px;
 }
 
 .gen-subtitle {
   color: var(--text-secondary);
-  font-size: 14px;
+  font-size: 16px;
 }
 
 .gen-tabs {
@@ -27,7 +27,7 @@
   flex: 1;
   padding: 10px 16px;
   font-family: var(--font-body);
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 500;
   color: var(--text-secondary);
   background: transparent;
@@ -65,7 +65,7 @@
 
 .gen-output-text {
   font-family: 'SF Mono', 'Fira Code', 'Fira Mono', 'Consolas', monospace;
-  font-size: 16px;
+  font-size: 17px;
   line-height: 1.6;
   color: var(--text);
   word-break: break-all;
@@ -97,12 +97,12 @@
 }
 
 .gen-meter-label {
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
 }
 
 .gen-meter-bits {
-  font-size: 12px;
+  font-size: 13px;
   color: var(--text-muted);
 }
 
@@ -171,7 +171,7 @@
   align-items: center;
   gap: 8px;
   cursor: pointer;
-  font-size: 14px;
+  font-size: 15px;
   color: var(--text-secondary);
   user-select: none;
 }
@@ -195,7 +195,7 @@
 }
 
 .gen-seo-heading {
-  font-size: 20px;
+  font-size: 22px;
   font-weight: 700;
   color: var(--text);
   margin-bottom: 12px;
@@ -203,7 +203,7 @@
 }
 
 .gen-seo-text {
-  font-size: 15px;
+  font-size: 16px;
   line-height: 1.7;
   color: var(--text-secondary);
   max-width: 640px;
@@ -217,7 +217,7 @@
 }
 
 .gen-related-heading {
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 600;
   color: var(--text-secondary);
   text-transform: uppercase;
@@ -249,13 +249,13 @@
 }
 
 .gen-related-title {
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 600;
   color: var(--accent);
 }
 
 .gen-related-desc {
-  font-size: 13px;
+  font-size: 14px;
   color: var(--text-secondary);
   line-height: 1.4;
 }

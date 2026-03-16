@@ -32,13 +32,13 @@
 }
 
 .seo-section h2 {
-  font-size: 22px;
+  font-size: 24px;
   margin-bottom: 16px;
   color: var(--text);
 }
 
 .seo-section h3 {
-  font-size: 16px;
+  font-size: 18px;
   margin-top: 24px;
   margin-bottom: 8px;
   color: var(--text);
@@ -46,7 +46,7 @@
 
 .seo-section p {
   color: var(--text-secondary);
-  font-size: 14px;
+  font-size: 16px;
   line-height: 1.7;
   margin-bottom: 12px;
 }
@@ -76,22 +76,29 @@
   border-color: var(--text-muted);
 }
 
+.feature-card-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
 .feature-card-icon {
-  font-size: 20px;
-  margin-bottom: 8px;
+  font-size: 22px;
+  line-height: 1;
 }
 
 .feature-card h4 {
   font-family: var(--font-display);
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 700;
-  margin-bottom: 4px;
+  margin: 0;
   color: var(--text);
 }
 
 .feature-card p {
-  font-size: 13px;
-  color: var(--text-muted);
+  font-size: 15px;
+  color: var(--text-secondary);
   margin: 0;
   line-height: 1.5;
 }
