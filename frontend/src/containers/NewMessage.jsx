@@ -1,12 +1,13 @@
 import React, {useState} from "react";
-import {useNavigate} from "react-router-dom";
+import {useNavigate, useLocation} from "react-router-dom";
 import axios from "axios"
 import CryptoJS from 'crypto-js'
 import {getRandomString, Constants} from '../utils/util';
 
 export default function NewMessage() {
     const navigate = useNavigate();
-    const [secretMessage, setSecretMessage] = useState("");
+    const location = useLocation();
+    const [secretMessage, setSecretMessage] = useState(location.state?.prefill || "");
     const [secretKey, setSecretKey] = useState("");
     const [duration, setDuration] = useState(Constants.defaultDuration);
     const [needOptions, setNeedOptions] = useState(false);
