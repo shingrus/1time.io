@@ -1,6 +1,6 @@
 import React, {useEffect, useState} from "react";
 import {useNavigate, useLocation} from "react-router-dom";
-import {getRandomString, Constants, encryptSecretMessage, postJson, preloadCryptoJS} from '../utils/util';
+import {Constants, createSecretLink, preloadCryptoJS} from '../utils/util';
 import '../styles/home.css';
 
 export default function NewMessage() {
@@ -37,24 +37,17 @@ export default function NewMessage() {
         event.preventDefault();
         setIsLoading(true);
 
-        const randomKey = getRandomString(Constants.randomKeyLen);
-        const durationDays = parseInt(duration, 10);
-        const fullSecretKey = secretKey + randomKey;
-        const {encryptedMessage, hashedKey} = await encryptSecretMessage(secretMessage, fullSecretKey);
-
-        const payload = {
-            secretMessage: encryptedMessage,
-            hashedKey,
-            duration: durationDays * 86400,
-        };
-
         try {
-            const data = await postJson('saveSecret', payload);
-            if (data.status === "ok") {
+            const {randomKey, newId} = await createSecretLink(secretMessage, {
+                secretKey,
+                durationDays: parseInt(duration, 10),
+            });
+
+            if (newId) {
                 navigate("/new", {
                     state: {
                         randomString: randomKey,
-                        newId: data.newId,
+                        newId,
                     },
                 });
                 return;

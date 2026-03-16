@@ -1,6 +1,6 @@
 import React, {useState, useCallback, useEffect} from "react";
 import {useNavigate, useLocation, Link} from "react-router-dom";
-import {copyTextToClipboard} from '../utils/util';
+import {copyTextToClipboard, createSecretLink, preloadCryptoJS} from '../utils/util';
 import wordlist from '../utils/wordlist';
 import '../styles/generator.css';
 
@@ -143,6 +143,7 @@ export default function PasswordGenerator() {
     const [mode, setMode] = useState(preset.mode);
     const [copied, setCopied] = useState(false);
     const [generated, setGenerated] = useState('');
+    const [isSharing, setIsSharing] = useState(false);
 
     // Password options
     const [length, setLength] = useState(preset.length);
@@ -162,6 +163,10 @@ export default function PasswordGenerator() {
             metaDesc.setAttribute('content', preset.metaDescription || '');
         }
     }, [preset]);
+
+    useEffect(() => {
+        preloadCryptoJS();
+    }, []);
 
     // Re-apply presets when route changes
     useEffect(() => {
@@ -192,8 +197,25 @@ export default function PasswordGenerator() {
         }
     };
 
-    const handleShare = () => {
-        navigate('/', {state: {prefill: generated}});
+    const handleShare = async () => {
+        if (!generated || isSharing) {
+            return;
+        }
+
+        setIsSharing(true);
+
+        try {
+            const {randomKey, newId} = await createSecretLink(generated);
+            navigate('/new', {
+                state: {
+                    randomString: randomKey,
+                    newId,
+                },
+            });
+            return;
+        } catch (error) {}
+
+        setIsSharing(false);
     };
 
     const toggleOption = (key) => {
@@ -264,12 +286,12 @@ export default function PasswordGenerator() {
                     </svg>
                     {copied ? "Copied!" : "Copy"}
                 </button>
-                <button className="btn btn-primary" onClick={handleShare} type="button">
+                <button className="btn btn-primary" onClick={handleShare} type="button" disabled={!generated || isSharing}>
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
                         <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
                     </svg>
-                    Share as link
+                    {isSharing ? 'Creating...' : 'Share as link'}
                 </button>
             </div>
 

@@ -52,6 +52,38 @@ export async function decryptSecretMessage(cryptedMessage, fullSecretKey) {
     return decryptedData.toString(CryptoJS.enc.Utf8);
 }
 
+export function buildSecretLink(randomString, newId) {
+    return `${window.location.origin}/v/#${randomString}${newId}`;
+}
+
+export async function createSecretLink(secretMessage, options = {}) {
+    const {secretKey = '', durationDays = Constants.defaultDuration} = options;
+
+    if (!secretMessage) {
+        throw new Error('Secret message is required');
+    }
+
+    const randomKey = getRandomString(Constants.randomKeyLen);
+    const fullSecretKey = secretKey + randomKey;
+    const {encryptedMessage, hashedKey} = await encryptSecretMessage(secretMessage, fullSecretKey);
+
+    const data = await postJson('saveSecret', {
+        secretMessage: encryptedMessage,
+        hashedKey,
+        duration: durationDays * 86400,
+    });
+
+    if (data.status !== 'ok' || !data.newId) {
+        throw new Error('Failed to create secret link');
+    }
+
+    return {
+        randomKey,
+        newId: data.newId,
+        link: buildSecretLink(randomKey, data.newId),
+    };
+}
+
 export async function postJson(path, payload) {
     const response = await fetch(`${Constants.apiBaseUrl}${path}`, {
         method: 'POST',

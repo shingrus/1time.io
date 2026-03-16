@@ -1,6 +1,6 @@
 import React, {useState} from "react";
 import {useLocation, useNavigate} from "react-router-dom";
-import {copyTextToClipboard} from '../utils/util';
+import {buildSecretLink, copyTextToClipboard} from '../utils/util';
 import '../styles/link.css';
 
 export default function ShowNewLink() {
@@ -9,7 +9,7 @@ export default function ShowNewLink() {
     const [copied, setCopied] = useState(false);
     const routeState = location.state;
     const newLink = routeState?.randomString
-        ? `${window.location.origin}/v/#${routeState.randomString}${routeState.newId}`
+        ? buildSecretLink(routeState.randomString, routeState.newId)
         : "";
 
     const handleCopy = async () => {

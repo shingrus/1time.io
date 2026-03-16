@@ -80,6 +80,49 @@ describe('App routes', () => {
     expect(secretLinkField.value).toContain('abc123');
   });
 
+  it('creates a one-time link from the password generator page and shows the standard result screen', async () => {
+    const user = userEvent.setup();
+    fetch.mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        status: 'ok',
+        newId: 'gen123',
+      }),
+    });
+
+    renderApp(['/password-generator']);
+
+    await user.click(await screen.findByRole('button', { name: /share as link/i }));
+
+    await waitFor(() => {
+      expect(fetch).toHaveBeenCalledTimes(1);
+    });
+
+    expect(fetch).toHaveBeenCalledWith(
+      '/api/saveSecret',
+      expect.objectContaining({
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: expect.any(String),
+      }),
+    );
+
+    const requestPayload = JSON.parse(fetch.mock.calls[0][1].body);
+    expect(requestPayload).toEqual(expect.objectContaining({
+      secretMessage: expect.any(String),
+      hashedKey: expect.any(String),
+      duration: 604800,
+    }));
+
+    const secretLinkField = await screen.findByLabelText(/secret one-time link/i);
+    expect(secretLinkField.value).toContain('/v/#');
+    expect(secretLinkField.value).toContain('gen123');
+    expect(screen.getByText(/your secret link is ready/i)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /share as link/i })).not.toBeInTheDocument();
+  });
+
   it('shows not found on unknown routes', async () => {
     renderApp(['/missing']);
     expect(await screen.findByText(/doesn't exist/i)).toBeInTheDocument();
