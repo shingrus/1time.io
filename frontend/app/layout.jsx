@@ -6,6 +6,7 @@ import '../styles/link.css';
 import '../styles/view.css';
 import '../styles/generator.css';
 import '../styles/about.css';
+import '../styles/blog.css';
 import Header from '../components/Header';
 import Link from 'next/link';
 
@@ -47,7 +48,7 @@ export default function RootLayout({children}) {
                     </main>
                     <footer className="app-footer">
                         <p className="app-footer-text">
-                            <Link href="/about">About</Link> &middot; End-to-end encrypted &middot; <a href="https://github.com/shingrus/onetimelink" target="_blank" rel="noopener noreferrer">Open source</a>
+                            <Link href="/about">About</Link> &middot; <Link href="/blog">Blog</Link> &middot; End-to-end encrypted &middot; <a href="https://github.com/shingrus/onetimelink" target="_blank" rel="noopener noreferrer">Open source</a>
                         </p>
                     </footer>
                 </div>

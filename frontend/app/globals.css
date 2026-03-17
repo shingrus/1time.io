@@ -114,6 +114,21 @@ body {
   color: var(--accent);
 }
 
+.app-nav-icon {
+  display: flex;
+  align-items: center;
+  padding: 6px !important;
+  color: var(--text-muted) !important;
+  opacity: 0.7;
+  transition: opacity var(--transition), color var(--transition);
+}
+
+.app-nav-icon:hover {
+  opacity: 1;
+  color: var(--text) !important;
+  background: transparent !important;
+}
+
 .app-main {
   flex: 1;
   padding: 8px 24px 40px;

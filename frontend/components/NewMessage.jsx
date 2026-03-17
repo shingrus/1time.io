@@ -128,7 +128,7 @@ export default function NewMessage() {
             </form>
 
             <section className="seo-section">
-                <h2>End-to-end encrypted. Self-destruct.</h2>
+                <h1>End-to-end encrypted. Self-destruct.</h1>
                 <p>
                     OneTimeLink.me creates encrypted one-time links
                     that automatically destroy themselves after being read. Your data is encrypted in the
