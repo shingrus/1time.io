@@ -1,9 +1,11 @@
 export var Constants = {
     randomKeyLen: 12,
     defaultDuration: 7,
-    isDebug: import.meta.env.DEV,
-    apiBaseUrl: "/api/",
+    isDebug: process.env.NODE_ENV === 'development',
+    apiBaseUrl: process.env.NEXT_PUBLIC_API_URL || "/api/",
 };
+
+const pendingSecretLinkStorageKey = 'pendingSecretLink';
 
 const chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXTZabcdefghiklmnopqrstuvwxyz";
 const textEncoder = new TextEncoder();
@@ -138,6 +140,41 @@ export async function decryptSecretMessage(cryptedMessage, fullSecretKey) {
 
 export function buildSecretLink(randomString, newId) {
     return `${window.location.origin}/v/#${randomString}${newId}`;
+}
+
+export function storePendingSecretLink(randomKey, newId) {
+    if (typeof window === 'undefined' || !window.sessionStorage) {
+        throw new Error('Session storage is unavailable');
+    }
+
+    window.sessionStorage.setItem(
+        pendingSecretLinkStorageKey,
+        JSON.stringify({randomKey, newId}),
+    );
+}
+
+export function consumePendingSecretLink() {
+    if (typeof window === 'undefined' || !window.sessionStorage) {
+        return null;
+    }
+
+    const rawPendingLink = window.sessionStorage.getItem(pendingSecretLinkStorageKey);
+    if (!rawPendingLink) {
+        return null;
+    }
+
+    window.sessionStorage.removeItem(pendingSecretLinkStorageKey);
+
+    try {
+        const parsedPendingLink = JSON.parse(rawPendingLink);
+        if (typeof parsedPendingLink.randomKey !== 'string' || typeof parsedPendingLink.newId !== 'string') {
+            return null;
+        }
+
+        return parsedPendingLink;
+    } catch (error) {
+        return null;
+    }
 }
 
 export async function createSecretLink(secretMessage, options = {}) {

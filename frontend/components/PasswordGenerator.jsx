@@ -1,8 +1,10 @@
-import React, {useState, useCallback, useEffect} from "react";
-import {useNavigate, useLocation, Link} from "react-router-dom";
-import {copyTextToClipboard, createSecretLink} from '../utils/util';
+'use client';
+
+import {useState, useCallback, useEffect} from "react";
+import {useRouter} from "next/navigation";
+import Link from "next/link";
+import {copyTextToClipboard, createSecretLink, storePendingSecretLink} from '../utils/util';
 import wordlist from '../utils/wordlist';
-import '../styles/generator.css';
 
 const CHARSETS = {
     uppercase: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
@@ -15,8 +17,6 @@ const CHARSETS = {
 const PRESETS = {
     '/password-generator': {
         title: 'Password Generator',
-        pageTitle: 'Free Password Generator — onetimelink.me',
-        metaDescription: 'Generate strong, random passwords and passphrases in your browser. Client-side only, nothing sent to a server. Free, fast, and open source.',
         subtitle: 'Generate strong passwords and passphrases in your browser. Nothing leaves your device.',
         length: 20,
         mode: 'password',
@@ -26,8 +26,6 @@ const PRESETS = {
     },
     '/strong-password-generator': {
         title: 'Strong Password Generator',
-        pageTitle: 'Strong Password Generator — Create Uncrackable Passwords',
-        metaDescription: 'Generate strong 24+ character passwords with uppercase, lowercase, numbers, and symbols. Cryptographically random, generated in your browser.',
         subtitle: 'Create a strong, uncrackable password with maximum entropy.',
         length: 24,
         mode: 'password',
@@ -37,8 +35,6 @@ const PRESETS = {
     },
     '/create-password-14-symbols': {
         title: 'Create 14-Character Password',
-        pageTitle: 'Create a 14-Character Password with Symbols — Quick & Secure',
-        metaDescription: 'Instantly create a secure 14-character password with letters, numbers, and symbols. Meets most site requirements. Generated locally in your browser.',
         subtitle: 'Quick 14-character password with letters, numbers, and symbols.',
         length: 14,
         mode: 'password',
@@ -48,8 +44,6 @@ const PRESETS = {
     },
     '/random-password-generator': {
         title: 'Random Password Generator',
-        pageTitle: 'Random Password Generator — Cryptographically Secure',
-        metaDescription: 'Generate truly random passwords using the Web Crypto API. No server involved — all passwords created locally in your browser with real cryptographic randomness.',
         subtitle: 'Truly random passwords using browser cryptographic APIs.',
         length: 16,
         mode: 'password',
@@ -59,8 +53,6 @@ const PRESETS = {
     },
     '/passphrase-generator': {
         title: 'Passphrase Generator',
-        pageTitle: 'Passphrase Generator — Memorable & Secure Multi-Word Passwords',
-        metaDescription: 'Generate memorable multi-word passphrases that are easy to type and hard to crack. Uses cryptographic randomness, runs entirely in your browser.',
         subtitle: 'Generate memorable multi-word passphrases that are easy to type.',
         length: 16,
         mode: 'passphrase',
@@ -135,10 +127,9 @@ function getStrength(entropy) {
     return { label: 'Very strong', color: '#047857', percent: 100 };
 }
 
-export default function PasswordGenerator() {
-    const navigate = useNavigate();
-    const location = useLocation();
-    const preset = PRESETS[location.pathname] || PRESETS['/password-generator'];
+export default function PasswordGenerator({ presetPath }) {
+    const router = useRouter();
+    const preset = PRESETS[presetPath] || PRESETS['/password-generator'];
 
     const [mode, setMode] = useState(preset.mode);
     const [copied, setCopied] = useState(false);
@@ -154,23 +145,6 @@ export default function PasswordGenerator() {
     const [separator, setSeparator] = useState('-');
     const [capitalize, setCapitalize] = useState(true);
     const [includeNumber, setIncludeNumber] = useState(true);
-
-    // Set page title and meta description for SEO
-    useEffect(() => {
-        document.title = preset.pageTitle || preset.title + ' — onetimelink.me';
-        const metaDesc = document.querySelector('meta[name="description"]');
-        if (metaDesc) {
-            metaDesc.setAttribute('content', preset.metaDescription || '');
-        }
-    }, [preset]);
-
-    // Re-apply presets when route changes
-    useEffect(() => {
-        setMode(preset.mode);
-        setLength(preset.length);
-        setOptions(preset.options);
-        if (preset.wordCount) setWordCount(preset.wordCount);
-    }, [location.pathname]);
 
     const generate = useCallback(() => {
         setCopied(false);
@@ -202,12 +176,8 @@ export default function PasswordGenerator() {
 
         try {
             const {randomKey, newId} = await createSecretLink(generated);
-            navigate('/new', {
-                state: {
-                    randomString: randomKey,
-                    newId,
-                },
-            });
+            storePendingSecretLink(randomKey, newId);
+            router.push('/new');
             return;
         } catch (error) {}
 
@@ -220,7 +190,7 @@ export default function PasswordGenerator() {
         if (anyOn) setOptions(next);
     };
 
-    const otherPages = SEO_LINKS.filter(l => l.path !== location.pathname);
+    const otherPages = SEO_LINKS.filter(l => l.path !== presetPath);
 
     return (
         <div>
@@ -383,7 +353,7 @@ export default function PasswordGenerator() {
                 <h3 className="gen-related-heading">More password tools</h3>
                 <div className="gen-related-grid">
                     {otherPages.map(page => (
-                        <Link key={page.path} to={page.path} className="gen-related-card">
+                        <Link key={page.path} href={page.path} className="gen-related-card">
                             <span className="gen-related-title">{page.label}</span>
                             <span className="gen-related-desc">{page.desc}</span>
                         </Link>

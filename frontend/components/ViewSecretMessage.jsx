@@ -1,11 +1,11 @@
-import React, {useState} from 'react';
-import {useLocation, useNavigate} from "react-router-dom";
+'use client';
+
+import {useState, useEffect} from 'react';
+import {useRouter} from "next/navigation";
 import {Constants, copyTextToClipboard, decryptSecretMessage, hashSecretKey, postJson} from '../utils/util';
-import '../styles/view.css';
 
 export default function ViewSecretMessage() {
-    const location = useLocation();
-    const navigate = useNavigate();
+    const router = useRouter();
     const [isLoading, setIsLoading] = useState(false);
     const [secretMessage, setSecretMessage] = useState("");
     const [secretKey, setSecretKey] = useState("");
@@ -13,19 +13,25 @@ export default function ViewSecretMessage() {
     const [isWrongKey, setIsWrongKey] = useState(false);
     const [isNoMessage, setIsNoMessage] = useState(false);
     const [copied, setCopied] = useState(false);
+    const [linkKey, setLinkKey] = useState("");
+
+    // Extract the link key from hash or pathname (client-side only)
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            const hash = window.location.hash;
+            if (hash && hash.length > 1) {
+                setLinkKey(hash.slice(1));
+                return;
+            }
+            const path = window.location.pathname;
+            if (path.startsWith("/v/")) {
+                setLinkKey(path.slice(3).replace(/\/$/, ''));
+            }
+        }
+    }, []);
 
     const handleChange = (event) => {
         setSecretKey(event.target.value);
-    };
-
-    const getLinkKey = () => {
-        if (location.hash && location.hash.length > 1) {
-            return location.hash.slice(1);
-        }
-        if (location.pathname.startsWith("/v/")) {
-            return location.pathname.slice(3);
-        }
-        return "";
     };
 
     const handleSubmit = async (event) => {
@@ -34,15 +40,14 @@ export default function ViewSecretMessage() {
         setIsLoading(true);
         setIsWrongKey(false);
 
-        const link = getLinkKey();
-        if (!link || link.length <= Constants.randomKeyLen) {
+        if (!linkKey || linkKey.length <= Constants.randomKeyLen) {
             setIsLoading(false);
             setIsNoMessage(true);
             return;
         }
 
-        const randomKey = link.substring(0, Constants.randomKeyLen);
-        const id = link.substring(Constants.randomKeyLen);
+        const randomKey = linkKey.substring(0, Constants.randomKeyLen);
+        const id = linkKey.substring(Constants.randomKeyLen);
         const fullSecretKey = secretKey + randomKey;
         const hashedKey = await hashSecretKey(fullSecretKey);
 
@@ -182,7 +187,7 @@ export default function ViewSecretMessage() {
                         <button
                             className="btn btn-secondary"
                             type="button"
-                            onClick={() => navigate('/')}
+                            onClick={() => router.push('/')}
                         >
                             Create your own secret
                         </button>

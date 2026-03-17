@@ -1,18 +1,24 @@
-import React, {useEffect, useRef, useState} from "react";
-import {useLocation, useNavigate} from "react-router-dom";
-import {buildSecretLink, copyTextToClipboard} from '../utils/util';
-import '../styles/link.css';
+'use client';
+
+import {useEffect, useRef, useState} from "react";
+import {useRouter} from "next/navigation";
+import {buildSecretLink, consumePendingSecretLink, copyTextToClipboard} from '../utils/util';
 
 export default function ShowNewLink() {
-    const location = useLocation();
-    const navigate = useNavigate();
+    const router = useRouter();
     const [copied, setCopied] = useState(false);
     const [didAutoCopy, setDidAutoCopy] = useState(false);
+    const [newLink, setNewLink] = useState("");
     const resetCopiedTimeoutRef = useRef(null);
-    const routeState = location.state;
-    const newLink = routeState?.randomString
-        ? buildSecretLink(routeState.randomString, routeState.newId)
-        : "";
+
+    useEffect(() => {
+        const pendingSecretLink = consumePendingSecretLink();
+        if (!pendingSecretLink) {
+            return;
+        }
+
+        setNewLink(buildSecretLink(pendingSecretLink.randomKey, pendingSecretLink.newId));
+    }, []);
 
     useEffect(() => {
         if (!newLink) {
@@ -57,6 +63,20 @@ export default function ShowNewLink() {
 
     return (
         <div className="link-display">
+            {!newLink && (
+                <>
+                    <p className="link-display-label">This link is no longer available.</p>
+                    <div className="link-actions">
+                        <button
+                            className="btn btn-secondary btn-lg"
+                            type="button"
+                            onClick={() => router.push('/')}
+                        >Create another</button>
+                    </div>
+                </>
+            )}
+            {newLink && (
+                <>
             <div style={{marginBottom: 24}}>
                 <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#16A34A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
@@ -89,13 +109,15 @@ export default function ShowNewLink() {
                 <button
                     className="btn btn-secondary btn-lg"
                     type="button"
-                    onClick={() => navigate('/')}
+                    onClick={() => router.push('/')}
                 >Create another</button>
             </div>
             <p className="link-notice">
                 This link works only once. After the recipient opens it, the message is
                 permanently destroyed. Even we cannot read it — encryption happens in your browser.
             </p>
+                </>
+            )}
         </div>
     );
 }
