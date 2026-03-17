@@ -12,7 +12,7 @@ vet:
 	go vet ./...
 
 frontend_build:
-	cd ${FRONTEND_DIRECTORY} && npm run build
+	cd ${FRONTEND_DIRECTORY} && npm ci && npm run build
 
 build: clean frontend_build
 	mkdir -p ${BINARIES_DIRECTORY}
