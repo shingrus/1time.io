@@ -1,8 +1,8 @@
 export var Constants = {
     randomKeyLen: 12,
     defaultDuration: 7,
-    isDebug: import.meta.env.DEV,
-    apiBaseUrl: "/api/",
+    isDebug: process.env.NODE_ENV === 'development',
+    apiBaseUrl: process.env.NEXT_PUBLIC_API_URL || "/api/",
 };
 
 const chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXTZabcdefghiklmnopqrstuvwxyz";

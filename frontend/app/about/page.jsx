@@ -1,8 +1,17 @@
-import React from 'react';
-import {Link} from "react-router-dom";
-import '../styles/about.css';
+import Link from 'next/link';
 
-export default function About() {
+export const metadata = {
+    title: 'About — onetimelink.me',
+    description: 'Learn how onetimelink.me uses end-to-end encryption to share secrets securely. Open source, zero-knowledge, no accounts required.',
+    alternates: { canonical: '/about' },
+    openGraph: {
+        title: 'About — onetimelink.me',
+        description: 'Learn how onetimelink.me uses end-to-end encryption to share secrets securely.',
+        url: '/about',
+    },
+};
+
+export default function AboutPage() {
     return (
         <div className="about-page">
             <h1>About onetimelink.me</h1>
@@ -67,7 +76,7 @@ export default function About() {
             </div>
 
             <div style={{textAlign: 'center', paddingTop: 16}}>
-                <Link to="/" className="btn btn-primary btn-lg">
+                <Link href="/" className="btn btn-primary btn-lg">
                     Create a secret link
                 </Link>
             </div>

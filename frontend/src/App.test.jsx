@@ -1,207 +1,188 @@
 import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import App from './App';
 
-function renderApp(initialEntries = ['/']) {
-  return render(
-    <MemoryRouter
-      initialEntries={initialEntries}
-      future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
-    >
-      <App />
-    </MemoryRouter>
-  );
-}
+// Mock next/navigation
+const mockPush = vi.fn();
+const mockPathname = vi.fn(() => '/');
+
+vi.mock('next/navigation', () => ({
+    useRouter: () => ({ push: mockPush }),
+    usePathname: () => mockPathname(),
+    useSearchParams: () => new URLSearchParams({ rs: 'testRandomKey1', id: 'testId123' }),
+}));
+
+// Mock next/link as a simple anchor
+vi.mock('next/link', () => ({
+    default: ({ href, children, ...props }) =>
+        React.createElement('a', { href, ...props }, children),
+}));
+
+import NewMessage from '../components/NewMessage';
+import ShowNewLink from '../components/ShowNewLink';
+import ViewSecretMessage from '../components/ViewSecretMessage';
+import PasswordGenerator from '../components/PasswordGenerator';
 
 beforeEach(() => {
-  vi.clearAllMocks();
-  global.fetch = vi.fn();
-  window.scrollTo = vi.fn();
-  document.head.querySelectorAll('link[rel="canonical"], meta[property="og:url"], meta[name="robots"]').forEach((node) => node.remove());
-  Object.defineProperty(window.navigator, 'clipboard', {
-    configurable: true,
-    value: {
-      writeText: vi.fn().mockResolvedValue(undefined),
-    },
-  });
+    vi.clearAllMocks();
+    mockPathname.mockReturnValue('/');
+    global.fetch = vi.fn();
+    window.scrollTo = vi.fn();
+    Object.defineProperty(window.navigator, 'clipboard', {
+        configurable: true,
+        value: {
+            writeText: vi.fn().mockResolvedValue(undefined),
+        },
+    });
 });
 
-describe('App routes', () => {
-  it('renders the message form and reveals advanced options', async () => {
-    const user = userEvent.setup();
+describe('NewMessage component', () => {
+    it('renders the message form and reveals advanced options', async () => {
+        const user = userEvent.setup();
 
-    renderApp();
+        render(<NewMessage />);
 
-    const submitButton = screen.getByRole('button', { name: /create secret link/i });
-    expect(submitButton).toBeDisabled();
+        const submitButton = screen.getByRole('button', { name: /create secret link/i });
+        expect(submitButton).toBeDisabled();
 
-    await user.type(screen.getByLabelText(/your secret message/i), 'top secret');
-    expect(submitButton).toBeEnabled();
+        await user.type(screen.getByLabelText(/your secret message/i), 'top secret');
+        expect(submitButton).toBeEnabled();
 
-    await user.click(screen.getByRole('button', { name: /options/i }));
-    expect(screen.getByLabelText(/additional passphrase/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/self-destruct after/i)).toBeInTheDocument();
-  });
-
-  it('submits a new secret and navigates to the generated link page', async () => {
-    const user = userEvent.setup();
-    fetch.mockResolvedValue({
-      ok: true,
-      json: async () => ({
-        status: 'ok',
-        newId: 'abc123',
-      }),
+        await user.click(screen.getByRole('button', { name: /options/i }));
+        expect(screen.getByLabelText(/additional passphrase/i)).toBeInTheDocument();
+        expect(screen.getByLabelText(/self-destruct after/i)).toBeInTheDocument();
     });
 
-    renderApp();
+    it('submits a new secret and navigates to the generated link page', async () => {
+        const user = userEvent.setup();
+        fetch.mockResolvedValue({
+            ok: true,
+            json: async () => ({
+                status: 'ok',
+                newId: 'abc123',
+            }),
+        });
 
-    await user.type(screen.getByLabelText(/your secret message/i), 'ship it');
-    await user.click(screen.getByRole('button', { name: /create secret link/i }));
+        render(<NewMessage />);
 
-    await waitFor(() => {
-      expect(fetch).toHaveBeenCalledTimes(1);
+        await user.type(screen.getByLabelText(/your secret message/i), 'ship it');
+        await user.click(screen.getByRole('button', { name: /create secret link/i }));
+
+        await waitFor(() => {
+            expect(fetch).toHaveBeenCalledTimes(1);
+        });
+
+        expect(fetch).toHaveBeenCalledWith(
+            '/api/saveSecret',
+            expect.objectContaining({
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: expect.any(String),
+            }),
+        );
+
+        const requestPayload = JSON.parse(fetch.mock.calls[0][1].body);
+        expect(requestPayload).toEqual(expect.objectContaining({
+            secretMessage: expect.any(String),
+            hashedKey: expect.any(String),
+            duration: 604800,
+        }));
+
+        await waitFor(() => {
+            expect(mockPush).toHaveBeenCalledWith(
+                expect.stringMatching(/\/new\?rs=.+&id=abc123/)
+            );
+        });
+    });
+});
+
+describe('ShowNewLink component', () => {
+    it('displays the generated link and auto-copies it', async () => {
+        render(<ShowNewLink />);
+
+        const linkInput = screen.getByLabelText(/secret one-time link/i);
+        expect(linkInput).toBeInTheDocument();
+        expect(linkInput.value).toContain('/v/#');
+        expect(linkInput.value).toContain('testRandomKey1');
+        expect(linkInput.value).toContain('testId123');
+
+        await waitFor(() => {
+            expect(screen.getByRole('button', { name: /link already copied/i })).toBeInTheDocument();
+        });
+    });
+});
+
+describe('PasswordGenerator component', () => {
+    it('renders with the correct preset for password-generator', () => {
+        render(<PasswordGenerator presetPath="/password-generator" />);
+
+        expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Password Generator');
+        expect(screen.getByRole('button', { name: /share as link/i })).toBeInTheDocument();
     });
 
-    expect(fetch).toHaveBeenCalledWith(
-      '/api/saveSecret',
-      expect.objectContaining({
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: expect.any(String),
-      }),
-    );
+    it('creates a one-time link from the password generator and navigates', async () => {
+        const user = userEvent.setup();
+        fetch.mockResolvedValue({
+            ok: true,
+            json: async () => ({
+                status: 'ok',
+                newId: 'gen123',
+            }),
+        });
 
-    const requestPayload = JSON.parse(fetch.mock.calls[0][1].body);
-    expect(requestPayload).toEqual(expect.objectContaining({
-      secretMessage: expect.any(String),
-      hashedKey: expect.any(String),
-      duration: 604800,
-    }));
+        render(<PasswordGenerator presetPath="/password-generator" />);
 
-    const secretLinkField = await screen.findByLabelText(/secret one-time link/i);
-    expect(secretLinkField.value).toContain('/v/#');
-    expect(secretLinkField.value).toContain('abc123');
-    expect(await screen.findByRole('button', { name: /link already copied/i })).toBeInTheDocument();
-  });
+        await user.click(await screen.findByRole('button', { name: /share as link/i }));
 
-  it('sets the canonical and og:url tags for indexable routes', async () => {
-    renderApp(['/password-generator']);
+        await waitFor(() => {
+            expect(fetch).toHaveBeenCalledTimes(1);
+        });
 
-    await waitFor(() => {
-      expect(document.querySelector('link[rel="canonical"]')?.getAttribute('href')).toBe(`${window.location.origin}/password-generator`);
-      expect(document.querySelector('meta[property="og:url"]')?.getAttribute('content')).toBe(`${window.location.origin}/password-generator`);
+        expect(fetch).toHaveBeenCalledWith(
+            '/api/saveSecret',
+            expect.objectContaining({
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: expect.any(String),
+            }),
+        );
+
+        const requestPayload = JSON.parse(fetch.mock.calls[0][1].body);
+        expect(requestPayload).toEqual(expect.objectContaining({
+            secretMessage: expect.any(String),
+            hashedKey: expect.any(String),
+            duration: 604800,
+        }));
+
+        await waitFor(() => {
+            expect(mockPush).toHaveBeenCalledWith(
+                expect.stringMatching(/\/new\?rs=.+&id=gen123/)
+            );
+        });
     });
-  });
+});
 
-  it('canonicalizes /index.html to the root URL', async () => {
-    renderApp(['/index.html']);
+describe('ViewSecretMessage component', () => {
+    it('shows the pre-read state with decrypt button', () => {
+        render(<ViewSecretMessage />);
 
-    await waitFor(() => {
-      expect(document.querySelector('link[rel="canonical"]')?.getAttribute('href')).toBe(`${window.location.origin}/`);
-      expect(document.querySelector('meta[property="og:url"]')?.getAttribute('content')).toBe(`${window.location.origin}/`);
-    });
-  });
-
-  it('scrolls to the top after internal route navigation', async () => {
-    const user = userEvent.setup();
-
-    renderApp(['/']);
-    const initialCalls = window.scrollTo.mock.calls.length;
-
-    await user.click(screen.getAllByRole('link', { name: /about/i })[0]);
-
-    await waitFor(() => {
-      expect(screen.getByRole('heading', { name: /about onetimelink\.me/i })).toBeInTheDocument();
-      expect(window.scrollTo).toHaveBeenCalledTimes(initialCalls + 1);
+        expect(screen.getByText(/someone sent you a secret message/i)).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /decrypt & read/i })).toBeInTheDocument();
     });
 
-    expect(window.scrollTo).toHaveBeenLastCalledWith(0, 0);
-  });
+    it('treats invalid view links as destroyed after submit', async () => {
+        const user = userEvent.setup();
 
-  it('marks the generated-link page as noindex', async () => {
-    renderApp(['/new']);
+        render(<ViewSecretMessage />);
 
-    await waitFor(() => {
-      expect(document.querySelector('meta[name="robots"]')?.getAttribute('content')).toBe('noindex, nofollow');
+        await user.click(await screen.findByRole('button', { name: /decrypt & read/i }));
+
+        expect(await screen.findByText(/already been read or has expired/i)).toBeInTheDocument();
+        expect(fetch).not.toHaveBeenCalled();
     });
-  });
-
-  it('marks secret-view routes as noindex and clears the tag on indexable pages', async () => {
-    const firstRender = renderApp(['/v/short']);
-
-    await waitFor(() => {
-      expect(document.querySelector('meta[name="robots"]')?.getAttribute('content')).toBe('noindex, nofollow');
-    });
-
-    firstRender.unmount();
-    renderApp(['/password-generator']);
-
-    await waitFor(() => {
-      expect(document.querySelector('meta[name="robots"]')).toBeNull();
-    });
-  });
-
-  it('creates a one-time link from the password generator page and shows the standard result screen', async () => {
-    const user = userEvent.setup();
-    fetch.mockResolvedValue({
-      ok: true,
-      json: async () => ({
-        status: 'ok',
-        newId: 'gen123',
-      }),
-    });
-
-    renderApp(['/password-generator']);
-
-    await user.click(await screen.findByRole('button', { name: /share as link/i }));
-
-    await waitFor(() => {
-      expect(fetch).toHaveBeenCalledTimes(1);
-    });
-
-    expect(fetch).toHaveBeenCalledWith(
-      '/api/saveSecret',
-      expect.objectContaining({
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: expect.any(String),
-      }),
-    );
-
-    const requestPayload = JSON.parse(fetch.mock.calls[0][1].body);
-    expect(requestPayload).toEqual(expect.objectContaining({
-      secretMessage: expect.any(String),
-      hashedKey: expect.any(String),
-      duration: 604800,
-    }));
-
-    const secretLinkField = await screen.findByLabelText(/secret one-time link/i);
-    expect(secretLinkField.value).toContain('/v/#');
-    expect(secretLinkField.value).toContain('gen123');
-    expect(screen.getByText(/your secret link is ready/i)).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /share as link/i })).not.toBeInTheDocument();
-  });
-
-  it('shows not found on unknown routes', async () => {
-    renderApp(['/missing']);
-    expect(await screen.findByText(/doesn't exist/i)).toBeInTheDocument();
-  });
-
-  it('treats invalid view links as destroyed after submit', async () => {
-    const user = userEvent.setup();
-
-    renderApp(['/v/short']);
-
-    await user.click(await screen.findByRole('button', { name: /decrypt & read/i }));
-
-    expect(await screen.findByText(/already been read or has expired/i)).toBeInTheDocument();
-    expect(fetch).not.toHaveBeenCalled();
-  });
 });

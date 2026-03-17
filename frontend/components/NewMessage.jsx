@@ -1,12 +1,13 @@
-import React, {useState} from "react";
-import {Link, useNavigate, useLocation} from "react-router-dom";
+'use client';
+
+import {useState} from "react";
+import Link from "next/link";
+import {useRouter} from "next/navigation";
 import {Constants, createSecretLink} from '../utils/util';
-import '../styles/home.css';
 
 export default function NewMessage() {
-    const navigate = useNavigate();
-    const location = useLocation();
-    const [secretMessage, setSecretMessage] = useState(location.state?.prefill || "");
+    const router = useRouter();
+    const [secretMessage, setSecretMessage] = useState("");
     const [secretKey, setSecretKey] = useState("");
     const [duration, setDuration] = useState(Constants.defaultDuration);
     const [needOptions, setNeedOptions] = useState(false);
@@ -40,12 +41,7 @@ export default function NewMessage() {
             });
 
             if (newId) {
-                navigate("/new", {
-                    state: {
-                        randomString: randomKey,
-                        newId,
-                    },
-                });
+                router.push(`/new?rs=${encodeURIComponent(randomKey)}&id=${encodeURIComponent(newId)}`);
                 return;
             }
         } catch (error) {}
@@ -147,7 +143,7 @@ export default function NewMessage() {
                         </div>
                         <p>Links self-destruct after 1 to 30 days, even if nobody opens them.</p>
                     </div>
-                    <Link to="/strong-password-generator" className="feature-card feature-card-link">
+                    <Link href="/strong-password-generator" className="feature-card feature-card-link">
                         <div className="feature-card-header">
                             <div className="feature-card-icon" aria-hidden="true">&#x1f511;</div>
                             <h3>Strong Password Generator</h3>

@@ -70,16 +70,14 @@ npm install
 Start the frontend dev server:
 
 ```bash
-npm start
-```
-
-You can also use:
-
-```bash
 npm run dev
 ```
 
-The frontend now runs on Vite. In development it serves on `http://127.0.0.1:3000` and proxies `/api` to the Go backend on `127.0.0.1:8080`, so the Go server must be running first.
+The frontend runs on Next.js. In development it serves on `http://127.0.0.1:3001` and proxies `/api` to the Go backend on `http://127.0.0.1:8080`, so the Go server must be running first. This keeps frontend requests same-origin in development, matching production behind nginx.
+
+If you need to point the dev proxy somewhere else, set `API_PROXY_TARGET` before `npm run dev`.
+
+`NEXT_PUBLIC_API_URL` should usually be left unset in local development so the frontend continues to use relative `/api/` requests through the Next.js proxy.
 
 Create a production build:
 
@@ -95,6 +93,6 @@ npm test
 
 ## Notes
 
-- The frontend has been migrated from Create React App to Vite and now installs without the old CRA transitive vulnerability set.
+- The frontend has been migrated from Create React App to Next.js with static export for production builds.
 - The server-rendered flow under `templates/` is deprecated. It still exists in the codebase, but it is not part of the recommended deployment path.
 - Production nginx, Redis, and systemd example configs are in `configs/`.

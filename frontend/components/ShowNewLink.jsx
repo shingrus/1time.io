@@ -1,17 +1,20 @@
-import React, {useEffect, useRef, useState} from "react";
-import {useLocation, useNavigate} from "react-router-dom";
+'use client';
+
+import {useEffect, useRef, useState} from "react";
+import {useRouter, useSearchParams} from "next/navigation";
 import {buildSecretLink, copyTextToClipboard} from '../utils/util';
-import '../styles/link.css';
 
 export default function ShowNewLink() {
-    const location = useLocation();
-    const navigate = useNavigate();
+    const router = useRouter();
+    const searchParams = useSearchParams();
     const [copied, setCopied] = useState(false);
     const [didAutoCopy, setDidAutoCopy] = useState(false);
     const resetCopiedTimeoutRef = useRef(null);
-    const routeState = location.state;
-    const newLink = routeState?.randomString
-        ? buildSecretLink(routeState.randomString, routeState.newId)
+
+    const randomString = searchParams.get('rs') || '';
+    const newId = searchParams.get('id') || '';
+    const newLink = randomString && newId
+        ? buildSecretLink(randomString, newId)
         : "";
 
     useEffect(() => {
@@ -89,7 +92,7 @@ export default function ShowNewLink() {
                 <button
                     className="btn btn-secondary btn-lg"
                     type="button"
-                    onClick={() => navigate('/')}
+                    onClick={() => router.push('/')}
                 >Create another</button>
             </div>
             <p className="link-notice">

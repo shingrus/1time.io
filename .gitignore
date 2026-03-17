@@ -1,6 +1,7 @@
 /1time
 /bin/
 /frontend/build/
+/frontend/.next/
 /frontend/node_modules/
 /.idea/
 /.claude/

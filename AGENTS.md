@@ -4,15 +4,14 @@
 
 - Go backend lives at the repo root.
 - Redis is required for message storage.
-- React frontend lives in `frontend/` and uses Vite.
-- Server-rendered HTML flows in `templates/` are deprecated. They still exist in the codebase, but they are not part of the default deployment path.
+- React frontend lives in `frontend/` and uses Next.js with static export (`output: 'export'`).
+- Server-rendered HTML flows in `templates/` are deprecated.
 
 ## Backend
 
 - Entry point: `main.go`
 - HTTP handlers: `handlers.go`
 - Redis access: `storage.go`
-- Crypto/random helpers: `utils.go`
 - The backend listens on `127.0.0.1:8080`.
 - Required env:
   - `REDISHOST=127.0.0.1:6379`
@@ -36,18 +35,21 @@ make build
 
 ## Frontend
 
-- Toolchain: Vite
-- Runtime: React 19, React Router 6
-- Entry HTML: `frontend/index.html`
-- App entry: `frontend/src/index.jsx`
-- Route shell: `frontend/src/App.jsx`
+- Toolchain: Next.js 15 with static export
+- Runtime: React 19
+- Config: `frontend/next.config.js` (output: 'export', distDir: 'build', trailingSlash: true)
+- Root layout: `frontend/app/layout.jsx`
+- Pages: `frontend/app/*/page.jsx` (file-based routing)
+- Client components: `frontend/components/*.jsx` (marked with 'use client')
+- Utils: `frontend/utils/util.js` (encryption), `frontend/utils/wordlist.js`
+- Styles: `frontend/app/globals.css` (base), `frontend/styles/*.css` (per-component)
 
 Run locally:
 
 ```bash
 cd frontend
 npm install
-npm start
+npm run dev
 ```
 
 Useful commands:
@@ -60,28 +62,34 @@ npm run build
 
 ## Frontend Notes
 
-- The dev server runs on `127.0.0.1:3000` and proxies `/api` to `127.0.0.1:8080`.
+- The dev server runs on `127.0.0.1:3001`.
+- In normal local development, leave `NEXT_PUBLIC_API_URL` unset so the frontend uses relative `/api/` requests and Next.js proxies them to `http://127.0.0.1:8080`.
+- To use a different backend target in development, set `API_PROXY_TARGET` before `npm run dev`.
 - Do not edit `frontend/build` directly; it is generated output.
-- `frontend/index.html` contains critical inline shell CSS to reduce first-render layout shift and FOUC. Preserve that unless you intentionally rework the initial paint behavior.
-- The footer tagline was moved into `frontend/src/App.jsx` so it renders with the app and does not shift after the form mounts.
-- The frontend now uses the native Clipboard API helper in `frontend/src/utils/util.js`; do not reintroduce `react-copy-to-clipboard`.
+- SEO metadata is defined via `export const metadata` in each page.jsx file, NOT via useEffect. This is critical for Google indexing.
+- Each page.jsx is a server component that exports metadata and renders a client component from `components/`.
+- The `'use client'` directive is required on all interactive components (forms, buttons, state).
+- The `/new` route receives secret link data via URL search params (`?rs=...&id=...`).
+- The `/v/` route reads the secret key from the URL hash (`#key`), which is client-side only.
+- Pages with `robots: 'noindex, nofollow'` in metadata: `/new`, `/v/`.
+- Tests live in `frontend/src/App.test.jsx` and use vitest + React Testing Library.
+- The vitest config (`frontend/vitest.config.js`) uses esbuild with `jsx: 'automatic'` to handle JSX in components.
 
 ## Domain And Branding
 
 - Public domain is `https://onetimelink.me`.
 - Do not reintroduce old domains such as `1time.it`, `1time.click`, or `sharepass.to`.
-- Template favicon links should stay relative, e.g. `/ico.png`.
-- `templates/result.html` still renders production-host share links for `onetimelink.me`, but the `templates/` flow is deprecated.
 
 ## Deployment
 
-- Frontend production build output: `frontend/build`
+- Frontend production build output: `frontend/build` (static HTML files per route)
 - Backend production binary from `make build`: `bin/1time`
 - Example nginx config: `configs/nginx/onetimelink.conf`
-- nginx is expected to serve the frontend statics and proxy `/api` to the Go app on `127.0.0.1:8080`.
+- nginx serves frontend statics and proxies `/api` to the Go app on `127.0.0.1:8080`.
+- The nginx `try_files` directive includes `$uri/index.html` for Next.js trailing-slash static export.
 
 ## Important Behavior
 
 - The React frontend uses the JSON API routes under `/api`.
-- The deprecated server-rendered `/view/...` flow is separate from the SPA `/v/...` flow.
-- If changing legacy links, routes, or templates-backed behavior, check both the React frontend and the `templates/` files.
+- Each route generates its own `index.html` with full pre-rendered content and unique meta tags for SEO.
+- The deprecated server-rendered `/view/...` flow is separate from the SPA `/v/` flow.
