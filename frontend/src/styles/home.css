@@ -72,6 +72,11 @@
   transition: border-color var(--transition);
 }
 
+.feature-card-link {
+  display: block;
+  text-decoration: none;
+}
+
 .feature-card:hover {
   border-color: var(--text-muted);
 }

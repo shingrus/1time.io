@@ -1,5 +1,5 @@
 import React, {useState} from "react";
-import {useNavigate, useLocation} from "react-router-dom";
+import {Link, useNavigate, useLocation} from "react-router-dom";
 import {Constants, createSecretLink} from '../utils/util';
 import '../styles/home.css';
 
@@ -120,7 +120,7 @@ export default function NewMessage() {
             <section className="seo-section">
                 <h2>End-to-end encrypted. Self-destruct.</h2>
                 <p>
-                    Stop sending passwords through email and chat. onetimelink.me creates encrypted one-time links
+                    OneTimeLink.me creates encrypted one-time links
                     that automatically destroy themselves after being read. Your data is encrypted in the
                     browser before it ever leaves your device - we never see it.
                 </p>
@@ -147,13 +147,13 @@ export default function NewMessage() {
                         </div>
                         <p>Links self-destruct after 1 to 30 days, even if nobody opens them.</p>
                     </div>
-                    <div className="feature-card">
+                    <Link to="/strong-password-generator" className="feature-card feature-card-link">
                         <div className="feature-card-header">
-                            <div className="feature-card-icon" aria-hidden="true">&#x1f6ab;</div>
-                            <h3>No signup needed</h3>
+                            <div className="feature-card-icon" aria-hidden="true">&#x1f511;</div>
+                            <h3>Strong Password Generator</h3>
                         </div>
-                        <p>No accounts, no tracking, no cookies. Just paste and share.</p>
-                    </div>
+                        <p>Create a longer, higher-entropy password in your browser for critical accounts.</p>
+                    </Link>
                 </div>
 
                 <h3>How it works</h3>

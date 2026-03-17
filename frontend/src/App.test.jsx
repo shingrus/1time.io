@@ -19,7 +19,8 @@ function renderApp(initialEntries = ['/']) {
 beforeEach(() => {
   vi.clearAllMocks();
   global.fetch = vi.fn();
-  document.head.querySelectorAll('link[rel="canonical"], meta[property="og:url"]').forEach((node) => node.remove());
+  window.scrollTo = vi.fn();
+  document.head.querySelectorAll('link[rel="canonical"], meta[property="og:url"], meta[name="robots"]').forEach((node) => node.remove());
   Object.defineProperty(window.navigator, 'clipboard', {
     configurable: true,
     value: {
@@ -103,6 +104,45 @@ describe('App routes', () => {
     await waitFor(() => {
       expect(document.querySelector('link[rel="canonical"]')?.getAttribute('href')).toBe(`${window.location.origin}/`);
       expect(document.querySelector('meta[property="og:url"]')?.getAttribute('content')).toBe(`${window.location.origin}/`);
+    });
+  });
+
+  it('scrolls to the top after internal route navigation', async () => {
+    const user = userEvent.setup();
+
+    renderApp(['/']);
+    const initialCalls = window.scrollTo.mock.calls.length;
+
+    await user.click(screen.getAllByRole('link', { name: /about/i })[0]);
+
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: /about onetimelink\.me/i })).toBeInTheDocument();
+      expect(window.scrollTo).toHaveBeenCalledTimes(initialCalls + 1);
+    });
+
+    expect(window.scrollTo).toHaveBeenLastCalledWith(0, 0);
+  });
+
+  it('marks the generated-link page as noindex', async () => {
+    renderApp(['/new']);
+
+    await waitFor(() => {
+      expect(document.querySelector('meta[name="robots"]')?.getAttribute('content')).toBe('noindex, nofollow');
+    });
+  });
+
+  it('marks secret-view routes as noindex and clears the tag on indexable pages', async () => {
+    const firstRender = renderApp(['/v/short']);
+
+    await waitFor(() => {
+      expect(document.querySelector('meta[name="robots"]')?.getAttribute('content')).toBe('noindex, nofollow');
+    });
+
+    firstRender.unmount();
+    renderApp(['/password-generator']);
+
+    await waitFor(() => {
+      expect(document.querySelector('meta[name="robots"]')).toBeNull();
     });
   });
 

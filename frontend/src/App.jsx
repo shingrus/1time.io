@@ -12,46 +12,51 @@ const canonicalPaths = new Set([
     '/strong-password-generator',
 ]);
 
-function getCanonicalPath(pathname) {
-    if (pathname === '/index.html') {
-        return '/';
-    }
-
-    if (canonicalPaths.has(pathname)) {
-        return pathname;
-    }
-
-    return '/';
-}
-
-function upsertCanonicalUrl(canonicalUrl) {
-    let canonical = document.querySelector('link[rel="canonical"]');
-    if (!canonical) {
-        canonical = document.createElement('link');
-        canonical.setAttribute('rel', 'canonical');
-        document.head.appendChild(canonical);
-    }
-    canonical.setAttribute('href', canonicalUrl);
-}
-
-function upsertOgUrl(canonicalUrl) {
-    let ogUrl = document.querySelector('meta[property="og:url"]');
-    if (!ogUrl) {
-        ogUrl = document.createElement('meta');
-        ogUrl.setAttribute('property', 'og:url');
-        document.head.appendChild(ogUrl);
-    }
-    ogUrl.setAttribute('content', canonicalUrl);
-}
-
 export default function App() {
     const location = useLocation();
 
     useEffect(() => {
-        const canonicalUrl = new URL(getCanonicalPath(location.pathname), window.location.origin).toString();
+        window.scrollTo(0, 0);
+    }, [location.pathname]);
 
-        upsertCanonicalUrl(canonicalUrl);
-        upsertOgUrl(canonicalUrl);
+    useEffect(() => {
+        const canonicalPath = location.pathname === '/index.html'
+            ? '/'
+            : canonicalPaths.has(location.pathname)
+                ? location.pathname
+                : '/';
+        const canonicalUrl = new URL(canonicalPath, window.location.origin).toString();
+
+        let canonical = document.querySelector('link[rel="canonical"]');
+        if (!canonical) {
+            canonical = document.createElement('link');
+            canonical.setAttribute('rel', 'canonical');
+            document.head.appendChild(canonical);
+        }
+        canonical.setAttribute('href', canonicalUrl);
+
+        let ogUrl = document.querySelector('meta[property="og:url"]');
+        if (!ogUrl) {
+            ogUrl = document.createElement('meta');
+            ogUrl.setAttribute('property', 'og:url');
+            document.head.appendChild(ogUrl);
+        }
+        ogUrl.setAttribute('content', canonicalUrl);
+
+        const shouldNoindex = location.pathname === '/new' || location.pathname.startsWith('/v/');
+        let robots = document.querySelector('meta[name="robots"]');
+
+        if (shouldNoindex) {
+            if (!robots) {
+                robots = document.createElement('meta');
+                robots.setAttribute('name', 'robots');
+                document.head.appendChild(robots);
+            }
+            robots.setAttribute('content', 'noindex, nofollow');
+            return;
+        }
+
+        robots?.remove();
     }, [location.pathname]);
 
     return (
@@ -69,6 +74,15 @@ export default function App() {
                 <nav className="app-nav">
                     <Link to="/password-generator" className={location.pathname.includes('password') ? 'active' : ''}>Password Generator</Link>
                     <Link to="/about" className={location.pathname === '/about' ? 'active' : ''}>About</Link>
+                    <a
+                        className="app-nav-github"
+                        href="https://github.com/shingrus/onetimelink"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        aria-label="View on GitHub"
+                    >
+                        GitHub
+                    </a>
                 </nav>
             </header>
 
