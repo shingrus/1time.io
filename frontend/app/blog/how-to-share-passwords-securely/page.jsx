@@ -8,12 +8,44 @@ export const metadata = {
         title: 'How to Share Passwords Securely with Your Team',
         description: 'Stop sharing passwords over Slack and email. Learn the safe alternatives for teams.',
         url: '/blog/how-to-share-passwords-securely',
+        images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'How to Share Passwords Securely' }],
+    },
+    twitter: {
+        card: 'summary_large_image',
+        title: 'How to Share Passwords Securely with Your Team',
+        description: 'Stop sharing passwords over Slack and email. Learn the safe alternatives for teams.',
     },
 };
+
+const jsonLd = [
+    {
+        '@context': 'https://schema.org',
+        '@type': 'Article',
+        headline: 'How to Share Passwords Securely with Your Team',
+        description: 'Learn why sharing passwords via Slack, email, or spreadsheets is dangerous and discover secure alternatives like encrypted one-time links, password managers, and more.',
+        datePublished: '2025-03-01',
+        dateModified: '2026-03-18',
+        author: { '@type': 'Organization', name: 'onetimelink.me', url: 'https://onetimelink.me' },
+        publisher: { '@type': 'Organization', name: 'onetimelink.me', url: 'https://onetimelink.me' },
+        mainEntityOfPage: 'https://onetimelink.me/blog/how-to-share-passwords-securely',
+    },
+    {
+        '@context': 'https://schema.org',
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+            { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://onetimelink.me' },
+            { '@type': 'ListItem', position: 2, name: 'Blog', item: 'https://onetimelink.me/blog' },
+            { '@type': 'ListItem', position: 3, name: 'How to Share Passwords Securely' },
+        ],
+    },
+];
 
 export default function Article() {
     return (
         <article className="article">
+            {jsonLd.map((schema, i) => (
+                <script key={i} type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }} />
+            ))}
             <div className="article-header">
                 <span className="article-tag">Guide</span>
                 <h1>How to Share Passwords Securely with Your Team</h1>

@@ -8,6 +8,7 @@ export const metadata = {
         title: 'Blog — onetimelink.me',
         description: 'Guides on secure password sharing, self-destructing messages, and protecting sensitive data online.',
         url: '/blog',
+        images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'onetimelink.me Blog' }],
     },
 };
 

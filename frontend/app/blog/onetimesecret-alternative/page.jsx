@@ -8,12 +8,44 @@ export const metadata = {
         title: 'onetimelink.me vs OneTimeSecret — A Transparent Comparison',
         description: 'Side-by-side comparison of two one-time secret sharing tools. Encryption, privacy, features, and pricing.',
         url: '/blog/onetimesecret-alternative',
+        images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'onetimelink.me vs OneTimeSecret' }],
+    },
+    twitter: {
+        card: 'summary_large_image',
+        title: 'onetimelink.me vs OneTimeSecret — A Transparent Comparison',
+        description: 'Side-by-side comparison of two one-time secret sharing tools. Encryption, privacy, features, and pricing.',
     },
 };
+
+const jsonLd = [
+    {
+        '@context': 'https://schema.org',
+        '@type': 'Article',
+        headline: 'onetimelink.me vs OneTimeSecret — A Transparent Comparison',
+        description: 'An honest, transparent comparison between onetimelink.me and OneTimeSecret (onetimesecret.com). Compare encryption, privacy, features, pricing, and open-source status side by side.',
+        datePublished: '2025-03-01',
+        dateModified: '2026-03-18',
+        author: { '@type': 'Organization', name: 'onetimelink.me', url: 'https://onetimelink.me' },
+        publisher: { '@type': 'Organization', name: 'onetimelink.me', url: 'https://onetimelink.me' },
+        mainEntityOfPage: 'https://onetimelink.me/blog/onetimesecret-alternative',
+    },
+    {
+        '@context': 'https://schema.org',
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+            { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://onetimelink.me' },
+            { '@type': 'ListItem', position: 2, name: 'Blog', item: 'https://onetimelink.me/blog' },
+            { '@type': 'ListItem', position: 3, name: 'onetimelink.me vs OneTimeSecret' },
+        ],
+    },
+];
 
 export default function Article() {
     return (
         <article className="article">
+            {jsonLd.map((schema, i) => (
+                <script key={i} type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }} />
+            ))}
             <div className="article-header">
                 <span className="article-tag">Comparison</span>
                 <h1>onetimelink.me vs OneTimeSecret — A Transparent Comparison</h1>

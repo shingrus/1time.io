@@ -8,12 +8,44 @@ export const metadata = {
         title: 'Self-Destructing Messages — How They Actually Work',
         description: 'The encryption, deletion flow, and privacy reality behind disappearing messages.',
         url: '/blog/self-destructing-messages-explained',
+        images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'Self-Destructing Messages Explained' }],
+    },
+    twitter: {
+        card: 'summary_large_image',
+        title: 'Self-Destructing Messages — How They Actually Work',
+        description: 'The encryption, deletion flow, and privacy reality behind disappearing messages.',
     },
 };
+
+const jsonLd = [
+    {
+        '@context': 'https://schema.org',
+        '@type': 'Article',
+        headline: 'Self-Destructing Messages — How They Actually Work',
+        description: 'Learn how self-destructing messages work under the hood: encryption, one-time access, and permanent deletion.',
+        datePublished: '2025-03-01',
+        dateModified: '2026-03-18',
+        author: { '@type': 'Organization', name: 'onetimelink.me', url: 'https://onetimelink.me' },
+        publisher: { '@type': 'Organization', name: 'onetimelink.me', url: 'https://onetimelink.me' },
+        mainEntityOfPage: 'https://onetimelink.me/blog/self-destructing-messages-explained',
+    },
+    {
+        '@context': 'https://schema.org',
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+            { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://onetimelink.me' },
+            { '@type': 'ListItem', position: 2, name: 'Blog', item: 'https://onetimelink.me/blog' },
+            { '@type': 'ListItem', position: 3, name: 'Self-Destructing Messages — How They Actually Work' },
+        ],
+    },
+];
 
 export default function Article() {
     return (
         <article className="article">
+            {jsonLd.map((schema, i) => (
+                <script key={i} type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }} />
+            ))}
             <div className="article-header">
                 <span className="article-tag">How It Works</span>
                 <h1>Self-Destructing Messages — How They Actually Work</h1>

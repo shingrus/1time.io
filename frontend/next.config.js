@@ -7,7 +7,6 @@ module.exports = (phase) => {
   const nextConfig = {
     distDir: 'build',
     trailingSlash: true,
-    skipTrailingSlashRedirect: true,
   };
 
   if (phase === PHASE_DEVELOPMENT_SERVER) {

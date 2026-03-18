@@ -166,7 +166,7 @@ export default function NewMessage() {
                     </Link>
                 </div>
 
-                <h3>How it works</h3>
+                <h2>How it works</h2>
                 <p>
                     Type or paste your secret above. onetimelink.me encrypts it with a unique key using AES
                     encryption directly in your browser. You get a one-time link containing the
@@ -174,7 +174,7 @@ export default function NewMessage() {
                     decrypted in their browser and permanently deleted from our servers.
                 </p>
 
-                <h3>Perfect for sharing</h3>
+                <h2>Perfect for sharing</h2>
                 <p>
                     Passwords, API keys, SSH keys, private notes, access tokens, two-factor backup codes,
                     database credentials, configuration secrets, or any text you need to share

@@ -19,9 +19,10 @@ export const metadata = {
         description: 'Send passwords and sensitive data through encrypted one-time links. End-to-end encrypted, auto-destroyed after reading.',
         type: 'website',
         url: '/',
+        images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'onetimelink.me — Encrypted One-Time Secret Links' }],
     },
     twitter: {
-        card: 'summary',
+        card: 'summary_large_image',
         title: 'onetimelink.me — Encrypted One-Time Secret Links',
         description: 'Share passwords and private data securely. End-to-end encrypted, self-destruct after reading.',
     },
@@ -41,6 +42,26 @@ export default function RootLayout({children}) {
     return (
         <html lang="en">
             <body>
+                <script
+                    type="application/ld+json"
+                    dangerouslySetInnerHTML={{ __html: JSON.stringify({
+                        '@context': 'https://schema.org',
+                        '@type': 'Organization',
+                        name: 'onetimelink.me',
+                        url: 'https://onetimelink.me',
+                        logo: 'https://onetimelink.me/favicon.svg',
+                        sameAs: ['https://github.com/shingrus/onetimelink'],
+                    }) }}
+                />
+                <script
+                    type="application/ld+json"
+                    dangerouslySetInnerHTML={{ __html: JSON.stringify({
+                        '@context': 'https://schema.org',
+                        '@type': 'WebSite',
+                        name: 'onetimelink.me',
+                        url: 'https://onetimelink.me',
+                    }) }}
+                />
                 <div className="app-layout">
                     <Header />
                     <main className="app-main">

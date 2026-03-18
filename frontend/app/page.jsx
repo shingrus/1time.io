@@ -8,9 +8,27 @@ export const metadata = {
         title: 'onetimelink.me — Share Secrets with Self-Destruct Links',
         description: 'Send passwords and sensitive data through encrypted one-time links. End-to-end encrypted, auto-destroyed after reading.',
         url: '/',
+        images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'onetimelink.me — Encrypted One-Time Secret Links' }],
     },
 };
 
+const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: 'onetimelink.me',
+    url: 'https://onetimelink.me',
+    description: 'Share passwords, tokens, and sensitive data through encrypted one-time self-destruct links. End-to-end encrypted — we never see your data.',
+    applicationCategory: 'SecurityApplication',
+    operatingSystem: 'Any',
+    offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+    featureList: 'End-to-end encryption, One-time access, Auto-expiry, Password generator, Zero-knowledge architecture',
+};
+
 export default function HomePage() {
-    return <NewMessage />;
+    return (
+        <>
+            <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+            <NewMessage />
+        </>
+    );
 }

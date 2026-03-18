@@ -8,6 +8,7 @@ export const metadata = {
         title: 'About — onetimelink.me',
         description: 'Learn how onetimelink.me uses end-to-end encryption to share secrets securely.',
         url: '/about',
+        images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'About onetimelink.me' }],
     },
 };
 
