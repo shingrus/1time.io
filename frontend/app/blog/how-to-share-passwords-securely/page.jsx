@@ -258,18 +258,22 @@ export default function Article() {
 
                 <div className="article-cta">
                     <div className="article-cta-icon">🔒</div>
-                    <h3>Share a password securely right now</h3>
+                    <h2>Share a password securely right now</h2>
                     <p>Paste a password, get an encrypted one-time link. No signup, no tracking, free forever.</p>
                     <Link href="/" className="btn btn-primary btn-lg">Create a secure link</Link>
                 </div>
             </div>
 
             <div className="related-articles">
-                <h3>Related Articles</h3>
+                <h2>Related Articles</h2>
                 <div className="related-articles-grid">
-                    <Link href="/blog/self-destructing-messages-explained" className="related-article-card">
-                        <span>Self-Destructing Messages — How They Actually Work</span>
-                        <span>The encryption and deletion flow behind one-time messages.</span>
+                    <Link href="/blog/is-slack-safe-for-passwords" className="related-article-card">
+                        <span>Is Slack Safe for Sharing Passwords?</span>
+                        <span>Why Slack DMs are not as private as you think.</span>
+                    </Link>
+                    <Link href="/blog/how-to-send-passwords-over-email" className="related-article-card">
+                        <span>How to Send Passwords Over Email</span>
+                        <span>Why emailing passwords is dangerous and what to do instead.</span>
                     </Link>
                     <Link href="/blog/onetimesecret-alternative" className="related-article-card">
                         <span>onetimelink.me vs OneTimeSecret</span>

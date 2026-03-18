@@ -5,16 +5,30 @@ export const dynamic = 'force-static';
 
 const routes = [
     ['/', 1.0],
+    // Password generator tools
     ['/password-generator', 0.9],
     ['/strong-password-generator', 0.8],
+    ['/secure-password-generator', 0.8],
     ['/create-password-14-symbols', 0.8],
+    ['/password-generator-16-characters', 0.8],
     ['/random-password-generator', 0.8],
     ['/passphrase-generator', 0.8],
-    ['/about', 0.5],
+    ['/wifi-password-generator', 0.8],
+    ['/api-key-generator', 0.8],
+    // Blog
     ['/blog', 0.8],
+    ['/blog/is-slack-safe-for-passwords', 0.8],
+    ['/blog/how-to-send-passwords-over-email', 0.8],
+    ['/blog/how-to-share-api-keys', 0.8],
+    ['/blog/how-to-share-wifi-password', 0.8],
     ['/blog/how-to-share-passwords-securely', 0.8],
     ['/blog/self-destructing-messages-explained', 0.8],
     ['/blog/onetimesecret-alternative', 0.8],
+    ['/blog/bitwarden-send-alternative', 0.8],
+    ['/blog/privnote-alternative', 0.8],
+    ['/blog/password-pusher-alternative', 0.8],
+    // About
+    ['/about', 0.5],
 ];
 
 export default function sitemap() {

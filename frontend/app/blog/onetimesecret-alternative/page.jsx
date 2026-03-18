@@ -263,22 +263,26 @@ export default function Article() {
 
                 <div className="article-cta">
                     <div className="article-cta-icon">🔒</div>
-                    <h3>Try the zero-knowledge alternative</h3>
+                    <h2>Try the zero-knowledge alternative</h2>
                     <p>Share a secret with true end-to-end encryption. Free, no signup, open source.</p>
                     <Link href="/" className="btn btn-primary btn-lg">Create a secure link</Link>
                 </div>
             </div>
 
             <div className="related-articles">
-                <h3>Related Articles</h3>
+                <h2>Related Articles</h2>
                 <div className="related-articles-grid">
-                    <Link href="/blog/how-to-share-passwords-securely" className="related-article-card">
-                        <span>How to Share Passwords Securely with Your Team</span>
-                        <span>The complete guide to secure credential sharing.</span>
+                    <Link href="/blog/privnote-alternative" className="related-article-card">
+                        <span>onetimelink.me vs Privnote</span>
+                        <span>Why encryption matters more than disappearing messages.</span>
                     </Link>
-                    <Link href="/blog/self-destructing-messages-explained" className="related-article-card">
-                        <span>Self-Destructing Messages — How They Actually Work</span>
-                        <span>The encryption and deletion flow behind one-time messages.</span>
+                    <Link href="/blog/bitwarden-send-alternative" className="related-article-card">
+                        <span>onetimelink.me vs Bitwarden Send</span>
+                        <span>Dedicated tool vs password manager feature.</span>
+                    </Link>
+                    <Link href="/blog/how-to-share-passwords-securely" className="related-article-card">
+                        <span>How to Share Passwords Securely</span>
+                        <span>The complete guide to secure credential sharing.</span>
                     </Link>
                 </div>
             </div>

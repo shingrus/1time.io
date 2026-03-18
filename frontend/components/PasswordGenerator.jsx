@@ -61,6 +61,42 @@ const PRESETS = {
         seoHeading: 'Memorable Passphrase Generator',
         seoText: 'Passphrases combine multiple random words into a single password that is both highly secure and easy to remember. A 4-5 word passphrase can provide over 50 bits of entropy while remaining human-friendly. Our passphrase generator picks words from a curated list using cryptographic randomness, so every combination is unique. Passphrases are ideal for master passwords, device logins, and any situation where you need to type your password by hand.',
     },
+    '/secure-password-generator': {
+        title: 'Secure Password Generator',
+        subtitle: 'Cryptographically secure passwords generated entirely in your browser.',
+        length: 20,
+        mode: 'password',
+        options: { uppercase: true, lowercase: true, numbers: true, symbols: true },
+        seoHeading: 'Cryptographically Secure Password Generator',
+        seoText: 'Security starts with a strong password. Our secure password generator uses the Web Crypto API — the same cryptographic engine used by banks and governments — to produce truly random passwords directly in your browser. No data is ever transmitted to a server. Each character is selected independently using hardware-backed randomness, making the output resistant to brute-force attacks, dictionary attacks, and predictive algorithms. Use this tool to create unique passwords for every account and pair them with a password manager for daily convenience.',
+    },
+    '/password-generator-16-characters': {
+        title: '16-Character Password Generator',
+        subtitle: 'Generate a strong 16-character password instantly.',
+        length: 16,
+        mode: 'password',
+        options: { uppercase: true, lowercase: true, numbers: true, symbols: true },
+        seoHeading: 'Generate a 16-Character Password',
+        seoText: 'A 16-character password strikes the ideal balance between security and usability. With a mix of uppercase letters, lowercase letters, numbers, and symbols, a 16-character password provides approximately 105 bits of entropy — far beyond what any brute-force attack can crack in a human lifetime. Many security standards including NIST and OWASP recommend at least 12-16 characters. This generator creates your password locally in the browser using cryptographic randomness, so it never leaves your device.',
+    },
+    '/wifi-password-generator': {
+        title: 'WiFi Password Generator',
+        subtitle: 'Generate strong WiFi passwords that are secure yet easy to share.',
+        length: 16,
+        mode: 'password',
+        options: { uppercase: true, lowercase: true, numbers: true, symbols: false },
+        seoHeading: 'Generate a Strong WiFi Password',
+        seoText: 'Your WiFi password protects your entire home or office network. A weak WiFi password can be cracked in minutes using widely available tools, giving attackers access to all devices on your network. Our WiFi password generator creates strong, random passwords without confusing symbols — making them easy to read and type on phones, smart TVs, and IoT devices. Generated entirely in your browser with cryptographic randomness. For maximum security, change your WiFi password periodically and use WPA3 if your router supports it.',
+    },
+    '/api-key-generator': {
+        title: 'API Key Generator',
+        subtitle: 'Generate random API keys and tokens for your applications.',
+        length: 32,
+        mode: 'password',
+        options: { uppercase: true, lowercase: true, numbers: true, symbols: false },
+        seoHeading: 'Generate Random API Keys and Tokens',
+        seoText: 'API keys and tokens need to be long, random, and unpredictable. Our API key generator creates cryptographically random strings using the Web Crypto API built into your browser — the same randomness source used for TLS encryption. The default 32-character alphanumeric format works with virtually any API or service. No symbols by default to avoid URL-encoding issues. Everything is generated client-side — your keys never touch a server. Need to share the key securely? Use the built-in share button to create an encrypted one-time link.',
+    },
 };
 
 // All SEO pages to link to (excluding the current page)
@@ -70,6 +106,10 @@ const SEO_LINKS = [
     { path: '/create-password-14-symbols', label: '14-Character Password', desc: 'Quick passwords with symbols for most sites' },
     { path: '/random-password-generator', label: 'Random Password Generator', desc: 'Cryptographically random character passwords' },
     { path: '/passphrase-generator', label: 'Passphrase Generator', desc: 'Memorable multi-word passphrases' },
+    { path: '/secure-password-generator', label: 'Secure Password Generator', desc: 'Crypto-grade passwords for maximum security' },
+    { path: '/password-generator-16-characters', label: '16-Character Password', desc: 'The sweet spot of security and usability' },
+    { path: '/wifi-password-generator', label: 'WiFi Password Generator', desc: 'Easy-to-type passwords for your network' },
+    { path: '/api-key-generator', label: 'API Key Generator', desc: 'Random tokens and keys for developers' },
 ];
 
 function secureRandom(max) {

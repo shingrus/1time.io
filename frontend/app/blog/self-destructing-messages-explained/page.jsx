@@ -288,17 +288,21 @@ export default function Article() {
 
                 <div className="article-cta">
                     <div className="article-cta-icon">💬</div>
-                    <h3>Send a self-destructing message</h3>
+                    <h2>Send a self-destructing message</h2>
                     <p>End-to-end encrypted, zero-knowledge, destroyed after one read. Try it now.</p>
                     <Link href="/" className="btn btn-primary btn-lg">Create a self-destructing message</Link>
                 </div>
             </div>
 
             <div className="related-articles">
-                <h3>Related Articles</h3>
+                <h2>Related Articles</h2>
                 <div className="related-articles-grid">
+                    <Link href="/blog/privnote-alternative" className="related-article-card">
+                        <span>onetimelink.me vs Privnote</span>
+                        <span>Why encryption matters more than just deleting messages.</span>
+                    </Link>
                     <Link href="/blog/how-to-share-passwords-securely" className="related-article-card">
-                        <span>How to Share Passwords Securely with Your Team</span>
+                        <span>How to Share Passwords Securely</span>
                         <span>The complete guide to secure credential sharing.</span>
                     </Link>
                     <Link href="/blog/onetimesecret-alternative" className="related-article-card">
