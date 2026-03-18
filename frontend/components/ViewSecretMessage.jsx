@@ -49,7 +49,7 @@ export default function ViewSecretMessage() {
         const randomKey = linkKey.substring(0, Constants.randomKeyLen);
         const id = linkKey.substring(Constants.randomKeyLen);
         const fullSecretKey = secretKey + randomKey;
-        const hashedKey = await hashSecretKey(fullSecretKey);
+        const hashedKey = await hashSecretKey(Constants.authPrefix+fullSecretKey);
 
         try {
             const data = await postJson('get', {

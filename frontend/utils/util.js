@@ -1,11 +1,13 @@
 export var Constants = {
-    randomKeyLen: 12,
-    defaultDuration: 7,
+    randomKeyLen: 16,
+    defaultDuration: 1,
     isDebug: process.env.NODE_ENV === 'development',
     apiBaseUrl: process.env.NEXT_PUBLIC_API_URL || "/api/",
+    encryptPrefix: 'encrypt:',
+    authPrefix: 'auth:',
 };
 
-const chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXTZabcdefghiklmnopqrstuvwxyz";
+const chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
 const textEncoder = new TextEncoder();
 const textDecoder = new TextDecoder();
 const randomCharLimit = 256 - (256 % chars.length);
@@ -100,13 +102,13 @@ export function getRandomString(stringLen) {
 export async function encryptSecretMessage(secretMessage, fullSecretKey) {
     const crypto = requireWebCrypto();
     const iv = crypto.getRandomValues(new Uint8Array(12));
-    const secretKey = await importSecretKey(fullSecretKey);
+    const encryptKey = await importSecretKey(Constants.encryptPrefix+fullSecretKey);
     const encryptedBuffer = await crypto.subtle.encrypt(
         {name: 'AES-GCM', iv},
-        secretKey,
+        encryptKey,
         textEncoder.encode(secretMessage),
     );
-    const hashedKey = bytesToHex(await sha256Bytes(fullSecretKey));
+    const hashedKey = bytesToHex(await sha256Bytes(Constants.authPrefix + fullSecretKey));
 
     return {
         encryptedMessage: `v1.${toBase64Url(iv)}.${toBase64Url(new Uint8Array(encryptedBuffer))}`,
@@ -126,10 +128,10 @@ export async function decryptSecretMessage(cryptedMessage, fullSecretKey) {
         throw new Error('Unsupported encrypted message format');
     }
 
-    const secretKey = await importSecretKey(fullSecretKey);
+    const decryptKey = await importSecretKey(Constants.encryptPrefix+ fullSecretKey);
     const decryptedBuffer = await crypto.subtle.decrypt(
         {name: 'AES-GCM', iv: fromBase64Url(encodedIv)},
-        secretKey,
+        decryptKey,
         fromBase64Url(encodedMessage),
     );
 
