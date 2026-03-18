@@ -76,8 +76,8 @@ export default function ShowNewLink({newLink = "", onReset}) {
             )}
             {newLink && (
                 <>
-            <div style={{marginBottom: 24}}>
-                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#16A34A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <div style={{marginBottom: 24, color: 'var(--success)'}}>
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
                     <polyline points="22 4 12 14.01 9 11.01"/>
                 </svg>

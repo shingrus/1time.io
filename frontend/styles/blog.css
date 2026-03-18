@@ -279,7 +279,7 @@
 }
 
 .comparison-table .partial {
-  color: #F59E0B;
+  color: var(--warning);
   font-weight: 700;
 }
 

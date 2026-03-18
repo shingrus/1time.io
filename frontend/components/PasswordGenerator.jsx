@@ -120,11 +120,11 @@ function estimateEntropy(password) {
 }
 
 function getStrength(entropy) {
-    if (entropy < 40) return { label: 'Weak', color: '#DC2626', percent: 20 };
-    if (entropy < 60) return { label: 'Fair', color: '#F59E0B', percent: 40 };
-    if (entropy < 80) return { label: 'Good', color: '#16A34A', percent: 60 };
-    if (entropy < 120) return { label: 'Strong', color: '#059669', percent: 80 };
-    return { label: 'Very strong', color: '#047857', percent: 100 };
+    if (entropy < 40) return { label: 'Weak', color: 'var(--danger)', percent: 20 };
+    if (entropy < 60) return { label: 'Fair', color: 'var(--warning)', percent: 40 };
+    if (entropy < 80) return { label: 'Good', color: 'var(--success)', percent: 60 };
+    if (entropy < 120) return { label: 'Strong', color: '#047857', percent: 80 };
+    return { label: 'Very strong', color: '#065F46', percent: 100 };
 }
 
 export default function PasswordGenerator({ presetPath }) {

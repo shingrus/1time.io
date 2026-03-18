@@ -115,7 +115,7 @@
 
 .error-page h2 {
   font-size: 72px;
-  color: var(--border);
+  color: var(--text-muted);
   margin-bottom: 8px;
 }
 
