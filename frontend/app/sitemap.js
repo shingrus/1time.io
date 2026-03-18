@@ -17,6 +17,7 @@ const routes = [
     ['/api-key-generator', 0.8],
     // Blog
     ['/blog', 0.8],
+    ['/blog/hkdf-key-derivation-explained', 0.8],
     ['/blog/password-for-crypto-wallet', 0.8],
     ['/blog/database-password-security', 0.8],
     ['/blog/secure-home-wifi-setup', 0.8],

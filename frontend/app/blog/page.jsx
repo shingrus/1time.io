@@ -14,6 +14,14 @@ export const metadata = {
 
 const articles = [
     {
+        slug: 'hkdf-key-derivation-explained',
+        tag: 'How It Works',
+        title: 'What Is HKDF and Why We Use It for End-to-End Encryption',
+        excerpt: 'We upgraded from SHA-256 hashing to HKDF key derivation. Here is what that means, why it matters, and how it keeps your secrets safer.',
+        date: 'March 2026',
+        readTime: '8 min read',
+    },
+    {
         slug: 'password-for-crypto-wallet',
         tag: 'Security',
         title: 'How to Create a Strong Password for Your Crypto Wallet',
