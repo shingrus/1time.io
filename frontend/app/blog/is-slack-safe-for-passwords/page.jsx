@@ -54,9 +54,6 @@ export default function Article() {
                     that is a serious security risk and what to do instead.
                 </p>
                 <div className="article-meta">March 2026 &middot; 6 min read</div>
-                <div style={{marginTop: 20}}>
-                    <Link href="/" className="btn btn-primary btn-lg">Create a secure link</Link>
-                </div>
             </div>
 
             <div className="article-body">

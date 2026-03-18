@@ -1,16 +1,50 @@
-# onetimelink.me
+# [onetimelink.me](https://onetimelink.me) — Share Secrets with Encrypted One-Time Links
 
-One-time secret sharing service with:
+Share passwords, API keys, and sensitive data through self-destructing links with **end-to-end encryption**. The server never sees your secrets — everything is encrypted and decrypted in the browser using AES-GCM.
 
-- a Go backend on `127.0.0.1:8080`
-- Redis for message storage
-- an optional React frontend in `frontend/`
+**[Try it live →](https://onetimelink.me)**
 
-## Requirements
+## Why onetimelink.me?
 
-- Go
-- Redis
-- Node.js and npm
+- **End-to-end encrypted** — secrets are encrypted in the browser before they leave your device. The decryption key is stored in the URL fragment (`#`), which is never sent to the server.
+- **Zero-knowledge** — the server stores only encrypted blobs. Even with full database access, your secrets cannot be read.
+- **Self-destructing** — each link can only be opened once. After that, the encrypted data is permanently deleted.
+- **No signup required** — paste a secret, get a link, share it. No accounts, no tracking.
+- **Open source** — the full source code is right here. Audit it yourself.
+- **Free** — no paid tiers, no limits, no ads.
+
+## How it works
+
+1. You paste a secret into [onetimelink.me](https://onetimelink.me)
+2. Your browser encrypts it with AES-GCM and a random key
+3. The encrypted blob is sent to the server; the key stays in the URL fragment
+4. You share the link — the recipient opens it, the browser decrypts it, and the server deletes the encrypted blob
+
+The encryption key never touches the server. Even if the server is compromised, your secrets remain safe.
+
+## Free tools
+
+- [Password Generator](https://onetimelink.me/password-generator) — generate strong random passwords
+- [Passphrase Generator](https://onetimelink.me/passphrase-generator) — memorable multi-word passphrases
+- [API Key Generator](https://onetimelink.me/api-key-generator) — random tokens for developers
+- [WiFi Password Generator](https://onetimelink.me/wifi-password-generator) — easy-to-type network passwords
+
+## Tech stack
+
+- **Backend:** Go + Redis
+- **Frontend:** Next.js (static export)
+- **Encryption:** Web Crypto API (AES-GCM)
+- **Deployment:** nginx + systemd
+
+---
+
+## Development
+
+### Requirements
+
+- Go 1.25+
+- Redis 8+
+- Node.js 25+ and npm
 
 This repo currently builds locally with:
 
@@ -19,7 +53,7 @@ This repo currently builds locally with:
 - npm `11.6.2`
 - Redis `8.4.0`
 
-## Backend setup
+### Backend setup
 
 Start Redis locally and export the backend connection settings:
 
@@ -58,7 +92,7 @@ The script installs `nginx`, `redis-server`, and `rsync`, creates the `onetimeli
 
 Install the sample nginx site from `configs/nginx/onetimelink.conf`, adjust `server_name`, then run `nginx -t` before reloading nginx.
 
-## Frontend setup
+### Frontend setup
 
 Install dependencies:
 
@@ -91,7 +125,7 @@ Run frontend tests:
 npm test
 ```
 
-## Notes
+### Notes
 
 - The frontend has been migrated from Create React App to Next.js with static export for production builds.
 - The server-rendered flow under `templates/` is deprecated. It still exists in the codebase, but it is not part of the recommended deployment path.

@@ -1,0 +1,234 @@
+import Link from 'next/link';
+
+export const metadata = {
+    title: 'Team Password Sharing Without a Password Manager — onetimelink.me',
+    description: 'Practical approaches to sharing passwords within a team when you do not have a password manager. Covers one-time links, secure workflows, and when to upgrade.',
+    alternates: { canonical: '/blog/team-password-sharing' },
+    openGraph: {
+        title: 'Team Password Sharing Without a Password Manager',
+        description: 'How to share team credentials securely when you do not have a password manager.',
+        url: '/blog/team-password-sharing',
+        images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'Team Password Sharing' }],
+    },
+    twitter: {
+        card: 'summary_large_image',
+        title: 'Team Password Sharing Without a Password Manager',
+        description: 'How to share team credentials securely when you do not have a password manager.',
+    },
+};
+
+const jsonLd = [
+    {
+        '@context': 'https://schema.org',
+        '@type': 'Article',
+        headline: 'Team Password Sharing Without a Password Manager',
+        description: 'Practical approaches to sharing passwords within a team when you do not have a password manager.',
+        datePublished: '2026-03-18',
+        dateModified: '2026-03-18',
+        author: { '@type': 'Organization', name: 'onetimelink.me', url: 'https://onetimelink.me' },
+        publisher: { '@type': 'Organization', name: 'onetimelink.me', url: 'https://onetimelink.me' },
+        mainEntityOfPage: 'https://onetimelink.me/blog/team-password-sharing',
+    },
+    {
+        '@context': 'https://schema.org',
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+            { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://onetimelink.me' },
+            { '@type': 'ListItem', position: 2, name: 'Blog', item: 'https://onetimelink.me/blog' },
+            { '@type': 'ListItem', position: 3, name: 'Team Password Sharing' },
+        ],
+    },
+];
+
+export default function Article() {
+    return (
+        <article className="article">
+            {jsonLd.map((schema, i) => (
+                <script key={i} type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }} />
+            ))}
+            <div className="article-header">
+                <span className="article-tag">Teams</span>
+                <h1>Team Password Sharing Without a Password Manager</h1>
+                <p className="article-subtitle">
+                    Not every team has a password manager. Not every situation justifies one. Here is how
+                    to share credentials securely with your team using tools that require zero setup.
+                </p>
+                <div className="article-meta">March 2026 &middot; 7 min read</div>
+            </div>
+
+            <div className="article-body">
+                <h2>The Reality of Team Password Sharing</h2>
+                <p>
+                    In an ideal world, every team would use a password manager with built-in sharing.
+                    In reality, most teams — especially small startups, freelance groups, and cross-company
+                    collaborations — share passwords the fast way: Slack DMs, email, or text messages.
+                </p>
+                <p>
+                    The problem is not that people are lazy. The problem is that the secure alternatives
+                    have traditionally required everyone to install software, create accounts, and learn
+                    a new tool. That friction means people default to pasting the password in chat.
+                </p>
+
+                <h2>The Zero-Setup Approach: Encrypted One-Time Links</h2>
+                <p>
+                    The fastest secure way to share a password with a teammate is an encrypted one-time link.
+                    Here is the workflow:
+                </p>
+                <ol>
+                    <li>Generate a strong password (use the generator below)</li>
+                    <li>Click "Share as link" to create an encrypted, self-destructing link</li>
+                    <li>Send the link over Slack, email, or any channel</li>
+                    <li>The recipient opens the link, copies the password, and it is permanently destroyed</li>
+                </ol>
+                <p>
+                    No accounts. No installs. No training. The recipient does not even need to know what
+                    onetimelink.me is — they just click the link.
+                </p>
+
+                <h3>Generate a team password and share it instantly</h3>
+
+                <p>
+                    <Link href="/password-generator" className="btn btn-primary">Generate a team password →</Link>
+                </p>
+
+                <div className="callout callout-tip">
+                    <span className="callout-icon">💡</span>
+                    <p>
+                        <strong>Pro tip:</strong> Send the link and the context through different channels.
+                        Share the one-time link via Slack, and mention which account it is for via email
+                        (or vice versa). This way, neither channel contains both pieces of information.
+                    </p>
+                </div>
+
+                <h2>When This Approach Works Best</h2>
+                <p>
+                    Encrypted one-time links are the right tool for these situations:
+                </p>
+                <ul>
+                    <li><strong>Onboarding a new team member</strong> — share staging credentials, API keys, or service passwords on their first day</li>
+                    <li><strong>Working with contractors</strong> — they do not have access to your password manager and probably never will</li>
+                    <li><strong>Cross-team collaboration</strong> — sharing a credential with someone in a different department or company</li>
+                    <li><strong>One-off sharing</strong> — the WiFi password for a conference room, a temporary login, a one-time API token</li>
+                    <li><strong>Emergency access</strong> — someone is locked out and needs a password right now</li>
+                </ul>
+
+                <h2>When You Should Get a Password Manager Instead</h2>
+                <p>
+                    One-time links solve the sharing problem, but they do not solve the storage problem.
+                    If your team has these needs, it is time to invest in a proper password manager:
+                </p>
+                <ul>
+                    <li><strong>Shared credentials that multiple people access daily</strong> — a password manager keeps them synced and current</li>
+                    <li><strong>More than 10 shared accounts</strong> — tracking who has access to what becomes unmanageable without a tool</li>
+                    <li><strong>Compliance requirements</strong> — SOC 2, HIPAA, and similar standards require auditable access controls</li>
+                    <li><strong>Team turnover</strong> — when someone leaves, you need to rotate every password they had access to</li>
+                </ul>
+
+                <table className="comparison-table">
+                    <thead>
+                        <tr>
+                            <th>Scenario</th>
+                            <th>One-Time Links</th>
+                            <th>Password Manager</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Sharing with a contractor</td>
+                            <td><span className="check">✓</span> Best option</td>
+                            <td><span className="partial">~</span> Overkill</td>
+                        </tr>
+                        <tr>
+                            <td>Daily shared logins</td>
+                            <td><span className="partial">~</span> Works but tedious</td>
+                            <td><span className="check">✓</span> Best option</td>
+                        </tr>
+                        <tr>
+                            <td>Onboarding</td>
+                            <td><span className="check">✓</span> Fast, no setup</td>
+                            <td><span className="check">✓</span> If already in place</td>
+                        </tr>
+                        <tr>
+                            <td>Audit trail needed</td>
+                            <td><span className="cross">✗</span> No tracking</td>
+                            <td><span className="check">✓</span> Full logs</td>
+                        </tr>
+                        <tr>
+                            <td>Setup cost</td>
+                            <td><span className="check">✓</span> Free, instant</td>
+                            <td><span className="partial">~</span> $3-8/user/month</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h2>Building a Team Password Workflow</h2>
+                <p>
+                    Even without a password manager, you can establish a secure workflow for your team.
+                    Here is a practical protocol:
+                </p>
+
+                <h3>Step 1: Generate strong, unique passwords</h3>
+                <p>
+                    Use a <Link href="/password-generator">password generator</Link> for every shared account.
+                    Never let anyone pick a password from their head. Human-chosen passwords are always weaker
+                    than generated ones.
+                </p>
+
+                <h3>Step 2: Share via encrypted links only</h3>
+                <p>
+                    Establish a team rule: no passwords in Slack, email, or text. Ever. If someone needs a
+                    credential, they get a <Link href="/">one-time link</Link>. This is easy to enforce because
+                    it takes the same amount of effort — paste the password, get a link, send the link.
+                </p>
+
+                <h3>Step 3: Rotate on departure</h3>
+                <p>
+                    When someone leaves the team, make a list of every credential they had access to and
+                    change them all. This is the most painful part of not having a password manager, but
+                    it is non-negotiable. A former team member with active credentials is a security risk.
+                </p>
+
+                <h3>Step 4: Document who has access to what</h3>
+                <p>
+                    Keep a simple spreadsheet (not containing the passwords themselves) that tracks which
+                    services exist and who has been given access. When it is time to rotate, you know exactly
+                    what to change.
+                </p>
+
+                <div className="callout callout-warning">
+                    <span className="callout-icon">⚠️</span>
+                    <p>
+                        <strong>Never put passwords in a shared spreadsheet.</strong> The access-tracking spreadsheet
+                        should only list service names and team member names — never the actual passwords.
+                        Passwords should only be shared through encrypted one-time links.
+                    </p>
+                </div>
+
+                <div className="article-cta">
+                    <div className="article-cta-icon">🔒</div>
+                    <h2>Share a password with your team right now</h2>
+                    <p>Generate a strong password and create an encrypted self-destructing link in seconds. No signup required.</p>
+                    <Link href="/" className="btn btn-primary btn-lg">Create a secure link</Link>
+                </div>
+            </div>
+
+            <div className="related-articles">
+                <h2>Related Articles</h2>
+                <div className="related-articles-grid">
+                    <Link href="/blog/how-to-share-passwords-securely" className="related-article-card">
+                        <span>How to Share Passwords Securely</span>
+                        <span>The complete guide to secure credential sharing.</span>
+                    </Link>
+                    <Link href="/blog/how-to-share-api-keys" className="related-article-card">
+                        <span>How to Share API Keys Securely</span>
+                        <span>Safe ways to share tokens and keys with developers.</span>
+                    </Link>
+                    <Link href="/blog/database-password-security" className="related-article-card">
+                        <span>Database Password Security</span>
+                        <span>Best practices for database credentials.</span>
+                    </Link>
+                </div>
+            </div>
+        </article>
+    );
+}

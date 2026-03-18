@@ -14,6 +14,46 @@ export const metadata = {
 
 const articles = [
     {
+        slug: 'password-for-crypto-wallet',
+        tag: 'Security',
+        title: 'How to Create a Strong Password for Your Crypto Wallet',
+        excerpt: 'Your crypto wallet password is the last line of defense. A weak one can be cracked in hours with no way to recover funds. Learn how to create one that cannot be broken.',
+        date: 'March 2026',
+        readTime: '6 min read',
+    },
+    {
+        slug: 'database-password-security',
+        tag: 'DevOps',
+        title: 'Database Password Security Best Practices',
+        excerpt: 'How to generate, store, rotate, and share database credentials for PostgreSQL, MySQL, MongoDB, and Redis without putting your data at risk.',
+        date: 'March 2026',
+        readTime: '8 min read',
+    },
+    {
+        slug: 'secure-home-wifi-setup',
+        tag: 'Guide',
+        title: 'How to Set Up a Secure Home WiFi Network',
+        excerpt: 'Your WiFi password protects every device on your network. Step-by-step guide to strong passwords, WPA3, guest networks, and router hardening.',
+        date: 'March 2026',
+        readTime: '7 min read',
+    },
+    {
+        slug: 'strong-email-password',
+        tag: 'Security',
+        title: 'How to Create a Strong Email Password',
+        excerpt: 'Your email is the skeleton key to your digital life. Anyone who gets in can reset every other password you have. Here is how to protect it.',
+        date: 'March 2026',
+        readTime: '6 min read',
+    },
+    {
+        slug: 'team-password-sharing',
+        tag: 'Teams',
+        title: 'Team Password Sharing Without a Password Manager',
+        excerpt: 'Not every team has a password manager. Here are practical, secure approaches to sharing credentials using encrypted one-time links and smart workflows.',
+        date: 'March 2026',
+        readTime: '7 min read',
+    },
+    {
         slug: 'is-slack-safe-for-passwords',
         tag: 'Security',
         title: 'Is Slack Safe for Sharing Passwords? (No, and Here Is Why)',
