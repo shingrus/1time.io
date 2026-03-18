@@ -54,9 +54,6 @@ export default function Article() {
                     But what actually happens under the hood? And are all self-destructing messages equally private?
                 </p>
                 <div className="article-meta">March 2025 &middot; 6 min read</div>
-                <div style={{marginTop: 20}}>
-                    <Link href="/" className="btn btn-primary btn-lg">Create a self-destructing message</Link>
-                </div>
             </div>
 
             <div className="article-body">

@@ -54,9 +54,6 @@ export default function Article() {
                     email. Here is why that is a serious risk and how to share credentials safely.
                 </p>
                 <div className="article-meta">March 2026 &middot; 7 min read</div>
-                <div style={{marginTop: 20}}>
-                    <Link href="/" className="btn btn-primary btn-lg">Create a secure link</Link>
-                </div>
             </div>
 
             <div className="article-body">

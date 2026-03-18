@@ -56,9 +56,6 @@ export default function Article() {
                     has the edge.
                 </p>
                 <div className="article-meta">March 2025 &middot; 5 min read</div>
-                <div style={{marginTop: 20}}>
-                    <Link href="/" className="btn btn-primary btn-lg">Create a secure link</Link>
-                </div>
             </div>
 
             <div className="article-body">
