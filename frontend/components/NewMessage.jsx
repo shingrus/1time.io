@@ -139,28 +139,28 @@ export default function NewMessage() {
                     <div className="feature-card">
                         <div className="feature-card-header">
                             <div className="feature-card-icon" aria-hidden="true">&#x1f512;</div>
-                            <h3>End-to-end encrypted</h3>
+                            <h2>End-to-end encrypted</h2>
                         </div>
                         <p>AES encryption happens in your browser. The server only stores ciphertext.</p>
                     </div>
                     <div className="feature-card">
                         <div className="feature-card-header">
                             <div className="feature-card-icon" aria-hidden="true">&#x1f4a5;</div>
-                            <h3>One-time access</h3>
+                            <h2>One-time access</h2>
                         </div>
                         <p>Each link works exactly once. After reading, the data is permanently deleted.</p>
                     </div>
                     <div className="feature-card">
                         <div className="feature-card-header">
                             <div className="feature-card-icon" aria-hidden="true">&#x23f1;&#xfe0f;</div>
-                            <h3>Auto-expiry</h3>
+                            <h2>Auto-expiry</h2>
                         </div>
                         <p>Links self-destruct after 1 to 30 days, even if nobody opens them.</p>
                     </div>
                     <Link href="/strong-password-generator" className="feature-card feature-card-link">
                         <div className="feature-card-header">
                             <div className="feature-card-icon" aria-hidden="true">&#x1f511;</div>
-                            <h3>Strong Password Generator</h3>
+                            <h2>Strong Password Generator</h2>
                         </div>
                         <p>Create a longer, higher-entropy password in your browser for critical accounts.</p>
                     </Link>

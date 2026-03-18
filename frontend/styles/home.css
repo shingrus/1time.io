@@ -94,7 +94,7 @@
   line-height: 1;
 }
 
-.feature-card h3 {
+.feature-card h2 {
   font-family: var(--font-display);
   font-size: 16px;
   font-weight: 700;
