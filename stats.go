@@ -7,4 +7,4 @@ type InMemoryCounters struct {
 	rootPage     int32
 }
 
-var inMemoryCounters InMemoryCounters
+//var inMemoryCounters InMemoryCounters

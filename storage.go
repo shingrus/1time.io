@@ -1,11 +1,14 @@
 package main
 
 import (
+	"crypto/rand"
 	"crypto/subtle"
+	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"log"
 	"os"
-	"strconv"
+	"sync"
 	"time"
 
 	"github.com/go-redis/redis"
@@ -15,36 +18,72 @@ var redisPassword = os.Getenv("REDISPASS")
 var redisHost = os.Getenv("REDISHOST")
 
 const globalIncrementalKey = "nextIncrementalKey"
+const storageIDByteLen = 16
+const maxStorageIDAttempts = 5
+const redisTimeout = time.Second * 10
+
+var errStorageIDCollision = errors.New("failed to generate unique storage id")
+
+var redisClient *redis.Client
+var redisOnce sync.Once
 
 func getRedisClient() *redis.Client {
-	return redis.NewClient(&redis.Options{
-		Addr:     redisHost,
-		Password: redisPassword,
-		DB:       0,
+	redisOnce.Do(func() {
+		redisClient = redis.NewClient(&redis.Options{
+			Addr:         redisHost,
+			Password:     redisPassword,
+			DB:           0,
+			ReadTimeout:  redisTimeout,
+			WriteTimeout: redisTimeout,
+		})
 	})
+
+	return redisClient
 }
 
 /*
-store value with global uniq key
+store value with uniq key
 return key string(hexademical number)
 error in case of failure
 */
 func saveToStorage(value interface{}, duration time.Duration) (newKey string, err error) {
 	client := getRedisClient()
-	val, err := client.Incr(globalIncrementalKey).Result()
-	if err != nil {
+	if _, err = client.Incr(globalIncrementalKey).Result(); err != nil {
 		log.Println(err)
-	} else {
-		newKey = strconv.FormatInt(val, 16)
-		log.Printf("Got new key storage: %v", newKey)
+		return "", err
 	}
 
-	return newKey, client.Set(getStoreKey(newKey), value, duration).Err()
+	for attempt := 0; attempt < maxStorageIDAttempts; attempt++ {
+		newKey, err = generateStorageID()
+		if err != nil {
+			return "", err
+		}
+
+		ok, setErr := client.SetNX(getStoreKey(newKey), value, duration).Result()
+		if setErr != nil {
+			return "", setErr
+		}
+		if ok {
+			log.Printf("Got new key storage: %v", newKey)
+			return newKey, nil
+		}
+	}
+
+	return "", errStorageIDCollision
+}
+
+// Generates uniq id storageIDByteLen length
+func generateStorageID() (string, error) {
+	randomBytes := make([]byte, storageIDByteLen)
+	if _, err := rand.Read(randomBytes); err != nil {
+		return "", err
+	}
+
+	return base64.RawURLEncoding.EncodeToString(randomBytes), nil
 }
 
 /*
-function constucts key for messages using format like 'messageKey<XX>'
-where XXXXXX is a hex-number
+This function constructs key for messages using format like 'messageKey<id>'
 */
 func getStoreKey(key string) string {
 	return "messageKey" + key
