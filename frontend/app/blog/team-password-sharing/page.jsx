@@ -91,6 +91,11 @@ export default function Article() {
                     <Link href="/password-generator" className="btn btn-primary">Generate a team password →</Link>
                 </p>
 
+                <p>
+                    Most services require at least 14 characters — try our <Link href="/password-generator-14-characters">14-character password generator</Link> for
+                    a quick password that meets most site requirements.
+                </p>
+
                 <div className="callout callout-tip">
                     <span className="callout-icon">💡</span>
                     <p>

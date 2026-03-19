@@ -105,7 +105,7 @@ export default function Article() {
                 </p>
 
                 <p>
-                    <Link href="/strong-password-generator" className="btn btn-primary">Generate a crypto-grade password →</Link>
+                    <Link href="/password-generator" className="btn btn-primary">Generate a crypto-grade password →</Link>
                 </p>
 
                 <h2>How to Store Your Crypto Wallet Password</h2>

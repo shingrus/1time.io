@@ -148,6 +148,11 @@ export default function Article() {
                     </p>
                 </div>
 
+                <p>
+                    Need to generate a new API key? Use our <Link href="/api-key-generator">API Key Generator</Link> to
+                    create cryptographically random tokens directly in your browser.
+                </p>
+
                 <div className="article-cta">
                     <div className="article-cta-icon">🔑</div>
                     <h2>Share API keys without the risk</h2>

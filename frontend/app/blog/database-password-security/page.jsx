@@ -130,7 +130,7 @@ export default function Article() {
                 </p>
 
                 <p>
-                    <Link href="/random-password-generator" className="btn btn-primary">Generate a database password →</Link>
+                    <Link href="/password-generator-16-characters" className="btn btn-primary">Generate a database password →</Link>
                 </p>
 
                 <h2>How to Store Database Passwords</h2>

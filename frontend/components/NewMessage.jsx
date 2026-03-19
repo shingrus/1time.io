@@ -157,12 +157,12 @@ export default function NewMessage() {
                         </div>
                         <p>Links self-destruct after 1 to 30 days, even if nobody opens them.</p>
                     </div>
-                    <Link href="/strong-password-generator" className="feature-card feature-card-link">
+                    <Link href="/password-generator" className="feature-card feature-card-link">
                         <div className="feature-card-header">
                             <div className="feature-card-icon" aria-hidden="true">&#x1f511;</div>
-                            <h2>Strong Password Generator</h2>
+                            <h2>Password Generator</h2>
                         </div>
-                        <p>Create a longer, higher-entropy password in your browser for critical accounts.</p>
+                        <p>Create a strong, high-entropy password in your browser for critical accounts.</p>
                     </Link>
                 </div>
 
@@ -180,6 +180,34 @@ export default function NewMessage() {
                     database credentials, configuration secrets, or any text you need to share
                     securely just once.
                 </p>
+
+                <h2>Free security tools</h2>
+                <div className="tools-grid">
+                    <Link href="/password-generator" className="tool-card">
+                        <strong>Password Generator</strong>
+                        <span>All-purpose password and passphrase tool</span>
+                    </Link>
+                    <Link href="/passphrase-generator" className="tool-card">
+                        <strong>Passphrase Generator</strong>
+                        <span>Memorable multi-word passphrases</span>
+                    </Link>
+                    <Link href="/password-generator-14-characters" className="tool-card">
+                        <strong>14-Character Password</strong>
+                        <span>Quick passwords for most sites</span>
+                    </Link>
+                    <Link href="/password-generator-16-characters" className="tool-card">
+                        <strong>16-Character Password</strong>
+                        <span>The sweet spot of security</span>
+                    </Link>
+                    <Link href="/wifi-password-generator" className="tool-card">
+                        <strong>WiFi Password Generator</strong>
+                        <span>Easy-to-type network passwords</span>
+                    </Link>
+                    <Link href="/api-key-generator" className="tool-card">
+                        <strong>API Key Generator</strong>
+                        <span>Random tokens for developers</span>
+                    </Link>
+                </div>
             </section>
         </div>
     );

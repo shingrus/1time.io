@@ -1,4 +1,4 @@
-const LAST_MODIFIED = '2026-03-18';
+const LAST_MODIFIED = new Date().toISOString().slice(0, 10);
 const SITE_URL = 'https://onetimelink.me';
 
 export const dynamic = 'force-static';
@@ -7,12 +7,9 @@ const routes = [
     ['/', 1.0],
     // Password generator tools
     ['/password-generator', 0.9],
-    ['/strong-password-generator', 0.8],
-    ['/secure-password-generator', 0.8],
-    ['/create-password-14-symbols', 0.8],
-    ['/password-generator-16-characters', 0.8],
-    ['/random-password-generator', 0.8],
     ['/passphrase-generator', 0.8],
+    ['/password-generator-14-characters', 0.8],
+    ['/password-generator-16-characters', 0.8],
     ['/wifi-password-generator', 0.8],
     ['/api-key-generator', 0.8],
     // Blog

@@ -108,3 +108,43 @@
   margin: 0;
   line-height: 1.5;
 }
+
+/* Tools grid */
+.tools-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+  margin: 16px 0;
+}
+
+@media (min-width: 480px) {
+  .tools-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.tool-card {
+  display: block;
+  padding: 14px 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  text-decoration: none;
+  transition: border-color var(--transition);
+}
+
+.tool-card:hover {
+  border-color: var(--text-muted);
+}
+
+.tool-card strong {
+  display: block;
+  font-size: 14px;
+  color: var(--text);
+  margin-bottom: 2px;
+}
+
+.tool-card span {
+  font-size: 13px;
+  color: var(--text-secondary);
+}

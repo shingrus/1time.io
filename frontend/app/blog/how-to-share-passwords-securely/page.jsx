@@ -253,6 +253,11 @@ export default function Article() {
                     </p>
                 </div>
 
+                <p>
+                    Need a strong password first? Our <Link href="/password-generator-16-characters">16-character password generator</Link> creates
+                    passwords that hit the sweet spot of security and usability.
+                </p>
+
                 <div className="article-cta">
                     <div className="article-cta-icon">🔒</div>
                     <h2>Share a password securely right now</h2>

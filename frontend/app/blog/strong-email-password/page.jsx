@@ -113,7 +113,7 @@ export default function Article() {
                 </p>
 
                 <p>
-                    <Link href="/strong-password-generator" className="btn btn-primary">Generate a strong email password →</Link>
+                    <Link href="/password-generator-14-characters" className="btn btn-primary">Generate a strong email password →</Link>
                 </p>
 
                 <h2>Why Common Email Passwords Fail</h2>

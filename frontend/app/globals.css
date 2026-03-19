@@ -139,6 +139,24 @@ body {
   text-align: center;
 }
 
+.app-footer-tools {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px 16px;
+  margin-bottom: 12px;
+  font-size: 13px;
+}
+
+.app-footer-tools a {
+  color: var(--text-secondary);
+  text-decoration: none;
+}
+
+.app-footer-tools a:hover {
+  color: var(--accent);
+}
+
 .app-footer-text {
   font-size: 13px;
   color: var(--text-secondary);

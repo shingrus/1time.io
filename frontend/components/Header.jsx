@@ -20,7 +20,7 @@ export default function Header() {
             <nav className="app-nav">
                 <Link
                     href="/password-generator"
-                    className={!pathname?.startsWith('/blog') && (pathname?.includes('password') || pathname?.includes('passphrase') || pathname?.includes('create-password')) ? 'active' : ''}
+                    className={!pathname?.startsWith('/blog') && (pathname?.includes('password') || pathname?.includes('passphrase') || pathname?.includes('api-key')) ? 'active' : ''}
                 >
                     Password Generator
                 </Link>

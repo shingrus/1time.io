@@ -71,6 +71,12 @@ export default function RootLayout({children}) {
                         {children}
                     </main>
                     <footer className="app-footer">
+                        <nav className="app-footer-tools">
+                            <Link href="/password-generator">Password Generator</Link>
+                            <Link href="/passphrase-generator">Passphrase Generator</Link>
+                            <Link href="/wifi-password-generator">WiFi Password Generator</Link>
+                            <Link href="/api-key-generator">API Key Generator</Link>
+                        </nav>
                         <p className="app-footer-text">
                             <Link href="/about">About</Link> &middot; <Link href="/blog">Blog</Link> &middot; End-to-end encrypted &middot; <a href="https://github.com/shingrus/onetimelink" target="_blank" rel="noopener noreferrer">Open source</a>
                         </p>
