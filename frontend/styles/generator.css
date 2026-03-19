@@ -207,6 +207,50 @@
   line-height: 1.7;
   color: var(--text-secondary);
   max-width: 640px;
+  margin-bottom: 12px;
+}
+
+.gen-seo-subheading {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text);
+  margin-top: 28px;
+  margin-bottom: 10px;
+  letter-spacing: -0.2px;
+}
+
+/* FAQ section */
+.gen-faq {
+  margin-top: 32px;
+}
+
+.gen-faq-list {
+  margin: 0;
+  padding: 0;
+}
+
+.gen-faq-item {
+  padding: 16px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.gen-faq-item:first-child {
+  border-top: 1px solid var(--border);
+}
+
+.gen-faq-q {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+
+.gen-faq-a {
+  font-size: 15px;
+  line-height: 1.7;
+  color: var(--text-secondary);
+  margin: 0;
+  max-width: 640px;
 }
 
 /* Related pages grid */

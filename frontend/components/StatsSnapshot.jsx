@@ -50,24 +50,17 @@ export default function StatsSnapshot() {
     return (
         <div className="stats-page">
             <div className="stats-header">
-                <h1>In-Memory Stats</h1>
-                <p className="subtitle">
-                    Current process snapshot.
-                </p>
+                <h1>Stats</h1>
             </div>
 
             <div className="stats-grid">
                 <section className="stats-card">
-                    <span className="stats-label">Cached overall stored secrets</span>
+                    <span className="stats-label">Stored secrets</span>
                     <strong className="stats-value">{stats.overallStoredSecrets.toLocaleString()}</strong>
                 </section>
                 <section className="stats-card">
                     <span className="stats-label">Buffered page hits</span>
                     <strong className="stats-value">{stats.pendingPageHitsTotal.toLocaleString()}</strong>
-                </section>
-                <section className="stats-card">
-                    <span className="stats-label">Flush interval</span>
-                    <strong className="stats-value">{stats.flushIntervalSeconds}s</strong>
                 </section>
             </div>
 
