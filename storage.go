@@ -48,7 +48,7 @@ error in case of failure
 */
 func saveToStorage(value interface{}, duration time.Duration) (newKey string, err error) {
 	client := getRedisClient()
-	if _, err = client.Incr(globalIncrementalKey).Result(); err != nil {
+	if err = incrementStoredSecretCounters(time.Now().UTC()); err != nil {
 		log.Println(err)
 		return "", err
 	}

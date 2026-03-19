@@ -223,6 +223,51 @@ export async function postJson(path, payload) {
     return response.json();
 }
 
+export function getStatsPageName(path) {
+    if (!path || path === '/') {
+        return 'home';
+    }
+
+    const normalizedPath = path.replace(/^\/+/, '').replace(/\/+$/, '');
+
+    if (!normalizedPath || normalizedPath === 'about' || normalizedPath === 'v') {
+        return null;
+    }
+
+    if (normalizedPath === 'blog' || normalizedPath.startsWith('blog/')) {
+        return 'blog';
+    }
+
+    if (
+        normalizedPath === 'passphrase-generator' ||
+        normalizedPath.includes('password') ||
+        normalizedPath === 'create-password-14-symbols'
+    ) {
+        return 'password';
+    }
+
+    if (normalizedPath === 'api-key-generator') {
+        return 'password';
+    }
+
+    return null;
+}
+
+export function sendStatsPing(page) {
+    if (!page || typeof window === 'undefined') {
+        return;
+    }
+
+    void fetch(`${Constants.apiBaseUrl}stat`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({page}),
+        keepalive: true,
+    }).catch(() => {});
+}
+
 export async function copyTextToClipboard(text) {
     if (!text) {
         return false;

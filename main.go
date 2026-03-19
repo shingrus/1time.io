@@ -17,6 +17,7 @@ const maxDuration = 86400 * 30    // keep for 1 month
 var _, DEBUG = os.LookupEnv("DEBUG")
 
 func main() {
+	appStats.Start()
 	http.HandleFunc("/api/", apiHandler)
 	log.Fatal(http.ListenAndServe("127.0.0.1:8080", nil))
 }

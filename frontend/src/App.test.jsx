@@ -22,12 +22,39 @@ import NewMessage from '../components/NewMessage';
 import ShowNewLink from '../components/ShowNewLink';
 import ViewSecretMessage from '../components/ViewSecretMessage';
 import PasswordGenerator from '../components/PasswordGenerator';
-import { Constants, decryptSecretMessage, encryptSecretMessage, hashSecretKey } from '../utils/util';
+import StatsSnapshot from '../components/StatsSnapshot';
+import { Constants, decryptSecretMessage, encryptSecretMessage, getStatsPageName, hashSecretKey } from '../utils/util';
 
 beforeEach(() => {
     vi.clearAllMocks();
     mockPathname.mockReturnValue('/');
-    global.fetch = vi.fn();
+    global.fetch = vi.fn().mockImplementation(async (url) => {
+        if (url === '/api/stat') {
+            return {
+                ok: true,
+                json: async () => ({}),
+            };
+        }
+
+        if (url === '/api/ss') {
+            return {
+                ok: true,
+                json: async () => ({
+                    overallStoredSecrets: 0,
+                    pendingPageHits: {},
+                    pendingPageHitsTotal: 0,
+                    flushIntervalSeconds: 10,
+                }),
+            };
+        }
+
+        return {
+            ok: true,
+            json: async () => ({
+                status: 'ok',
+            }),
+        };
+    });
     window.scrollTo = vi.fn();
     Object.defineProperty(window.navigator, 'clipboard', {
         configurable: true,
@@ -56,12 +83,24 @@ describe('NewMessage component', () => {
 
     it('submits a new secret and navigates to the generated link page', async () => {
         const user = userEvent.setup();
-        fetch.mockResolvedValue({
-            ok: true,
-            json: async () => ({
-                status: 'ok',
-                newId: 'abc123',
-            }),
+        fetch.mockImplementation(async (url) => {
+            if (url === '/api/stat') {
+                return {
+                    ok: true,
+                    json: async () => ({
+                        status: 'ok',
+                        overallStoredSecrets: 100,
+                    }),
+                };
+            }
+
+            return {
+                ok: true,
+                json: async () => ({
+                    status: 'ok',
+                    newId: 'abc123',
+                }),
+            };
         });
 
         render(<NewMessage />);
@@ -70,10 +109,11 @@ describe('NewMessage component', () => {
         await user.click(screen.getByRole('button', { name: /create secret link/i }));
 
         await waitFor(() => {
-            expect(fetch).toHaveBeenCalledTimes(1);
+            expect(fetch.mock.calls.some(([url]) => url === '/api/saveSecret')).toBe(true);
         });
 
-        expect(fetch).toHaveBeenCalledWith(
+        const saveSecretCall = fetch.mock.calls.find(([url]) => url === '/api/saveSecret');
+        expect(saveSecretCall).toEqual([
             '/api/saveSecret',
             expect.objectContaining({
                 method: 'POST',
@@ -82,9 +122,9 @@ describe('NewMessage component', () => {
                 },
                 body: expect.any(String),
             }),
-        );
+        ]);
 
-        const requestPayload = JSON.parse(fetch.mock.calls[0][1].body);
+        const requestPayload = JSON.parse(saveSecretCall[1].body);
         expect(requestPayload).toEqual(expect.objectContaining({
             secretMessage: expect.any(String),
             hashedKey: expect.any(String),
@@ -124,12 +164,24 @@ describe('PasswordGenerator component', () => {
 
     it('creates a one-time link from the password generator and navigates', async () => {
         const user = userEvent.setup();
-        fetch.mockResolvedValue({
-            ok: true,
-            json: async () => ({
-                status: 'ok',
-                newId: 'gen123',
-            }),
+        fetch.mockImplementation(async (url) => {
+            if (url === '/api/stat') {
+                return {
+                    ok: true,
+                    json: async () => ({
+                        status: 'ok',
+                        overallStoredSecrets: 100,
+                    }),
+                };
+            }
+
+            return {
+                ok: true,
+                json: async () => ({
+                    status: 'ok',
+                    newId: 'gen123',
+                }),
+            };
         });
 
         render(<PasswordGenerator presetPath="/password-generator" />);
@@ -137,10 +189,11 @@ describe('PasswordGenerator component', () => {
         await user.click(await screen.findByRole('button', { name: /share as link/i }));
 
         await waitFor(() => {
-            expect(fetch).toHaveBeenCalledTimes(1);
+            expect(fetch.mock.calls.some(([url]) => url === '/api/saveSecret')).toBe(true);
         });
 
-        expect(fetch).toHaveBeenCalledWith(
+        const saveSecretCall = fetch.mock.calls.find(([url]) => url === '/api/saveSecret');
+        expect(saveSecretCall).toEqual([
             '/api/saveSecret',
             expect.objectContaining({
                 method: 'POST',
@@ -149,9 +202,9 @@ describe('PasswordGenerator component', () => {
                 },
                 body: expect.any(String),
             }),
-        );
+        ]);
 
-        const requestPayload = JSON.parse(fetch.mock.calls[0][1].body);
+        const requestPayload = JSON.parse(saveSecretCall[1].body);
         expect(requestPayload).toEqual(expect.objectContaining({
             secretMessage: expect.any(String),
             hashedKey: expect.any(String),
@@ -162,6 +215,39 @@ describe('PasswordGenerator component', () => {
         expect(linkInput.value).toContain('/v/#');
         expect(linkInput.value).toContain('gen123');
         expect(mockPush).not.toHaveBeenCalled();
+    });
+});
+
+describe('StatsSnapshot component', () => {
+    it('renders the in-memory stats snapshot', async () => {
+        fetch.mockImplementation(async (url) => {
+            if (url === '/api/ss') {
+                return {
+                    ok: true,
+                    json: async () => ({
+                        overallStoredSecrets: 12,
+                        pendingPageHits: {
+                            home: 2,
+                            blog: 1,
+                        },
+                        pendingPageHitsTotal: 3,
+                        flushIntervalSeconds: 10,
+                    }),
+                };
+            }
+
+            return {
+                ok: true,
+                json: async () => ({}),
+            };
+        });
+
+        render(<StatsSnapshot />);
+
+        expect(await screen.findByRole('heading', { level: 1 })).toHaveTextContent('In-Memory Stats');
+        expect(await screen.findByText('12')).toBeInTheDocument();
+        expect(screen.getByText('home')).toBeInTheDocument();
+        expect(screen.getByText('blog')).toBeInTheDocument();
     });
 });
 
@@ -186,6 +272,15 @@ describe('ViewSecretMessage component', () => {
 });
 
 describe('crypto util', () => {
+    it('groups tracked routes into shared stats buckets', () => {
+        expect(getStatsPageName('/')).toBe('home');
+        expect(getStatsPageName('/blog/how-to-share-passwords-securely')).toBe('blog');
+        expect(getStatsPageName('/password-generator-16-characters')).toBe('password');
+        expect(getStatsPageName('/passphrase-generator')).toBe('password');
+        expect(getStatsPageName('/api-key-generator')).toBe('password');
+        expect(getStatsPageName('/about')).toBeNull();
+    });
+
     it('round-trips HKDF-derived encryption and auth for a secret', async () => {
         const fullSecretKey = 'extra-passphraseAbCd1234';
         const {encryptedMessage, hashedKey} = await encryptSecretMessage('hello hkdf', fullSecretKey);

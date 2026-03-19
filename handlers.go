@@ -383,6 +383,10 @@ func apiHandler(w http.ResponseWriter, r *http.Request) {
 	//	responseCode, response = apiUnsecSave(r)
 	case "get":
 		responseCode, response = apiGetMessage(r)
+	case "stat":
+		responseCode, response = apiStat(r)
+	case "ss":
+		responseCode, response = apiStatSnapshot()
 	default:
 		jResponse := struct {
 			Code        int    `json:"code"`
@@ -391,6 +395,9 @@ func apiHandler(w http.ResponseWriter, r *http.Request) {
 		response, _ = json.Marshal(jResponse)
 	}
 	w.WriteHeader(responseCode)
+	if responseCode == http.StatusNoContent || len(response) == 0 {
+		return
+	}
 	_, err := w.Write(response)
 	if err != nil {
 		log.Println(err)
