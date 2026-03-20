@@ -1,6 +1,0 @@
-User-agent: *
-Allow: /
-Disallow: /*.pdf$
-Disallow: /*.png$
-
-Sitemap: https://onetimelink.me/sitemap.xml

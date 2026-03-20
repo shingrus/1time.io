@@ -1,19 +1,22 @@
-# [onetimelink.me](https://onetimelink.me) — Share Secrets with Encrypted One-Time Links
+# [onetimelink.me](https://onetimelink.me) — Self-Hosted One-Time Secret Links with End-to-End Encryption
 
-Share passwords, API keys, and sensitive data through self-destructing links with **end-to-end encryption**. The server never sees your secrets — everything is encrypted and decrypted in the browser using AES-GCM.
+`onetimelink.me` is an open-source, self-hosted one-time secret sharing app for passwords, API keys, access tokens, private notes, and other sensitive text. It creates encrypted one-time links that self-destruct after the first read, so you can share secrets without leaving them in chat history, email inboxes, or ticketing systems.
+
+If you need a **self-hosted one-time secret link** service with **Docker Compose**, **zero-knowledge encryption**, and a lightweight **Go + Next.js** stack, this repo is built for that use case.
 
 **[Try it live →](https://onetimelink.me)**
 
-## Why onetimelink.me?
+## Why Use onetimelink.me for One-Time Secret Sharing?
 
+- **Self-hosted one-time secret links** — share passwords, API keys, notes, and credentials through links that are designed to be opened once.
 - **End-to-end encrypted** — secrets are encrypted in the browser before they leave your device. The decryption key is stored in the URL fragment (`#`), which is never sent to the server.
-- **Zero-knowledge** — the server stores only encrypted blobs. Even with full database access, your secrets cannot be read.
-- **Self-destructing** — each link can only be opened once. After that, the encrypted data is permanently deleted.
+- **Zero-knowledge architecture** — the server stores only encrypted blobs. Even with full database access, your secrets cannot be read.
+- **Self-destructing secret sharing** — each link can only be opened once. After that, the encrypted data is permanently deleted.
 - **No signup required** — paste a secret, get a link, share it. No accounts, no tracking.
-- **Open source** — the full source code is right here. Audit it yourself.
-- **Free** — no paid tiers, no limits, no ads.
+- **Open source** — the full source code is right here. Audit it yourself or run your own private deployment.
+- **Docker Compose ready** — deploy a self-hosted one-time secret service with Redis, nginx, and the Go backend.
 
-## How it works
+## How This One-Time Secret Link App Works
 
 1. You paste a secret into [onetimelink.me](https://onetimelink.me)
 2. Your browser encrypts it with AES-GCM and a random key
@@ -34,7 +37,58 @@ The encryption key never touches the server. Even if the server is compromised, 
 - **Backend:** Go + Redis
 - **Frontend:** Next.js (static export)
 - **Encryption:** Web Crypto API (AES-GCM)
-- **Deployment:** nginx + systemd
+- **Deployment:** Docker Compose, nginx, systemd
+
+## Self-Hosted One-Time Secret Links with Docker Compose
+
+The repo includes a production-ready self-hosted `docker-compose.yml` for encrypted one-time secret sharing. It runs:
+
+- Redis with persistent RDB storage for one-time secret data
+- The Go API backend for secret creation and one-time retrieval
+- nginx serving the static frontend over plain HTTP and proxying `/api`
+
+Copy-paste quick start:
+
+```bash
+git pull
+export DATA_DIR=/srv/onetimelink-data
+export APP_HOSTNAME=secrets.example.com
+export APP_PORT=8080
+mkdir -p "${DATA_DIR}"
+docker compose up -d --build
+```
+
+If you do not need a custom port, you can skip `APP_PORT` and it will default to `8080`.
+
+Setup:
+
+```bash
+cp .env.example .env
+```
+
+Set these required values in `.env`:
+
+- `DATA_DIR` — host path for Redis `dump.rdb`
+- `APP_HOSTNAME` — public hostname used for one-time links, metadata, and branding, default `onetimelink.me`
+
+Optional values:
+
+- `APP_PORT` — external HTTP port, default `8080`
+- `SHOW_BLOG` — blog visibility toggle, default `false` in the compose example for self-hosted deployments
+
+Start everything with one command:
+
+```bash
+docker compose up -d --build
+```
+
+The stack serves plain HTTP on `http://127.0.0.1:${APP_PORT}`. Put your own SSL terminator or reverse proxy in front of it if you want HTTPS for your self-hosted one-time secret link service.
+
+Notes:
+
+- The frontend image is generic. The hostname is injected at container startup, so changing `APP_HOSTNAME` does not require rebuilding the image.
+- Blog routes are excluded from the self-hosted build when `SHOW_BLOG=false` and return `404`.
+- The default self-hosted path is optimized for private secret sharing rather than the public blog/SEO content used on the hosted site.
 
 ---
 

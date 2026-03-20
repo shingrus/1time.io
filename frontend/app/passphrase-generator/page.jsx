@@ -1,4 +1,5 @@
 import PasswordGenerator from '../../components/PasswordGenerator';
+import {absoluteUrl} from '../../utils/siteConfig';
 
 export const metadata = {
     title: 'Passphrase Generator — Memorable & Secure Multi-Word Passwords',
@@ -16,7 +17,7 @@ const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'WebApplication',
     name: 'Passphrase Generator',
-    url: 'https://onetimelink.me/passphrase-generator',
+    url: absoluteUrl('/passphrase-generator'),
     description: 'Generate memorable multi-word passphrases that are easy to type and hard to crack. Uses cryptographic randomness, runs entirely in your browser.',
     applicationCategory: 'SecurityApplication',
     operatingSystem: 'Any',

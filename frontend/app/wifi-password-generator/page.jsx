@@ -1,11 +1,12 @@
 import PasswordGenerator from '../../components/PasswordGenerator';
+import {absoluteUrl, siteHost} from '../../utils/siteConfig';
 
 export const metadata = {
-    title: 'WiFi Password Generator — onetimelink.me',
+    title: `WiFi Password Generator — ${siteHost}`,
     description: 'Generate strong, random WiFi passwords that are secure yet easy to type. Created locally in your browser. Free, instant, and private.',
     alternates: { canonical: '/wifi-password-generator' },
     openGraph: {
-        title: 'WiFi Password Generator — onetimelink.me',
+        title: `WiFi Password Generator — ${siteHost}`,
         description: 'Generate strong WiFi passwords that are secure yet easy to type. Created in your browser.',
         url: '/wifi-password-generator',
         images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'WiFi Password Generator' }],
@@ -16,7 +17,7 @@ const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'WebApplication',
     name: 'WiFi Password Generator',
-    url: 'https://onetimelink.me/wifi-password-generator',
+    url: absoluteUrl('/wifi-password-generator'),
     description: 'Generate strong, random WiFi passwords that are secure yet easy to type. Created locally in your browser.',
     applicationCategory: 'SecurityApplication',
     operatingSystem: 'Any',

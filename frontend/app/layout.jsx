@@ -11,27 +11,28 @@ import '../styles/stats.css';
 import Header from '../components/Header';
 import PageStatsTracker from '../components/PageStatsTracker';
 import Link from 'next/link';
+import {absoluteUrl, isBlogEnabled, siteHost, siteUrl} from '../utils/siteConfig';
 
 export const metadata = {
-    metadataBase: new URL('https://onetimelink.me'),
-    title: 'onetimelink.me — Share Secrets with Encrypted One-Time Links',
+    metadataBase: new URL(siteUrl),
+    title: `${siteHost} — Share Secrets with Encrypted One-Time Links`,
     description: 'Share passwords, tokens, and sensitive data through encrypted one-time self-destruct links. End-to-end encrypted — we never see your data. Free, fast, no signup required.',
     openGraph: {
-        title: 'onetimelink.me — Share Secrets with Self-Destruct Links',
+        title: `${siteHost} — Share Secrets with Self-Destruct Links`,
         description: 'Send passwords and sensitive data through encrypted one-time links. End-to-end encrypted, auto-destroyed after reading.',
         type: 'website',
         url: '/',
-        images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'onetimelink.me — Encrypted One-Time Secret Links' }],
+        images: [{ url: '/og-image.png', width: 1200, height: 630, alt: `${siteHost} — Encrypted One-Time Secret Links` }],
     },
     twitter: {
         card: 'summary_large_image',
-        title: 'onetimelink.me — Encrypted One-Time Secret Links',
+        title: `${siteHost} — Encrypted One-Time Secret Links`,
         description: 'Share passwords and private data securely. End-to-end encrypted, self-destruct after reading.',
     },
     icons: {
         icon: '/favicon.svg',
     },
-    manifest: '/manifest.json',
+    manifest: '/manifest.webmanifest',
 };
 
 export const viewport = {
@@ -41,6 +42,8 @@ export const viewport = {
 };
 
 export default function RootLayout({children}) {
+    const showBlog = isBlogEnabled();
+
     return (
         <html lang="en">
             <body>
@@ -49,9 +52,9 @@ export default function RootLayout({children}) {
                     dangerouslySetInnerHTML={{ __html: JSON.stringify({
                         '@context': 'https://schema.org',
                         '@type': 'Organization',
-                        name: 'onetimelink.me',
-                        url: 'https://onetimelink.me',
-                        logo: 'https://onetimelink.me/favicon.svg',
+                        name: siteHost,
+                        url: siteUrl,
+                        logo: absoluteUrl('/favicon.svg'),
                         sameAs: ['https://github.com/shingrus/onetimelink'],
                     }) }}
                 />
@@ -60,8 +63,8 @@ export default function RootLayout({children}) {
                     dangerouslySetInnerHTML={{ __html: JSON.stringify({
                         '@context': 'https://schema.org',
                         '@type': 'WebSite',
-                        name: 'onetimelink.me',
-                        url: 'https://onetimelink.me',
+                        name: siteHost,
+                        url: siteUrl,
                     }) }}
                 />
                 <div className="app-layout">
@@ -78,7 +81,13 @@ export default function RootLayout({children}) {
                             <Link href="/api-key-generator">API Key Generator</Link>
                         </nav>
                         <p className="app-footer-text">
-                            <Link href="/about">About</Link> &middot; <Link href="/blog">Blog</Link> &middot; End-to-end encrypted &middot; <a href="https://github.com/shingrus/onetimelink" target="_blank" rel="noopener noreferrer">Open source</a>
+                            <Link href="/about">About</Link>
+                            {showBlog && (
+                                <>
+                                    {' '} &middot; <Link href="/blog">Blog</Link>
+                                </>
+                            )}
+                            {' '} &middot; End-to-end encrypted &middot; <a href="https://github.com/shingrus/onetimelink" target="_blank" rel="noopener noreferrer">Open source</a>
                         </p>
                     </footer>
                 </div>

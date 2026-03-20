@@ -1,4 +1,5 @@
 import PasswordGenerator from '../../components/PasswordGenerator';
+import {absoluteUrl} from '../../utils/siteConfig';
 
 export const metadata = {
     title: '14-Character Password Generator — Quick & Secure',
@@ -16,7 +17,7 @@ const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'WebApplication',
     name: '14-Character Password Generator',
-    url: 'https://onetimelink.me/password-generator-14-characters',
+    url: absoluteUrl('/password-generator-14-characters'),
     description: 'Generate a secure 14-character password with letters, numbers, and symbols. Meets most site requirements. Generated locally in your browser.',
     applicationCategory: 'SecurityApplication',
     operatingSystem: 'Any',

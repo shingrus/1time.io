@@ -4,6 +4,7 @@ import {useState} from "react";
 import Link from "next/link";
 import ShowNewLink from './ShowNewLink';
 import {Constants, createSecretLink} from '../utils/util';
+import {siteHost} from '../utils/siteConfig';
 
 export default function NewMessage() {
     const [secretMessage, setSecretMessage] = useState("");
@@ -130,7 +131,7 @@ export default function NewMessage() {
             <section className="seo-section">
                 <h1>End-to-end encrypted. Self-destruct.</h1>
                 <p>
-                    OneTimeLink.me creates encrypted one-time links
+                    {siteHost} creates encrypted one-time links
                     that automatically destroy themselves after being read. Your data is encrypted in the
                     browser before it ever leaves your device - we never see it.
                 </p>
@@ -168,7 +169,7 @@ export default function NewMessage() {
 
                 <h2>How it works</h2>
                 <p>
-                    Type or paste your secret above. onetimelink.me encrypts it with a unique key using AES
+                    Type or paste your secret above. {siteHost} encrypts it with a unique key using AES
                     encryption directly in your browser. You get a one-time link containing the
                     decryption key. Share it with your recipient — once they open it, the secret is
                     decrypted in their browser and permanently deleted from our servers.

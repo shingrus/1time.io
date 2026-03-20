@@ -1,22 +1,23 @@
 import NewMessage from '../components/NewMessage';
+import {siteHost, siteUrl} from '../utils/siteConfig';
 
 export const metadata = {
-    title: 'onetimelink.me — Share Secrets with Encrypted One-Time Links',
+    title: `${siteHost} — Share Secrets with Encrypted One-Time Links`,
     description: 'Share passwords, tokens, and sensitive data through encrypted one-time self-destruct links. End-to-end encrypted — we never see your data. Free, fast, no signup required.',
     alternates: { canonical: '/' },
     openGraph: {
-        title: 'onetimelink.me — Share Secrets with Self-Destruct Links',
+        title: `${siteHost} — Share Secrets with Self-Destruct Links`,
         description: 'Send passwords and sensitive data through encrypted one-time links. End-to-end encrypted, auto-destroyed after reading.',
         url: '/',
-        images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'onetimelink.me — Encrypted One-Time Secret Links' }],
+        images: [{ url: '/og-image.png', width: 1200, height: 630, alt: `${siteHost} — Encrypted One-Time Secret Links` }],
     },
 };
 
 const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'WebApplication',
-    name: 'onetimelink.me',
-    url: 'https://onetimelink.me',
+    name: siteHost,
+    url: siteUrl,
     description: 'Share passwords, tokens, and sensitive data through encrypted one-time self-destruct links. End-to-end encrypted — we never see your data.',
     applicationCategory: 'SecurityApplication',
     operatingSystem: 'Any',
