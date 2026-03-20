@@ -75,6 +75,17 @@ npm run build
 - Tests live in `frontend/src/App.test.jsx` and use vitest + React Testing Library.
 - The vitest config (`frontend/vitest.config.js`) uses esbuild with `jsx: 'automatic'` to handle JSX in components.
 
+## Frontend CSS Performance
+
+- Treat every `<link rel="stylesheet">` in `frontend/build/**/index.html` as render-blocking unless proven otherwise.
+- Keep `frontend/app/layout.jsx` limited to truly shared base styles only: app chrome, typography tokens, buttons, form primitives, and other classes needed on first paint across most routes.
+- Do not import route-specific CSS into `frontend/app/layout.jsx`.
+- If a stylesheet is specific to one route family and required for first paint, emit it from that route's server `page.jsx` or `layout.jsx`, preferably via `frontend/components/InlineCss.jsx`, instead of promoting it to the root layout.
+- If UI only appears after user interaction (success states, generated-link panels, drawers, modals, secondary tools), lazy-load the component so its JS and CSS stay out of the initial render path.
+- Do not statically import post-interaction components from large entry components when the initial screen can render without them.
+- Before merging frontend UI changes, run `cd frontend && npm run build` and inspect the generated HTML for the affected route to confirm it is not pulling unrelated CSS chunks.
+- A route should not ship CSS for unrelated pages such as blog, stats, view, about, or post-submit states during initial render.
+
 ## Domain And Branding
 
 - Public domain is `https://onetimelink.me`.

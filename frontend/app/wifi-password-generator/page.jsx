@@ -1,3 +1,4 @@
+import InlineCss from '../../components/InlineCss';
 import PasswordGenerator from '../../components/PasswordGenerator';
 import {absoluteUrl, siteHost} from '../../utils/siteConfig';
 
@@ -38,6 +39,7 @@ const faqJsonLd = {
 export default function WifiPasswordGeneratorPage() {
     return (
         <>
+            <InlineCss file="styles/generator.css" />
             <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
             <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />
             <PasswordGenerator presetPath="/wifi-password-generator" />

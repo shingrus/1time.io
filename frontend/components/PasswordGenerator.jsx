@@ -1,11 +1,19 @@
 'use client';
 
-import '../styles/generator.css';
-import {useState, useCallback, useEffect} from "react";
+import {lazy, Suspense, useState, useCallback, useEffect} from "react";
 import Link from "next/link";
-import ShowNewLink from './ShowNewLink';
 import {copyTextToClipboard, createSecretLink} from '../utils/util';
 import wordlist from '../utils/wordlist';
+
+const ShowNewLink = lazy(() => import('./ShowNewLink'));
+
+function LinkReadyFallback() {
+    return (
+        <p style={{color: 'var(--text-secondary)', padding: '20px 0', textAlign: 'center'}}>
+            Preparing secure link...
+        </p>
+    );
+}
 
 const CHARSETS = {
     uppercase: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
@@ -341,10 +349,12 @@ export default function PasswordGenerator({ presetPath }) {
 
     if (sharedLink) {
         return (
-            <ShowNewLink
-                newLink={sharedLink}
-                onReset={() => setSharedLink('')}
-            />
+            <Suspense fallback={<LinkReadyFallback />}>
+                <ShowNewLink
+                    newLink={sharedLink}
+                    onReset={() => setSharedLink('')}
+                />
+            </Suspense>
         );
     }
 

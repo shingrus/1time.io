@@ -1,4 +1,4 @@
-import '../styles/home.css';
+import InlineCss from '../components/InlineCss';
 import NewMessage from '../components/NewMessage';
 import {siteHost, siteUrl} from '../utils/siteConfig';
 
@@ -29,6 +29,7 @@ const jsonLd = {
 export default function HomePage() {
     return (
         <>
+            <InlineCss file="styles/home.css" />
             <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
             <NewMessage />
         </>

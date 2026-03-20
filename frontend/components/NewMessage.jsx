@@ -1,10 +1,19 @@
 'use client';
 
-import {useState} from "react";
+import {lazy, Suspense, useState} from "react";
 import Link from "next/link";
-import ShowNewLink from './ShowNewLink';
 import {Constants, createSecretLink} from '../utils/util';
 import {siteHost} from '../utils/siteConfig';
+
+const ShowNewLink = lazy(() => import('./ShowNewLink'));
+
+function LinkReadyFallback() {
+    return (
+        <p style={{color: 'var(--text-secondary)', padding: '20px 0', textAlign: 'center'}}>
+            Preparing secure link...
+        </p>
+    );
+}
 
 export default function NewMessage() {
     const [secretMessage, setSecretMessage] = useState("");
@@ -57,10 +66,12 @@ export default function NewMessage() {
 
     if (newLink) {
         return (
-            <ShowNewLink
-                newLink={newLink}
-                onReset={() => setNewLink("")}
-            />
+            <Suspense fallback={<LinkReadyFallback />}>
+                <ShowNewLink
+                    newLink={newLink}
+                    onReset={() => setNewLink("")}
+                />
+            </Suspense>
         );
     }
 
