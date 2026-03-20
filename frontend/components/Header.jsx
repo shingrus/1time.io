@@ -2,9 +2,11 @@
 
 import Link from 'next/link';
 import {usePathname} from 'next/navigation';
+import {isBlogEnabled} from '../utils/siteConfig';
 
 export default function Header() {
     const pathname = usePathname();
+    const showBlog = isBlogEnabled();
 
     return (
         <header className="app-header">
@@ -24,12 +26,14 @@ export default function Header() {
                 >
                     Password Generator
                 </Link>
-                <Link
-                    href="/blog"
-                    className={pathname?.startsWith('/blog') ? 'active' : ''}
-                >
-                    Blog
-                </Link>
+                {showBlog && (
+                    <Link
+                        href="/blog"
+                        className={pathname?.startsWith('/blog') ? 'active' : ''}
+                    >
+                        Blog
+                    </Link>
+                )}
                 <a
                     className="app-nav-icon"
                     href="https://github.com/shingrus/onetimelink"

@@ -1,43 +1,51 @@
-const LAST_MODIFIED = new Date().toISOString().slice(0, 10);
-const SITE_URL = 'https://onetimelink.me';
+import {isBlogEnabled, siteHostDefault} from '../utils/siteConfig';
 
 export const dynamic = 'force-static';
 
-const routes = [
-    ['/', 1.0],
-    // Password generator tools
-    ['/password-generator', 0.9],
-    ['/passphrase-generator', 0.8],
-    ['/password-generator-14-characters', 0.8],
-    ['/password-generator-16-characters', 0.8],
-    ['/wifi-password-generator', 0.8],
-    ['/api-key-generator', 0.8],
-    // Blog
-    ['/blog', 0.8],
-    ['/blog/hkdf-key-derivation-explained', 0.8],
-    ['/blog/password-for-crypto-wallet', 0.8],
-    ['/blog/database-password-security', 0.8],
-    ['/blog/secure-home-wifi-setup', 0.8],
-    ['/blog/strong-email-password', 0.8],
-    ['/blog/team-password-sharing', 0.8],
-    ['/blog/is-slack-safe-for-passwords', 0.8],
-    ['/blog/how-to-send-passwords-over-email', 0.8],
-    ['/blog/how-to-share-api-keys', 0.8],
-    ['/blog/how-to-share-wifi-password', 0.8],
-    ['/blog/how-to-share-passwords-securely', 0.8],
-    ['/blog/self-destructing-messages-explained', 0.8],
-    ['/blog/onetimesecret-alternative', 0.8],
-    ['/blog/bitwarden-send-alternative', 0.8],
-    ['/blog/privnote-alternative', 0.8],
-    ['/blog/password-pusher-alternative', 0.8],
+// [path, priority, lastModified]
+// Update lastModified only when page content actually changes
+const coreRoutes = [
+    ['/', 1.0, '2025-03-19'],
+    // Password generator tools (content expanded 2025-03-19)
+    ['/password-generator', 0.9, '2025-03-19'],
+    ['/passphrase-generator', 0.8, '2025-03-19'],
+    ['/password-generator-14-characters', 0.8, '2025-03-19'],
+    ['/password-generator-16-characters', 0.8, '2025-03-19'],
+    ['/wifi-password-generator', 0.8, '2025-03-19'],
+    ['/api-key-generator', 0.8, '2025-03-19'],
     // About
-    ['/about', 0.5],
+    ['/about', 0.5, '2025-01-01'],
+];
+
+const blogRoutes = [
+    ['/blog', 0.8, '2025-03-19'],
+    ['/blog/hkdf-key-derivation-explained', 0.8, '2025-02-01'],
+    ['/blog/password-for-crypto-wallet', 0.8, '2025-02-01'],
+    ['/blog/database-password-security', 0.8, '2025-02-01'],
+    ['/blog/secure-home-wifi-setup', 0.8, '2025-02-01'],
+    ['/blog/strong-email-password', 0.8, '2025-02-01'],
+    ['/blog/team-password-sharing', 0.8, '2025-02-01'],
+    ['/blog/is-slack-safe-for-passwords', 0.8, '2025-02-01'],
+    ['/blog/how-to-send-passwords-over-email', 0.8, '2025-02-01'],
+    ['/blog/how-to-share-api-keys', 0.8, '2025-02-01'],
+    ['/blog/how-to-share-wifi-password', 0.8, '2025-02-01'],
+    ['/blog/how-to-share-passwords-securely', 0.8, '2025-02-01'],
+    ['/blog/self-destructing-messages-explained', 0.8, '2025-02-01'],
+    ['/blog/onetimesecret-alternative', 0.8, '2025-02-01'],
+    ['/blog/bitwarden-send-alternative', 0.8, '2025-02-01'],
+    ['/blog/privnote-alternative', 0.8, '2025-02-01'],
+    ['/blog/password-pusher-alternative', 0.8, '2025-02-01'],
 ];
 
 export default function sitemap() {
-    return routes.map(([url, priority]) => ({
-        url: `${SITE_URL}${url}`,
-        lastModified: LAST_MODIFIED,
+    const routes = isBlogEnabled()
+        ? [...coreRoutes, ...blogRoutes]
+        : coreRoutes;
+    const siteUrl = `https://${process.env.NEXT_PUBLIC_SITE_HOST || siteHostDefault}`;
+
+    return routes.map(([url, priority, lastModified]) => ({
+        url: `${siteUrl}${url}`,
+        lastModified,
         priority,
     }));
 }

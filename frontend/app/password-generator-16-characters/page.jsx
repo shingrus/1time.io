@@ -1,11 +1,12 @@
 import PasswordGenerator from '../../components/PasswordGenerator';
+import {absoluteUrl, siteHost} from '../../utils/siteConfig';
 
 export const metadata = {
-    title: '16-Character Password Generator — onetimelink.me',
+    title: `16-Character Password Generator — ${siteHost}`,
     description: 'Generate a strong 16-character password with letters, numbers, and symbols. Created in your browser with cryptographic randomness. Free and instant.',
     alternates: { canonical: '/password-generator-16-characters' },
     openGraph: {
-        title: '16-Character Password Generator — onetimelink.me',
+        title: `16-Character Password Generator — ${siteHost}`,
         description: 'Generate a strong 16-character password with letters, numbers, and symbols. Created in your browser instantly.',
         url: '/password-generator-16-characters',
         images: [{ url: '/og-image.png', width: 1200, height: 630, alt: '16-Character Password Generator' }],
@@ -16,7 +17,7 @@ const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'WebApplication',
     name: '16-Character Password Generator',
-    url: 'https://onetimelink.me/password-generator-16-characters',
+    url: absoluteUrl('/password-generator-16-characters'),
     description: 'Generate a strong 16-character password with letters, numbers, and symbols. Created in your browser with cryptographic randomness.',
     applicationCategory: 'SecurityApplication',
     operatingSystem: 'Any',
