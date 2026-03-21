@@ -1,6 +1,6 @@
 <p align="center">
-  <a href="https://onetimelink.me">
-    <img src="frontend/public/og-image.png" alt="OneTimeLink" width="400">
+  <a href="https://1time.io">
+    <img src="frontend/public/og-image.png" alt="1time.io" width="400">
   </a>
 </p>
 
@@ -10,7 +10,7 @@
 </p>
 
 <p align="center">
-  <a href="https://onetimelink.me"><img src="https://img.shields.io/badge/Try_it_live-onetimelink.me-E8552D?style=for-the-badge" alt="Try it live"></a>
+  <a href="https://1time.io"><img src="https://img.shields.io/badge/Try_it_live-1time.io-E8552D?style=for-the-badge" alt="Try it live"></a>
 </p>
 
 <p align="center">
@@ -28,7 +28,7 @@
   <img src="docs/screenshot-reveal.png" alt="Reveal a secret" width="45%">
 </p>
 
-## Why OneTimeLink?
+## Why 1time?
 
 | | Feature | Details |
 |---|---|---|
@@ -73,7 +73,7 @@ The encryption key stays in the URL fragment (`#`), which is **never sent to the
 
 ### Use the hosted version
 
-**[onetimelink.me](https://onetimelink.me)** — free, no signup, ready to use.
+**[1time.io](https://1time.io)** — free, no signup, ready to use.
 
 ### Self-host with Docker Compose
 
@@ -103,7 +103,7 @@ Both options start on `http://localhost:8080` with Redis persistence, the Go API
 
 | Variable | Default | Description |
 |---|---|---|
-| `APP_HOSTNAME` | `onetimelink.me` | Public hostname for links and metadata |
+| `APP_HOSTNAME` | `1time.io` | Public hostname for links and metadata |
 | `APP_PORT` | `8080` | External HTTP port |
 | `DATA_DIR` | `./data` | Host path for Redis persistence |
 | `SHOW_BLOG` | `false` | Enable blog routes (for hosted version) |
@@ -116,7 +116,7 @@ Put your own reverse proxy (Caddy, Traefik, nginx) in front for HTTPS/TLS termin
 
 ## Comparison with Alternatives
 
-| Feature | **OneTimeLink** | OneTimeSecret | Yopass | PrivateBin | Password Pusher |
+| Feature | **1time** | OneTimeSecret | Yopass | PrivateBin | Password Pusher |
 |---|:---:|:---:|:---:|:---:|:---:|
 | Zero-knowledge (E2E encrypted) | **Yes** | No | Yes | Yes | No |
 | Self-destructing after first read | **Yes** | Yes | Yes | Optional | Optional |
@@ -130,10 +130,10 @@ Put your own reverse proxy (Caddy, Traefik, nginx) in front for HTTPS/TLS termin
 
 ## Free Tools
 
-- [Password Generator](https://onetimelink.me/password-generator) — strong random passwords
-- [Passphrase Generator](https://onetimelink.me/passphrase-generator) — memorable multi-word passphrases
-- [API Key Generator](https://onetimelink.me/api-key-generator) — random tokens for developers
-- [WiFi Password Generator](https://onetimelink.me/wifi-password-generator) — easy-to-type network passwords
+- [Password Generator](https://1time.io/password-generator) — strong random passwords
+- [Passphrase Generator](https://1time.io/passphrase-generator) — memorable multi-word passphrases
+- [API Key Generator](https://1time.io/api-key-generator) — random tokens for developers
+- [WiFi Password Generator](https://1time.io/wifi-password-generator) — easy-to-type network passwords
 
 ---
 
@@ -201,7 +201,7 @@ make build
 sudo ./scripts/init_vm.sh
 ```
 
-Installs nginx, Redis, creates the `onetimelink` systemd service, and deploys the built artifacts.
+Installs nginx, Redis, creates the `1time` systemd service, and deploys the built artifacts.
 
 ---
 
@@ -225,4 +225,4 @@ The encryption model is designed so that **the server operator cannot read secre
 
 ## License
 
-[MIT](LICENSE) — Copyright (c) 2018-2026 onetimelink.me
+[MIT](LICENSE) — Copyright (c) 2018-2026 1time.io

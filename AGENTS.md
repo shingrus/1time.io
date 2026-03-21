@@ -1,4 +1,4 @@
-# onetimelink.me
+# 1time.io
 
 ## Overview
 
@@ -103,13 +103,13 @@ npm run build
 
 ## Domain And Branding
 
-- Public domain is `https://onetimelink.me`.
+- Public domain is `https://1time.io`.
 
 ## Deployment
 
 - Frontend production build output: `frontend/build` (static HTML files per route)
 - Backend production binary from `make build`: `bin/1time`
-- Example nginx config: `configs/nginx/onetimelink.conf`
+- Example nginx config: `configs/nginx/1time.conf`
 - nginx serves frontend statics and proxies `/api` to the Go app on `127.0.0.1:8080`.
 - The nginx `try_files` directive includes `$uri/index.html` for Next.js trailing-slash static export.
 

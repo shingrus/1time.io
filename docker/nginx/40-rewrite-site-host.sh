@@ -2,9 +2,9 @@
 set -eu
 
 SITE_ROOT="${SITE_ROOT:-/usr/share/nginx/html}"
-APP_HOSTNAME="${APP_HOSTNAME:-onetimelink.me}"
+APP_HOSTNAME="${APP_HOSTNAME:-1time.io}"
 
-if [ "${APP_HOSTNAME}" = "onetimelink.me" ]; then
+if [ "${APP_HOSTNAME}" = "1time.io" ]; then
     exit 0
 fi
 
@@ -19,9 +19,8 @@ find "${SITE_ROOT}" -type f \
     | while IFS= read -r file; do
         tmp_file="${file}.tmp"
         sed \
-            -e "s|https://onetimelink\\.me|https://${escaped_host}|g" \
-            -e "s|OneTimeLink\\.me|${escaped_host}|g" \
-            -e "s|onetimelink\\.me|${escaped_host}|g" \
+            -e "s|https://1time\\.io|https://${escaped_host}|g" \
+            -e "s|1time\\.io|${escaped_host}|g" \
             "${file}" > "${tmp_file}"
         mv "${tmp_file}" "${file}"
     done

@@ -57,6 +57,8 @@ else
     echo "Skipping frontend copy: ${FRONTEND_SOURCE} does not exist."
 fi
 
+#certbot certonly --manual --preferred-challenges dns -d 1time.io -d '*.1time.io'
+
 tmp_unit="$(mktemp)"
 sed \
     -e "s#^User=.*#User=${APP_USER}#" \

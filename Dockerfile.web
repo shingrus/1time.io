@@ -14,7 +14,7 @@ RUN npm run build
 
 FROM nginx:alpine
 
-ARG APP_HOSTNAME=onetimelink.me
+ARG APP_HOSTNAME=1time.io
 
 ENV APP_HOSTNAME=${APP_HOSTNAME}
 ENV NGINX_PORT=8080

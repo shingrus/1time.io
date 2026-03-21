@@ -66,7 +66,7 @@ jobs:
           tags: ${{ steps.meta.outputs.tags_web }}
           platforms: linux/amd64,linux/arm64
           build-args: |
-            APP_HOSTNAME=onetimelink.me
+            APP_HOSTNAME=1time.io
             SHOW_BLOG=false
           cache-from: type=gha,scope=web
           cache-to: type=gha,mode=max,scope=web

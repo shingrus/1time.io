@@ -23,7 +23,7 @@ services:
       - ${DATA_DIR:-./data}:/data
 
   backend:
-    image: ghcr.io/shingrus/onetimelink-backend:latest
+    image: ghcr.io/shingrus/1time-backend:latest
     restart: unless-stopped
     environment:
       LISTEN_ADDR: 0.0.0.0:8080
@@ -33,10 +33,10 @@ services:
       - redis
 
   web:
-    image: ghcr.io/shingrus/onetimelink-web:latest
+    image: ghcr.io/shingrus/1time-web:latest
     restart: unless-stopped
     environment:
-      APP_HOSTNAME: ${APP_HOSTNAME:-onetimelink.me}
+      APP_HOSTNAME: ${APP_HOSTNAME:-1time.io}
       NGINX_PORT: 8080
     depends_on:
       - backend
