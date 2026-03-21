@@ -23,8 +23,8 @@ const jsonLd = [
         '@type': 'Article',
         headline: 'How to Share API Keys Securely with Your Team',
         description: 'Learn how to share API keys, tokens, and secrets with developers safely. Stop pasting credentials in Slack and use encrypted one-time links instead.',
-        datePublished: '2026-03-18',
-        dateModified: '2026-03-18',
+        datePublished: '2026-01-13',
+        dateModified: '2026-03-20',
         author: { '@type': 'Organization', name: '1time.io', url: 'https://1time.io' },
         publisher: { '@type': 'Organization', name: '1time.io', url: 'https://1time.io' },
         mainEntityOfPage: 'https://1time.io/blog/how-to-share-api-keys',
@@ -53,7 +53,7 @@ export default function Article() {
                     Every developer has done it: pasted an API key into Slack, a GitHub issue, or an
                     email. Here is why that is a serious risk and how to share credentials safely.
                 </p>
-                <div className="article-meta">March 2026 &middot; 7 min read</div>
+                <div className="article-meta">Jan 13, 2026 &middot; 7 min read</div>
             </div>
 
             <div className="article-body">

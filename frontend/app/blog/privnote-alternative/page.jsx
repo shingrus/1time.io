@@ -23,8 +23,8 @@ const jsonLd = [
         '@type': 'Article',
         headline: '1time.io vs Privnote — Why Encryption Matters',
         description: 'Compare 1time.io and Privnote for self-destructing messages. Learn why Privnote lacks end-to-end encryption and what that means for your secrets.',
-        datePublished: '2026-03-18',
-        dateModified: '2026-03-18',
+        datePublished: '2026-01-05',
+        dateModified: '2026-03-19',
         author: { '@type': 'Organization', name: '1time.io', url: 'https://1time.io' },
         publisher: { '@type': 'Organization', name: '1time.io', url: 'https://1time.io' },
         mainEntityOfPage: 'https://1time.io/blog/privnote-alternative',
@@ -54,7 +54,7 @@ export default function Article() {
                     after reading is only half the equation. If the server can read your message in the
                     first place, is it really private?
                 </p>
-                <div className="article-meta">March 2026 &middot; 5 min read</div>
+                <div className="article-meta">Jan 5, 2026 &middot; 5 min read</div>
             </div>
 
             <div className="article-body">

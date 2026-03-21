@@ -23,8 +23,8 @@ const jsonLd = [
         '@type': 'Article',
         headline: 'What Is HKDF and Why We Use It for End-to-End Encryption',
         description: 'A plain-language explanation of HKDF and how 1time.io uses it to separate encryption keys from server-side auth tokens.',
-        datePublished: '2026-03-18',
-        dateModified: '2026-03-18',
+        datePublished: '2026-03-21',
+        dateModified: '2026-03-21',
         author: { '@type': 'Organization', name: '1time.io', url: 'https://1time.io' },
         publisher: { '@type': 'Organization', name: '1time.io', url: 'https://1time.io' },
         mainEntityOfPage: 'https://1time.io/blog/hkdf-key-derivation-explained',
@@ -53,7 +53,7 @@ export default function Article() {
                     We recently upgraded <Link href="/">1time.io</Link> from simple SHA-256 hashing to HKDF-based key derivation.
                     Here is what that means in plain language, why it matters, and how it makes your secrets safer.
                 </p>
-                <div className="article-meta">March 2026 &middot; 8 min read</div>
+                <div className="article-meta">Mar 21, 2026 &middot; 8 min read</div>
             </div>
 
             <div className="article-body">

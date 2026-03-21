@@ -23,8 +23,8 @@ const jsonLd = [
         '@type': 'Article',
         headline: '1time.io vs Bitwarden Send — A Practical Comparison',
         description: 'Compare 1time.io and Bitwarden Send for sharing secrets securely. See why a dedicated one-time link tool is faster and easier than Bitwarden Send.',
-        datePublished: '2026-03-18',
-        dateModified: '2026-03-18',
+        datePublished: '2026-03-06',
+        dateModified: '2026-03-21',
         author: { '@type': 'Organization', name: '1time.io', url: 'https://1time.io' },
         publisher: { '@type': 'Organization', name: '1time.io', url: 'https://1time.io' },
         mainEntityOfPage: 'https://1time.io/blog/bitwarden-send-alternative',
@@ -54,7 +54,7 @@ export default function Article() {
                     to someone quickly, Bitwarden Send adds friction. Here is how the two compare for
                     one-time secret sharing.
                 </p>
-                <div className="article-meta">March 2026 &middot; 5 min read</div>
+                <div className="article-meta">Mar 6, 2026 &middot; 5 min read</div>
             </div>
 
             <div className="article-body">

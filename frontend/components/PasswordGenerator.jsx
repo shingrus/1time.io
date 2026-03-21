@@ -25,12 +25,12 @@ const CHARSETS = {
 // SEO preset configurations keyed by route path
 const PRESETS = {
     '/password-generator': {
-        title: 'Password Generator',
+        title: 'Strong Password Generator',
         subtitle: 'Generate strong passwords and passphrases in your browser. Nothing leaves your device.',
         length: 20,
         mode: 'password',
         options: { uppercase: true, lowercase: true, numbers: true, symbols: true },
-        seoHeading: 'Free Online Password Generator',
+        seoHeading: 'Free Online Strong Password Generator',
         seoText: 'Create secure, random passwords instantly with our free password generator. Every password is generated entirely in your browser using cryptographic randomness — nothing is ever sent to a server. Choose your preferred length, character types, or switch to memorable passphrases. Strong passwords are your first line of defense against unauthorized access to your accounts.',
         seoSections: [
             {

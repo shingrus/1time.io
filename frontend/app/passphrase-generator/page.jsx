@@ -25,6 +25,15 @@ const jsonLd = {
     offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
 };
 
+const breadcrumbJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://1time.io' },
+        { '@type': 'ListItem', position: 2, name: 'Passphrase Generator' },
+    ],
+};
+
 const faqJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'FAQPage',
@@ -41,6 +50,7 @@ export default function PassphraseGeneratorPage() {
         <>
             <InlineCss file="styles/generator.css" />
             <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+            <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
             <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />
             <PasswordGenerator presetPath="/passphrase-generator" />
         </>

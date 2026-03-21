@@ -140,11 +140,11 @@ export default function NewMessage() {
             </form>
 
             <section className="seo-section">
-                <h1>End-to-end encrypted. Self-destruct.</h1>
+                <h1>Share Secrets with Encrypted One-Time Links</h1>
                 <p>
                     {siteHost} creates encrypted one-time links
-                    that automatically destroy themselves after being read. Your data is encrypted in the
-                    browser before it ever leaves your device - we never see it.
+                    that automatically self-destruct after being read. End-to-end encrypted in your
+                    browser before anything leaves your device — we never see your data.
                 </p>
 
                 <div className="features-grid">

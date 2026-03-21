@@ -23,8 +23,8 @@ const jsonLd = [
         '@type': 'Article',
         headline: 'How to Set Up a Secure Home WiFi Network',
         description: 'Step-by-step guide to securing your home WiFi network with strong passwords, WPA3, and proper router configuration.',
-        datePublished: '2026-03-18',
-        dateModified: '2026-03-18',
+        datePublished: '2026-02-20',
+        dateModified: '2026-03-21',
         author: { '@type': 'Organization', name: '1time.io', url: 'https://1time.io' },
         publisher: { '@type': 'Organization', name: '1time.io', url: 'https://1time.io' },
         mainEntityOfPage: 'https://1time.io/blog/secure-home-wifi-setup',
@@ -53,7 +53,7 @@ export default function Article() {
                     Your WiFi password is the front door to your home network. Every device — laptop, phone,
                     smart TV, baby monitor — connects through it. Here is how to lock it down properly.
                 </p>
-                <div className="article-meta">March 2026 &middot; 7 min read</div>
+                <div className="article-meta">Feb 20, 2026 &middot; 7 min read</div>
             </div>
 
             <div className="article-body">

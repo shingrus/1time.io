@@ -3,11 +3,11 @@ import PasswordGenerator from '../../components/PasswordGenerator';
 import {absoluteUrl, siteHost} from '../../utils/siteConfig';
 
 export const metadata = {
-    title: `Free Password Generator — ${siteHost}`,
+    title: `Free Strong Password Generator — ${siteHost}`,
     description: 'Generate strong, random passwords and passphrases in your browser. Client-side only, nothing sent to a server. Free, fast, and open source.',
     alternates: { canonical: '/password-generator' },
     openGraph: {
-        title: `Free Password Generator — ${siteHost}`,
+        title: `Free Strong Password Generator — ${siteHost}`,
         description: 'Generate strong, random passwords and passphrases in your browser. Client-side only, nothing sent to a server.',
         url: '/password-generator',
         images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'Free Password Generator' }],
@@ -17,12 +17,21 @@ export const metadata = {
 const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'WebApplication',
-    name: 'Free Password Generator',
+    name: 'Free Strong Password Generator',
     url: absoluteUrl('/password-generator'),
     description: 'Generate strong, random passwords and passphrases in your browser. Client-side only, nothing sent to a server.',
     applicationCategory: 'SecurityApplication',
     operatingSystem: 'Any',
     offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+};
+
+const breadcrumbJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://1time.io' },
+        { '@type': 'ListItem', position: 2, name: 'Strong Password Generator' },
+    ],
 };
 
 const faqJsonLd = {
@@ -41,6 +50,7 @@ export default function PasswordGeneratorPage() {
         <>
             <InlineCss file="styles/generator.css" />
             <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+            <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
             <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />
             <PasswordGenerator presetPath="/password-generator" />
         </>

@@ -23,8 +23,8 @@ const jsonLd = [
         '@type': 'Article',
         headline: 'How to Create a Strong Password for Your Crypto Wallet',
         description: 'Learn why crypto wallets need the strongest passwords possible and how to generate one that resists brute-force attacks.',
-        datePublished: '2026-03-18',
-        dateModified: '2026-03-18',
+        datePublished: '2026-03-14',
+        dateModified: '2026-03-21',
         author: { '@type': 'Organization', name: '1time.io', url: 'https://1time.io' },
         publisher: { '@type': 'Organization', name: '1time.io', url: 'https://1time.io' },
         mainEntityOfPage: 'https://1time.io/blog/password-for-crypto-wallet',
@@ -53,7 +53,7 @@ export default function Article() {
                     Your crypto wallet password is the last line of defense between your assets and an attacker.
                     A weak one can be cracked in hours. Here is how to make one that cannot.
                 </p>
-                <div className="article-meta">March 2026 &middot; 6 min read</div>
+                <div className="article-meta">Mar 14, 2026 &middot; 6 min read</div>
             </div>
 
             <div className="article-body">

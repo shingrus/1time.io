@@ -23,8 +23,8 @@ const jsonLd = [
         '@type': 'Article',
         headline: 'Is Slack Safe for Sharing Passwords? (No, and Here Is Why)',
         description: 'Slack stores all messages indefinitely and admins can read DMs. Learn why Slack is dangerous for sharing passwords and what secure alternatives exist.',
-        datePublished: '2026-03-18',
-        dateModified: '2026-03-18',
+        datePublished: '2025-12-29',
+        dateModified: '2026-03-19',
         author: { '@type': 'Organization', name: '1time.io', url: 'https://1time.io' },
         publisher: { '@type': 'Organization', name: '1time.io', url: 'https://1time.io' },
         mainEntityOfPage: 'https://1time.io/blog/is-slack-safe-for-passwords',
@@ -53,7 +53,7 @@ export default function Article() {
                     You probably share passwords over Slack DMs. So does everyone else. Here is why
                     that is a serious security risk and what to do instead.
                 </p>
-                <div className="article-meta">March 2026 &middot; 6 min read</div>
+                <div className="article-meta">Dec 29, 2025 &middot; 6 min read</div>
             </div>
 
             <div className="article-body">

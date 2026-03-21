@@ -23,8 +23,8 @@ const jsonLd = [
         '@type': 'Article',
         headline: '1time.io vs Password Pusher — Which Is More Secure?',
         description: 'Compare 1time.io and Password Pusher (pwpush.com) for sharing passwords securely.',
-        datePublished: '2026-03-18',
-        dateModified: '2026-03-18',
+        datePublished: '2026-01-29',
+        dateModified: '2026-03-20',
         author: { '@type': 'Organization', name: '1time.io', url: 'https://1time.io' },
         publisher: { '@type': 'Organization', name: '1time.io', url: 'https://1time.io' },
         mainEntityOfPage: 'https://1time.io/blog/password-pusher-alternative',
@@ -54,7 +54,7 @@ export default function Article() {
                     through expiring links. Here is how it compares to 1time.io in terms of
                     encryption, privacy, and everyday usability.
                 </p>
-                <div className="article-meta">March 2026 &middot; 5 min read</div>
+                <div className="article-meta">Jan 29, 2026 &middot; 5 min read</div>
             </div>
 
             <div className="article-body">

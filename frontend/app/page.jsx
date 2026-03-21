@@ -3,12 +3,12 @@ import NewMessage from '../components/NewMessage';
 import {siteHost, siteUrl} from '../utils/siteConfig';
 
 export const metadata = {
-    title: `${siteHost} — Share Secrets with Encrypted One-Time Links`,
-    description: 'Share passwords, tokens, and sensitive data through encrypted one-time self-destruct links. End-to-end encrypted — we never see your data. Free, fast, no signup required.',
+    title: `${siteHost} — Free Encrypted One-Time Links for Passwords & Secrets`,
+    description: 'Send passwords, API keys, and sensitive data through free encrypted one-time links that self-destruct after reading. Zero-knowledge encryption — we never see your data. No signup required.',
     alternates: { canonical: '/' },
     openGraph: {
-        title: `${siteHost} — Share Secrets with Self-Destruct Links`,
-        description: 'Send passwords and sensitive data through encrypted one-time links. End-to-end encrypted, auto-destroyed after reading.',
+        title: `${siteHost} — Free Encrypted One-Time Secret Links`,
+        description: 'Send passwords and sensitive data through encrypted one-time links. Zero-knowledge encryption, auto-destroyed after reading.',
         url: '/',
         images: [{ url: '/og-image.png', width: 1200, height: 630, alt: `${siteHost} — Encrypted One-Time Secret Links` }],
     },

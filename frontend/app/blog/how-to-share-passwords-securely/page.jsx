@@ -23,7 +23,7 @@ const jsonLd = [
         '@type': 'Article',
         headline: 'How to Share Passwords Securely with Your Team',
         description: 'Learn why sharing passwords via Slack, email, or spreadsheets is dangerous and discover secure alternatives like encrypted one-time links, password managers, and more.',
-        datePublished: '2025-03-01',
+        datePublished: '2025-12-01',
         dateModified: '2026-03-18',
         author: { '@type': 'Organization', name: '1time.io', url: 'https://1time.io' },
         publisher: { '@type': 'Organization', name: '1time.io', url: 'https://1time.io' },
@@ -53,7 +53,7 @@ export default function Article() {
                     Slack DMs, emails, and spreadsheets are the most common ways teams share passwords.
                     They are also the least secure. Here is what to do instead.
                 </p>
-                <div className="article-meta">March 2025 &middot; 7 min read</div>
+                <div className="article-meta">Dec 1, 2025 &middot; 7 min read</div>
             </div>
 
             <div className="article-body">

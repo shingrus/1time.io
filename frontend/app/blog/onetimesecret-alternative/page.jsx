@@ -23,7 +23,7 @@ const jsonLd = [
         '@type': 'Article',
         headline: '1time.io vs OneTimeSecret — A Transparent Comparison',
         description: 'An honest, transparent comparison between 1time.io and OneTimeSecret (onetimesecret.com). Compare encryption, privacy, features, pricing, and open-source status side by side.',
-        datePublished: '2025-03-01',
+        datePublished: '2025-12-15',
         dateModified: '2026-03-18',
         author: { '@type': 'Organization', name: '1time.io', url: 'https://1time.io' },
         publisher: { '@type': 'Organization', name: '1time.io', url: 'https://1time.io' },
@@ -55,7 +55,7 @@ export default function Article() {
                     comparison — where we are better, where we are similar, and where OneTimeSecret
                     has the edge.
                 </p>
-                <div className="article-meta">March 2025 &middot; 5 min read</div>
+                <div className="article-meta">Dec 15, 2025 &middot; 5 min read</div>
             </div>
 
             <div className="article-body">

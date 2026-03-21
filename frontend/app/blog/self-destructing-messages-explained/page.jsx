@@ -23,7 +23,7 @@ const jsonLd = [
         '@type': 'Article',
         headline: 'Self-Destructing Messages — How They Actually Work',
         description: 'Learn how self-destructing messages work under the hood: encryption, one-time access, and permanent deletion.',
-        datePublished: '2025-03-01',
+        datePublished: '2025-12-08',
         dateModified: '2026-03-18',
         author: { '@type': 'Organization', name: '1time.io', url: 'https://1time.io' },
         publisher: { '@type': 'Organization', name: '1time.io', url: 'https://1time.io' },
@@ -53,7 +53,7 @@ export default function Article() {
                     You send a message, the recipient reads it, and it vanishes forever.
                     But what actually happens under the hood? And are all self-destructing messages equally private?
                 </p>
-                <div className="article-meta">March 2025 &middot; 6 min read</div>
+                <div className="article-meta">Dec 8, 2025 &middot; 6 min read</div>
             </div>
 
             <div className="article-body">

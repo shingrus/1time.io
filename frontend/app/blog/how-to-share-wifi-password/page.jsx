@@ -23,8 +23,8 @@ const jsonLd = [
         '@type': 'Article',
         headline: 'How to Share Your WiFi Password Securely',
         description: 'Learn the safest ways to share your WiFi password with guests, Airbnb visitors, and coworkers without exposing your network to security risks.',
-        datePublished: '2026-03-18',
-        dateModified: '2026-03-18',
+        datePublished: '2026-02-05',
+        dateModified: '2026-03-20',
         author: { '@type': 'Organization', name: '1time.io', url: 'https://1time.io' },
         publisher: { '@type': 'Organization', name: '1time.io', url: 'https://1time.io' },
         mainEntityOfPage: 'https://1time.io/blog/how-to-share-wifi-password',
@@ -53,7 +53,7 @@ export default function Article() {
                     Whether you are hosting guests, running an Airbnb, or onboarding office visitors,
                     sharing WiFi passwords the wrong way can compromise your entire network.
                 </p>
-                <div className="article-meta">March 2026 &middot; 5 min read</div>
+                <div className="article-meta">Feb 5, 2026 &middot; 5 min read</div>
             </div>
 
             <div className="article-body">

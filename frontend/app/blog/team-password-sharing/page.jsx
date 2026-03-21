@@ -23,8 +23,8 @@ const jsonLd = [
         '@type': 'Article',
         headline: 'Team Password Sharing Without a Password Manager',
         description: 'Practical approaches to sharing passwords within a team when you do not have a password manager.',
-        datePublished: '2026-03-18',
-        dateModified: '2026-03-18',
+        datePublished: '2026-01-21',
+        dateModified: '2026-03-20',
         author: { '@type': 'Organization', name: '1time.io', url: 'https://1time.io' },
         publisher: { '@type': 'Organization', name: '1time.io', url: 'https://1time.io' },
         mainEntityOfPage: 'https://1time.io/blog/team-password-sharing',
@@ -53,7 +53,7 @@ export default function Article() {
                     Not every team has a password manager. Not every situation justifies one. Here is how
                     to share credentials securely with your team using tools that require zero setup.
                 </p>
-                <div className="article-meta">March 2026 &middot; 7 min read</div>
+                <div className="article-meta">Jan 21, 2026 &middot; 7 min read</div>
             </div>
 
             <div className="article-body">

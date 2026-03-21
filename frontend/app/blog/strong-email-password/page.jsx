@@ -23,8 +23,8 @@ const jsonLd = [
         '@type': 'Article',
         headline: 'How to Create a Strong Email Password',
         description: 'Your email password is the master key to your digital life. Learn how to create one that cannot be cracked.',
-        datePublished: '2026-03-18',
-        dateModified: '2026-03-18',
+        datePublished: '2026-02-13',
+        dateModified: '2026-03-20',
         author: { '@type': 'Organization', name: '1time.io', url: 'https://1time.io' },
         publisher: { '@type': 'Organization', name: '1time.io', url: 'https://1time.io' },
         mainEntityOfPage: 'https://1time.io/blog/strong-email-password',
@@ -53,7 +53,7 @@ export default function Article() {
                     Your email account is the skeleton key to your entire digital life. Anyone who gets in
                     can reset every other password you have. Here is how to protect it.
                 </p>
-                <div className="article-meta">March 2026 &middot; 6 min read</div>
+                <div className="article-meta">Feb 13, 2026 &middot; 6 min read</div>
             </div>
 
             <div className="article-body">

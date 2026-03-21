@@ -23,8 +23,8 @@ const jsonLd = [
         '@type': 'Article',
         headline: 'Database Password Security Best Practices',
         description: 'Learn how to generate and manage strong database passwords for PostgreSQL, MySQL, MongoDB, and Redis.',
-        datePublished: '2026-03-18',
-        dateModified: '2026-03-18',
+        datePublished: '2026-02-27',
+        dateModified: '2026-03-21',
         author: { '@type': 'Organization', name: '1time.io', url: 'https://1time.io' },
         publisher: { '@type': 'Organization', name: '1time.io', url: 'https://1time.io' },
         mainEntityOfPage: 'https://1time.io/blog/database-password-security',
@@ -53,7 +53,7 @@ export default function Article() {
                     Your database password is the front door to your application data.
                     Here is how to generate, store, rotate, and share database credentials without putting your data at risk.
                 </p>
-                <div className="article-meta">March 2026 &middot; 8 min read</div>
+                <div className="article-meta">Feb 27, 2026 &middot; 8 min read</div>
             </div>
 
             <div className="article-body">
