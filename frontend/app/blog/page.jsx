@@ -14,6 +14,14 @@ export const metadata = {
 
 const articles = [
     {
+        slug: 'share-secrets-from-terminal',
+        tag: 'DevOps',
+        title: 'How to Share Secrets from the Terminal with End-to-End Encryption',
+        excerpt: 'Use the 1time CLI to share passwords, API keys, and tokens from your terminal as encrypted one-time links. Pipe in a secret, get a self-destructing link.',
+        date: 'Mar 22, 2026',
+        readTime: '5 min read',
+    },
+    {
         slug: 'hkdf-key-derivation-explained',
         tag: 'How It Works',
         title: 'What Is HKDF and Why We Use It for End-to-End Encryption',

@@ -404,6 +404,56 @@
   line-height: 1.4;
 }
 
+/* Inline code */
+.article-body code {
+  font-family: 'SF Mono', 'Fira Code', 'Fira Mono', monospace;
+  font-size: 0.875em;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 2px 6px;
+}
+
+/* Code blocks */
+.code-block {
+  position: relative;
+  margin: 20px 0;
+  background: #1E1E1E;
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.code-block-copy {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: none;
+  border: none;
+  color: #666;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 4px;
+  line-height: 1;
+}
+
+.code-block-copy:hover { color: #aaa; }
+
+.code-block pre {
+  margin: 0;
+  padding: 16px;
+  overflow-x: auto;
+}
+
+.code-block code {
+  font-family: 'SF Mono', 'Fira Code', 'Fira Mono', monospace;
+  font-size: 14px;
+  line-height: 1.6;
+  color: #D4D4D4;
+  background: none;
+  border: none;
+  padding: 0;
+}
+
 @media (max-width: 480px) {
   .article h1 {
     font-size: 26px;

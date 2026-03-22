@@ -33,6 +33,36 @@ make build
 
 - `make build` builds the frontend production bundle into `frontend/build` and the backend binary into `bin/1time`.
 
+## CLI
+
+- First-party CLI lives in `cli/` and publishes as `@1time/cli`.
+- Runtime: Node.js 20+.
+- Entry point: `cli/index.mjs`
+- Command implementation: `cli/lib.mjs`
+- Shared encryption protocol: `cli/protocol.mjs`
+- The CLI syncs shared protocol code via `cli/scripts/sync-protocol.mjs` before `npm test`, `npm pack`, and `npm publish`.
+- Supported commands: `1time send`, `1time read`, `--host`, `-h` / `--help`
+- `1time send` input precedence is: piped `stdin`, `1TIME_SECRET`, then positional secret argument.
+- Prefer `stdin` for `send`; positional secrets leak through shell history and process listings.
+- `read` currently accepts the full secret link as a positional argument only, which also exposes decryption material in shell history and process listings.
+- Default host is `1time.io`; bare hosts normalize to `https://...`; plain `http://` is only allowed for loopback addresses such as `127.0.0.1`.
+
+Run locally:
+
+```bash
+node cli/index.mjs --help
+printf 'hello' | node cli/index.mjs send
+node cli/index.mjs read 'https://1time.io/v/#...'
+```
+
+Build/test:
+
+```bash
+cd cli
+npm test
+npm pack --dry-run
+```
+
 ## Frontend
 
 - Toolchain: Next.js 15 with static export

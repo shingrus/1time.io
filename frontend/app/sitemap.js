@@ -19,7 +19,8 @@ const coreRoutes = [
 ];
 
 const blogRoutes = [
-    ['/blog/', 0.8, '2026-03-21'],
+    ['/blog/', 0.8, '2026-03-22'],
+    ['/blog/share-secrets-from-terminal/', 0.8, '2026-03-22'],
     ['/blog/hkdf-key-derivation-explained/', 0.8, '2026-03-21'],
     ['/blog/password-for-crypto-wallet/', 0.8, '2026-03-21'],
     ['/blog/bitwarden-send-alternative/', 0.8, '2026-03-21'],
