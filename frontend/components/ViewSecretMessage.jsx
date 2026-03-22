@@ -156,7 +156,6 @@ export default function ViewSecretMessage() {
                                 </svg>
                                 {copied ? "Copied!" : "Copy"}
                             </button>
-                            <a href="/" className="btn btn-primary btn-sm">Create your own secret link</a>
                         </div>
                     </div>
                 )}
