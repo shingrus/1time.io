@@ -67,6 +67,17 @@ export default function AboutPage() {
             </div>
 
             <div className="about-section">
+                <h2>Command-line interface</h2>
+                <p>
+                    Share secrets directly from your terminal with the{' '}
+                    <a href="https://www.npmjs.com/package/@1time/cli" target="_blank" rel="noopener noreferrer">1time CLI</a>.
+                    Install it with <code>npm install -g @1time/cli</code>, then pipe secrets in and get a one-time link back.
+                    Same end-to-end encryption as the web app — your secret is encrypted locally before it ever leaves your machine.
+                    Works with self-hosted instances via the <code>--host</code> flag.
+                </p>
+            </div>
+
+            <div className="about-section">
                 <h2>Use cases</h2>
                 <ul>
                     <li>Sharing passwords with team members or clients</li>

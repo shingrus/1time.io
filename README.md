@@ -11,11 +11,14 @@
 
 <p align="center">
   <a href="https://1time.io"><img src="https://img.shields.io/badge/Try_it_live-1time.io-E8552D?style=for-the-badge" alt="Try it live"></a>
+  &nbsp;
+  <a href="https://www.npmjs.com/package/@1time/cli"><img src="https://img.shields.io/badge/CLI-npm_install_@1time/cli-CB3837?style=for-the-badge&logo=npm" alt="CLI"></a>
 </p>
 
 <p align="center">
   <a href="https://github.com/shingrus/1time/blob/master/LICENSE"><img src="https://img.shields.io/github/license/shingrus/1time?style=flat-square" alt="License"></a>
   <a href="https://github.com/shingrus/1time/releases"><img src="https://img.shields.io/github/v/release/shingrus/1time?style=flat-square" alt="Release"></a>
+  <a href="https://www.npmjs.com/package/@1time/cli"><img src="https://img.shields.io/npm/v/@1time/cli?style=flat-square&label=cli" alt="npm"></a>
   <a href="https://github.com/shingrus/1time/stargazers"><img src="https://img.shields.io/github/stars/shingrus/1time?style=flat-square" alt="Stars"></a>
   <a href="https://github.com/shingrus/1time"><img src="https://img.shields.io/github/last-commit/shingrus/1time?style=flat-square" alt="Last commit"></a>
 </p>
@@ -37,6 +40,7 @@
 | **🏠** | **Self-hosted** | Run your own instance with Docker Compose in under 2 minutes. |
 | **👤** | **No signup required** | Paste a secret, get a link, share it. No accounts, no tracking. |
 | **🔑** | **Built-in generators** | Password, passphrase, API key, and WiFi password generators included. |
+| **💻** | **First-party CLI** | `npm i -g @1time/cli` — pipe secrets from your terminal, perfect for DevOps workflows. |
 | **⚡** | **Lightweight stack** | Go + Redis backend, static Next.js frontend. Minimal resource usage. |
 
 ---
@@ -74,6 +78,21 @@ The encryption key stays in the URL fragment (`#`), which is **never sent to the
 ### Use the hosted version
 
 **[1time.io](https://1time.io)** — free, no signup, ready to use.
+
+### CLI
+
+```bash
+npm install -g @1time/cli
+
+# Send a secret
+printf 'postgres://user:pass@host/db' | 1time send
+# → https://1time.io/v/#...
+
+# Read a secret
+1time read 'https://1time.io/v/#...'
+```
+
+Pipe-friendly, no browser needed. Works with self-hosted instances via `--host`. See [CLI docs](cli/README.md) for more.
 
 ### Self-host with Docker Compose
 
@@ -122,6 +141,7 @@ Put your own reverse proxy (Caddy, Traefik, nginx) in front for HTTPS/TLS termin
 | Self-destructing after first read | **Yes** | Yes | Yes | Optional | Optional |
 | No signup required | **Yes** | Yes | Yes | Yes | Yes |
 | Self-hosted Docker Compose | **Yes** | Yes | Yes | Yes | Yes |
+| First-party CLI | **Yes** | No | Yes | No | Yes |
 | Built-in password generators | **Yes** | No | No | No | No |
 | Lightweight (Go + static HTML) | **Yes** | No (Ruby) | Yes (Go) | No (PHP) | No (Ruby) |
 | Open source | **MIT** | MIT | Apache-2.0 | zlib | Apache-2.0 |
@@ -144,6 +164,7 @@ Put your own reverse proxy (Caddy, Traefik, nginx) in front for HTTPS/TLS termin
 | Backend | Go (stdlib, no frameworks) |
 | Storage | Redis with RDB persistence |
 | Frontend | Next.js (static export) |
+| CLI | Node.js ([`@1time/cli`](https://www.npmjs.com/package/@1time/cli)) |
 | Encryption | Web Crypto API (AES-256-GCM, HKDF-SHA256) |
 | Deployment | Docker Compose + nginx |
 
@@ -185,6 +206,17 @@ npm run build
 
 # Tests
 npm test
+```
+
+### CLI
+
+```bash
+cd cli
+npm install
+npm test
+
+# Run locally against dev backend
+printf 'hello' | node index.mjs send --host http://127.0.0.1:8080
 ```
 
 ### Full build

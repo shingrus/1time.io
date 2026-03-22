@@ -176,6 +176,13 @@ export default function NewMessage() {
                         </div>
                         <p>Create a strong, high-entropy password in your browser for critical accounts.</p>
                     </Link>
+                    <a href="https://www.npmjs.com/package/@1time/cli" className="feature-card feature-card-link" target="_blank" rel="noopener noreferrer">
+                        <div className="feature-card-header">
+                            <div className="feature-card-icon" aria-hidden="true">&#x1f4bb;</div>
+                            <h2>CLI</h2>
+                        </div>
+                        <p>Share secrets from your terminal. <code style={{fontSize: '0.85em'}}>printf 'secret' | 1time send</code></p>
+                    </a>
                 </div>
 
                 <h2>How it works</h2>

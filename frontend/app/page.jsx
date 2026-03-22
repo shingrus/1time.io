@@ -23,7 +23,7 @@ const jsonLd = {
     applicationCategory: 'SecurityApplication',
     operatingSystem: 'Any',
     offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
-    featureList: 'End-to-end encryption, One-time access, Auto-expiry, Password generator, Zero-knowledge architecture',
+    featureList: 'End-to-end encryption, One-time access, Auto-expiry, Password generator, CLI, Zero-knowledge architecture, Self-hosted',
 };
 
 export default function HomePage() {
