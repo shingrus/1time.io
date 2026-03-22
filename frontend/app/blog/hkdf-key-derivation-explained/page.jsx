@@ -125,7 +125,7 @@ export default function Article() {
                     "concentrates" the randomness into a clean, uniformly distributed key.
                 </p>
                 <p>
-                    At <Link href="/">1time.io</Link>, our input is a 16-character random string generated using the
+                    At <Link href="/">1time.io</Link>, our input is a 20-character random string generated using the
                     Web Crypto API, and our salt is <code>onetimelink:v2</code>.
                 </p>
 
@@ -355,9 +355,8 @@ export default function Article() {
 
                 <h3>1. Key material generation</h3>
                 <p>
-                    A 16-character random string is generated using <code>crypto.getRandomValues()</code> with
-                    rejection sampling to avoid modulo bias. The character set
-                    is <code>0-9A-Za-z</code> (62 characters). If the user set an optional passphrase,
+                    A 20-character random string is generated using <code>crypto.getRandomValues()</code>. The character set
+                    is <code>A-Za-z0-9-_</code> (64 URL-safe characters). If the user set an optional passphrase,
                     it is prepended to the random string to form the full secret
                     key: <code>fullSecretKey = userPassphrase + randomKey</code>.
                 </p>

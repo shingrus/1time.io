@@ -9,9 +9,9 @@ import {
     hashSecretKey,
     normalizeOrigin,
     parseSecretLink,
-} from '../frontend/utils/protocol.mjs';
+} from './protocol.mjs';
 
-const secretArgWarning = 'Warning: --secret passes sensitive data in argv and may leak via shell history or process listings.\n';
+const secretArgWarning = 'Warning: passing the secret in argv may leak via shell history or process listings.\n';
 
 function write(stream, text) {
     if (text) {
@@ -23,14 +23,14 @@ export function getHelpText() {
     return `1time v0
 
 Usage:
-  1time send [--host <host-or-origin>] [--secret <secret>]
+  1time send [--host <host-or-origin>] [secret]
   1time read [--host <host-or-origin>] <link>
   1time --help
 
 Input precedence for send:
   1. piped stdin
   2. 1TIME_SECRET
-  3. --secret (warns because argv is not safe)
+  3. positional secret argument (warns because argv is not safe)
 
 Notes:
   - read only supports links passed as an argument in v0
@@ -65,7 +65,7 @@ export async function resolveSecret({stdin, env, values, stderr}) {
         return values.secret;
     }
 
-    throw new Error('Missing secret. Provide it via stdin, 1TIME_SECRET, or --secret.');
+    throw new Error('Missing secret. Provide it via stdin, 1TIME_SECRET, or a positional argument.');
 }
 
 export async function postJson({origin, path, payload, fetchImpl}) {
@@ -148,9 +148,6 @@ function parseSendArgs(args) {
             host: {
                 type: 'string',
             },
-            secret: {
-                type: 'string',
-            },
         },
     });
 }
@@ -196,13 +193,21 @@ export async function run(argv = process.argv.slice(2), io = {}) {
             write(stdout, getHelpText());
             return 0;
         }
-        if (positionals.length > 0) {
-            write(stderr, 'send does not accept positional arguments.\n');
+        if (positionals.length > 1) {
+            write(stderr, 'send accepts at most one positional secret argument.\n');
             return 1;
         }
 
         try {
-            const secret = await resolveSecret({stdin, env, values, stderr});
+            const secret = await resolveSecret({
+                stdin,
+                env,
+                values: {
+                    ...values,
+                    secret: positionals[0],
+                },
+                stderr,
+            });
             const link = await createSecretLink({
                 host: values.host,
                 secret,

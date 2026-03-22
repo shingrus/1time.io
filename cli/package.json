@@ -1,0 +1,49 @@
+{
+  "name": "@1time/cli",
+  "version": "0.2.0",
+  "description": "Command-line client for end-to-end encrypted one-time secret sharing on 1time.io",
+  "type": "module",
+  "bin": {
+    "1time": "./index.mjs"
+  },
+  "keywords": [
+    "1time",
+    "1time.io",
+    "cli",
+    "one-time secret",
+    "secret sharing",
+    "self-destructing links",
+    "encrypted links",
+    "password sharing",
+    "api key sharing",
+    "security"
+  ],
+  "homepage": "https://1time.io",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/shingrus/1time.git",
+    "directory": "cli"
+  },
+  "bugs": {
+    "url": "https://github.com/shingrus/1time/issues"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "README.md",
+    "index.mjs",
+    "lib.mjs",
+    "protocol.mjs"
+  ],
+  "scripts": {
+    "sync:protocol": "node ./scripts/sync-protocol.mjs",
+    "pretest": "npm run sync:protocol",
+    "test": "node --test ./lib.test.mjs",
+    "prepack": "npm run sync:protocol",
+    "pack:dry": "npm pack --dry-run"
+  }
+}

@@ -55,11 +55,11 @@ test('run send prefers stdin over env and prints the created link', async () => 
     assert.match(stdout.getOutput(), /abc123/);
 });
 
-test('run send warns when the secret is passed via argv', async () => {
+test('run send warns when the secret is passed as a positional argv argument', async () => {
     const stdout = createWritableCapture();
     const stderr = createWritableCapture();
 
-    const exitCode = await run(['send', '--secret', 'argv secret'], {
+    const exitCode = await run(['send', 'argv secret'], {
         stdin: createStdin('', true),
         stdout: stdout.stream,
         stderr: stderr.stream,
@@ -74,7 +74,7 @@ test('run send warns when the secret is passed via argv', async () => {
     });
 
     assert.equal(exitCode, 0);
-    assert.match(stderr.getOutput(), /Warning: --secret/);
+    assert.match(stderr.getOutput(), /Warning: passing the secret in argv/);
     assert.match(stdout.getOutput(), /^https:\/\/1time\.io\/v\/#/);
 });
 

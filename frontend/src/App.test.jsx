@@ -23,7 +23,7 @@ import ShowNewLink from '../components/ShowNewLink';
 import ViewSecretMessage from '../components/ViewSecretMessage';
 import PasswordGenerator from '../components/PasswordGenerator';
 import StatsSnapshot from '../components/StatsSnapshot';
-import { Constants, decryptSecretMessage, encryptSecretMessage, getStatsPageName, hashSecretKey } from '../utils/util';
+import { Constants, decryptSecretMessage, encryptSecretMessage, getRandomString, getStatsPageName, hashSecretKey } from '../utils/util';
 
 beforeEach(() => {
     vi.clearAllMocks();
@@ -140,12 +140,12 @@ describe('NewMessage component', () => {
 
 describe('ShowNewLink component', () => {
     it('displays the generated link and auto-copies it', async () => {
-        render(<ShowNewLink newLink="http://localhost:3001/v/#testRandomKey1testId123" onReset={vi.fn()} />);
+        render(<ShowNewLink newLink="http://localhost:3001/v/#AbCdEfGhIjKlMnOpQr-_testId123" onReset={vi.fn()} />);
 
         const linkInput = await screen.findByLabelText(/secret one-time link/i);
         expect(linkInput).toBeInTheDocument();
         expect(linkInput.value).toContain('/v/#');
-        expect(linkInput.value).toContain('testRandomKey1');
+        expect(linkInput.value).toContain('AbCdEfGhIjKlMnOpQr-_');
         expect(linkInput.value).toContain('testId123');
 
         await waitFor(() => {
@@ -287,5 +287,13 @@ describe('crypto util', () => {
 
         await expect(hashSecretKey(fullSecretKey)).resolves.toBe(hashedKey);
         await expect(decryptSecretMessage(encryptedMessage, fullSecretKey)).resolves.toBe('hello hkdf');
+    });
+
+    it('generates 20-character url-safe random keys', () => {
+        const randomKey = getRandomString(Constants.randomKeyLen);
+
+        expect(Constants.randomKeyLen).toBe(20);
+        expect(randomKey).toHaveLength(20);
+        expect(randomKey).toMatch(/^[A-Za-z0-9_-]+$/);
     });
 });
