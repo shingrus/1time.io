@@ -27,8 +27,9 @@ const jsonLd = [
         datePublished: '2026-03-22',
         dateModified: '2026-03-22',
         author: { '@type': 'Organization', name: '1time.io', url: 'https://1time.io' },
-        publisher: { '@type': 'Organization', name: '1time.io', url: 'https://1time.io' },
+        publisher: { '@type': 'Organization', name: '1time.io', url: 'https://1time.io', logo: { '@type': 'ImageObject', url: 'https://1time.io/logo-512.png', width: 512, height: 512 } },
         mainEntityOfPage: 'https://1time.io/blog/share-secrets-from-terminal',
+        image: ['https://1time.io/og-image.png'],
     },
     {
         '@context': 'https://schema.org',
@@ -36,7 +37,7 @@ const jsonLd = [
         itemListElement: [
             { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://1time.io' },
             { '@type': 'ListItem', position: 2, name: 'Blog', item: 'https://1time.io/blog' },
-            { '@type': 'ListItem', position: 3, name: 'Share Secrets from the Terminal' },
+            { '@type': 'ListItem', position: 3, name: 'Share Secrets from the Terminal', item: 'https://1time.io/blog/share-secrets-from-terminal' },
         ],
     },
     {

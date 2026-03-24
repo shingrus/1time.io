@@ -1,24 +1,41 @@
 import '../../styles/about.css';
 import Link from 'next/link';
-import {siteHost} from '../../utils/siteConfig';
+import {absoluteUrl, siteHost, siteUrl} from '../../utils/siteConfig';
 
 export const metadata = {
-    title: `About — ${siteHost}`,
+    title: `About ${siteHost} — Zero-Knowledge Secret Sharing, Open Source`,
     description: `Learn how ${siteHost} uses end-to-end encryption to share secrets securely. Open source, zero-knowledge, no accounts required.`,
     alternates: { canonical: '/about' },
     openGraph: {
-        title: `About — ${siteHost}`,
+        title: `About ${siteHost} — Zero-Knowledge Secret Sharing, Open Source`,
         description: `Learn how ${siteHost} uses end-to-end encryption to share secrets securely.`,
         url: '/about',
         images: [{ url: '/og-image.png', width: 1200, height: 630, alt: `About ${siteHost}` }],
     },
 };
 
+const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'AboutPage',
+    url: `${siteUrl}about/`,
+    name: `About ${siteHost} — Zero-Knowledge Secret Sharing, Open Source`,
+    description: `Learn how ${siteHost} uses end-to-end encryption to share secrets securely. Open source, zero-knowledge, no accounts required.`,
+    mainEntity: {
+        '@type': 'Organization',
+        '@id': `${siteUrl}#organization`,
+        name: siteHost,
+        url: siteUrl,
+        description: 'Free encrypted one-time secret sharing with zero-knowledge architecture.',
+    },
+};
+
 export default function AboutPage() {
     return (
         <div className="about-page">
+            <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
             <h1>About {siteHost}</h1>
             <p className="subtitle">Secure one-time secret sharing, built for simplicity.</p>
+            <p className="article-last-updated" style={{fontSize: '0.85em', color: 'var(--color-muted, #888)', marginTop: 4}}>Last updated: March 2026</p>
 
             <div className="about-section">
                 <h2>Why {siteHost}?</h2>
@@ -37,7 +54,7 @@ export default function AboutPage() {
                 <h2>How it works</h2>
                 <ul className="step-list">
                     <li>You type or paste your secret into the message box</li>
-                    <li>Your browser encrypts it with AES using a unique generated key</li>
+                    <li>Your browser derives a cryptographic key using HKDF (RFC 5869) and encrypts your secret with AES-GCM-256</li>
                     <li>Only the encrypted ciphertext is sent to our server</li>
                     <li>You get a one-time link containing the decryption key</li>
                     <li>Your recipient opens the link — their browser decrypts the message</li>

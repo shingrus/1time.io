@@ -1,11 +1,26 @@
 import Link from 'next/link';
 
+const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    url: 'https://1time.io/blog/',
+    name: 'Password Security Blog — Guides on Encryption and Secure Sharing | 1time.io',
+    description: 'Guides on secure password sharing, self-destructing messages, and protecting sensitive data online. Learn best practices for zero-knowledge encryption.',
+    breadcrumb: {
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+            { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://1time.io' },
+            { '@type': 'ListItem', position: 2, name: 'Blog', item: 'https://1time.io/blog' },
+        ],
+    },
+};
+
 export const metadata = {
-    title: 'Blog — 1time.io',
+    title: 'Password Security Blog — Guides on Encryption and Secure Sharing | 1time.io',
     description: 'Guides on secure password sharing, self-destructing messages, and protecting sensitive data online. Learn best practices for zero-knowledge encryption.',
     alternates: { canonical: '/blog' },
     openGraph: {
-        title: 'Blog — 1time.io',
+        title: 'Password Security Blog — Encryption and Secure Sharing | 1time.io',
         description: 'Guides on secure password sharing, self-destructing messages, and protecting sensitive data online.',
         url: '/blog',
         images: [{ url: '/og-image.png', width: 1200, height: 630, alt: '1time.io Blog' }],
@@ -154,8 +169,14 @@ const articles = [
 export default function BlogIndex() {
     return (
         <div className="blog-index">
+            <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
             <h1>Blog</h1>
             <p className="subtitle">Guides on secure sharing, encryption, and protecting sensitive data.</p>
+            <p className="blog-intro">
+                Practical guides on password security, zero-knowledge encryption, and safe secret sharing for developers and teams.
+                Learn why common methods like Slack DMs and email are insecure, how to share API keys and credentials safely,
+                and how the encryption behind 1time.io actually works.
+            </p>
 
             <div className="blog-list">
                 {articles.map((article) => (

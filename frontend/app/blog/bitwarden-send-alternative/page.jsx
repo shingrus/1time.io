@@ -26,8 +26,9 @@ const jsonLd = [
         datePublished: '2026-03-06',
         dateModified: '2026-03-21',
         author: { '@type': 'Organization', name: '1time.io', url: 'https://1time.io' },
-        publisher: { '@type': 'Organization', name: '1time.io', url: 'https://1time.io' },
+        publisher: { '@type': 'Organization', name: '1time.io', url: 'https://1time.io', logo: { '@type': 'ImageObject', url: 'https://1time.io/logo-512.png', width: 512, height: 512 } },
         mainEntityOfPage: 'https://1time.io/blog/bitwarden-send-alternative',
+        image: ['https://1time.io/og-image.png'],
     },
     {
         '@context': 'https://schema.org',
@@ -35,7 +36,7 @@ const jsonLd = [
         itemListElement: [
             { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://1time.io' },
             { '@type': 'ListItem', position: 2, name: 'Blog', item: 'https://1time.io/blog' },
-            { '@type': 'ListItem', position: 3, name: '1time.io vs Bitwarden Send' },
+            { '@type': 'ListItem', position: 3, name: '1time.io vs Bitwarden Send', item: 'https://1time.io/blog/bitwarden-send-alternative' },
         ],
     },
 ];

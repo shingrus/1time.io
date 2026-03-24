@@ -51,10 +51,20 @@ export default function RootLayout({children}) {
                     dangerouslySetInnerHTML={{ __html: JSON.stringify({
                         '@context': 'https://schema.org',
                         '@type': 'Organization',
+                        '@id': `${siteUrl}#organization`,
                         name: siteHost,
                         url: siteUrl,
-                        logo: absoluteUrl('/favicon.svg'),
-                        sameAs: ['https://github.com/shingrus/1time'],
+                        description: 'Free encrypted one-time secret sharing with zero-knowledge architecture. Share passwords, API keys, and secrets via self-destructing links. No signup required, open source.',
+                        logo: {
+                            '@type': 'ImageObject',
+                            url: absoluteUrl('/logo-512.png'),
+                            width: 512,
+                            height: 512,
+                        },
+                        sameAs: [
+                            'https://github.com/shingrus/1time',
+                            'https://www.npmjs.com/package/@1time/cli',
+                        ],
                     }) }}
                 />
                 <script

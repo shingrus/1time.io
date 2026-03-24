@@ -31,7 +31,7 @@ const breadcrumbJsonLd = {
     itemListElement: [
         { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://1time.io' },
         { '@type': 'ListItem', position: 2, name: 'Password Generator', item: 'https://1time.io/password-generator' },
-        { '@type': 'ListItem', position: 3, name: '15-Character Password Generator' },
+        { '@type': 'ListItem', position: 3, name: '15-Character Password Generator', item: 'https://1time.io/password-generator-15-characters' },
     ],
 };
 

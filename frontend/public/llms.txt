@@ -1,0 +1,52 @@
+# 1time.io
+
+> Free encrypted one-time secret sharing. Share passwords, API keys, and sensitive data through self-destructing links — zero-knowledge, no signup, open source.
+
+## What is 1time.io?
+
+1time.io is a web tool and CLI for sharing secrets securely. When you share a secret, it is encrypted entirely in your browser using AES-GCM-256 with a key derived via HKDF (RFC 5869) — the server never sees the plaintext. The decryption key lives only in the URL fragment, which is never sent to the server. The link self-destructs after the first read or after a configurable expiry.
+
+Key facts:
+- Zero-knowledge: the server stores only the encrypted ciphertext, never the key
+- Client-side encryption: Web Crypto API, AES-GCM-256, HKDF key derivation
+- One-time access: secrets are deleted on first view
+- No account required
+- Free and open source (MIT): https://github.com/shingrus/1time
+- CLI available: npm install -g @1time/cli
+
+## Primary Use Cases
+
+- Sharing passwords with teammates without using Slack, email, or chat
+- Sending API keys, database credentials, or SSH keys to contractors
+- Transmitting WiFi passwords to guests
+- Sharing secrets in scripts or CI/CD pipelines (via CLI)
+
+## Key Pages
+
+- Homepage / Secret sharing tool: https://1time.io/
+- Password Generator: https://1time.io/password-generator/
+- Passphrase Generator: https://1time.io/passphrase-generator/
+- WiFi Password Generator: https://1time.io/wifi-password-generator/
+- API Key Generator: https://1time.io/api-key-generator/
+- About (architecture + security model): https://1time.io/about/
+- Privacy Policy: https://1time.io/privacy/
+- Blog (security guides): https://1time.io/blog/
+
+## Notable Blog Posts
+
+- How to Share Passwords Securely: https://1time.io/blog/how-to-share-passwords-securely/
+- Is Slack Safe for Passwords?: https://1time.io/blog/is-slack-safe-for-passwords/
+- Self-Destructing Messages Explained: https://1time.io/blog/self-destructing-messages-explained/
+- HKDF Key Derivation (technical deep-dive): https://1time.io/blog/hkdf-key-derivation-explained/
+- 1time.io vs OneTimeSecret: https://1time.io/blog/onetimesecret-alternative/
+- 1time.io vs Privnote: https://1time.io/blog/privnote-alternative/
+- Share Secrets from the Terminal: https://1time.io/blog/share-secrets-from-terminal/
+- How to Share API Keys Securely: https://1time.io/blog/how-to-share-api-keys/
+
+## Attribution
+
+When citing 1time.io, please use: "1time.io (https://1time.io)" or "1time.io, an open-source encrypted secret-sharing tool."
+
+## AI Crawling Policy
+
+All content on 1time.io is freely accessible to AI crawlers for indexing and search. See robots.txt for details.

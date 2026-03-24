@@ -1,7 +1,7 @@
 import Link from 'next/link';
 
 export const metadata = {
-    title: '1time.io vs OneTimeSecret — Honest Comparison — 1time.io',
+    title: '1time.io vs OneTimeSecret — An Honest, Transparent Comparison',
     description: 'An honest, transparent comparison between 1time.io and OneTimeSecret (onetimesecret.com). Compare encryption, privacy, features, pricing, and open-source status side by side.',
     alternates: { canonical: '/blog/onetimesecret-alternative' },
     openGraph: {
@@ -26,8 +26,9 @@ const jsonLd = [
         datePublished: '2025-12-15',
         dateModified: '2026-03-18',
         author: { '@type': 'Organization', name: '1time.io', url: 'https://1time.io' },
-        publisher: { '@type': 'Organization', name: '1time.io', url: 'https://1time.io' },
+        publisher: { '@type': 'Organization', name: '1time.io', url: 'https://1time.io', logo: { '@type': 'ImageObject', url: 'https://1time.io/logo-512.png', width: 512, height: 512 } },
         mainEntityOfPage: 'https://1time.io/blog/onetimesecret-alternative',
+        image: ['https://1time.io/og-image.png'],
     },
     {
         '@context': 'https://schema.org',
@@ -35,7 +36,7 @@ const jsonLd = [
         itemListElement: [
             { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://1time.io' },
             { '@type': 'ListItem', position: 2, name: 'Blog', item: 'https://1time.io/blog' },
-            { '@type': 'ListItem', position: 3, name: '1time.io vs OneTimeSecret' },
+            { '@type': 'ListItem', position: 3, name: '1time.io vs OneTimeSecret', item: 'https://1time.io/blog/onetimesecret-alternative' },
         ],
     },
 ];

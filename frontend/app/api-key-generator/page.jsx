@@ -30,7 +30,7 @@ const breadcrumbJsonLd = {
     '@type': 'BreadcrumbList',
     itemListElement: [
         { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://1time.io' },
-        { '@type': 'ListItem', position: 2, name: 'API Key Generator' },
+        { '@type': 'ListItem', position: 2, name: 'API Key Generator', item: 'https://1time.io/api-key-generator' },
     ],
 };
 

@@ -3,7 +3,7 @@ import PasswordGenerator from '../../components/PasswordGenerator';
 import {absoluteUrl} from '../../utils/siteConfig';
 
 export const metadata = {
-    title: 'Passphrase Generator — Memorable & Secure Multi-Word Passwords',
+    title: 'Passphrase Generator — Memorable & Secure Multi-Word Passwords | 1time.io',
     description: 'Generate memorable multi-word passphrases that are easy to type and hard to crack. Uses cryptographic randomness, runs entirely in your browser.',
     alternates: { canonical: '/passphrase-generator' },
     openGraph: {
@@ -30,7 +30,7 @@ const breadcrumbJsonLd = {
     '@type': 'BreadcrumbList',
     itemListElement: [
         { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://1time.io' },
-        { '@type': 'ListItem', position: 2, name: 'Passphrase Generator' },
+        { '@type': 'ListItem', position: 2, name: 'Passphrase Generator', item: 'https://1time.io/passphrase-generator' },
     ],
 };
 
