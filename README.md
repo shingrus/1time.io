@@ -174,9 +174,9 @@ Put your own reverse proxy (Caddy, Traefik, nginx) in front for HTTPS/TLS termin
 
 ### Requirements
 
-- Go 1.25+
-- Redis 8+
-- Node.js 25+ and npm
+- Go 1.22+
+- Redis 7+
+- Node.js 20+ and npm
 
 ### Backend
 
