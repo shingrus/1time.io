@@ -233,6 +233,9 @@ export default function Article() {
                     In practice, most teams use a combination. A password manager for day-to-day
                     internal credentials, a secrets manager for infrastructure, and one-time links
                     for everything else — especially sharing with people outside your organization.
+                    For nearby handoffs or cross-device logins, a
+                    {' '}<Link href="/share-passwords-with-qr-code">one-time QR code version of the link</Link>
+                    {' '}can be even faster.
                 </p>
 
                 <h2>Best Practices for Any Method</h2>
@@ -278,9 +281,9 @@ export default function Article() {
                         <span>How to Send Passwords Over Email</span>
                         <span>Why emailing passwords is dangerous and what to do instead.</span>
                     </Link>
-                    <Link href="/blog/onetimesecret-alternative" className="related-article-card">
-                        <span>1time.io vs OneTimeSecret</span>
-                        <span>A transparent feature-by-feature comparison.</span>
+                    <Link href="/blog/how-to-share-passwords-with-qr-code" className="related-article-card">
+                        <span>How to Share Passwords with a QR Code</span>
+                        <span>When QR is better than copy-paste for one-time secret sharing.</span>
                     </Link>
                 </div>
             </div>

@@ -4,11 +4,11 @@ import {siteHost, siteUrl} from '../utils/siteConfig';
 
 export const metadata = {
     title: `Share Passwords Securely — Free Encrypted One-Time Links | ${siteHost}`,
-    description: 'Share passwords and secrets through encrypted one-time links that self-destruct after reading. Zero-knowledge encryption, free, open source.',
+    description: 'Share passwords and secrets through encrypted one-time links and QR codes that self-destruct after reading. Zero-knowledge encryption, free, open source.',
     alternates: { canonical: '/' },
     openGraph: {
         title: `${siteHost} — Free Encrypted One-Time Secret Links`,
-        description: 'Send passwords and sensitive data through encrypted one-time links. Zero-knowledge encryption, auto-destroyed after reading.',
+        description: 'Send passwords and sensitive data through encrypted one-time links and QR codes. Zero-knowledge encryption, auto-destroyed after reading.',
         url: '/',
         images: [{ url: '/og-image.png', width: 1200, height: 630, alt: `${siteHost} — Encrypted One-Time Secret Links` }],
     },
@@ -23,7 +23,7 @@ const jsonLd = {
     applicationCategory: 'SecurityApplication',
     operatingSystem: 'Any',
     offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
-    featureList: 'End-to-end encryption, One-time access, Auto-expiry, Password generator, CLI, Zero-knowledge architecture, Self-hosted',
+    featureList: 'End-to-end encryption, One-time access, QR code sharing, Auto-expiry, Password generator, CLI, Zero-knowledge architecture, Self-hosted',
 };
 
 export default function HomePage() {

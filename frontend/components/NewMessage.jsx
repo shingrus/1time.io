@@ -177,6 +177,13 @@ export default function NewMessage() {
                         </div>
                         <p>Create a strong, high-entropy password in your browser for critical accounts.</p>
                     </Link>
+                    <Link href="/share-passwords-with-qr-code" className="feature-card feature-card-link">
+                        <div className="feature-card-header">
+                            <div className="feature-card-icon" aria-hidden="true">&#x1f4f1;</div>
+                            <h2>QR Code Sharing</h2>
+                        </div>
+                        <p>Reveal a one-time QR code for nearby or cross-device password sharing.</p>
+                    </Link>
                     <a href="https://www.npmjs.com/package/@1time/cli" className="feature-card feature-card-link" target="_blank" rel="noopener noreferrer">
                         <div className="feature-card-header">
                             <div className="feature-card-icon" aria-hidden="true">&#x1f4bb;</div>
@@ -216,6 +223,7 @@ export default function NewMessage() {
                 <h2>From the blog</h2>
                 <nav className="seo-nav">
                     <Link href="/blog/stop-sending-passwords-over-slack">Stop Sending Passwords Over Slack</Link>
+                    <Link href="/blog/how-to-share-passwords-with-qr-code">How to Share Passwords with a QR Code</Link>
                     <Link href="/blog/onetimesecret-alternative">1time.io vs OneTimeSecret</Link>
                     <Link href="/blog/privnote-alternative">1time.io vs Privnote</Link>
                     <Link href="/blog/is-slack-safe-for-passwords">Is Slack Safe for Passwords?</Link>

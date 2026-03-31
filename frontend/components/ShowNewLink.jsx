@@ -4,11 +4,14 @@ import '../styles/link.css';
 import {useEffect, useRef, useState} from "react";
 import {useRouter} from "next/navigation";
 import {copyTextToClipboard} from '../utils/util';
+import {createQrSvg} from '../utils/qr';
 
 export default function ShowNewLink({newLink = "", onReset}) {
     const router = useRouter();
     const [copied, setCopied] = useState(false);
     const [didAutoCopy, setDidAutoCopy] = useState(false);
+    const [isQrLoading, setIsQrLoading] = useState(false);
+    const [qrSvg, setQrSvg] = useState("");
     const resetCopiedTimeoutRef = useRef(null);
 
     useEffect(() => {
@@ -61,6 +64,21 @@ export default function ShowNewLink({newLink = "", onReset}) {
         router.push('/');
     };
 
+    const handleToggleQr = async () => {
+        if (qrSvg) {
+            setQrSvg("");
+            return;
+        }
+
+        setIsQrLoading(true);
+
+        try {
+            setQrSvg(await createQrSvg(newLink));
+        } finally {
+            setIsQrLoading(false);
+        }
+    };
+
     return (
         <div className="link-display">
             {!newLink && (
@@ -92,6 +110,41 @@ export default function ShowNewLink({newLink = "", onReset}) {
                 value={newLink}
                 readOnly
             />
+            {qrSvg && (
+                <section
+                    aria-live="polite"
+                    style={{
+                        marginTop: 18,
+                        padding: 18,
+                        borderRadius: 'var(--radius-lg)',
+                        border: '1px solid rgba(15, 23, 42, 0.08)',
+                        background: 'linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 250, 252, 0.98))',
+                        boxShadow: '0 18px 40px rgba(15, 23, 42, 0.08)',
+                    }}
+                >
+                    <p className="link-display-label" style={{marginBottom: 0}}>Scan from another device</p>
+                    <p style={{margin: '12px auto 0', maxWidth: 360, fontSize: 13, lineHeight: 1.6, color: 'var(--text-muted)'}}>
+                        This QR encodes the same one-time link shown above.
+                    </p>
+                    <div
+                        style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            marginTop: 12,
+                            padding: 14,
+                            borderRadius: 20,
+                            background: '#ffffff',
+                            boxShadow: 'inset 0 0 0 1px rgba(15, 23, 42, 0.06)',
+                        }}
+                    >
+                        <div
+                            aria-label="Secret link QR code"
+                            dangerouslySetInnerHTML={{__html: qrSvg}}
+                        />
+                    </div>
+                </section>
+            )}
             <div className="link-actions">
                 <button
                     className="btn btn-success btn-lg"
@@ -108,6 +161,26 @@ export default function ShowNewLink({newLink = "", onReset}) {
                 </button>
                 <button
                     className="btn btn-secondary btn-lg"
+                    disabled={isQrLoading}
+                    type="button"
+                    onClick={handleToggleQr}
+                >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        <path d="M3 3h6v6H3z"/>
+                        <path d="M15 3h6v6h-6z"/>
+                        <path d="M3 15h6v6H3z"/>
+                        <path d="M15 15h3"/>
+                        <path d="M18 12v3"/>
+                        <path d="M21 15v6"/>
+                        <path d="M15 21h3"/>
+                        <path d="M21 21h.01"/>
+                    </svg>
+                    {isQrLoading ? "Loading QR..." : qrSvg ? "Hide QR code" : "Show QR code"}
+                </button>
+            </div>
+            <div className="link-actions">
+                <button
+                    className="btn btn-primary btn-lg"
                     type="button"
                     onClick={handleReset}
                 >Create another</button>
