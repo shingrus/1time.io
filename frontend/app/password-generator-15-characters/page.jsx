@@ -3,11 +3,11 @@ import PasswordGenerator from '../../components/PasswordGenerator';
 import {absoluteUrl} from '../../utils/siteConfig';
 
 export const metadata = {
-    title: '15-Character Password Generator — Free & Secure',
+    title: '15-Character Password Generator — Free & Secure | 1time.io',
     description: 'Generate a strong 15-character password with letters, numbers, and symbols. Meets enterprise and compliance requirements. Created locally in your browser.',
     alternates: { canonical: '/password-generator-15-characters' },
     openGraph: {
-        title: '15-Character Password Generator — Free & Secure',
+        title: '15-Character Password Generator — Free & Secure | 1time.io',
         description: 'Generate a strong 15-character password with letters, numbers, and symbols. Meets enterprise and compliance requirements.',
         url: '/password-generator-15-characters',
         images: [{ url: '/og-image.png', width: 1200, height: 630, alt: '15-Character Password Generator' }],

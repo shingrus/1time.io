@@ -53,6 +53,11 @@ export default function SharePasswordsWithQrCodePage() {
                         Generate a one-time QR code for an encrypted secret link. It is ideal when the sender
                         and recipient are together, or when a password needs to jump quickly from one device to another.
                     </p>
+                    <p>
+                        <Link href="/" className="btn btn-primary">
+                            Create a secure link
+                        </Link>
+                    </p>
                 </div>
 
                 <div className="article-body">

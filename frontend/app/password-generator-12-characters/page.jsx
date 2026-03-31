@@ -3,11 +3,11 @@ import PasswordGenerator from '../../components/PasswordGenerator';
 import {absoluteUrl} from '../../utils/siteConfig';
 
 export const metadata = {
-    title: '12-Character Password Generator — Free & Secure',
+    title: '12-Character Password Generator — Free & Secure | 1time.io',
     description: 'Generate a secure 12-character password with letters, numbers, and symbols. The minimum recommended length for most accounts. Created locally in your browser.',
     alternates: { canonical: '/password-generator-12-characters' },
     openGraph: {
-        title: '12-Character Password Generator — Free & Secure',
+        title: '12-Character Password Generator — Free & Secure | 1time.io',
         description: 'Generate a secure 12-character password with letters, numbers, and symbols. The minimum recommended length for most accounts.',
         url: '/password-generator-12-characters',
         images: [{ url: '/og-image.png', width: 1200, height: 630, alt: '12-Character Password Generator' }],
