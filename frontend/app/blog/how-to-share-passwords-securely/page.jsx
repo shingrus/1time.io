@@ -270,23 +270,23 @@ export default function Article() {
                 </div>
             </div>
 
-            <div className="related-articles">
-                <h2>Related Articles</h2>
-                <div className="related-articles-grid">
-                    <Link href="/blog/is-slack-safe-for-passwords" className="related-article-card">
-                        <span>Is Slack Safe for Sharing Passwords?</span>
+                <div className="related-articles">
+                    <h2>Related Articles</h2>
+                    <div className="related-articles-grid">
+                        <Link href="/blog/is-slack-safe-for-passwords" className="related-article-card">
+                            <span>Is Slack Safe for Sharing Passwords?</span>
                         <span>Why Slack DMs are not as private as you think.</span>
                     </Link>
-                    <Link href="/blog/how-to-send-passwords-over-email" className="related-article-card">
-                        <span>How to Send Passwords Over Email</span>
-                        <span>Why emailing passwords is dangerous and what to do instead.</span>
-                    </Link>
-                    <Link href="/blog/how-to-share-passwords-with-qr-code" className="related-article-card">
-                        <span>How to Share Passwords with a QR Code</span>
-                        <span>When QR is better than copy-paste for one-time secret sharing.</span>
-                    </Link>
+                        <Link href="/blog/how-to-send-passwords-over-email" className="related-article-card">
+                            <span>How to Send Passwords Over Email</span>
+                            <span>Why emailing passwords is dangerous and what to do instead.</span>
+                        </Link>
+                        <Link href="/share-passwords-with-qr-code" className="related-article-card">
+                            <span>Share Passwords with a QR Code</span>
+                            <span>The feature page for nearby and cross-device one-time sharing.</span>
+                        </Link>
+                    </div>
                 </div>
-            </div>
         </article>
     );
 }

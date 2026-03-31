@@ -15,6 +15,7 @@ const coreRoutes = [
     ['/password-generator-16-characters/', 0.7, 'monthly', '2026-03-21'],
     ['/wifi-password-generator/', 0.8, 'weekly', '2026-03-23'],
     ['/api-key-generator/', 0.8, 'weekly', '2026-03-23'],
+    ['/share-passwords-with-qr-code/', 0.7, 'weekly', '2026-03-31'],
     // About & legal
     ['/about/', 0.5, 'monthly', '2026-03-23'],
     ['/privacy/', 0.4, 'monthly', '2026-03-22'],

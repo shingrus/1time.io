@@ -123,8 +123,8 @@ export default function SharePasswordsWithQrCodePage() {
                     <p>
                         If you want the broader security context, read our guide on
                         {' '}<Link href="/blog/how-to-share-passwords-securely">how to share passwords securely</Link>.
-                        If you want a more practical walkthrough, read
-                        {' '}<Link href="/blog/how-to-share-passwords-with-qr-code">how to share passwords with a QR code</Link>.
+                        For WiFi-specific examples, read
+                        {' '}<Link href="/blog/how-to-share-wifi-password">how to share your WiFi password securely</Link>.
                     </p>
 
                     <div className="article-cta">
@@ -138,9 +138,9 @@ export default function SharePasswordsWithQrCodePage() {
                 <div className="related-articles">
                     <h2>Keep Reading</h2>
                     <div className="related-articles-grid">
-                        <Link href="/blog/how-to-share-passwords-with-qr-code" className="related-article-card">
-                            <span>How to Share Passwords with a QR Code</span>
-                            <span>When QR is better than copy-paste, and when it is not.</span>
+                        <Link href="/blog/how-to-send-passwords-over-email" className="related-article-card">
+                            <span>How to Send Passwords Over Email</span>
+                            <span>What to do when the recipient is remote and QR is not the right fit.</span>
                         </Link>
                         <Link href="/blog/how-to-share-passwords-securely" className="related-article-card">
                             <span>How to Share Passwords Securely</span>

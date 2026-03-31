@@ -29,14 +29,6 @@ export const metadata = {
 
 const articles = [
     {
-        slug: 'how-to-share-passwords-with-qr-code',
-        tag: 'Guide',
-        title: 'How to Share Passwords with a QR Code Securely',
-        excerpt: 'Use one-time QR codes for nearby sharing and cross-device password handoffs without leaving the secret behind in chat history.',
-        date: 'Mar 31, 2026',
-        readTime: '5 min read',
-    },
-    {
         slug: 'stop-sending-passwords-over-slack',
         tag: 'DevOps',
         title: 'Stop Sending Passwords Over Slack: Here\'s What I Built Instead',

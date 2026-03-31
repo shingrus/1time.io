@@ -191,23 +191,23 @@ export default function Article() {
                 </div>
             </div>
 
-            <div className="related-articles">
-                <h2>Related Articles</h2>
-                <div className="related-articles-grid">
-                    <Link href="/blog/how-to-share-passwords-securely" className="related-article-card">
-                        <span>How to Share Passwords Securely</span>
+                <div className="related-articles">
+                    <h2>Related Articles</h2>
+                    <div className="related-articles-grid">
+                        <Link href="/blog/how-to-share-passwords-securely" className="related-article-card">
+                            <span>How to Share Passwords Securely</span>
                         <span>The complete guide to secure credential sharing.</span>
                     </Link>
-                    <Link href="/blog/how-to-send-passwords-over-email" className="related-article-card">
-                        <span>How to Send Passwords Over Email</span>
-                        <span>Why emailing passwords is dangerous and what to do instead.</span>
-                    </Link>
-                    <Link href="/blog/how-to-share-passwords-with-qr-code" className="related-article-card">
-                        <span>How to Share Passwords with a QR Code</span>
-                        <span>When one-time QR codes are better than static WiFi QR codes.</span>
-                    </Link>
+                        <Link href="/blog/how-to-send-passwords-over-email" className="related-article-card">
+                            <span>How to Send Passwords Over Email</span>
+                            <span>Why emailing passwords is dangerous and what to do instead.</span>
+                        </Link>
+                        <Link href="/share-passwords-with-qr-code" className="related-article-card">
+                            <span>Share Passwords with a QR Code</span>
+                            <span>When one-time QR codes are better than static WiFi QR codes.</span>
+                        </Link>
+                    </div>
                 </div>
-            </div>
         </article>
     );
 }
