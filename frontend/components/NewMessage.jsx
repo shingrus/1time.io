@@ -215,6 +215,7 @@ export default function NewMessage() {
 
                 <h2>From the blog</h2>
                 <nav className="seo-nav">
+                    <Link href="/blog/stop-sending-passwords-over-slack">Stop Sending Passwords Over Slack</Link>
                     <Link href="/blog/onetimesecret-alternative">1time.io vs OneTimeSecret</Link>
                     <Link href="/blog/privnote-alternative">1time.io vs Privnote</Link>
                     <Link href="/blog/is-slack-safe-for-passwords">Is Slack Safe for Passwords?</Link>

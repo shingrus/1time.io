@@ -39,6 +39,7 @@ const blogRoutes = [
     ['/blog/onetimesecret-alternative/', 0.6, 'monthly', '2026-03-23'],
     ['/blog/self-destructing-messages-explained/', 0.6, 'monthly', '2026-03-18'],
     ['/blog/how-to-share-passwords-securely/', 0.6, 'monthly', '2026-03-18'],
+    ['/blog/stop-sending-passwords-over-slack/', 0.6, 'monthly', '2026-03-31'],
 ];
 
 export default function sitemap() {

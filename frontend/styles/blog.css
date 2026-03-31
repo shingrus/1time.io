@@ -69,6 +69,14 @@
   padding: 20px 0;
 }
 
+.article-wide {
+  position: relative;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(1120px, calc(100vw - 48px));
+  max-width: none;
+}
+
 .article-header {
   margin-bottom: 32px;
 }
@@ -185,6 +193,13 @@
   margin-bottom: 16px;
 }
 
+.blog-diagram-image {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 12px;
+}
+
 .diagram-flow {
   display: flex;
   align-items: center;
@@ -246,6 +261,70 @@
 
 .diagram-step-success .diagram-step-label {
   color: var(--success);
+}
+
+.trust-diagram-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.trust-diagram-panel {
+  padding: 20px;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+}
+
+.trust-diagram-panel-neutral {
+  background: #F5F5F4;
+  border-color: #D6D3D1;
+}
+
+.trust-diagram-panel-secure {
+  background: #F0FDF4;
+  border-color: #22C55E;
+}
+
+.trust-diagram-panel-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text);
+}
+
+.trust-diagram-list {
+  list-style: none;
+  padding-left: 0 !important;
+  margin-bottom: 0 !important;
+}
+
+.trust-diagram-list li {
+  position: relative;
+  padding-left: 18px;
+  margin-bottom: 10px;
+  color: var(--text-secondary);
+}
+
+.trust-diagram-list li:last-child {
+  margin-bottom: 0;
+}
+
+.trust-diagram-list li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 11px;
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: currentColor;
+  opacity: 0.55;
 }
 
 /* Comparison table */
@@ -340,7 +419,7 @@
   margin-bottom: 8px;
 }
 
-.article-cta h3 {
+.article-cta h2 {
   font-size: 20px;
   margin-bottom: 8px;
   color: var(--text);
@@ -360,7 +439,7 @@
   border-top: 1px solid var(--border);
 }
 
-.related-articles h3 {
+.related-articles h2 {
   font-size: 15px;
   font-weight: 600;
   color: var(--text-secondary);
@@ -412,6 +491,26 @@
   border: 1px solid var(--border);
   border-radius: 4px;
   padding: 2px 6px;
+}
+
+/* Block code — bare <pre><code> without .code-block wrapper */
+.article-body pre {
+  margin: 20px 0;
+  padding: 16px 20px;
+  background: #1E1E1E;
+  border-radius: var(--radius);
+  overflow-x: auto;
+}
+
+.article-body pre code {
+  font-family: 'SF Mono', 'Fira Code', 'Fira Mono', monospace;
+  font-size: 14px;
+  line-height: 1.6;
+  color: #D4D4D4;
+  background: none;
+  border: none;
+  padding: 0;
+  border-radius: 0;
 }
 
 /* Code blocks */
@@ -470,5 +569,12 @@
   .comparison-table th,
   .comparison-table td {
     padding: 8px 10px;
+  }
+}
+
+@media (max-width: 720px) {
+  .trust-diagram-grid {
+    display: flex;
+    flex-direction: column;
   }
 }

@@ -29,6 +29,14 @@ export const metadata = {
 
 const articles = [
     {
+        slug: 'stop-sending-passwords-over-slack',
+        tag: 'DevOps',
+        title: 'Stop Sending Passwords Over Slack: Here\'s What I Built Instead',
+        excerpt: 'I searched our Slack history for "password" and found credentials from six months ago in plaintext. So I built an open-source zero-knowledge secret sharing tool.',
+        date: 'Mar 31, 2026',
+        readTime: '8 min read',
+    },
+    {
         slug: 'share-secrets-from-terminal',
         tag: 'DevOps',
         title: 'How to Share Secrets from the Terminal with End-to-End Encryption',
