@@ -95,6 +95,11 @@ export default function Article() {
                     The downside: QR codes printed on paper or displayed on a screen are visible to
                     anyone who can see them. Use this for guest networks, not your primary network.
                 </p>
+                <p>
+                    If you want a QR code for a <em>one-time secret link</em> instead of a permanent WiFi
+                    QR, use a <Link href="/share-passwords-with-qr-code">one-time QR code flow</Link>.
+                    It is better for temporary access and nearby sharing.
+                </p>
 
                 <h3>3. Set Up a Guest Network</h3>
                 <p>
@@ -197,9 +202,9 @@ export default function Article() {
                         <span>How to Send Passwords Over Email</span>
                         <span>Why emailing passwords is dangerous and what to do instead.</span>
                     </Link>
-                    <Link href="/blog/self-destructing-messages-explained" className="related-article-card">
-                        <span>Self-Destructing Messages Explained</span>
-                        <span>How one-time messages actually work under the hood.</span>
+                    <Link href="/blog/how-to-share-passwords-with-qr-code" className="related-article-card">
+                        <span>How to Share Passwords with a QR Code</span>
+                        <span>When one-time QR codes are better than static WiFi QR codes.</span>
                     </Link>
                 </div>
             </div>

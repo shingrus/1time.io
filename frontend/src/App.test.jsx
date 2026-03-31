@@ -28,6 +28,7 @@ import { Constants, decryptSecretMessage, encryptSecretMessage, getRandomString,
 beforeEach(() => {
     vi.clearAllMocks();
     mockPathname.mockReturnValue('/');
+    window.history.pushState({}, '', '/');
     global.fetch = vi.fn().mockImplementation(async (url) => {
         if (url === '/api/stat') {
             return {
@@ -152,6 +153,24 @@ describe('ShowNewLink component', () => {
             expect(screen.getByRole('button', { name: /link already copied/i })).toBeInTheDocument();
         });
     });
+
+    it('loads the QR UI only after the user requests it', async () => {
+        const user = userEvent.setup();
+
+        render(
+            <ShowNewLink
+                newLink="http://localhost:3001/v/#AbCdEfGhIjKlMnOpQr-_testId123"
+                onReset={vi.fn()}
+            />
+        );
+
+        expect(screen.queryByLabelText(/secret link qr code/i)).not.toBeInTheDocument();
+
+        await user.click(screen.getByRole('button', { name: /show qr code/i }));
+
+        await screen.findByText(/scan from another device/i);
+        expect(await screen.findByLabelText(/secret link qr code/i)).toBeInTheDocument();
+    });
 });
 
 describe('PasswordGenerator component', () => {
@@ -255,8 +274,22 @@ describe('ViewSecretMessage component', () => {
     it('shows the pre-read state with decrypt button', () => {
         render(<ViewSecretMessage />);
 
-        expect(screen.getByText(/someone sent you a secret message/i)).toBeInTheDocument();
+        expect(screen.getByText(/encrypted message/i)).toBeInTheDocument();
         expect(screen.getByRole('button', { name: /decrypt & read/i })).toBeInTheDocument();
+    });
+
+    it('loads the QR UI on the view page only after the user requests it', async () => {
+        const user = userEvent.setup();
+        window.history.pushState({}, '', '/v/#AbCdEfGhIjKlMnOpQr-_testId123');
+
+        render(<ViewSecretMessage />);
+
+        expect(screen.queryByLabelText(/secret link qr code/i)).not.toBeInTheDocument();
+
+        await user.click(await screen.findByRole('button', { name: /show qr code/i }));
+
+        await screen.findByText(/scan from another device/i);
+        expect(await screen.findByLabelText(/secret link qr code/i)).toBeInTheDocument();
     });
 
     it('treats invalid view links as destroyed after submit', async () => {

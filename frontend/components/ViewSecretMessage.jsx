@@ -4,17 +4,22 @@ import '../styles/view.css';
 import {useState, useEffect} from 'react';
 import {useRouter} from "next/navigation";
 import {Constants, copyTextToClipboard, decryptSecretMessage, hashSecretKey, postJson} from '../utils/util';
+import {createQrSvg} from '../utils/qr';
 
 export default function ViewSecretMessage() {
     const router = useRouter();
     const [isLoading, setIsLoading] = useState(false);
     const [secretMessage, setSecretMessage] = useState("");
     const [secretKey, setSecretKey] = useState("");
-    const [needSecretKey, setNeedSecretKey] = useState("");
+    const [needSecretKey, setNeedSecretKey] = useState(false);
     const [isWrongKey, setIsWrongKey] = useState(false);
     const [isNoMessage, setIsNoMessage] = useState(false);
     const [copied, setCopied] = useState(false);
     const [linkKey, setLinkKey] = useState("");
+    const [isQrLoading, setIsQrLoading] = useState(false);
+    const [qrSvg, setQrSvg] = useState("");
+    const hasSecretMessage = secretMessage.length > 0;
+    const isPreRead = !hasSecretMessage && !isNoMessage;
 
     // Extract the link key from hash or pathname (client-side only)
     useEffect(() => {
@@ -80,7 +85,7 @@ export default function ViewSecretMessage() {
                 setIsNoMessage(true);
                 return;
             }
-        } catch (error) {}
+        } catch {}
 
         setIsLoading(false);
     };
@@ -93,21 +98,27 @@ export default function ViewSecretMessage() {
         }
     };
 
+    const handleToggleQr = async () => {
+        if (qrSvg) {
+            setQrSvg("");
+            return;
+        }
+
+        if (!linkKey || typeof window === 'undefined') {
+            return;
+        }
+
+        setIsQrLoading(true);
+
+        try {
+            setQrSvg(await createQrSvg(`${window.location.origin}/v/#${linkKey}`));
+        } finally {
+            setIsQrLoading(false);
+        }
+    };
+
     return (
         <div>
-            {/* Pre-read state */}
-            {secretMessage.length === 0 && !isNoMessage && (
-                <div className="view-prompt">
-                    <div className="view-prompt-icon">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-                            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-                        </svg>
-                    </div>
-                    <p>Someone sent you a secret message. Once you read it, it will be permanently destroyed.</p>
-                </div>
-            )}
-
             <form onSubmit={handleSubmit}>
                 {/* Wrong key warning */}
                 {isWrongKey && (
@@ -117,7 +128,7 @@ export default function ViewSecretMessage() {
                 )}
 
                 {/* Secret key input */}
-                {secretMessage.length === 0 && !isNoMessage && needSecretKey && (
+                {isPreRead && needSecretKey && (
                     <div className="form-field">
                         <label className="form-label" htmlFor="secretKey">Passphrase required</label>
                         <input
@@ -133,7 +144,7 @@ export default function ViewSecretMessage() {
                 )}
 
                 {/* Decrypted message */}
-                {secretMessage.length > 0 && (
+                {hasSecretMessage && (
                     <div className="message-panel">
                         <div className="message-panel-header">
                             <span className="status-dot"></span>
@@ -161,28 +172,75 @@ export default function ViewSecretMessage() {
                 )}
 
                 {/* Read button */}
-                {secretMessage.length === 0 && !isNoMessage && (
-                    <div style={{textAlign: 'center'}}>
-                        <button
-                            className="btn btn-primary btn-lg"
-                            type="submit"
-                            disabled={isLoading}
-                        >
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-                                <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-                            </svg>
-                            {!isLoading ? "Decrypt & read" : "Decrypting..."}
-                        </button>
+                {isPreRead && (
+                    <>
+                    <div className="message-panel message-panel-locked">
+                        <div className="message-panel-header">
+                            Encrypted message
+                        </div>
+                        <div className="message-panel-body message-panel-body-locked">
+                            <div className="view-secret-placeholder">
+                                <div className="view-secret-line view-secret-line-wide"></div>
+                                <div className="view-secret-line"></div>
+                                <div className="view-secret-line view-secret-line-short"></div>
+                                <div className="view-secret-line view-secret-line-medium"></div>
+                            </div>
+                            <div className="view-secret-fog">
+                                <button
+                                    className="btn btn-success btn-lg"
+                                    type="submit"
+                                    disabled={isLoading}
+                                >
+                                    {!isLoading ? "Decrypt & read" : "Decrypting..."}
+                                </button>
+                            </div>
+                        </div>
                     </div>
+                    {linkKey && (
+                        <div className="view-secondary-actions">
+                            <button
+                                className="btn btn-secondary btn-lg"
+                                disabled={isQrLoading}
+                                type="button"
+                                onClick={handleToggleQr}
+                            >
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                                    <path d="M3 3h6v6H3z"/>
+                                    <path d="M15 3h6v6h-6z"/>
+                                    <path d="M3 15h6v6H3z"/>
+                                    <path d="M15 15h3"/>
+                                    <path d="M18 12v3"/>
+                                    <path d="M21 15v6"/>
+                                    <path d="M15 21h3"/>
+                                    <path d="M21 21h.01"/>
+                                </svg>
+                                {isQrLoading ? "Loading QR..." : qrSvg ? "Hide QR code" : "Show QR code"}
+                            </button>
+                        </div>
+                    )}
+                    {qrSvg && (
+                        <section className="view-qr-panel" aria-live="polite">
+                            <p className="view-qr-panel-title">Scan from another device</p>
+                            <p className="view-qr-panel-note">
+                                This QR encodes the same one-time link for this secret.
+                            </p>
+                            <div className="view-qr-panel-code">
+                                <div
+                                    aria-label="Secret link QR code"
+                                    dangerouslySetInnerHTML={{__html: qrSvg}}
+                                />
+                            </div>
+                        </section>
+                    )}
+                    </>
                 )}
 
                 {/* Destroyed state */}
-                {isNoMessage && secretMessage.length === 0 && (
+                {isNoMessage && !hasSecretMessage && (
                     <div className="destroyed-notice">
                         <p>This message has already been read or has expired.</p>
                         <button
-                            className="btn btn-secondary"
+                            className="btn btn-primary"
                             type="button"
                             onClick={() => router.push('/')}
                         >
@@ -192,7 +250,7 @@ export default function ViewSecretMessage() {
                 )}
 
                 {/* Post-read CTA */}
-                {secretMessage.length > 0 && (
+                {hasSecretMessage && (
                     <div className="view-cta">
                         <p className="view-cta-destroyed">This message has been permanently destroyed from our servers.</p>
                         <div className="view-cta-box">

@@ -191,6 +191,11 @@ export default function Article() {
                     flawed: the ZIP file persists in the email forever, and the encryption on older
                     ZIP formats is weak. One-time links are simpler and more secure.
                 </p>
+                <p>
+                    If the recipient is nearby, you do not need email at all. Show a
+                    {' '}<Link href="/share-passwords-with-qr-code">one-time QR code</Link>
+                    {' '}and let them scan the encrypted link on their own device.
+                </p>
 
                 <div className="article-cta">
                     <div className="article-cta-icon">📧</div>
@@ -211,9 +216,9 @@ export default function Article() {
                         <span>Is Slack Safe for Sharing Passwords?</span>
                         <span>Why Slack DMs are not as private as you think.</span>
                     </Link>
-                    <Link href="/blog/self-destructing-messages-explained" className="related-article-card">
-                        <span>Self-Destructing Messages Explained</span>
-                        <span>How one-time messages actually work under the hood.</span>
+                    <Link href="/blog/how-to-share-passwords-with-qr-code" className="related-article-card">
+                        <span>How to Share Passwords with a QR Code</span>
+                        <span>A better option when sender and recipient are together.</span>
                     </Link>
                 </div>
             </div>
