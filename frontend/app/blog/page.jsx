@@ -29,6 +29,14 @@ export const metadata = {
 
 const articles = [
     {
+        slug: 'quantum-safe-password-sharing',
+        tag: 'Security',
+        title: 'Quantum-Safe Password Sharing: Why 1time.io Uses No RSA or ECC',
+        excerpt: 'Most secret sharing tools rely on RSA or ECC, which quantum computers will break. 1time.io uses pure symmetric encryption for quantum-safe one-time links — and that is not an accident.',
+        date: 'Apr 1, 2026',
+        readTime: '7 min read',
+    },
+    {
         slug: 'stop-sending-passwords-over-slack',
         tag: 'DevOps',
         title: 'Stop Sending Passwords Over Slack: Here\'s What I Built Instead',

@@ -22,7 +22,8 @@ const coreRoutes = [
 ];
 
 const blogRoutes = [
-    ['/blog/', 0.7, 'daily', '2026-03-23'],
+    ['/blog/', 0.7, 'daily', '2026-04-01'],
+    ['/blog/quantum-safe-password-sharing/', 0.6, 'monthly', '2026-04-01'],
     ['/blog/share-secrets-from-terminal/', 0.6, 'monthly', '2026-03-22'],
     ['/blog/hkdf-key-derivation-explained/', 0.6, 'monthly', '2026-03-21'],
     ['/blog/password-for-crypto-wallet/', 0.6, 'monthly', '2026-03-21'],
