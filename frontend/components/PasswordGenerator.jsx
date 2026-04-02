@@ -476,16 +476,18 @@ export default function PasswordGenerator({ presetPath }) {
     return (
         <div>
             <div className="gen-header">
-                <h1 className="gen-title">{preset.title}</h1>
+                <div className="gen-title-row">
+                    <h1 className="gen-title">{preset.title}</h1>
+                    {preset.quantumSafe && (
+                        <span className="gen-badge-quantum" title="Uses AES-256-GCM + HKDF — no RSA or ECC. NIST-approved for post-quantum use.">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                            </svg>
+                            Quantum Safe
+                        </span>
+                    )}
+                </div>
                 <p className="gen-subtitle">{preset.subtitle}</p>
-                {preset.quantumSafe && (
-                    <span className="gen-badge-quantum" title="Uses AES-256-GCM + HKDF — no RSA or ECC. NIST-approved for post-quantum use.">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-                        </svg>
-                        Quantum Safe
-                    </span>
-                )}
             </div>
 
             <div className="gen-tabs">

@@ -13,20 +13,26 @@
   font-size: 16px;
 }
 
+.gen-title-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 4px;
+}
+
+.gen-title-row .gen-title { margin-bottom: 0; }
+
 .gen-badge-quantum {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  margin-top: 10px;
-  padding: 4px 10px;
-  font-size: 12px;
+  gap: 4px;
+  padding: 3px 8px;
+  font-size: 11px;
   font-weight: 600;
-  letter-spacing: 0.03em;
   color: var(--accent);
-  background: var(--accent-light, rgba(234, 88, 12, 0.08));
-  border: 1px solid rgba(234, 88, 12, 0.2);
+  border: 1px solid rgba(234, 88, 12, 0.25);
   border-radius: 20px;
-  cursor: default;
 }
 
 .gen-tabs {

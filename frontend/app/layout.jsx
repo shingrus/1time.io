@@ -85,19 +85,26 @@ export default function RootLayout({children}) {
                     <footer className="app-footer">
                         <nav className="app-footer-tools">
                             <Link href="/password-generator">Password Generator</Link>
-                            <Link href="/passphrase-generator">Passphrase Generator</Link>
-                            <Link href="/wifi-password-generator">WiFi Password Generator</Link>
-                            <Link href="/api-key-generator">API Key Generator</Link>
+                            <Link href="/passphrase-generator">Passphrase</Link>
+                            <Link href="/wifi-password-generator">WiFi Password</Link>
+                            <Link href="/api-key-generator">API Key</Link>
+                            <Link href="/share-passwords-with-qr-code">QR Code</Link>
+                        </nav>
+                        <nav className="app-footer-tools">
+                            {showBlog && <Link href="/blog">Blog</Link>}
+                            <Link href="/about">About</Link>
+                            <Link href="/privacy">Privacy</Link>
+                            <a href="https://www.npmjs.com/package/@1time/cli" target="_blank" rel="noopener noreferrer">CLI</a>
+                            <a href="https://github.com/shingrus/1time" target="_blank" rel="noopener noreferrer">GitHub</a>
                         </nav>
                         <p className="app-footer-text">
-                            <Link href="/about">About</Link>
-                            {' '} &middot; <Link href="/privacy">Privacy</Link>
-                            {showBlog && (
-                                <>
-                                    {' '} &middot; <Link href="/blog">Blog</Link>
-                                </>
-                            )}
-                            {' '} &middot; End-to-end encrypted &middot; <a href="https://github.com/shingrus/1time" target="_blank" rel="noopener noreferrer">Open source</a>
+                            Zero-knowledge
+                            {' '}&middot;{' '}
+                            {showBlog
+                                ? <Link href="/blog/quantum-safe-password-sharing">Quantum-safe encryption</Link>
+                                : 'Quantum-safe encryption'
+                            }
+                            {' '}&middot; &copy; 2026 1time.io
                         </p>
                     </footer>
                 </div>
