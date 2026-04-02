@@ -6,6 +6,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 // Mock next/navigation
 const mockPush = vi.fn();
 const mockPathname = vi.fn(() => '/');
+const mockClipboardWriteText = vi.fn();
 
 vi.mock('next/navigation', () => ({
     useRouter: () => ({ push: mockPush }),
@@ -28,6 +29,7 @@ import { Constants, decryptSecretMessage, encryptSecretMessage, getRandomString,
 beforeEach(() => {
     vi.clearAllMocks();
     mockPathname.mockReturnValue('/');
+    mockClipboardWriteText.mockResolvedValue(undefined);
     window.history.pushState({}, '', '/');
     global.fetch = vi.fn().mockImplementation(async (url) => {
         if (url === '/api/stat') {
@@ -60,7 +62,7 @@ beforeEach(() => {
     Object.defineProperty(window.navigator, 'clipboard', {
         configurable: true,
         value: {
-            writeText: vi.fn().mockResolvedValue(undefined),
+            writeText: mockClipboardWriteText,
         },
     });
 });
@@ -175,10 +177,11 @@ describe('ShowNewLink component', () => {
 
 describe('PasswordGenerator component', () => {
     it('renders with the correct preset for password-generator', () => {
-        render(<PasswordGenerator presetPath="/password-generator" />);
+        const {container} = render(<PasswordGenerator presetPath="/password-generator" />);
 
         expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Password Generator');
         expect(screen.getByRole('button', { name: /share as link/i })).toBeInTheDocument();
+        expect(container.querySelector('.gen-output-copy')).not.toBeNull();
     });
 
     it('creates a one-time link from the password generator and navigates', async () => {

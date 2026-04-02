@@ -74,7 +74,9 @@
   background: var(--surface);
   border: 1.5px solid var(--border);
   border-radius: var(--radius);
+  position: relative;
   padding: 20px;
+  padding-right: 44px;
   margin-bottom: 16px;
   cursor: pointer;
   transition: border-color var(--transition);
@@ -92,6 +94,14 @@
   color: var(--text);
   word-break: break-all;
   white-space: pre-wrap;
+}
+
+.gen-output-copy {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  color: var(--text-secondary);
+  pointer-events: none;
 }
 
 .gen-meter {
