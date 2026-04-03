@@ -424,8 +424,8 @@ func apiSaveSecretFile(r *http.Request) (responseCode int, response []byte) {
 	tmpPath := tmpFile.Name()
 
 	if _, err := io.Copy(tmpFile, file); err != nil {
-		tmpFile.Close()
-		os.Remove(tmpPath)
+		_ = tmpFile.Close()
+		_ = os.Remove(tmpPath)
 		log.Printf("io.Copy error: %v", err)
 		response, _ = json.Marshal(jResponse)
 		return
