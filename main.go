@@ -22,6 +22,11 @@ func main() {
 		listenAddr = "127.0.0.1:8080"
 	}
 
+	if fileStorageDir == "" {
+		fileStorageDir, _ = os.Getwd()
+		log.Printf("Env %s is not set, using cwd: %s", FILE_STORAGE_DIR_VAR, fileStorageDir)
+	}
+
 	appStats.Start()
 	http.HandleFunc("/api/", apiHandler)
 	log.Fatal(http.ListenAndServe(listenAddr, nil))

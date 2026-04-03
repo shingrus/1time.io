@@ -2,17 +2,32 @@ package main
 
 import (
 	"encoding/json"
-	//"html/template"
+	"io"
 	"log"
 	"net/http"
+	"os"
+	"path/filepath"
+	"strconv"
 	"time"
 )
 
+const FILE_STORAGE_DIR_VAR = "FILE_STORAGE_DIR"
+
 type StoredMessage struct {
-	Encrypted bool   `json:"encrypted"` // obsolete all messages are encrypted
+	Encrypted bool   `json:"encrypted"`
 	Message   string `json:"message"`
 	HashedKey string `json:"hashedKey"`
 }
+
+type StoredFile struct {
+	Encrypted bool   `json:"encrypted"`
+	FileUri   string `json:"fileUri"`
+	HashedKey string `json:"hashedKey"`
+}
+
+const maxFileSize = 10 * 1024 * 1024 // 10MB
+
+var fileStorageDir = os.Getenv("FILE_STORAGE_DIR")
 
 //func indexHandler(w http.ResponseWriter, r *http.Request) {
 //	t, err := template.ParseFiles("templates/form.html")
@@ -353,6 +368,162 @@ func apiGetMessage(r *http.Request) (responseCode int, response []byte) {
 	return
 }
 
+func apiSaveSecretFile(r *http.Request) (responseCode int, response []byte) {
+	responseCode = 200
+	jResponse := struct {
+		Status string `json:"status"`
+		NewId  string `json:"newId"`
+	}{Status: "error", NewId: "0"}
+
+	r.Body = http.MaxBytesReader(nil, r.Body, maxFileSize+1024) // file + form fields
+
+	if err := r.ParseMultipartForm(maxFileSize); err != nil {
+		log.Printf("ParseMultipartForm error: %v", err)
+		response, _ = json.Marshal(jResponse)
+		return
+	}
+
+	hashedKey := r.FormValue("hashedKey")
+	durationStr := r.FormValue("duration")
+
+	file, _, err := r.FormFile("file")
+	if err != nil {
+		log.Printf("FormFile error: %v", err)
+		response, _ = json.Marshal(jResponse)
+		return
+	}
+	defer file.Close()
+
+	if hashedKey == "" {
+		response, _ = json.Marshal(jResponse)
+		return
+	}
+
+	// Parse duration
+	duration := defaultDuration
+	if durationStr != "" {
+		if d, err := strconv.Atoi(durationStr); err == nil && d > 0 && d <= maxDuration {
+			duration = d
+		}
+	}
+
+	// Ensure storage dir exists
+	if err := os.MkdirAll(fileStorageDir, 0750); err != nil {
+		log.Printf("MkdirAll error: %v", err)
+		response, _ = json.Marshal(jResponse)
+		return
+	}
+
+	// Write to temp file first, rename after we get the storage ID
+	tmpFile, err := os.CreateTemp(fileStorageDir, "upload-*.tmp")
+	if err != nil {
+		log.Printf("CreateTemp error: %v", err)
+		response, _ = json.Marshal(jResponse)
+		return
+	}
+	tmpPath := tmpFile.Name()
+
+	if _, err := io.Copy(tmpFile, file); err != nil {
+		tmpFile.Close()
+		os.Remove(tmpPath)
+		log.Printf("io.Copy error: %v", err)
+		response, _ = json.Marshal(jResponse)
+		return
+	}
+	tmpFile.Close()
+
+	// Save metadata to Redis (generates the storage ID)
+	storedFile := StoredFile{
+		Encrypted: true,
+		FileUri:   "", // will be set after we know the ID
+		HashedKey: hashedKey,
+	}
+	valueToStore, _ := json.Marshal(storedFile)
+
+	storeKey, err := saveFileToStorage(valueToStore, time.Duration(duration)*time.Second)
+	if err != nil {
+		os.Remove(tmpPath)
+		log.Printf("saveFileToStorage error: %v", err)
+		response, _ = json.Marshal(jResponse)
+		return
+	}
+
+	// Rename temp file to final path
+	filePath := filepath.Join(fileStorageDir, storeKey+".enc")
+	if err := os.Rename(tmpPath, filePath); err != nil {
+		os.Remove(tmpPath)
+		log.Printf("Rename error: %v", err)
+		response, _ = json.Marshal(jResponse)
+		return
+	}
+
+	// Update Redis with the actual file path
+	storedFile.FileUri = filePath
+	updatedValue, _ := json.Marshal(storedFile)
+	getRedisClient().Set(getFileStoreKey(storeKey), updatedValue, time.Duration(duration)*time.Second)
+
+	jResponse.Status = "ok"
+	jResponse.NewId = storeKey
+	response, _ = json.Marshal(jResponse)
+	return
+}
+
+// apiGetFile writes directly to ResponseWriter (binary stream)
+func apiGetFile(w http.ResponseWriter, r *http.Request) {
+	var payload struct {
+		Id        string `json:"id"`
+		HashedKey string `json:"hashedKey"`
+	}
+
+	dec := json.NewDecoder(r.Body)
+	if !dec.More() {
+		http.Error(w, `{"status":"error"}`, http.StatusBadRequest)
+		return
+	}
+	if err := dec.Decode(&payload); err != nil || payload.Id == "" || payload.HashedKey == "" {
+		http.Error(w, `{"status":"error"}`, http.StatusBadRequest)
+		return
+	}
+
+	storedFile, status, err := consumeFileMessageFromStorage(payload.Id, payload.HashedKey)
+	if err != nil {
+		log.Printf("consumeFileMessageFromStorage error: %v", err)
+		http.Error(w, `{"status":"error"}`, http.StatusInternalServerError)
+		return
+	}
+
+	switch status {
+	case "wrong key":
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`{"status":"wrong key"}`))
+		return
+	case "no message":
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`{"status":"no message"}`))
+		return
+	}
+
+	// Stream file to client
+	f, err := os.Open(storedFile.FileUri)
+	if err != nil {
+		log.Printf("Open file error: %v", err)
+		http.Error(w, `{"status":"no message"}`, http.StatusInternalServerError)
+		return
+	}
+	defer f.Close()
+
+	w.Header().Set("Content-Type", "application/octet-stream")
+	w.WriteHeader(http.StatusOK)
+	io.Copy(w, f)
+
+	// Delete file from disk after streaming
+	if err := os.Remove(storedFile.FileUri); err != nil {
+		log.Printf("Remove file error: %v", err)
+	}
+}
+
 func apiHandler(w http.ResponseWriter, r *http.Request) {
 	responseCode := 400
 	var response []byte
@@ -383,10 +554,13 @@ func apiHandler(w http.ResponseWriter, r *http.Request) {
 	switch apiCall {
 	case "saveSecret":
 		responseCode, response = apiSaveSecret(r)
-	//case "unsecSave":
-	//	responseCode, response = apiUnsecSave(r)
 	case "get":
 		responseCode, response = apiGetMessage(r)
+	case "saveFile":
+		responseCode, response = apiSaveSecretFile(r)
+	case "getFile":
+		apiGetFile(w, r)
+		return
 	case "stat":
 		responseCode, response = apiStat(r)
 	case "ss":

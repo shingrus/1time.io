@@ -91,6 +91,10 @@ func getStoreKey(key string) string {
 	return "messageKey" + key
 }
 
+func getFileStoreKey(key string) string {
+	return "fileKey" + key
+}
+
 //func getMessageFromStorage(key string) (val string) {
 //	client := getRedisClient()
 //	val, err := client.Get(getStoreKey(key)).Result()
@@ -103,6 +107,83 @@ func getStoreKey(key string) string {
 //	}
 //	return
 //}
+
+func saveFileToStorage(value interface{}, duration time.Duration) (newKey string, err error) {
+	client := getRedisClient()
+	if err = incrementStoredSecretCounters(time.Now().UTC()); err != nil {
+		log.Println(err)
+		return "", err
+	}
+
+	for attempt := 0; attempt < maxStorageIDAttempts; attempt++ {
+		newKey, err = generateStorageID()
+		if err != nil {
+			return "", err
+		}
+
+		ok, setErr := client.SetNX(getFileStoreKey(newKey), value, duration).Result()
+		if setErr != nil {
+			return "", setErr
+		}
+		if ok {
+			if DEBUG {
+				log.Printf("Got new file key storage: %v", newKey)
+			}
+			return newKey, nil
+		}
+	}
+
+	return "", errStorageIDCollision
+}
+
+func consumeFileMessageFromStorage(key string, hashedKey string) (storedFile StoredFile, status string, err error) {
+	client := getRedisClient()
+	storeKey := getFileStoreKey(key)
+	status = "no message"
+
+	err = client.Watch(func(tx *redis.Tx) error {
+		value, err := tx.Get(storeKey).Result()
+		if err == redis.Nil {
+			status = "no message"
+			return nil
+		}
+		if err != nil {
+			return err
+		}
+
+		if err := json.Unmarshal([]byte(value), &storedFile); err != nil {
+			return err
+		}
+
+		if subtle.ConstantTimeCompare([]byte(storedFile.HashedKey), []byte(hashedKey)) != 1 {
+			storedFile = StoredFile{}
+			status = "wrong key"
+			return nil
+		}
+
+		_, err = tx.TxPipelined(func(pipe redis.Pipeliner) error {
+			pipe.Del(storeKey)
+			return nil
+		})
+		if err == redis.TxFailedErr {
+			storedFile = StoredFile{}
+			status = "no message"
+			return nil
+		}
+		if err != nil {
+			return err
+		}
+
+		status = "ok"
+		return nil
+	}, storeKey)
+
+	return
+}
+
+// TODO: Add cleanup goroutine/cron that scans FILE_STORAGE_DIR and deletes
+// .enc files older than 30 days (matching Redis TTL). Redis key expiry alone
+// won't remove files from disk.
 
 func consumeMessageFromStorage(key string, hashedKey string) (storedMessage StoredMessage, status string, err error) {
 	client := getRedisClient()
