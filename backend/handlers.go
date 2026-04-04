@@ -150,10 +150,23 @@ func apiSaveSecretFile(r *http.Request) (responseCode int, response []byte) {
 	r.Body = http.MaxBytesReader(nil, r.Body, maxFileSize+1024) // file + form fields
 
 	if err := r.ParseMultipartForm(maxFileSize); err != nil {
+		if r.MultipartForm != nil {
+			if removeErr := r.MultipartForm.RemoveAll(); removeErr != nil {
+				log.Printf("RemoveAll error: %v", removeErr)
+			}
+		}
 		log.Printf("ParseMultipartForm error: %v", err)
 		response, _ = json.Marshal(jResponse)
 		return
 	}
+	defer func() {
+		if r.MultipartForm == nil {
+			return
+		}
+		if err := r.MultipartForm.RemoveAll(); err != nil {
+			log.Printf("RemoveAll error: %v", err)
+		}
+	}()
 
 	hashedKey := r.FormValue("hashedKey")
 	durationStr := r.FormValue("duration")
