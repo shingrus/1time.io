@@ -58,11 +58,11 @@ export default function StatsSnapshot() {
 
             <div className="stats-grid">
                 <section className="stats-card">
-                    <span className="stats-label">Stored secrets</span>
+                    <span className="stats-label">Shared texts</span>
                     <strong className="stats-value">{stats.overallStoredSecrets.toLocaleString()}</strong>
                 </section>
                 <section className="stats-card">
-                    <span className="stats-label">Stored files</span>
+                    <span className="stats-label">Shared files</span>
                     <strong className="stats-value">{stats.overallStoredFiles.toLocaleString()}</strong>
                 </section>
                 <section className="stats-card">
