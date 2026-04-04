@@ -1,11 +1,7 @@
-'use client';
-
 import Link from 'next/link';
-import {usePathname} from 'next/navigation';
 import {isBlogEnabled} from '../utils/siteConfig';
 
 export default function Header() {
-    const pathname = usePathname();
     const showBlog = isBlogEnabled();
 
     return (
@@ -20,17 +16,11 @@ export default function Header() {
                 <span className="app-logo-text">1time<span>io</span></span>
             </Link>
             <nav className="app-nav">
-                <Link
-                    href="/password-generator"
-                    className={!pathname?.startsWith('/blog') && (pathname?.includes('password') || pathname?.includes('passphrase') || pathname?.includes('api-key')) ? 'active' : ''}
-                >
+                <Link href="/password-generator">
                     Password Generator
                 </Link>
                 {showBlog && (
-                    <Link
-                        href="/blog"
-                        className={pathname?.startsWith('/blog') ? 'active' : ''}
-                    >
+                    <Link href="/blog">
                         Blog
                     </Link>
                 )}
