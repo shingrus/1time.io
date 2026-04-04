@@ -36,7 +36,7 @@ function bytesToBase64(bytes) {
         return btoa(binary);
     }
 
-    return Buffer.from(bytes).toString('base64');
+    return globalThis.Buffer.from(bytes).toString('base64');
 }
 
 function base64ToBytes(base64) {
@@ -51,7 +51,7 @@ function base64ToBytes(base64) {
         return bytes;
     }
 
-    return new Uint8Array(Buffer.from(base64, 'base64'));
+    return new Uint8Array(globalThis.Buffer.from(base64, 'base64'));
 }
 
 function toBase64Url(bytes) {

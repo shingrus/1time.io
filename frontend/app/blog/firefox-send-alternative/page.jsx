@@ -63,6 +63,15 @@ export default function Article() {
             </div>
 
             <div className="article-body">
+                <div className="callout callout-tip">
+                    <span className="callout-icon">&#x1F4C1;</span>
+                    <p>
+                        <strong>Looking for a quick replacement?</strong>{' '}
+                        <Link href="/secure-file-sharing/">Try secure file sharing</Link> — encrypted
+                        one-time file links, no account needed.
+                    </p>
+                </div>
+
                 <h2>What Was Firefox Send?</h2>
                 <p>
                     Firefox Send launched in 2019 as a free, encrypted file sharing service by Mozilla.
