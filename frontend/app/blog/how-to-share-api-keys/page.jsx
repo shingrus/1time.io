@@ -133,6 +133,11 @@ export default function Article() {
                     never committed. Share the initial values via one-time links, then each developer
                     manages their own local copy.
                 </p>
+                <p>
+                    Need to share an entire <code>.env</code> file, a service account JSON, or a PEM
+                    certificate? Use <Link href="/secure-file-sharing/">secure file sharing</Link> to
+                    send the file through an encrypted one-time download link.
+                </p>
 
                 <h2>Best Practices for API Key Security</h2>
                 <ul>

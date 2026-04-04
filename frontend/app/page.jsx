@@ -5,7 +5,7 @@ import {siteHost, siteUrl} from '../utils/siteConfig';
 
 export const metadata = {
     title: `Share Passwords Securely — Free Encrypted One-Time Links | ${siteHost}`,
-    description: 'Share passwords and text secrets through encrypted one-time links and QR codes that self-destruct after reading. Zero-knowledge encryption, free, open source.',
+    description: 'Share passwords, files, and secrets through encrypted one-time links and QR codes that self-destruct after reading. Zero-knowledge encryption, free, open source.',
     alternates: { canonical: '/' },
     openGraph: {
         title: `${siteHost} — Free Encrypted One-Time Secret Links`,
@@ -24,7 +24,7 @@ const jsonLd = {
     applicationCategory: 'SecurityApplication',
     operatingSystem: 'Any',
     offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
-    featureList: 'End-to-end encryption, One-time access, QR code sharing, Auto-expiry, Password generator, CLI, Zero-knowledge architecture, Self-hosted',
+    featureList: 'End-to-end encryption, One-time access, Encrypted file sharing, QR code sharing, Auto-expiry, Password generator, CLI, Zero-knowledge architecture, Self-hosted',
 };
 
 export default function HomePage() {
@@ -43,10 +43,11 @@ export default function HomePage() {
                 </nav>
                 <NewMessage />
                 <section className="seo-section">
-                    <h1>Share Secrets with Encrypted One-Time Links</h1>
+                    <h1>Share Secrets and Files with Encrypted One-Time Links</h1>
                     <p>
-                        {siteHost} is a free, open-source tool for sharing passwords and text secrets through
-                        encrypted one-time links. Each secret is encrypted in your browser using AES-256-GCM
+                        {siteHost} is a free, open-source tool for sharing passwords, text secrets, and{' '}
+                        <Link href="/secure-file-sharing/">encrypted files</Link> through
+                        one-time links. Each secret is encrypted in your browser using AES-256-GCM
                         before being stored. The server never sees the plaintext. Links self-destruct after
                         they are read once or after a set expiry period. No signup required.
                     </p>

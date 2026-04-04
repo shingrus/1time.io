@@ -195,6 +195,11 @@ export default function Article() {
                     ZIP formats is weak. One-time links are simpler and more secure.
                 </p>
                 <p>
+                    If you need to send an actual file — a PDF, a certificate, a config export — use{' '}
+                    <Link href="/secure-file-sharing/">secure file sharing</Link> instead. The file is
+                    encrypted in your browser and the download link works exactly once.
+                </p>
+                <p>
                     If the recipient is nearby, you do not need email at all. Show a
                     {' '}<Link href="/share-passwords-with-qr-code">one-time QR code</Link>
                     {' '}and let them scan the encrypted link on their own device.

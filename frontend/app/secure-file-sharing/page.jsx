@@ -58,6 +58,30 @@ const jsonLd = [
     },
     {
         '@context': 'https://schema.org',
+        '@type': 'WebApplication',
+        name: 'Secure File Sharing',
+        url: absoluteUrl('/secure-file-sharing/'),
+        description: 'Send encrypted files with one-time download links. Browser-side encryption, optional passphrase, and auto-expiry.',
+        applicationCategory: 'SecurityApplication',
+        operatingSystem: 'Any',
+        offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+        featureList: 'End-to-end file encryption, One-time download, Optional passphrase, Auto-expiry, Zero-knowledge architecture',
+    },
+    {
+        '@context': 'https://schema.org',
+        '@type': 'HowTo',
+        name: 'How to send a file securely with a one-time link',
+        description: 'Encrypt and share a file through a one-time download link using 1time.io.',
+        step: [
+            { '@type': 'HowToStep', position: 1, name: 'Choose a file', text: 'Select the file you want to share (up to 10 MB).' },
+            { '@type': 'HowToStep', position: 2, name: 'Add a passphrase (optional)', text: 'Set an optional passphrase for extra protection. The recipient will need it to decrypt.' },
+            { '@type': 'HowToStep', position: 3, name: 'Create the link', text: 'Click create. Your browser packs the file with its metadata, encrypts the payload locally, and uploads only the encrypted blob.' },
+            { '@type': 'HowToStep', position: 4, name: 'Send the link', text: 'Copy the one-time link and send it to the recipient via any channel.' },
+            { '@type': 'HowToStep', position: 5, name: 'Recipient downloads', text: 'The recipient opens the link. The browser decrypts the file locally and the server copy is destroyed.' },
+        ],
+    },
+    {
+        '@context': 'https://schema.org',
         '@type': 'FAQPage',
         mainEntity: faqItems.map((item) => ({
             '@type': 'Question',

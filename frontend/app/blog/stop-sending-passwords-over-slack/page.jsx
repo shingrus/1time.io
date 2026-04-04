@@ -342,7 +342,9 @@ SHOW_BLOG=false`}</code></pre>
                 </ul>
                 <p>
                     1time.io solves one specific problem: <strong>sending a secret to someone
-                    one time, securely, without leaving a trace.</strong>
+                    one time, securely, without leaving a trace.</strong> That goes for text
+                    secrets and for <Link href="/secure-file-sharing/">encrypted file sharing</Link> — same
+                    zero-knowledge model, one-time download, auto-expiry.
                 </p>
                 <p>
                     The contractor who needs the staging DB password. The client&apos;s developer
