@@ -30,6 +30,14 @@ export const metadata = {
 
 const articles = [
     {
+        slug: 'firefox-send-alternative',
+        tag: 'Comparison',
+        title: 'Firefox Send Alternative — Encrypted One-Time File Sharing',
+        excerpt: 'Firefox Send was shut down in 2020. 1time.io picks up where it left off: encrypted one-time file sharing with browser-side encryption, optional passphrase, and self-hosting.',
+        date: 'Apr 4, 2026',
+        readTime: '6 min read',
+    },
+    {
         slug: 'quantum-safe-password-sharing',
         tag: 'Security',
         title: 'Quantum-Safe Password Sharing: Why 1time.io Uses No RSA or ECC',

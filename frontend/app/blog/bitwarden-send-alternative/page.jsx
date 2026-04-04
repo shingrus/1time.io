@@ -121,7 +121,7 @@ export default function Article() {
                         </tr>
                         <tr>
                             <td><strong>File sharing</strong></td>
-                            <td><span className="cross">✗</span> Text only</td>
+                            <td><span className="check">✓</span> <Link href="/secure-file-sharing/">Encrypted files</Link></td>
                             <td><span className="check">✓</span> Text and files</td>
                         </tr>
                         <tr>
@@ -144,9 +144,9 @@ export default function Article() {
 
                 <h2>Where Bitwarden Send Wins</h2>
                 <ul>
-                    <li><strong>File sharing.</strong> Bitwarden Send supports sending files, not just text. If you need to share a document securely, this is a real advantage (though it requires a premium account).</li>
                     <li><strong>Ecosystem integration.</strong> If your whole team uses Bitwarden, Send is built right into the app and browser extension you already use.</li>
                     <li><strong>Access controls.</strong> You can set maximum access counts, add a password, and set custom expiration dates with granular control.</li>
+                    <li><strong>Larger files.</strong> Bitwarden Send supports files up to 500 MB on premium plans. 1time.io supports up to 10 MB (suitable for documents, certificates, and config files).</li>
                 </ul>
 
                 <h2>Where 1time.io Wins</h2>
@@ -160,8 +160,8 @@ export default function Article() {
 
                 <h2>When to Use Which</h2>
                 <p>
-                    <strong>Use Bitwarden Send</strong> if you need to share files, your entire team is
-                    already on Bitwarden, and you want everything in one ecosystem.
+                    <strong>Use Bitwarden Send</strong> if your entire team is already on Bitwarden
+                    and you want everything in one ecosystem, or if you need to share files larger than 10 MB.
                 </p>
                 <p>
                     <strong>Use 1time.io</strong> for everything else — quick password shares,
