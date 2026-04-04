@@ -20,6 +20,7 @@ var redisHost = os.Getenv("REDISHOST")
 const storageIDByteLen = 16
 const maxStorageIDAttempts = 5
 const redisTimeout = time.Second * 10
+const fileJanitorInterval = 2 * time.Hour
 
 var errStorageIDCollision = errors.New("failed to generate unique storage id")
 
@@ -139,9 +140,55 @@ func consumeFileMessageFromStorage(key string, hashedKey string) (storedFile Sto
 	return
 }
 
-// TODO: Add cleanup goroutine/cron that scans FILE_STORAGE_DIR and deletes
-// .enc files older than 30 days (matching Redis TTL). Redis key expiry alone
-// won't remove files from disk.
+func startFileJanitor() {
+	go runFileJanitorLoop()
+}
+
+func runFileJanitorLoop() {
+	if err := cleanupExpiredFiles(time.Now().UTC()); err != nil {
+		log.Printf("cleanupExpiredFiles error: %v", err)
+	}
+
+	ticker := time.NewTicker(fileJanitorInterval)
+	defer ticker.Stop()
+
+	for now := range ticker.C {
+		if err := cleanupExpiredFiles(now.UTC()); err != nil {
+			log.Printf("cleanupExpiredFiles error: %v", err)
+		}
+	}
+}
+
+func cleanupExpiredFiles(now time.Time) error {
+	entries, err := os.ReadDir(fileStorageDir)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil
+		}
+		return err
+	}
+
+	for _, entry := range entries {
+		if entry.IsDir() || len(entry.Name()) < 4 || entry.Name()[len(entry.Name())-4:] != ".enc" {
+			continue
+		}
+
+		info, err := entry.Info()
+		if err != nil {
+			return err
+		}
+		if info.ModTime().After(now) {
+			continue
+		}
+
+		filePath := fileStorageDir + string(os.PathSeparator) + entry.Name()
+		if err := os.Remove(filePath); err != nil && !os.IsNotExist(err) {
+			return err
+		}
+	}
+
+	return nil
+}
 
 func consumeMessageFromStorage(key string, hashedKey string) (storedMessage StoredMessage, status string, err error) {
 	client := getRedisClient()

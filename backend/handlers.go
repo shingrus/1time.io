@@ -192,6 +192,7 @@ func apiSaveSecretFile(r *http.Request) (responseCode int, response []byte) {
 	ttl := time.Duration(duration) * time.Second
 
 	for attempt := 0; attempt < maxStorageIDAttempts; attempt++ {
+		now := time.Now().UTC()
 		storeKey, err := generateStorageID()
 		if err != nil {
 			log.Printf("generateStorageID error: %v", err)
@@ -232,6 +233,14 @@ func apiSaveSecretFile(r *http.Request) (responseCode int, response []byte) {
 			return
 		}
 
+		expiresAt := now.Add(ttl)
+		if err := os.Chtimes(filePath, now, expiresAt); err != nil {
+			_ = os.Remove(filePath)
+			log.Printf("Chtimes error: %v", err)
+			response, _ = json.Marshal(jResponse)
+			return
+		}
+
 		record := StoredFile{
 			Encrypted: true,
 			FileUri:   filePath,
@@ -250,7 +259,7 @@ func apiSaveSecretFile(r *http.Request) (responseCode int, response []byte) {
 			continue
 		}
 
-		if err := incrementStoredFileCounters(time.Now().UTC()); err != nil {
+		if err := incrementStoredFileCounters(now); err != nil {
 			log.Printf("incrementStoredFileCounters error: %v", err)
 		}
 
