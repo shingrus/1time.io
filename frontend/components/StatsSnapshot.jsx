@@ -6,6 +6,7 @@ import {postJson} from '../utils/util';
 
 const EMPTY_STATS = {
     overallStoredSecrets: 0,
+    overallStoredFiles: 0,
     pendingPageHits: {},
     pendingPageHitsTotal: 0,
     flushIntervalSeconds: 10,
@@ -27,6 +28,7 @@ export default function StatsSnapshot() {
 
                 setStats({
                     overallStoredSecrets: data.overallStoredSecrets ?? 0,
+                    overallStoredFiles: data.overallStoredFiles ?? 0,
                     pendingPageHits: data.pendingPageHits ?? {},
                     pendingPageHitsTotal: data.pendingPageHitsTotal ?? 0,
                     flushIntervalSeconds: data.flushIntervalSeconds ?? 10,
@@ -58,6 +60,10 @@ export default function StatsSnapshot() {
                 <section className="stats-card">
                     <span className="stats-label">Stored secrets</span>
                     <strong className="stats-value">{stats.overallStoredSecrets.toLocaleString()}</strong>
+                </section>
+                <section className="stats-card">
+                    <span className="stats-label">Stored files</span>
+                    <strong className="stats-value">{stats.overallStoredFiles.toLocaleString()}</strong>
                 </section>
                 <section className="stats-card">
                     <span className="stats-label">Buffered page hits</span>

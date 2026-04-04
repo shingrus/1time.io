@@ -7,9 +7,11 @@ Requires=redis-server.service
 Type=simple
 User=1time
 Group=1time
-WorkingDirectory=/opt/1time/bin
+WorkingDirectory=/opt/1time
+Environment=LISTEN_ADDR=127.0.0.1:8080
 Environment=REDISHOST=127.0.0.1:6379
 Environment=REDISPASS=
+Environment=FILE_STORAGE_DIR=/opt/1time/files
 ExecStart=/opt/1time/bin/1time-api
 Restart=always
 RestartSec=3

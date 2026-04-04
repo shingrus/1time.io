@@ -22,7 +22,13 @@ func main() {
 		listenAddr = "127.0.0.1:8080"
 	}
 
+	if fileStorageDir == "" {
+		log.Printf("Env %s is not set, exiting", FILE_STORAGE_DIR_VAR)
+		os.Exit(1)
+	}
+
 	appStats.Start()
+	startFileJanitor()
 	http.HandleFunc("/api/", apiHandler)
 	log.Fatal(http.ListenAndServe(listenAddr, nil))
 }

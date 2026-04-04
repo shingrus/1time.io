@@ -17,10 +17,10 @@ import (
 var redisPassword = os.Getenv("REDISPASS")
 var redisHost = os.Getenv("REDISHOST")
 
-const globalIncrementalKey = "nextIncrementalKey"
 const storageIDByteLen = 16
 const maxStorageIDAttempts = 5
 const redisTimeout = time.Second * 10
+const fileJanitorInterval = 2 * time.Hour
 
 var errStorageIDCollision = errors.New("failed to generate unique storage id")
 
@@ -91,18 +91,104 @@ func getStoreKey(key string) string {
 	return "messageKey" + key
 }
 
-//func getMessageFromStorage(key string) (val string) {
-//	client := getRedisClient()
-//	val, err := client.Get(getStoreKey(key)).Result()
-//	if err == redis.Nil {
-//		log.Println(getStoreKey(key) + " does not exist")
-//	} else if err != nil {
-//		log.Println(err)
-//	} else {
-//		log.Printf("Got from storage: %v", val)
-//	}
-//	return
-//}
+func getFileStoreKey(key string) string {
+	return "fileKey" + key
+}
+
+func consumeFileMessageFromStorage(key string, hashedKey string) (storedFile StoredFile, status string, err error) {
+	client := getRedisClient()
+	storeKey := getFileStoreKey(key)
+	status = "no message"
+
+	err = client.Watch(func(tx *redis.Tx) error {
+		value, err := tx.Get(storeKey).Result()
+		if err == redis.Nil {
+			status = "no message"
+			return nil
+		}
+		if err != nil {
+			return err
+		}
+
+		if err := json.Unmarshal([]byte(value), &storedFile); err != nil {
+			return err
+		}
+
+		if subtle.ConstantTimeCompare([]byte(storedFile.HashedKey), []byte(hashedKey)) != 1 {
+			storedFile = StoredFile{}
+			status = "wrong key"
+			return nil
+		}
+
+		_, err = tx.TxPipelined(func(pipe redis.Pipeliner) error {
+			pipe.Del(storeKey)
+			return nil
+		})
+		if err == redis.TxFailedErr {
+			storedFile = StoredFile{}
+			status = "no message"
+			return nil
+		}
+		if err != nil {
+			return err
+		}
+
+		status = "ok"
+		return nil
+	}, storeKey)
+
+	return
+}
+
+func startFileJanitor() {
+	go runFileJanitorLoop()
+}
+
+func runFileJanitorLoop() {
+	if err := cleanupExpiredFiles(time.Now().UTC()); err != nil {
+		log.Printf("cleanupExpiredFiles error: %v", err)
+	}
+
+	ticker := time.NewTicker(fileJanitorInterval)
+	defer ticker.Stop()
+
+	for now := range ticker.C {
+		if err := cleanupExpiredFiles(now.UTC()); err != nil {
+			log.Printf("cleanupExpiredFiles error: %v", err)
+		}
+	}
+}
+
+func cleanupExpiredFiles(now time.Time) error {
+	entries, err := os.ReadDir(fileStorageDir)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil
+		}
+		return err
+	}
+
+	for _, entry := range entries {
+		if entry.IsDir() || len(entry.Name()) < 4 || entry.Name()[len(entry.Name())-4:] != ".enc" {
+			continue
+		}
+
+		info, err := entry.Info()
+		if err != nil {
+			return err
+		}
+		if info.ModTime().After(now) {
+			continue
+		}
+
+		filePath := fileStorageDir + string(os.PathSeparator) + entry.Name()
+		if err := os.Remove(filePath); err != nil && !os.IsNotExist(err) {
+			return err
+		}
+	}
+
+	return nil
+}
 
 func consumeMessageFromStorage(key string, hashedKey string) (storedMessage StoredMessage, status string, err error) {
 	client := getRedisClient()
@@ -148,9 +234,3 @@ func consumeMessageFromStorage(key string, hashedKey string) (storedMessage Stor
 
 	return
 }
-
-//func dropFromStorage(key string) {
-//	client := getRedisClient()
-//	client.Del(getStoreKey(key)).Err()
-//
-//}

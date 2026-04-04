@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import InlineCss from '../../components/InlineCss';
 
 const jsonLd = {
     '@context': 'https://schema.org',
@@ -28,6 +29,14 @@ export const metadata = {
 };
 
 const articles = [
+    {
+        slug: 'firefox-send-alternative',
+        tag: 'Comparison',
+        title: 'Firefox Send Alternative — Encrypted One-Time File Sharing',
+        excerpt: 'Firefox Send was shut down in 2020. 1time.io picks up where it left off: encrypted one-time file sharing with browser-side encryption, optional passphrase, and self-hosting.',
+        date: 'Apr 4, 2026',
+        readTime: '6 min read',
+    },
     {
         slug: 'quantum-safe-password-sharing',
         tag: 'Security',
@@ -185,6 +194,7 @@ const articles = [
 export default function BlogIndex() {
     return (
         <div className="blog-index">
+            <InlineCss file="styles/blog-index.css" />
             <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
             <h1>Blog</h1>
             <p className="subtitle">Guides on secure sharing, encryption, and protecting sensitive data.</p>

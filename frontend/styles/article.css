@@ -1,69 +1,3 @@
-/* Blog index */
-.blog-index {
-  padding: 20px 0;
-}
-
-.blog-index h1 {
-  font-size: 36px;
-  margin-bottom: 8px;
-}
-
-.blog-index .subtitle {
-  color: var(--text-secondary);
-  font-size: 18px;
-  margin-bottom: 32px;
-}
-
-.blog-list {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.blog-card {
-  display: block;
-  padding: 24px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  text-decoration: none;
-  transition: border-color var(--transition), box-shadow var(--transition);
-}
-
-.blog-card:hover {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 1px var(--accent);
-}
-
-.blog-card-tag {
-  display: inline-block;
-  font-size: 12px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--accent);
-  margin-bottom: 8px;
-}
-
-.blog-card h2 {
-  font-size: 20px;
-  margin-bottom: 8px;
-  color: var(--text);
-}
-
-.blog-card p {
-  font-size: 15px;
-  color: var(--text-secondary);
-  line-height: 1.6;
-  margin: 0;
-}
-
-.blog-card-meta {
-  font-size: 13px;
-  color: var(--text-muted);
-  margin-top: 12px;
-}
-
 /* Article page */
 .article {
   padding: 20px 0;
@@ -245,7 +179,6 @@
   flex-shrink: 0;
 }
 
-/* Danger/insecure step variant */
 .diagram-step-danger {
   background: #FEF2F2;
 }
@@ -254,7 +187,6 @@
   color: var(--danger);
 }
 
-/* Success/secure step variant */
 .diagram-step-success {
   background: #F0FDF4;
 }
@@ -322,7 +254,7 @@
   top: 11px;
   width: 7px;
   height: 7px;
-  border-radius: 999px;
+  border-radius: var(--radius-sm);
   background: currentColor;
   opacity: 0.55;
 }
@@ -493,7 +425,7 @@
   padding: 2px 6px;
 }
 
-/* Block code — bare <pre><code> without .code-block wrapper */
+/* Block code */
 .article-body pre {
   margin: 20px 0;
   padding: 16px 20px;
@@ -535,7 +467,9 @@
   line-height: 1;
 }
 
-.code-block-copy:hover { color: #aaa; }
+.code-block-copy:hover {
+  color: #aaa;
+}
 
 .code-block pre {
   margin: 0;
@@ -557,15 +491,19 @@
   .article h1 {
     font-size: 26px;
   }
+
   .diagram-flow {
     flex-direction: column;
   }
+
   .diagram-arrow {
     transform: rotate(90deg);
   }
+
   .comparison-table {
     font-size: 13px;
   }
+
   .comparison-table th,
   .comparison-table td {
     padding: 8px 10px;

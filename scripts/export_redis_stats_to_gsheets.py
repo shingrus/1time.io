@@ -3,8 +3,10 @@
 Export 1time Redis stats into a Google Spreadsheet.
 
 Expected Redis key layout from the Go app:
-  - nextIncrementalKey                       -> total stored secrets
-  - storedCounter_YYYYMMDD                   -> per-day stored secrets
+  - stats:stored:text:total                  -> total stored text secrets
+  - stats:stored:file:total                  -> total stored files
+  - stats:stored:text:day:YYYYMMDD           -> per-day stored text secrets
+  - stats:stored:file:day:YYYYMMDD           -> per-day stored files
   - stats:page:hits:total                    -> hash: page -> total hits
   - stats:page:hits:day:YYYYMMDD             -> hash: page -> daily hits
 
@@ -38,8 +40,10 @@ import redis
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
 
-GLOBAL_INCREMENTAL_KEY = "nextIncrementalKey"
-STORED_COUNTER_KEY_PREFIX = "storedCounter_"
+STORED_TEXT_TOTAL_KEY = "stats:stored:text:total"
+STORED_FILE_TOTAL_KEY = "stats:stored:file:total"
+STORED_TEXT_DAY_KEY_PREFIX = "stats:stored:text:day:"
+STORED_FILE_DAY_KEY_PREFIX = "stats:stored:file:day:"
 PAGE_HIT_TOTAL_KEY = "stats:page:hits:total"
 PAGE_HIT_DAY_KEY_PREFIX = "stats:page:hits:day:"
 
@@ -134,17 +138,29 @@ def safe_int(value: str | None) -> int:
 def collect_stats(client: redis.Redis) -> Dict[str, List[List[object]]]:
     exported_at = dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat()
 
-    total_stored = safe_int(client.get(GLOBAL_INCREMENTAL_KEY))
+    total_stored_text = safe_int(client.get(STORED_TEXT_TOTAL_KEY))
+    total_stored_files = safe_int(client.get(STORED_FILE_TOTAL_KEY))
     page_hits_total_raw = client.hgetall(PAGE_HIT_TOTAL_KEY)
     page_hits_total = sorted(
         ((page, safe_int(value)) for page, value in page_hits_total_raw.items()),
         key=lambda item: item[0],
     )
 
-    stored_daily_rows: List[List[object]] = [["day", "stored_secrets"]]
-    for key in scan_keys(client, f"{STORED_COUNTER_KEY_PREFIX}*"):
-        day = key.removeprefix(STORED_COUNTER_KEY_PREFIX)
-        stored_daily_rows.append([day, safe_int(client.get(key))])
+    stored_text_daily = {
+        key.removeprefix(STORED_TEXT_DAY_KEY_PREFIX): safe_int(client.get(key))
+        for key in scan_keys(client, f"{STORED_TEXT_DAY_KEY_PREFIX}*")
+    }
+    stored_file_daily = {
+        key.removeprefix(STORED_FILE_DAY_KEY_PREFIX): safe_int(client.get(key))
+        for key in scan_keys(client, f"{STORED_FILE_DAY_KEY_PREFIX}*")
+    }
+    stored_daily_rows: List[List[object]] = [["day", "stored_secrets", "stored_files"]]
+    for day in sorted(set(stored_text_daily) | set(stored_file_daily)):
+        stored_daily_rows.append([
+            day,
+            stored_text_daily.get(day, 0),
+            stored_file_daily.get(day, 0),
+        ])
 
     page_hits_daily_rows: List[List[object]] = [["day", "page", "hits"]]
     for key in scan_keys(client, f"{PAGE_HIT_DAY_KEY_PREFIX}*"):
@@ -156,7 +172,8 @@ def collect_stats(client: redis.Redis) -> Dict[str, List[List[object]]]:
     overview_rows: List[List[object]] = [
         ["metric", "value"],
         ["exported_at_utc", exported_at],
-        ["total_stored_secrets", total_stored],
+        ["total_stored_secrets", total_stored_text],
+        ["total_stored_files", total_stored_files],
         ["stored_daily_rows", max(len(stored_daily_rows) - 1, 0)],
         ["page_hits_total_rows", len(page_hits_total)],
         ["page_hits_daily_rows", max(len(page_hits_daily_rows) - 1, 0)],

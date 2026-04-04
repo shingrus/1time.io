@@ -1,6 +1,5 @@
 'use client';
 
-import '../styles/view.css';
 import {useState, useEffect} from 'react';
 import {useRouter} from "next/navigation";
 import {Constants, copyTextToClipboard, decryptSecretMessage, hashSecretKey, postJson} from '../utils/util';

@@ -41,7 +41,7 @@ const jsonLd = [
 export default function SharePasswordsWithQrCodePage() {
     return (
         <>
-            <InlineCss file="styles/blog.css" />
+            <InlineCss file="styles/article.css" />
             {jsonLd.map((schema, index) => (
                 <script key={index} type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }} />
             ))}

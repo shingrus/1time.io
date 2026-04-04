@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import InlineCss from '../../../components/InlineCss';
 
 export const metadata = {
     title: 'Stop Sending Passwords Over Slack: Here\'s What I Built Instead — 1time.io',
@@ -114,7 +115,9 @@ function ArchitectureDiagram() {
 
 export default function Article() {
     return (
-        <article className="article article-wide">
+        <>
+            <InlineCss file="styles/article.css" />
+            <article className="article article-wide">
             {jsonLd.map((schema, i) => (
                 <script key={i} type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }} />
             ))}
@@ -339,7 +342,9 @@ SHOW_BLOG=false`}</code></pre>
                 </ul>
                 <p>
                     1time.io solves one specific problem: <strong>sending a secret to someone
-                    one time, securely, without leaving a trace.</strong>
+                    one time, securely, without leaving a trace.</strong> That goes for text
+                    secrets and for <Link href="/secure-file-sharing/">encrypted file sharing</Link> — same
+                    zero-knowledge model, one-time download, auto-expiry.
                 </p>
                 <p>
                     The contractor who needs the staging DB password. The client&apos;s developer
@@ -388,5 +393,6 @@ SHOW_BLOG=false`}</code></pre>
                 </div>
             </div>
         </article>
+        </>
     );
 }

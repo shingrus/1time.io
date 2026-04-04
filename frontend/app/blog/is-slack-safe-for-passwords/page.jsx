@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import InlineCss from '../../../components/InlineCss';
 
 export const metadata = {
     title: 'Is Slack Safe for Sharing Passwords? (No, and Here Is Why) — 1time.io',
@@ -43,7 +44,9 @@ const jsonLd = [
 
 export default function Article() {
     return (
-        <article className="article">
+        <>
+            <InlineCss file="styles/article.css" />
+            <article className="article">
             {jsonLd.map((schema, i) => (
                 <script key={i} type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }} />
             ))}
@@ -170,6 +173,12 @@ export default function Article() {
                     tools, and retained according to corporate policies. The risks are identical.
                 </p>
 
+                <p>
+                    The same approach works for files. Need to share a document, certificate, or config
+                    export over Slack? Use <Link href="/secure-file-sharing/">encrypted file sharing</Link> — the
+                    file is encrypted in your browser and the download link self-destructs after one use.
+                </p>
+
                 <h2>Quick Checklist for Your Team</h2>
                 <ul>
                     <li>Never paste raw passwords, API keys, or tokens into Slack or Teams messages.</li>
@@ -205,5 +214,6 @@ export default function Article() {
                 </div>
             </div>
         </article>
+        </>
     );
 }

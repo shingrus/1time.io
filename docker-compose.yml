@@ -29,6 +29,9 @@ services:
       LISTEN_ADDR: 0.0.0.0:8080
       REDISHOST: redis:6379
       REDISPASS: ""
+      FILE_STORAGE_DIR: /data/files
+    volumes:
+      - ${DATA_DIR:-./data}:/data
     depends_on:
       - redis
 

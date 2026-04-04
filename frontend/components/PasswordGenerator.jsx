@@ -597,7 +597,7 @@ export default function PasswordGenerator({ presetPath }) {
                                 value={wordCount}
                                 onChange={(e) => setWordCount(Number(e.target.value))}
                             >
-                                {[3,4,5,6,7,8].map(n => (
+                                {[3,4,5,6,7,8,9,10,11,12].map(n => (
                                     <option key={n} value={n}>{n} words</option>
                                 ))}
                             </select>

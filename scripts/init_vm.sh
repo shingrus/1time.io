@@ -7,7 +7,9 @@ APP_GROUP="${APP_GROUP:-$APP_USER}"
 SERVICE_NAME="${SERVICE_NAME:-1time}"
 INSTALL_ROOT="${INSTALL_ROOT:-/opt/1time}"
 BIN_DIR="${INSTALL_ROOT}/bin"
+FILE_STORAGE_DIR="${FILE_STORAGE_DIR:-${INSTALL_ROOT}/files}"
 STATIC_ROOT="${STATIC_ROOT:-/var/www/1time}"
+LISTEN_ADDR="${LISTEN_ADDR:-127.0.0.1:8080}"
 REDIS_HOST="${REDIS_HOST:-127.0.0.1:6379}"
 REDIS_PASS="${REDIS_PASS:-}"
 
@@ -47,6 +49,7 @@ fi
 
 install -d -m 700 -o "${APP_USER}" -g "${APP_GROUP}" "/home/${APP_USER}/.ssh"
 install -d -m 755 -o "${APP_USER}" -g "${APP_GROUP}" "${INSTALL_ROOT}" "${BIN_DIR}" "${STATIC_ROOT}"
+install -d -m 750 -o "${APP_USER}" -g "${APP_GROUP}" "${FILE_STORAGE_DIR}"
 
 install -m 0755 -o "${APP_USER}" -g "${APP_GROUP}" "${BIN_SOURCE}" "${BIN_DIR}/1time-api"
 
@@ -63,9 +66,11 @@ tmp_unit="$(mktemp)"
 sed \
     -e "s#^User=.*#User=${APP_USER}#" \
     -e "s#^Group=.*#Group=${APP_GROUP}#" \
-    -e "s#^WorkingDirectory=.*#WorkingDirectory=${BIN_DIR}#" \
+    -e "s#^WorkingDirectory=.*#WorkingDirectory=${INSTALL_ROOT}#" \
+    -e "s#^Environment=LISTEN_ADDR=.*#Environment=LISTEN_ADDR=${LISTEN_ADDR}#" \
     -e "s#^Environment=REDISHOST=.*#Environment=REDISHOST=${REDIS_HOST}#" \
     -e "s#^Environment=REDISPASS=.*#Environment=REDISPASS=${REDIS_PASS}#" \
+    -e "s#^Environment=FILE_STORAGE_DIR=.*#Environment=FILE_STORAGE_DIR=${FILE_STORAGE_DIR}#" \
     -e "s#^ExecStart=.*#ExecStart=${BIN_DIR}/1time-api#" \
     "${UNIT_SOURCE}" > "${tmp_unit}"
 install -m 0644 "${tmp_unit}" "${UNIT_TARGET}"

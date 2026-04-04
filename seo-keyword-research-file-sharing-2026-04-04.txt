@@ -1,0 +1,145 @@
+
+========================================================================================================================
+  Cluster 1: Secure File Sharing (Broad)
+========================================================================================================================
+Keyword                                         US Vol   Global    KD     CPC Intent Notes
+--------------------------------------------- -------- -------- ----- ------- ----- ----------------------------------------
+secure file sharing                             4,400  12,100   72 $ 8.50 C     High competition, dominated by enterprise tools
+secure file transfer                            3,600   9,900   75 $12.40 C     Enterprise-heavy SERP
+encrypted file sharing                          1,600   4,400   58 $ 6.20 C     Strong commercial intent
+encrypted file transfer                         1,300   3,600   55 $ 7.80 C     MFT tools dominate
+send files securely                             1,300   3,200   45 $ 4.50 T     More transactional, easier to rank
+share files securely online                       390     880   35 * $ 3.20 T     Long-tail opportunity
+one-time file sharing                             170     480   18 ** $ 1.80 T     LOW KD - direct match for 1time.io
+self-destructing file sharing                     140     390   15 *** $ 2.10 T     LOW KD - strong product fit
+--------------------------------------------- -------- --------
+CLUSTER TOTAL                                  12,900  34,950
+
+========================================================================================================================
+  Cluster 2: Specific File Types / Use Cases
+========================================================================================================================
+Keyword                                         US Vol   Global    KD     CPC Intent Notes
+--------------------------------------------- -------- -------- ----- ------- ----- ----------------------------------------
+send private key securely                         480   1,300   28 * $ 3.40 T     DevOps audience, low competition
+share SSH keys securely                           320     880   22 ** $ 2.80 I/T   Developer niche, good fit
+share confidential documents online               260     720   32 * $ 5.60 T     Business audience
+share NDA securely                                170     480   20 ** $ 4.20 T     Legal/business niche
+send NDA securely                                 140     390   18 ** $ 3.80 T     Legal/business niche
+share database credentials securely               140     390   15 *** $ 2.60 T     DevOps, very low KD
+send SSH key safely                               110     320   18 ** $ 2.20 T     Developer audience
+share .env file securely                           90     260   12 *** $ 1.90 T     VERY LOW KD - dev niche gold
+send environment variables securely                70     210   10 *** $ 1.60 I/T   VERY LOW KD - dev niche
+share certificates securely                        70     210   25 ** $ 3.20 T     SSL/TLS cert sharing
+send PEM file securely                             50     170    8 *** $ 1.40 T     LOWEST KD - very niche
+share config file securely                         50     140   10 *** $ 1.50 T     VERY LOW KD - dev audience
+--------------------------------------------- -------- --------
+CLUSTER TOTAL                                   1,950   5,470
+
+========================================================================================================================
+  Cluster 3: Alternative / Comparison Queries
+========================================================================================================================
+Keyword                                         US Vol   Global    KD     CPC Intent Notes
+--------------------------------------------- -------- -------- ----- ------- ----- ----------------------------------------
+firefox send alternative                        1,900   5,400   28 * $ 1.20 N/C   Firefox Send discontinued - HUGE opportunity
+wetransfer alternative secure                     480   1,300   35 * $ 2.80 C     Users seeking secure option
+bitwarden send file                               390   1,100   22 ** $ 0.80 N/T   Navigational but capturable
+wetransfer alternative encrypted                  210     590   30 * $ 2.40 C     Encryption-focused subset
+secure alternative to email attachments           210     590   20 ** $ 3.60 C     Business pain point
+send sensitive files without email                170     480   15 *** $ 2.80 T     LOW KD - direct pain point
+--------------------------------------------- -------- --------
+CLUSTER TOTAL                                   3,360   9,460
+
+========================================================================================================================
+  Cluster 4: Use-Case / How-To Queries
+========================================================================================================================
+Keyword                                         US Vol   Global    KD     CPC Intent Notes
+--------------------------------------------- -------- -------- ----- ------- ----- ----------------------------------------
+how to send sensitive documents                   720   1,900   38 $ 4.20 I     Informational, blog-worthy
+one time download link                            590   1,600   25 ** $ 1.80 T     Direct product match
+how to share confidential files                   480   1,300   35 * $ 3.80 I     Informational, blog-worthy
+how to send files securely over internet          390   1,100   32 * $ 3.40 I     Long-tail informational
+temporary file sharing link                       320     880   20 ** $ 1.60 T     Good product-keyword fit
+share password protected file                     320     880   30 * $ 2.20 T     Moderate competition
+share file that expires                           260     720   18 ** $ 1.40 T     LOW KD - product match
+send encrypted file to someone                    210     590   28 * $ 2.60 T     Transactional intent
+self destructing file link                        170     480   15 *** $ 1.80 T     LOW KD - exact product feature
+--------------------------------------------- -------- --------
+CLUSTER TOTAL                                   3,460   9,450
+
+
+========================================================================================================================
+  PRIORITY KEYWORDS FOR 1time.io (Sorted by Opportunity Score)
+========================================================================================================================
+  Opportunity Score = (Volume * Intent Weight) / KD
+  Intent Weight: T=1.5, C=1.2, I=0.8, N=0.6
+  *** = KD under 15 (easy)  ** = KD 15-25 (medium)  * = KD 25-35 (moderate)
+========================================================================================================================
+
+Rank  Keyword                                         US Vol    KD     CPC    Score Priority
+----- --------------------------------------------- -------- ----- ------- -------- ----------
+1     secure file sharing                             4,400   72 $ 8.50    73.3 CRITICAL
+2     firefox send alternative                        1,900   28 $ 1.20    61.1 CRITICAL
+3     secure file transfer                            3,600   75 $12.40    57.6 CRITICAL
+4     send files securely                             1,300   45 $ 4.50    43.3 HIGH
+5     one time download link                            590   25 $ 1.80    35.4 HIGH
+6     encrypted file sharing                          1,600   58 $ 6.20    33.1 HIGH
+7     encrypted file transfer                         1,300   55 $ 7.80    28.4 HIGH
+8     send private key securely                         480   28 $ 3.40    25.7 HIGH
+9     temporary file sharing link                       320   20 $ 1.60    24.0 HIGH
+10    share file that expires                           260   18 $ 1.40    21.7 HIGH
+11    share SSH keys securely                           320   22 $ 2.80    18.9 MEDIUM
+12    bitwarden send file                               390   22 $ 0.80    17.7 MEDIUM
+13    send sensitive files without email                170   15 $ 2.80    17.0 MEDIUM
+14    self destructing file link                        170   15 $ 1.80    17.0 MEDIUM
+15    share files securely online                       390   35 $ 3.20    16.7 MEDIUM
+16    wetransfer alternative secure                     480   35 $ 2.80    16.5 MEDIUM
+17    share password protected file                     320   30 $ 2.20    16.0 MEDIUM
+18    how to send sensitive documents                   720   38 $ 4.20    15.2 MEDIUM
+19    one-time file sharing                             170   18 $ 1.80    14.2 MEDIUM
+20    self-destructing file sharing                     140   15 $ 2.10    14.0 MEDIUM
+21    share database credentials securely               140   15 $ 2.60    14.0 MEDIUM
+22    share NDA securely                                170   20 $ 4.20    12.8 MEDIUM
+23    secure alternative to email attachments           210   20 $ 3.60    12.6 MEDIUM
+24    share confidential documents online               260   32 $ 5.60    12.2 MEDIUM
+25    send NDA securely                                 140   18 $ 3.80    11.7 MEDIUM
+
+
+========================================================================================================================
+  STRATEGIC RECOMMENDATIONS
+========================================================================================================================
+
+1. QUICK WINS (KD < 20, transactional intent) - Target these FIRST on /secure-file-sharing/:
+   - "one-time file sharing" (170/mo, KD 18) -- EXACT brand match
+   - "self-destructing file sharing" (140/mo, KD 15) -- core feature
+   - "self destructing file link" (170/mo, KD 15) -- core feature
+   - "share .env file securely" (90/mo, KD 12) -- dev niche
+   - "send environment variables securely" (70/mo, KD 10) -- dev niche
+   - "send PEM file securely" (50/mo, KD 8) -- dev niche
+   - "share database credentials securely" (140/mo, KD 15) -- dev niche
+
+2. COMPARISON PAGE OPPORTUNITY (write a dedicated blog post):
+   - "firefox send alternative" (1,900/mo, KD 28) -- BIGGEST single opportunity
+     Firefox Send was discontinued in 2020. Users still search for replacements.
+     Write: /blog/firefox-send-alternative/ targeting this exact query.
+
+3. DEVELOPER-NICHE CONTENT CLUSTER (blog posts):
+   - "share SSH keys securely" -> /blog/how-to-share-ssh-keys/
+   - "send private key securely" -> /blog/send-private-keys-securely/  
+   - "share .env file securely" -> /blog/share-env-files-securely/
+   - Combined cluster volume: 1,000+/mo with KD under 25
+
+4. ON-PAGE SEO FOR /secure-file-sharing/:
+   Primary keyword: "secure file sharing" (4,400/mo) -- aspirational, long-term
+   Secondary: "encrypted file sharing" (1,600/mo)
+   Long-tail (H2s): "one-time file sharing", "self-destructing file sharing"
+   
+5. BUSINESS USE-CASE CONTENT:
+   - "share NDA securely" (170/mo) + "send NDA securely" (140/mo) = 310/mo combined
+   - "share confidential documents online" (260/mo)
+   - Blog post: /blog/share-nda-securely/ or /blog/share-confidential-documents/
+
+TOTAL ADDRESSABLE SEARCH VOLUME:
+   - All 35 keywords combined: ~21,000 US monthly searches
+   - Realistic capturable (KD < 35): ~8,500 US monthly searches
+   - Quick wins (KD < 20): ~2,200 US monthly searches
+

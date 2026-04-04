@@ -44,6 +44,7 @@ beforeEach(() => {
                 ok: true,
                 json: async () => ({
                     overallStoredSecrets: 0,
+                    overallStoredFiles: 0,
                     pendingPageHits: {},
                     pendingPageHitsTotal: 0,
                     flushIntervalSeconds: 10,
@@ -68,20 +69,18 @@ beforeEach(() => {
 });
 
 describe('NewMessage component', () => {
-    it('renders the message form and reveals advanced options', async () => {
+    it('renders the message form with always-visible options', async () => {
         const user = userEvent.setup();
 
         render(<NewMessage />);
 
         const submitButton = screen.getByRole('button', { name: /create secret link/i });
         expect(submitButton).toBeDisabled();
+        expect(screen.getByLabelText(/additional passphrase/i)).toBeInTheDocument();
+        expect(screen.getByLabelText(/expire after/i)).toBeInTheDocument();
 
         await user.type(screen.getByLabelText(/your secret message/i), 'top secret');
         expect(submitButton).toBeEnabled();
-
-        await user.click(screen.getByRole('button', { name: /options/i }));
-        expect(screen.getByLabelText(/additional passphrase/i)).toBeInTheDocument();
-        expect(screen.getByLabelText(/self-destruct after/i)).toBeInTheDocument();
     });
 
     it('submits a new secret and navigates to the generated link page', async () => {
@@ -248,6 +247,7 @@ describe('StatsSnapshot component', () => {
                     ok: true,
                     json: async () => ({
                         overallStoredSecrets: 12,
+                        overallStoredFiles: 5,
                         pendingPageHits: {
                             home: 2,
                             blog: 1,
@@ -268,6 +268,7 @@ describe('StatsSnapshot component', () => {
 
         expect(await screen.findByRole('heading', { level: 1 })).toHaveTextContent('In-Memory Stats');
         expect(await screen.findByText('12')).toBeInTheDocument();
+        expect(screen.getByText('5')).toBeInTheDocument();
         expect(screen.getByText('home')).toBeInTheDocument();
         expect(screen.getByText('blog')).toBeInTheDocument();
     });
