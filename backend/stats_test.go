@@ -113,6 +113,7 @@ func TestAPIStatSnapshotReturnsBufferedStats(t *testing.T) {
 	}()
 
 	appStats.AddStoredSecrets(7)
+	appStats.AddStoredFiles(3)
 	appStats.RecordPageHit(statPageHome)
 	appStats.RecordPageHit(statPagePassword)
 	appStats.RecordPageHit(statPagePassword)
@@ -125,6 +126,9 @@ func TestAPIStatSnapshotReturnsBufferedStats(t *testing.T) {
 	body := string(response)
 	if !strings.Contains(body, `"overallStoredSecrets":7`) {
 		t.Fatalf("snapshot body = %s, missing overallStoredSecrets", body)
+	}
+	if !strings.Contains(body, `"overallStoredFiles":3`) {
+		t.Fatalf("snapshot body = %s, missing overallStoredFiles", body)
 	}
 	if !strings.Contains(body, `"home":1`) {
 		t.Fatalf("snapshot body = %s, missing home count", body)

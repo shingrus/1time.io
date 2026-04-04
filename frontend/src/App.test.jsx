@@ -44,6 +44,7 @@ beforeEach(() => {
                 ok: true,
                 json: async () => ({
                     overallStoredSecrets: 0,
+                    overallStoredFiles: 0,
                     pendingPageHits: {},
                     pendingPageHitsTotal: 0,
                     flushIntervalSeconds: 10,
@@ -246,6 +247,7 @@ describe('StatsSnapshot component', () => {
                     ok: true,
                     json: async () => ({
                         overallStoredSecrets: 12,
+                        overallStoredFiles: 5,
                         pendingPageHits: {
                             home: 2,
                             blog: 1,
@@ -266,6 +268,7 @@ describe('StatsSnapshot component', () => {
 
         expect(await screen.findByRole('heading', { level: 1 })).toHaveTextContent('In-Memory Stats');
         expect(await screen.findByText('12')).toBeInTheDocument();
+        expect(screen.getByText('5')).toBeInTheDocument();
         expect(screen.getByText('home')).toBeInTheDocument();
         expect(screen.getByText('blog')).toBeInTheDocument();
     });

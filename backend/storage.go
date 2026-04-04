@@ -17,7 +17,6 @@ import (
 var redisPassword = os.Getenv("REDISPASS")
 var redisHost = os.Getenv("REDISHOST")
 
-const globalIncrementalKey = "nextIncrementalKey"
 const storageIDByteLen = 16
 const maxStorageIDAttempts = 5
 const redisTimeout = time.Second * 10
@@ -94,19 +93,6 @@ func getStoreKey(key string) string {
 func getFileStoreKey(key string) string {
 	return "fileKey" + key
 }
-
-//func getMessageFromStorage(key string) (val string) {
-//	client := getRedisClient()
-//	val, err := client.Get(getStoreKey(key)).Result()
-//	if err == redis.Nil {
-//		log.Println(getStoreKey(key) + " does not exist")
-//	} else if err != nil {
-//		log.Println(err)
-//	} else {
-//		log.Printf("Got from storage: %v", val)
-//	}
-//	return
-//}
 
 func consumeFileMessageFromStorage(key string, hashedKey string) (storedFile StoredFile, status string, err error) {
 	client := getRedisClient()
@@ -201,9 +187,3 @@ func consumeMessageFromStorage(key string, hashedKey string) (storedMessage Stor
 
 	return
 }
-
-//func dropFromStorage(key string) {
-//	client := getRedisClient()
-//	client.Del(getStoreKey(key)).Err()
-//
-//}

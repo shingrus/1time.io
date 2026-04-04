@@ -250,8 +250,8 @@ func apiSaveSecretFile(r *http.Request) (responseCode int, response []byte) {
 			continue
 		}
 
-		if err := incrementStoredSecretCounters(time.Now().UTC()); err != nil {
-			log.Printf("incrementStoredSecretCounters error: %v", err)
+		if err := incrementStoredFileCounters(time.Now().UTC()); err != nil {
+			log.Printf("incrementStoredFileCounters error: %v", err)
 		}
 
 		jResponse.Status = "ok"

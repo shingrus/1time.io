@@ -15,18 +15,27 @@ import (
 const (
 	pageHitTotalKey        = "stats:page:hits:total"
 	pageHitDayKeyPrefix    = "stats:page:hits:day:"
-	storedCounterKeyPrefix = "storedCounter_"
+	storedTextTotalKey     = "stats:stored:text:total"
+	storedTextDayKeyPrefix = "stats:stored:text:day:"
+	storedFileTotalKey     = "stats:stored:file:total"
+	storedFileDayKeyPrefix = "stats:stored:file:day:"
 	statsHistoryTTL        = time.Hour * 24 * 60
 	statsFlushInterval     = time.Second * 10
 	statPageCount          = 3
 )
 
 type statPageIndex int
+type storedCounterKind int
 
 const (
 	statPageHome statPageIndex = iota
 	statPageBlog
 	statPagePassword
+)
+
+const (
+	storedCounterText storedCounterKind = iota
+	storedCounterFile
 )
 
 var statPageNames = [statPageCount]string{
@@ -39,6 +48,7 @@ type pageHitSnapshot [statPageCount]int64
 
 type StatsSnapshot struct {
 	OverallStoredSecrets int64            `json:"overallStoredSecrets"`
+	OverallStoredFiles   int64            `json:"overallStoredFiles"`
 	PendingPageHits      map[string]int64 `json:"pendingPageHits"`
 	PendingPageHitsTotal int64            `json:"pendingPageHitsTotal"`
 	FlushIntervalSeconds int64            `json:"flushIntervalSeconds"`
@@ -48,6 +58,7 @@ type StatsManager struct {
 	mu                   sync.Mutex
 	pendingPageHits      pageHitSnapshot
 	overallStoredSecrets atomic.Int64
+	overallStoredFiles   atomic.Int64
 }
 
 var appStats = NewStatsManager()
@@ -57,7 +68,7 @@ func NewStatsManager() *StatsManager {
 }
 
 func (s *StatsManager) Start() {
-	if err := s.loadOverallStoredSecrets(); err != nil {
+	if err := s.loadOverallStoredCounters(); err != nil {
 		log.Println(err)
 	}
 
@@ -74,8 +85,16 @@ func (s *StatsManager) AddStoredSecrets(delta int64) {
 	s.overallStoredSecrets.Add(delta)
 }
 
+func (s *StatsManager) AddStoredFiles(delta int64) {
+	s.overallStoredFiles.Add(delta)
+}
+
 func (s *StatsManager) GetOverallStoredSecrets() int64 {
 	return s.overallStoredSecrets.Load()
+}
+
+func (s *StatsManager) GetOverallStoredFiles() int64 {
+	return s.overallStoredFiles.Load()
 }
 
 func (s *StatsManager) GetSnapshot() StatsSnapshot {
@@ -85,6 +104,7 @@ func (s *StatsManager) GetSnapshot() StatsSnapshot {
 
 	snapshot := StatsSnapshot{
 		OverallStoredSecrets: s.GetOverallStoredSecrets(),
+		OverallStoredFiles:   s.GetOverallStoredFiles(),
 		PendingPageHits:      make(map[string]int64, statPageCount),
 		FlushIntervalSeconds: int64(statsFlushInterval / time.Second),
 	}
@@ -98,13 +118,19 @@ func (s *StatsManager) GetSnapshot() StatsSnapshot {
 	return snapshot
 }
 
-func (s *StatsManager) loadOverallStoredSecrets() error {
-	total, err := getOverallStoredSecretsFromRedis()
+func (s *StatsManager) loadOverallStoredCounters() error {
+	textTotal, err := getOverallStoredCounterFromRedis(storedCounterText)
 	if err != nil {
 		return err
 	}
 
-	s.overallStoredSecrets.Store(total)
+	fileTotal, err := getOverallStoredCounterFromRedis(storedCounterFile)
+	if err != nil {
+		return err
+	}
+
+	s.overallStoredSecrets.Store(textTotal)
+	s.overallStoredFiles.Store(fileTotal)
 
 	return nil
 }
@@ -183,8 +209,26 @@ func getStatsDay(now time.Time) string {
 	return now.UTC().Format("20060102")
 }
 
-func getStoredCounterKey(now time.Time) string {
-	return storedCounterKeyPrefix + getStatsDay(now)
+func getStoredCounterDayKey(kind storedCounterKind, now time.Time) string {
+	switch kind {
+	case storedCounterText:
+		return storedTextDayKeyPrefix + getStatsDay(now)
+	case storedCounterFile:
+		return storedFileDayKeyPrefix + getStatsDay(now)
+	default:
+		return storedTextDayKeyPrefix + getStatsDay(now)
+	}
+}
+
+func getStoredCounterTotalKey(kind storedCounterKind) string {
+	switch kind {
+	case storedCounterText:
+		return storedTextTotalKey
+	case storedCounterFile:
+		return storedFileTotalKey
+	default:
+		return storedTextTotalKey
+	}
 }
 
 func getPageHitDayKey(now time.Time) string {
@@ -192,11 +236,20 @@ func getPageHitDayKey(now time.Time) string {
 }
 
 func incrementStoredSecretCounters(now time.Time) error {
+	return incrementStoredCounter(storedCounterText, now)
+}
+
+func incrementStoredFileCounters(now time.Time) error {
+	return incrementStoredCounter(storedCounterFile, now)
+}
+
+func incrementStoredCounter(kind storedCounterKind, now time.Time) error {
 	client := getRedisClient()
-	dayKey := getStoredCounterKey(now)
+	totalKey := getStoredCounterTotalKey(kind)
+	dayKey := getStoredCounterDayKey(kind, now)
 
 	_, err := client.TxPipelined(func(pipe redis.Pipeliner) error {
-		pipe.Incr(globalIncrementalKey)
+		pipe.Incr(totalKey)
 		pipe.Incr(dayKey)
 		pipe.Expire(dayKey, statsHistoryTTL)
 		return nil
@@ -205,7 +258,12 @@ func incrementStoredSecretCounters(now time.Time) error {
 		return err
 	}
 
-	appStats.AddStoredSecrets(1)
+	switch kind {
+	case storedCounterFile:
+		appStats.AddStoredFiles(1)
+	default:
+		appStats.AddStoredSecrets(1)
+	}
 	return nil
 }
 
@@ -230,9 +288,9 @@ func flushPageHitCounters(pageHits pageHitSnapshot, now time.Time) error {
 	return err
 }
 
-func getOverallStoredSecretsFromRedis() (int64, error) {
+func getOverallStoredCounterFromRedis(kind storedCounterKind) (int64, error) {
 	client := getRedisClient()
-	total, err := client.Get(globalIncrementalKey).Int64()
+	total, err := client.Get(getStoredCounterTotalKey(kind)).Int64()
 	if err == redis.Nil {
 		return 0, nil
 	}
