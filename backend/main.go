@@ -23,8 +23,8 @@ func main() {
 	}
 
 	if fileStorageDir == "" {
-		fileStorageDir, _ = os.Getwd()
-		log.Printf("Env %s is not set, using cwd: %s", FILE_STORAGE_DIR_VAR, fileStorageDir)
+		log.Printf("Env %s is not set, exiting", FILE_STORAGE_DIR_VAR)
+		os.Exit(1)
 	}
 
 	appStats.Start()

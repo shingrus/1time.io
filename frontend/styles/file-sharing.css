@@ -1,0 +1,170 @@
+.file-drop-zone {
+  border: 2px dashed var(--text-muted);
+  border-radius: var(--radius);
+  padding: 40px 20px;
+  text-align: center;
+  cursor: pointer;
+  background: var(--bg);
+  transition: border-color var(--transition), background var(--transition);
+}
+
+.file-drop-zone:hover,
+.file-drop-zone-active {
+  border-color: var(--accent);
+  background: var(--accent-light);
+}
+
+.file-drop-zone-has-file {
+  border-style: solid;
+  border-color: var(--accent);
+  background: var(--accent-light);
+  padding: 16px 20px;
+}
+
+.file-drop-prompt {
+  color: var(--text-secondary);
+}
+
+.file-drop-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 14px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--success);
+  background: var(--success);
+  color: #fff;
+  box-shadow: var(--shadow-sm);
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  transition:
+    border-color var(--transition),
+    color var(--transition),
+    background var(--transition);
+}
+
+.file-drop-zone:hover .file-drop-btn {
+  border-color: var(--success-hover);
+  background: var(--success-hover);
+  color: #fff;
+}
+
+.file-drop-btn svg {
+  flex-shrink: 0;
+}
+
+.file-drop-prompt p {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.6;
+}
+
+.file-drop-limit {
+  font-size: 13px !important;
+  color: var(--text-muted);
+  margin-top: 6px !important;
+}
+
+.file-selected {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.file-selected svg {
+  flex-shrink: 0;
+  color: var(--accent);
+}
+
+.file-selected-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.file-selected-size {
+  font-size: 13px;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.file-selected-remove {
+  margin-left: auto;
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  font-size: 18px;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 0 4px;
+  line-height: 1;
+}
+
+.file-selected-remove:hover {
+  color: var(--danger);
+}
+
+.file-progress {
+  margin-bottom: 16px;
+  padding: 16px;
+  border: 1px solid rgba(194, 65, 12, 0.18);
+  border-radius: var(--radius);
+  background:
+    linear-gradient(180deg, rgba(255, 251, 235, 0.96), rgba(255, 247, 237, 0.98));
+}
+
+.file-progress-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.file-progress-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.file-progress-value {
+  font-size: 13px;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.file-progress-track {
+  position: relative;
+  overflow: hidden;
+  height: 10px;
+  margin-top: 10px;
+  border-radius: var(--radius-sm);
+  background: rgba(148, 163, 184, 0.18);
+}
+
+.file-progress-fill {
+  height: 100%;
+  border-radius: var(--radius-sm);
+  background: linear-gradient(90deg, #C2410C, #EA580C);
+  transition: width 160ms linear;
+}
+
+.file-progress-track-indeterminate .file-progress-fill {
+  width: 42%;
+  animation: file-progress-slide 1.15s ease-in-out infinite;
+}
+
+@keyframes file-progress-slide {
+  0% {
+    transform: translateX(-85%);
+  }
+  100% {
+    transform: translateX(220%);
+  }
+}

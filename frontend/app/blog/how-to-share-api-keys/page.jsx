@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import InlineCss from '../../../components/InlineCss';
 
 export const metadata = {
     title: 'How to Share API Keys Securely with Your Team — 1time.io',
@@ -43,7 +44,9 @@ const jsonLd = [
 
 export default function Article() {
     return (
-        <article className="article">
+        <>
+            <InlineCss file="styles/article.css" />
+            <article className="article">
             {jsonLd.map((schema, i) => (
                 <script key={i} type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }} />
             ))}
@@ -180,5 +183,6 @@ export default function Article() {
                 </div>
             </div>
         </article>
+        </>
     );
 }

@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import InlineCss from '../../components/InlineCss';
 
 const jsonLd = {
     '@context': 'https://schema.org',
@@ -185,6 +186,7 @@ const articles = [
 export default function BlogIndex() {
     return (
         <div className="blog-index">
+            <InlineCss file="styles/blog-index.css" />
             <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
             <h1>Blog</h1>
             <p className="subtitle">Guides on secure sharing, encryption, and protecting sensitive data.</p>

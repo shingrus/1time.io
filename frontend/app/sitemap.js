@@ -6,6 +6,7 @@ export const dynamic = 'force-static';
 // Update lastModified only when page content actually changes
 const coreRoutes = [
     ['/', 1.0, 'weekly', '2026-03-23'],
+    ['/secure-file-sharing/', 0.9, 'weekly', '2026-04-03'],
     // Password generator tools
     ['/password-generator/', 0.9, 'weekly', '2026-03-23'],
     ['/passphrase-generator/', 0.8, 'weekly', '2026-03-23'],

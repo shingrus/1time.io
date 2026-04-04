@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import InlineCss from '../../../components/InlineCss';
 import CodeBlock from '../../../components/CodeBlock';
 
 export const metadata = {
@@ -74,7 +75,9 @@ const jsonLd = [
 
 export default function Article() {
     return (
-        <article className="article">
+        <>
+            <InlineCss file="styles/article.css" />
+            <article className="article">
             {jsonLd.map((schema, i) => (
                 <script key={i} type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }} />
             ))}
@@ -241,5 +244,6 @@ postgres://admin:s3cret@db.prod.internal:5432/myapp`}</CodeBlock>
                 </p>
             </div>
         </article>
+        </>
     );
 }

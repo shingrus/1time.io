@@ -116,7 +116,7 @@ cp .env.example .env
 docker compose -f docker-compose.dev.yml up -d --build
 ```
 
-Both options start on `http://localhost:8080` with Redis persistence, the Go API, and nginx serving the frontend. Multi-arch images (amd64 + arm64) are available.
+Both options start on `http://localhost:8080` with Redis persistence, encrypted file storage under `DATA_DIR/files`, the Go API, and nginx serving the frontend. Multi-arch images (amd64 + arm64) are available.
 
 ### Configuration
 
@@ -124,7 +124,7 @@ Both options start on `http://localhost:8080` with Redis persistence, the Go API
 |---|---|---|
 | `APP_HOSTNAME` | `1time.io` | Public hostname for links and metadata |
 | `APP_PORT` | `8080` | External HTTP port |
-| `DATA_DIR` | `./data` | Host path for Redis persistence |
+| `DATA_DIR` | `./data` | Host path for Redis persistence and encrypted file storage |
 | `SHOW_BLOG` | `false` | Enable blog routes (for hosted version) |
 
 Put your own reverse proxy (Caddy, Traefik, nginx) in front for HTTPS/TLS termination.
@@ -162,7 +162,7 @@ Put your own reverse proxy (Caddy, Traefik, nginx) in front for HTTPS/TLS termin
 | Layer | Technology |
 |---|---|
 | Backend | Go (stdlib, no frameworks) |
-| Storage | Redis with RDB persistence |
+| Storage | Redis plus encrypted file blobs on disk |
 | Frontend | Next.js (static export) |
 | CLI | Node.js ([`@1time/cli`](https://www.npmjs.com/package/@1time/cli)) |
 | Encryption | Web Crypto API (AES-256-GCM, HKDF-SHA256) |
@@ -182,15 +182,17 @@ Put your own reverse proxy (Caddy, Traefik, nginx) in front for HTTPS/TLS termin
 
 ```bash
 # Start Redis locally
+mkdir -p /tmp/1time-files
+export FILE_STORAGE_DIR=/tmp/1time-files
 export REDISHOST=127.0.0.1:6379
 export REDISPASS=
 
 # Run the backend
-go run .
+go run ./backend
 # Listening on http://127.0.0.1:8080
 
 # Tests
-GOCACHE=/tmp/go-cache go test ./...
+GOCACHE=/tmp/go-cache go test ./backend/...
 ```
 
 ### Frontend

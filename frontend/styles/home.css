@@ -1,21 +1,61 @@
-/* Options panel */
-.options-panel {
-  background: var(--bg);
+/* Route switcher */
+.share-mode-nav {
+  display: flex;
+  gap: 0;
+  margin-bottom: 18px;
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 16px;
-  margin-bottom: 16px;
-  animation: slideDown 200ms ease;
+  overflow: hidden;
+  background: var(--bg);
 }
 
-@keyframes slideDown {
-  from { opacity: 0; transform: translateY(-8px); }
-  to { opacity: 1; transform: translateY(0); }
+.share-mode-link {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 16px;
+  border: none;
+  background: transparent;
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: background var(--transition), color var(--transition);
+  text-decoration: none;
+}
+
+.share-mode-link:hover {
+  color: var(--text);
+}
+
+.share-mode-link-active {
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+
+.share-flow-page:has(.link-ready-fallback) .share-mode-nav,
+.share-flow-page:has(.link-display) .share-mode-nav,
+.share-flow-page:has(.link-ready-fallback) .seo-section,
+.share-flow-page:has(.link-display) .seo-section {
+  display: none;
+}
+
+.form-help-error {
+  color: var(--danger);
+  font-size: 14px;
 }
 
 .options-grid {
   display: grid;
   gap: 12px;
+  margin-bottom: 16px;
+}
+
+.share-primary-actions {
+  margin-bottom: 16px;
 }
 
 @media (min-width: 480px) {

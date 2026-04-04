@@ -71,6 +71,22 @@ function fromBase64Url(base64Url) {
     return base64ToBytes(base64);
 }
 
+function toUint8Array(data) {
+    if (data instanceof Uint8Array) {
+        return data;
+    }
+
+    if (data instanceof ArrayBuffer) {
+        return new Uint8Array(data);
+    }
+
+    if (ArrayBuffer.isView(data)) {
+        return new Uint8Array(data.buffer, data.byteOffset, data.byteLength);
+    }
+
+    throw new Error('Binary payload must be an ArrayBuffer or Uint8Array');
+}
+
 async function deriveHkdfBaseKey(fullSecretKey) {
     const crypto = requireWebCrypto();
 
@@ -169,20 +185,22 @@ export function getRandomString(stringLen) {
     return randomString;
 }
 
-export async function encryptSecretMessage(secretMessage, fullSecretKey) {
+export async function encryptSecretBytes(secretBytes, fullSecretKey) {
     const crypto = requireWebCrypto();
     const iv = crypto.getRandomValues(new Uint8Array(12));
     const encryptKey = await deriveSecretKey(fullSecretKey);
     const encryptedBuffer = await crypto.subtle.encrypt(
         {name: 'AES-GCM', iv},
         encryptKey,
-        textEncoder.encode(secretMessage),
+        toUint8Array(secretBytes),
     );
-    const hashedKey = await deriveAuthToken(fullSecretKey);
+    const encryptedBytes = new Uint8Array(iv.length + encryptedBuffer.byteLength);
+    encryptedBytes.set(iv);
+    encryptedBytes.set(new Uint8Array(encryptedBuffer), iv.length);
 
     return {
-        encryptedMessage: `${toBase64Url(iv)}.${toBase64Url(new Uint8Array(encryptedBuffer))}`,
-        hashedKey,
+        encryptedBytes,
+        hashedKey: await deriveAuthToken(fullSecretKey),
     };
 }
 
@@ -190,8 +208,33 @@ export async function hashSecretKey(fullSecretKey) {
     return deriveAuthToken(fullSecretKey);
 }
 
-export async function decryptSecretMessage(cryptedMessage, fullSecretKey) {
+export async function decryptSecretBytes(encryptedPayload, fullSecretKey) {
     const crypto = requireWebCrypto();
+    const encryptedBytes = toUint8Array(encryptedPayload);
+    if (encryptedBytes.length <= 12) {
+        throw new Error('Unsupported encrypted payload format');
+    }
+
+    const decryptKey = await deriveSecretKey(fullSecretKey);
+    const decryptedBuffer = await crypto.subtle.decrypt(
+        {name: 'AES-GCM', iv: encryptedBytes.slice(0, 12)},
+        decryptKey,
+        encryptedBytes.slice(12),
+    );
+
+    return new Uint8Array(decryptedBuffer);
+}
+
+export async function encryptSecretMessage(secretMessage, fullSecretKey) {
+    const {encryptedBytes, hashedKey} = await encryptSecretBytes(textEncoder.encode(secretMessage), fullSecretKey);
+
+    return {
+        encryptedMessage: `${toBase64Url(encryptedBytes.slice(0, 12))}.${toBase64Url(encryptedBytes.slice(12))}`,
+        hashedKey,
+    };
+}
+
+export async function decryptSecretMessage(cryptedMessage, fullSecretKey) {
     const [encodedIv, encodedMessage] = cryptedMessage.split('.');
 
     if (!encodedIv || !encodedMessage) {
@@ -200,15 +243,12 @@ export async function decryptSecretMessage(cryptedMessage, fullSecretKey) {
 
     const iv = fromBase64Url(encodedIv);
     const encryptedMessage = fromBase64Url(encodedMessage);
+    const encryptedBytes = new Uint8Array(iv.length + encryptedMessage.length);
+    encryptedBytes.set(iv);
+    encryptedBytes.set(encryptedMessage, iv.length);
+    const decryptedBytes = await decryptSecretBytes(encryptedBytes, fullSecretKey);
 
-    const decryptKey = await deriveSecretKey(fullSecretKey);
-    const decryptedBuffer = await crypto.subtle.decrypt(
-        {name: 'AES-GCM', iv},
-        decryptKey,
-        encryptedMessage,
-    );
-
-    return textDecoder.decode(decryptedBuffer);
+    return textDecoder.decode(decryptedBytes);
 }
 
 export function buildSecretLink(origin, randomString, newId) {

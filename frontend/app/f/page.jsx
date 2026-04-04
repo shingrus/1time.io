@@ -1,17 +1,17 @@
 import InlineCss from '../../components/InlineCss';
-import ViewSecretMessage from '../../components/ViewSecretMessage';
+import ViewSecretFile from '../../components/ViewSecretFile';
 import {siteHost} from '../../utils/siteConfig';
 
 export const metadata = {
     robots: 'noindex, nofollow',
-    title: `View Secret Message — ${siteHost}`,
+    title: `Download Encrypted File — ${siteHost}`,
 };
 
-export default function ViewSecretPage() {
+export default function ViewFilePage() {
     return (
         <>
             <InlineCss file="styles/view.css" />
-            <ViewSecretMessage />
+            <ViewSecretFile />
         </>
     );
 }

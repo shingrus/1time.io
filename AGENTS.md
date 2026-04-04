@@ -2,36 +2,40 @@
 
 ## Overview
 
-- Go backend lives at the repo root.
-- Redis is required for message storage.
+- Go backend lives in `backend/`.
+- Redis stores one-time secret metadata and counters.
+- `FILE_STORAGE_DIR` stores encrypted uploaded files on disk.
 - React frontend lives in `frontend/` and uses Next.js with static export (`output: 'export'`).
 - Server-rendered HTML flows in `templates/` are deprecated.
 
 ## Backend
 
-- Entry point: `main.go`
-- HTTP handlers: `handlers.go`
-- Redis access: `storage.go`
+- Entry point: `backend/main.go`
+- HTTP handlers: `backend/handlers.go`
+- Redis access: `backend/storage.go`
 - The backend listens on `127.0.0.1:8080`.
 - Required env:
+  - `FILE_STORAGE_DIR=/absolute/path/to/encrypted-files`
   - `REDISHOST=127.0.0.1:6379`
   - `REDISPASS=`
+- Optional env:
+  - `LISTEN_ADDR=127.0.0.1:8080`
 
 Run locally:
 
 ```bash
-go run .
+go run ./backend
 ```
 
 Build/test:
 
 ```bash
-go build ./...
-GOCACHE=/tmp/go-cache go test ./...
+go build ./backend
+GOCACHE=/tmp/go-cache go test ./backend/...
 make build
 ```
 
-- `make build` builds the frontend production bundle into `frontend/build` and the backend binary into `bin/1time`.
+- `make build` builds the frontend production bundle into `frontend/build` and the backend binary into `bin/1time-api`.
 
 ## CLI
 
@@ -138,7 +142,7 @@ npm run build
 ## Deployment
 
 - Frontend production build output: `frontend/build` (static HTML files per route)
-- Backend production binary from `make build`: `bin/1time`
+- Backend production binary from `make build`: `bin/1time-api`
 - Example nginx config: `configs/nginx/1time.conf`
 - nginx serves frontend statics and proxies `/api` to the Go app on `127.0.0.1:8080`.
 - The nginx `try_files` directive includes `$uri/index.html` for Next.js trailing-slash static export.

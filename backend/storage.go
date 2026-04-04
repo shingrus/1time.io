@@ -108,34 +108,6 @@ func getFileStoreKey(key string) string {
 //	return
 //}
 
-func saveFileToStorage(value interface{}, duration time.Duration) (newKey string, err error) {
-	client := getRedisClient()
-	if err = incrementStoredSecretCounters(time.Now().UTC()); err != nil {
-		log.Println(err)
-		return "", err
-	}
-
-	for attempt := 0; attempt < maxStorageIDAttempts; attempt++ {
-		newKey, err = generateStorageID()
-		if err != nil {
-			return "", err
-		}
-
-		ok, setErr := client.SetNX(getFileStoreKey(newKey), value, duration).Result()
-		if setErr != nil {
-			return "", setErr
-		}
-		if ok {
-			if DEBUG {
-				log.Printf("Got new file key storage: %v", newKey)
-			}
-			return newKey, nil
-		}
-	}
-
-	return "", errStorageIDCollision
-}
-
 func consumeFileMessageFromStorage(key string, hashedKey string) (storedFile StoredFile, status string, err error) {
 	client := getRedisClient()
 	storeKey := getFileStoreKey(key)

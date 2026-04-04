@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import InlineCss from '../../../components/InlineCss';
 
 export const metadata = {
     title: 'Stop Sending Passwords Over Slack: Here\'s What I Built Instead — 1time.io',
@@ -114,7 +115,9 @@ function ArchitectureDiagram() {
 
 export default function Article() {
     return (
-        <article className="article article-wide">
+        <>
+            <InlineCss file="styles/article.css" />
+            <article className="article article-wide">
             {jsonLd.map((schema, i) => (
                 <script key={i} type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }} />
             ))}
@@ -388,5 +391,6 @@ SHOW_BLOG=false`}</code></pre>
                 </div>
             </div>
         </article>
+        </>
     );
 }

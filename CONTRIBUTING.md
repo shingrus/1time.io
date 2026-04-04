@@ -28,7 +28,11 @@ Thanks for your interest in contributing! 1time.io is an open-source, zero-knowl
 redis-server
 
 # Run the backend
-go run .
+mkdir -p /tmp/1time-files
+export FILE_STORAGE_DIR=/tmp/1time-files
+export REDISHOST=127.0.0.1:6379
+export REDISPASS=
+go run ./backend
 ```
 
 ### Frontend (Next.js)
@@ -88,7 +92,7 @@ See [AGENTS.md](AGENTS.md) for detailed architecture documentation.
 
 ```bash
 # Backend
-go test ./...
+GOCACHE=/tmp/go-cache go test ./backend/...
 
 # Frontend
 cd frontend && npm test

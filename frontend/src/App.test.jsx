@@ -68,20 +68,18 @@ beforeEach(() => {
 });
 
 describe('NewMessage component', () => {
-    it('renders the message form and reveals advanced options', async () => {
+    it('renders the message form with always-visible options', async () => {
         const user = userEvent.setup();
 
         render(<NewMessage />);
 
         const submitButton = screen.getByRole('button', { name: /create secret link/i });
         expect(submitButton).toBeDisabled();
+        expect(screen.getByLabelText(/additional passphrase/i)).toBeInTheDocument();
+        expect(screen.getByLabelText(/expire after/i)).toBeInTheDocument();
 
         await user.type(screen.getByLabelText(/your secret message/i), 'top secret');
         expect(submitButton).toBeEnabled();
-
-        await user.click(screen.getByRole('button', { name: /options/i }));
-        expect(screen.getByLabelText(/additional passphrase/i)).toBeInTheDocument();
-        expect(screen.getByLabelText(/self-destruct after/i)).toBeInTheDocument();
     });
 
     it('submits a new secret and navigates to the generated link page', async () => {

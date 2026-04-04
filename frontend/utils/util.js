@@ -11,7 +11,15 @@ export var Constants = {
     ...ProtocolConstants,
     isDebug: process.env.NODE_ENV === 'development',
     apiBaseUrl: process.env.NEXT_PUBLIC_API_URL || "/api/",
+    maxFileSizeBytes: 10 * 1024 * 1024,
 };
+
+export const SHARE_DURATION_OPTIONS = [
+    {value: 1, label: '1 day'},
+    {value: 3, label: '3 days'},
+    {value: 7, label: '7 days'},
+    {value: 30, label: '30 days'},
+];
 
 export {decryptSecretMessage, encryptSecretMessage, getRandomString, hashSecretKey};
 
