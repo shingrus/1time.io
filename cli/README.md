@@ -3,6 +3,7 @@
 `1time` is a command-line client for [1time.io](https://1time.io), an end-to-end encrypted one-time secret sharing service.
 
 Use it to share passwords, API keys, tokens, private notes, and other sensitive text as self-destructing links from your terminal.
+It can also share encrypted files with one-time download links.
 
 ## Why Use 1time CLI
 
@@ -29,6 +30,18 @@ Read a one-time link:
 
 ```bash
 1time read 'https://1time.io/v/#...'
+```
+
+Create a one-time file link:
+
+```bash
+1time send-file ./backup-codes.txt
+```
+
+Download a one-time file:
+
+```bash
+1time read-file 'https://1time.io/f/#...'
 ```
 
 ## How It Works
@@ -105,9 +118,49 @@ Examples:
 1time read --host http://127.0.0.1:8080 'http://127.0.0.1:8080/v/#...'
 ```
 
+### `1time send-file <path>`
+
+Create an encrypted one-time file link.
+
+Examples:
+
+```bash
+1time send-file ./secret.pdf
+```
+
+```bash
+1TIME_PASSPHRASE='extra-passphrase' 1time send-file ./backup-codes.txt
+```
+
+```bash
+1time send-file --host http://127.0.0.1:8080 --passphrase 'extra-passphrase' ./report.zip
+```
+
+### `1time read-file <link>`
+
+Fetch, decrypt, and save a one-time file link.
+
+By default, the file is written to the current directory using the original filename.
+
+Examples:
+
+```bash
+1time read-file 'https://1time.io/f/#...'
+```
+
+```bash
+1TIME_PASSPHRASE='extra-passphrase' 1time read-file 'https://1time.io/f/#...'
+```
+
+```bash
+1time read-file --out ./downloads/secret.pdf 'https://1time.io/f/#...'
+```
+
 ## Command Reference
 
 - `--host <host-or-origin>`
+- `--passphrase <passphrase>` for `send-file` and `read-file`
+- `--out <path>` for `read-file`
 - `-h`, `--help`
 
 ## Host Rules
@@ -122,11 +175,11 @@ Examples:
 - Prefer `stdin` for `send`.
 - `1time send 'secret'` is supported for convenience, but it is insecure because command-line arguments can leak through shell history and process listings.
 - `1time read <link>` also places the full secret link in command history and process listings. In this protocol, the URL fragment contains the decryption material.
-- This early version does not yet support passphrases or custom expiry from the CLI.
+- `send-file` and `read-file` support optional passphrases via `--passphrase` or `1TIME_PASSPHRASE`.
+- Custom expiry is not yet supported from the CLI.
 
 ## Current Limitations
 
-- no passphrase support yet
 - no custom expiry support yet
 - `read` currently accepts the link as a command argument only
 

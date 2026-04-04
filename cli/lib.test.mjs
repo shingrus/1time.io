@@ -1,3 +1,6 @@
+import {mkdtemp, readFile, writeFile} from 'node:fs/promises';
+import {tmpdir} from 'node:os';
+import {join, basename, resolve} from 'node:path';
 import {Readable} from 'node:stream';
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -114,3 +117,213 @@ test('createSecretLink and revealSecret round-trip through the API protocol', as
 
     assert.equal(decryptedSecret, 'round-trip secret');
 });
+
+test('run send-file uploads a file and prints the created file link', async () => {
+    const tempDir = await mkdtemp(join(tmpdir(), '1time-cli-send-file-'));
+    const sourcePath = join(tempDir, 'secret.txt');
+    await writeFile(sourcePath, 'file from cli');
+
+    const stdout = createWritableCapture();
+    const stderr = createWritableCapture();
+    let requestBody = null;
+
+    const exitCode = await run(['send-file', '--host', '1time.example', sourcePath], {
+        stdin: createStdin('', true),
+        stdout: stdout.stream,
+        stderr: stderr.stream,
+        env: {},
+        fetchImpl: async (_url, options) => {
+            requestBody = options.body;
+            return new Response(JSON.stringify({
+                status: 'ok',
+                newId: 'file123',
+            }), {
+                status: 200,
+                headers: {'Content-Type': 'application/json'},
+            });
+        },
+    });
+
+    assert.equal(exitCode, 0);
+    assert.equal(stderr.getOutput(), '');
+    assert.equal(requestBody.get('duration'), '86400');
+    assert.equal(typeof requestBody.get('hashedKey'), 'string');
+    assert.ok(requestBody.get('file') instanceof Blob);
+    assert.match(stdout.getOutput(), /^https:\/\/1time\.example\/f\/#/);
+    assert.match(stdout.getOutput(), /file123/);
+});
+
+test('run read-file downloads the decrypted file into the current directory', async () => {
+    const sourceDir = await mkdtemp(join(tmpdir(), '1time-cli-source-'));
+    const outputDir = await mkdtemp(join(tmpdir(), '1time-cli-output-'));
+    const sourcePath = join(sourceDir, 'report.txt');
+    await writeFile(sourcePath, 'round-trip file');
+
+    const sendStdout = createWritableCapture();
+    let encryptedBytes = null;
+    let storedHashedKey = null;
+
+    const sendExitCode = await run(['send-file', '--passphrase', 'extra-passphrase', sourcePath], {
+        stdin: createStdin('', true),
+        stdout: sendStdout.stream,
+        stderr: createWritableCapture().stream,
+        env: {},
+        fetchImpl: async (_url, options) => {
+            const formData = options.body;
+            storedHashedKey = formData.get('hashedKey');
+            encryptedBytes = new Uint8Array(await formData.get('file').arrayBuffer());
+            return new Response(JSON.stringify({
+                status: 'ok',
+                newId: 'server-file-123',
+            }), {
+                status: 200,
+                headers: {'Content-Type': 'application/json'},
+            });
+        },
+    });
+
+    assert.equal(sendExitCode, 0);
+    const createdLink = sendStdout.getOutput().trim();
+
+    const readStdout = createWritableCapture();
+    const readStderr = createWritableCapture();
+    const readExitCode = await run(['read-file', '--passphrase', 'extra-passphrase', createdLink], {
+        stdin: createStdin('', true),
+        stdout: readStdout.stream,
+        stderr: readStderr.stream,
+        env: {},
+        cwd: outputDir,
+        fetchImpl: async (_url, options) => {
+            const requestBody = JSON.parse(options.body);
+            assert.equal(requestBody.id, 'server-file-123');
+            assert.equal(requestBody.hashedKey, storedHashedKey);
+
+            return new Response(encryptedBytes, {
+                status: 200,
+                headers: {'Content-Type': 'application/octet-stream'},
+            });
+        },
+    });
+
+    assert.equal(readExitCode, 0);
+    assert.equal(readStderr.getOutput(), passphraseWarningLine());
+    const outputPath = readStdout.getOutput().trim();
+    assert.equal(outputPath, resolve(outputDir, basename(sourcePath)));
+    assert.equal(await readFile(outputPath, 'utf8'), 'round-trip file');
+});
+
+test('read-file reports when a passphrase-protected file link is missing the passphrase', async () => {
+    const stdout = createWritableCapture();
+    const stderr = createWritableCapture();
+
+    const exitCode = await run(['read-file', 'https://1time.io/f/#AbCdEfGhIjKlMnOpQr-_file123'], {
+        stdin: createStdin('', true),
+        stdout: stdout.stream,
+        stderr: stderr.stream,
+        env: {},
+        fetchImpl: async () => new Response(JSON.stringify({
+            status: 'wrong key',
+        }), {
+            status: 200,
+            headers: {'Content-Type': 'application/json'},
+        }),
+    });
+
+    assert.equal(exitCode, 1);
+    assert.equal(stdout.getOutput(), '');
+    assert.match(stderr.getOutput(), /requires the correct passphrase/i);
+});
+
+test('read-file picks a unique filename when the decrypted name already exists', async () => {
+    const sourceDir = await mkdtemp(join(tmpdir(), '1time-cli-source-'));
+    const outputDir = await mkdtemp(join(tmpdir(), '1time-cli-output-'));
+    const sourcePath = join(sourceDir, 'report.txt');
+    const existingPath = join(outputDir, basename(sourcePath));
+    await writeFile(sourcePath, 'round-trip file');
+    await writeFile(existingPath, 'existing file');
+
+    const sendStdout = createWritableCapture();
+    let encryptedBytes = null;
+    let storedHashedKey = null;
+
+    const sendExitCode = await run(['send-file', '--passphrase', 'extra-passphrase', sourcePath], {
+        stdin: createStdin('', true),
+        stdout: sendStdout.stream,
+        stderr: createWritableCapture().stream,
+        env: {},
+        fetchImpl: async (_url, options) => {
+            const formData = options.body;
+            storedHashedKey = formData.get('hashedKey');
+            encryptedBytes = new Uint8Array(await formData.get('file').arrayBuffer());
+            return new Response(JSON.stringify({
+                status: 'ok',
+                newId: 'server-file-123',
+            }), {
+                status: 200,
+                headers: {'Content-Type': 'application/json'},
+            });
+        },
+    });
+
+    assert.equal(sendExitCode, 0);
+    const createdLink = sendStdout.getOutput().trim();
+
+    const readStdout = createWritableCapture();
+    const readStderr = createWritableCapture();
+    const readExitCode = await run(['read-file', '--passphrase', 'extra-passphrase', createdLink], {
+        stdin: createStdin('', true),
+        stdout: readStdout.stream,
+        stderr: readStderr.stream,
+        env: {},
+        cwd: outputDir,
+        fetchImpl: async (_url, options) => {
+            const requestBody = JSON.parse(options.body);
+            assert.equal(requestBody.id, 'server-file-123');
+            assert.equal(requestBody.hashedKey, storedHashedKey);
+
+            return new Response(encryptedBytes, {
+                status: 200,
+                headers: {'Content-Type': 'application/octet-stream'},
+            });
+        },
+    });
+
+    assert.equal(readExitCode, 0);
+    assert.equal(readStderr.getOutput(), passphraseWarningLine());
+
+    const outputPath = readStdout.getOutput().trim();
+    assert.equal(outputPath, resolve(outputDir, 'report (1).txt'));
+    assert.equal(await readFile(outputPath, 'utf8'), 'round-trip file');
+    assert.equal(await readFile(existingPath, 'utf8'), 'existing file');
+});
+
+test('read-file fails before fetching when --out already exists', async () => {
+    const outputDir = await mkdtemp(join(tmpdir(), '1time-cli-output-'));
+    const targetPath = join(outputDir, 'existing.txt');
+    await writeFile(targetPath, 'existing file');
+
+    const stdout = createWritableCapture();
+    const stderr = createWritableCapture();
+    let fetchCalled = false;
+
+    const exitCode = await run(['read-file', '--out', targetPath, 'https://1time.io/f/#AbCdEfGhIjKlMnOpQr-_file123'], {
+        stdin: createStdin('', true),
+        stdout: stdout.stream,
+        stderr: stderr.stream,
+        env: {},
+        cwd: outputDir,
+        fetchImpl: async () => {
+            fetchCalled = true;
+            throw new Error('should not fetch');
+        },
+    });
+
+    assert.equal(exitCode, 1);
+    assert.equal(stdout.getOutput(), '');
+    assert.equal(fetchCalled, false);
+    assert.match(stderr.getOutput(), /already exists/i);
+});
+
+function passphraseWarningLine() {
+    return 'Warning: passing the passphrase in argv may leak via shell history or process listings.\n';
+}

@@ -269,12 +269,12 @@ export function parseSecretLink(link, fallbackHost = ProtocolConstants.defaultHo
         origin = normalizeOrigin(`${parsed.protocol}//${parsed.host}`);
         if (parsed.hash && parsed.hash.length > 1) {
             token = parsed.hash.slice(1);
-        } else if (parsed.pathname.startsWith('/v/')) {
+        } else if (parsed.pathname.startsWith('/v/') || parsed.pathname.startsWith('/f/')) {
             token = parsed.pathname.slice(3).replace(/\/$/, '');
         } else {
             throw new Error('Unsupported secret link format');
         }
-    } else if (trimmed.startsWith('/v/')) {
+    } else if (trimmed.startsWith('/v/') || trimmed.startsWith('/f/')) {
         token = trimmed.slice(3).replace(/\/$/, '');
     } else if (trimmed.startsWith('#')) {
         token = trimmed.slice(1);
