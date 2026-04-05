@@ -77,7 +77,7 @@ export default function Article() {
 
                 <h3>1. Send a Self-Destructing Link</h3>
                 <p>
-                    The simplest secure approach: paste your WiFi password into <Link href="/">1time.io</Link>,
+                    The simplest secure approach: paste your WiFi password into the <Link href="/share-password-securely/">secure password sharing flow</Link>,
                     get an encrypted link, and send it via text or email. The recipient opens it, copies
                     the password, connects to WiFi, and the link self-destructs. No trace left in any
                     message history.
@@ -190,17 +190,17 @@ export default function Article() {
                     <div className="article-cta-icon">📶</div>
                     <h2>Share your WiFi password safely</h2>
                     <p>Create an encrypted one-time link. The password is gone after one view.</p>
-                    <Link href="/" className="btn btn-primary btn-lg">Create a secure link</Link>
+                    <Link href="/share-password-securely/" className="btn btn-primary btn-lg">Create a secure link</Link>
                 </div>
             </div>
 
                 <div className="related-articles">
                     <h2>Related Articles</h2>
                     <div className="related-articles-grid">
-                        <Link href="/blog/how-to-share-passwords-securely" className="related-article-card">
-                            <span>How to Share Passwords Securely</span>
-                        <span>The complete guide to secure credential sharing.</span>
-                    </Link>
+                        <Link href="/share-password-securely/" className="related-article-card">
+                            <span>Share Passwords Securely</span>
+                            <span>Create a one-time link for a WiFi password, guest network key, or temporary access code.</span>
+                        </Link>
                         <Link href="/blog/how-to-send-passwords-over-email" className="related-article-card">
                             <span>How to Send Passwords Over Email</span>
                             <span>Why emailing passwords is dangerous and what to do instead.</span>

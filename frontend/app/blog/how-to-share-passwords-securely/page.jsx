@@ -137,6 +137,11 @@ export default function Article() {
                     self-destructing link. Send the link over any channel you want — Slack, email, text.
                     Once the recipient opens it, the password is permanently destroyed.
                 </p>
+                <p>
+                    If you want a dedicated flow for this use case, start on the
+                    {' '}<Link href="/share-password-securely/">secure password sharing page</Link>
+                    {' '}and create a one-time link there.
+                </p>
 
                 <div className="diagram">
                     <div className="diagram-title">How one-time link sharing works</div>
@@ -269,13 +274,17 @@ export default function Article() {
                     <div className="article-cta-icon">🔒</div>
                     <h2>Share a password securely right now</h2>
                     <p>Paste a password, get an encrypted one-time link. No signup, no tracking, free forever.</p>
-                    <Link href="/" className="btn btn-primary btn-lg">Create a secure link</Link>
+                    <Link href="/share-password-securely/" className="btn btn-primary btn-lg">Create a secure link</Link>
                 </div>
             </div>
 
                 <div className="related-articles">
                     <h2>Related Articles</h2>
                     <div className="related-articles-grid">
+                        <Link href="/share-password-securely/" className="related-article-card">
+                            <span>Share Passwords Securely</span>
+                            <span>Create an encrypted one-time link for a password, token, or private note.</span>
+                        </Link>
                         <Link href="/blog/is-slack-safe-for-passwords" className="related-article-card">
                             <span>Is Slack Safe for Sharing Passwords?</span>
                         <span>Why Slack DMs are not as private as you think.</span>
@@ -283,10 +292,6 @@ export default function Article() {
                         <Link href="/blog/how-to-send-passwords-over-email" className="related-article-card">
                             <span>How to Send Passwords Over Email</span>
                             <span>Why emailing passwords is dangerous and what to do instead.</span>
-                        </Link>
-                        <Link href="/share-passwords-with-qr-code" className="related-article-card">
-                            <span>Share Passwords with a QR Code</span>
-                            <span>The feature page for nearby and cross-device one-time sharing.</span>
                         </Link>
                     </div>
                 </div>

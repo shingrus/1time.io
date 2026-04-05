@@ -138,7 +138,7 @@ export default function Article() {
                     password in the message. Replace the password with an encrypted one-time link:
                 </p>
                 <ol>
-                    <li>Paste the password into <Link href="/">1time.io</Link>.</li>
+                    <li>Paste the password into the <Link href="/share-password-securely/">secure password sharing flow</Link>.</li>
                     <li>Copy the encrypted one-time link.</li>
                     <li>Send the link in the Slack DM instead of the password.</li>
                     <li>The recipient clicks it, sees the password, and the link is permanently destroyed.</li>
@@ -192,20 +192,20 @@ export default function Article() {
                     <div className="article-cta-icon">💬</div>
                     <h2>Stop pasting passwords in Slack</h2>
                     <p>Send an encrypted one-time link instead. It takes 10 seconds and the password is destroyed after one view.</p>
-                    <Link href="/" className="btn btn-primary btn-lg">Create a secure link</Link>
+                    <Link href="/share-password-securely/" className="btn btn-primary btn-lg">Create a secure link</Link>
                 </div>
             </div>
 
             <div className="related-articles">
                 <h2>Related Articles</h2>
                 <div className="related-articles-grid">
-                    <Link href="/blog/how-to-share-passwords-securely" className="related-article-card">
-                        <span>How to Share Passwords Securely</span>
-                        <span>The complete guide to secure credential sharing.</span>
+                    <Link href="/share-password-securely/" className="related-article-card">
+                        <span>Share Passwords Securely</span>
+                        <span>Create a one-time link for Slack, Teams, email, or any other delivery channel.</span>
                     </Link>
-                    <Link href="/blog/how-to-share-api-keys" className="related-article-card">
-                        <span>How to Share API Keys Securely</span>
-                        <span>Best practices for sharing tokens and keys with your team.</span>
+                    <Link href="/secure-file-sharing/" className="related-article-card">
+                        <span>Secure File Sharing</span>
+                        <span>Need to send a document or config export in Slack instead of a password? Use one-time file links.</span>
                     </Link>
                     <Link href="/blog/how-to-send-passwords-over-email" className="related-article-card">
                         <span>How to Send Passwords Over Email</span>

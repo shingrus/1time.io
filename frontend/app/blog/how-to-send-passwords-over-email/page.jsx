@@ -115,7 +115,7 @@ export default function Article() {
                     encrypted one-time link. The workflow is simple:
                 </p>
                 <ol>
-                    <li>Go to <Link href="/">1time.io</Link> and paste the password.</li>
+                    <li>Go to the <Link href="/share-password-securely/">secure password sharing page</Link> and paste the password.</li>
                     <li>Copy the generated encrypted link.</li>
                     <li>Paste the link into your email instead of the actual password.</li>
                     <li>The recipient clicks the link, sees the password, and the link self-destructs.</li>
@@ -130,7 +130,7 @@ export default function Article() {
 
                 <h3>Step 1: Create the encrypted link</h3>
                 <p>
-                    Open <Link href="/">1time.io</Link> in your browser. Paste the password,
+                    Open the <Link href="/share-password-securely/">secure password sharing page</Link> in your browser. Paste the password,
                     API key, or credential into the text field. Optionally set a short expiration time
                     (15 minutes is usually enough for email) and add a passphrase for extra protection.
                 </p>
@@ -209,24 +209,24 @@ export default function Article() {
                     <div className="article-cta-icon">📧</div>
                     <h2>Stop emailing passwords</h2>
                     <p>Create an encrypted one-time link instead. It takes 10 seconds and the password never sits in an inbox.</p>
-                    <Link href="/" className="btn btn-primary btn-lg">Create a secure link</Link>
+                    <Link href="/share-password-securely/" className="btn btn-primary btn-lg">Create a secure link</Link>
                 </div>
             </div>
 
                 <div className="related-articles">
                     <h2>Related Articles</h2>
                     <div className="related-articles-grid">
-                        <Link href="/blog/how-to-share-passwords-securely" className="related-article-card">
-                            <span>How to Share Passwords Securely with Your Team</span>
-                        <span>The complete guide to secure credential sharing.</span>
-                    </Link>
+                        <Link href="/share-password-securely/" className="related-article-card">
+                            <span>Share Passwords Securely</span>
+                            <span>Create an encrypted one-time link instead of putting the password in the email body.</span>
+                        </Link>
+                        <Link href="/secure-file-sharing/" className="related-article-card">
+                            <span>Secure File Sharing</span>
+                            <span>Send PDFs, certificates, and config files over email with one-time encrypted downloads.</span>
+                        </Link>
                         <Link href="/blog/is-slack-safe-for-passwords" className="related-article-card">
                             <span>Is Slack Safe for Sharing Passwords?</span>
                             <span>Why Slack DMs are not as private as you think.</span>
-                        </Link>
-                        <Link href="/share-passwords-with-qr-code" className="related-article-card">
-                            <span>Share Passwords with a QR Code</span>
-                            <span>A better option when sender and recipient are together.</span>
                         </Link>
                     </div>
                 </div>

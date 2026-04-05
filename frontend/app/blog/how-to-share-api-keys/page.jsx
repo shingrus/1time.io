@@ -104,7 +104,7 @@ export default function Article() {
                     fastest secure option.
                 </p>
                 <ol>
-                    <li>Paste the API key into <Link href="/">1time.io</Link>.</li>
+                    <li>Paste the API key into the <Link href="/share-password-securely/">secure password sharing flow</Link>.</li>
                     <li>Set a short expiration (5-15 minutes is usually plenty).</li>
                     <li>Send the link to your teammate via any channel.</li>
                     <li>The key is destroyed after they view it. Nothing persists.</li>
@@ -166,24 +166,24 @@ export default function Article() {
                     <div className="article-cta-icon">🔑</div>
                     <h2>Share API keys without the risk</h2>
                     <p>Encrypted in your browser, destroyed after one view. The server never sees your key.</p>
-                    <Link href="/" className="btn btn-primary btn-lg">Create a secure link</Link>
+                    <Link href="/share-password-securely/" className="btn btn-primary btn-lg">Create a secure link</Link>
                 </div>
             </div>
 
             <div className="related-articles">
                 <h2>Related Articles</h2>
                 <div className="related-articles-grid">
+                    <Link href="/share-password-securely/" className="related-article-card">
+                        <span>Share Passwords and API Keys Securely</span>
+                        <span>Create an encrypted one-time link for a key, token, or password.</span>
+                    </Link>
+                    <Link href="/secure-file-sharing/" className="related-article-card">
+                        <span>Secure File Sharing</span>
+                        <span>Send .env files, certificates, and config exports through one-time download links.</span>
+                    </Link>
                     <Link href="/blog/how-to-share-passwords-securely" className="related-article-card">
                         <span>How to Share Passwords Securely</span>
                         <span>The complete guide to secure credential sharing.</span>
-                    </Link>
-                    <Link href="/blog/is-slack-safe-for-passwords" className="related-article-card">
-                        <span>Is Slack Safe for Sharing Passwords?</span>
-                        <span>Why Slack DMs are not as private as you think.</span>
-                    </Link>
-                    <Link href="/blog/password-pusher-alternative" className="related-article-card">
-                        <span>1time.io vs Password Pusher</span>
-                        <span>Two open-source tools compared for developer workflows.</span>
                     </Link>
                 </div>
             </div>

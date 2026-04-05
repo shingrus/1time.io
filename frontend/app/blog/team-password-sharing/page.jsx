@@ -186,7 +186,7 @@ export default function Article() {
                 <h3>Step 2: Share via encrypted links only</h3>
                 <p>
                     Establish a team rule: no passwords in Slack, email, or text. Ever. If someone needs a
-                    credential, they get a <Link href="/">one-time link</Link>. This is easy to enforce because
+                    credential, they get a <Link href="/share-password-securely/">one-time link</Link>. This is easy to enforce because
                     it takes the same amount of effort — paste the password, get a link, send the link.
                 </p>
 
@@ -217,24 +217,24 @@ export default function Article() {
                     <div className="article-cta-icon">🔒</div>
                     <h2>Share a password with your team right now</h2>
                     <p>Generate a strong password and create an encrypted self-destructing link in seconds. No signup required.</p>
-                    <Link href="/" className="btn btn-primary btn-lg">Create a secure link</Link>
+                    <Link href="/share-password-securely/" className="btn btn-primary btn-lg">Create a secure link</Link>
                 </div>
             </div>
 
             <div className="related-articles">
                 <h2>Related Articles</h2>
                 <div className="related-articles-grid">
+                    <Link href="/share-password-securely/" className="related-article-card">
+                        <span>Share Passwords Securely</span>
+                        <span>Create a one-time link for team credentials without asking anyone to install a new tool.</span>
+                    </Link>
                     <Link href="/blog/how-to-share-passwords-securely" className="related-article-card">
                         <span>How to Share Passwords Securely</span>
                         <span>The complete guide to secure credential sharing.</span>
                     </Link>
-                    <Link href="/blog/how-to-share-api-keys" className="related-article-card">
-                        <span>How to Share API Keys Securely</span>
-                        <span>Safe ways to share tokens and keys with developers.</span>
-                    </Link>
-                    <Link href="/blog/database-password-security" className="related-article-card">
-                        <span>Database Password Security</span>
-                        <span>Best practices for database credentials.</span>
+                    <Link href="/secure-file-sharing/" className="related-article-card">
+                        <span>Secure File Sharing</span>
+                        <span>Use one-time encrypted downloads for onboarding files, certificates, and handoff bundles.</span>
                     </Link>
                 </div>
             </div>

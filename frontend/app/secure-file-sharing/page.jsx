@@ -105,7 +105,7 @@ export default function SecureFileSharingPage() {
 
             <div className="share-flow-page">
                 <nav className="share-mode-nav" aria-label="Choose sharing mode">
-                    <Link href="/" className="share-mode-link">
+                    <Link href="/share-password-securely/" className="share-mode-link">
                         Text Secret
                     </Link>
                     <Link href="/secure-file-sharing/" className="share-mode-link share-mode-link-active">
@@ -145,12 +145,12 @@ export default function SecureFileSharingPage() {
                             </div>
                             <p>Once the recipient downloads the file, the stored copy is deleted from the server.</p>
                         </div>
-                        <Link href="/" className="feature-card feature-card-link">
+                        <Link href="/share-password-securely/" className="feature-card feature-card-link">
                             <div className="feature-card-header">
                                 <div className="feature-card-icon" aria-hidden="true">&#x1f4dd;</div>
                                 <h2>Text Secret Sharing</h2>
                             </div>
-                            <p>Need to send a password, token, or short note instead of a file? Use the text flow.</p>
+                            <p>Need to send a password, API key, or short note instead of a file? Use secure password sharing.</p>
                         </Link>
                     </div>
 
