@@ -230,6 +230,19 @@ body {
   color: var(--accent);
 }
 
+/* Shared content links for prose-heavy sections */
+.article-body a:not(.btn),
+.seo-section p a {
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.article-body a:not(.btn):hover,
+.seo-section p a:hover {
+  color: var(--accent-hover);
+}
+
 /* Typography */
 h1, h2, h3 {
   font-family: var(--font-display);
