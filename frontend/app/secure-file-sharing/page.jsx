@@ -181,7 +181,7 @@ export default function SecureFileSharingPage() {
 
                     <h2>Learn more</h2>
                     <nav className="seo-nav">
-                        <Link href="/">Share passwords and secrets</Link>
+                        <Link href="/share-password-securely/">Share passwords securely</Link>
                         <Link href="/blog/how-to-share-passwords-securely">How to share passwords securely</Link>
                         <Link href="/blog/how-to-share-api-keys">How to share API keys securely</Link>
                         <Link href="/blog/stop-sending-passwords-over-slack">Stop sending passwords over Slack</Link>

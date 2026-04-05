@@ -230,8 +230,8 @@ const PRESETS = {
         length: 16,
         mode: 'password',
         options: { uppercase: true, lowercase: true, numbers: true, symbols: false },
-        seoHeading: 'Generate a Strong WiFi Password',
-        seoText: 'Your WiFi password protects your entire home or office network. A weak WiFi password can be cracked in minutes using widely available tools, giving attackers access to all devices on your network. Our WiFi password generator creates strong, random passwords without confusing symbols — making them easy to read and type on phones, smart TVs, and IoT devices. Generated entirely in your browser with cryptographic randomness. For maximum security, change your WiFi password periodically and use WPA3 if your router supports it.',
+        seoHeading: 'Generate a Random WiFi Password for Any Router',
+        seoText: 'Your WiFi password protects your entire home or office network. A weak WiFi password can be cracked in minutes using widely available tools, giving attackers access to all devices on your network. Our WiFi password generator creates strong, random WPA2 and WPA3-compatible passwords without confusing symbols — making them easy to read and type on phones, smart TVs, and IoT devices. Works with any router brand: Netgear, TP-Link, Linksys, ASUS, and more. Generated entirely in your browser with cryptographic randomness. For maximum security, change your WiFi password periodically and use WPA3 if your router supports it.',
         seoSections: [
             {
                 heading: 'Why WiFi passwords need special treatment',
@@ -242,8 +242,8 @@ const PRESETS = {
                 text: 'With WPA2 (still the most common protocol), your password is hashed using PBKDF2 with 4,096 iterations of SHA-1. A determined attacker with a GPU cluster can test millions of guesses per second against the captured handshake. An 8-character alphanumeric password can be cracked in days. A 16-character one pushes the time well beyond feasibility. WPA3 uses SAE (Simultaneous Authentication of Equals), which makes offline brute-force attacks significantly harder. If your router supports WPA3, enable it — but use a strong password regardless.',
             },
             {
-                heading: 'How to change your WiFi password',
-                text: 'Log into your router\'s admin panel (usually at 192.168.0.1 or 192.168.1.1 in your browser). Navigate to the Wireless or WiFi settings section. Look for the password or passkey field under your network name (SSID). Paste or type your new password, save the settings, and reconnect all your devices. Consider generating a QR code for the new password so guests can connect by scanning instead of typing. Most phones can generate WiFi QR codes from the settings app.',
+                heading: 'How to change your WiFi password on any router',
+                text: 'Log into your router\'s admin panel — the address depends on the brand. Netgear: routerlogin.net or 192.168.1.1. TP-Link: tplinkwifi.net or 192.168.0.1. Linksys: 192.168.1.1. ASUS: router.asus.com. Navigate to the Wireless or WiFi settings section. Look for the password, passkey, or pre-shared key field under your network name (SSID). Select WPA2-Personal or WPA3-Personal as the security mode. Paste or type your new password, save the settings, and reconnect all your devices.',
             },
             {
                 heading: 'How to share your WiFi password securely',
@@ -253,6 +253,8 @@ const PRESETS = {
         faq: [
             { q: 'Why no symbols in WiFi passwords?', a: 'Most WiFi passwords are typed on devices with limited keyboards — smart TVs, game consoles, IoT devices. Symbols like @#$% are hard to locate on these keyboards and slow down the process. A 16-character alphanumeric password still provides about 95 bits of entropy, which is more than sufficient for WiFi security.' },
             { q: 'How long should a WiFi password be?', a: 'At least 12 characters, ideally 16 or more. WiFi passwords can be attacked offline (the attacker doesn\'t need to stay connected to your network), so they need more length than typical website passwords. Our default of 16 characters provides a strong security margin.' },
+            { q: 'What is a WiFi passkey and how do I create one?', a: 'A WiFi passkey (also called a pre-shared key or PSK) is the password used to authenticate devices on your wireless network. For WPA2-Personal and WPA3-Personal, the passkey can be 8 to 63 characters. To create a strong one, use this generator to get a random 16-character password, then enter it in your router\'s wireless security settings under the passkey or pre-shared key field.' },
+            { q: 'Does this work with WPA2 and WPA3 routers?', a: 'Yes. WPA2 and WPA3 both accept passwords between 8 and 63 ASCII characters. This generator creates 16-character alphanumeric passwords by default, which are compatible with all WPA2 and WPA3 routers from any brand — Netgear, TP-Link, Linksys, ASUS, and others.' },
             { q: 'How often should I change my WiFi password?', a: 'Change it when a device is lost or stolen, when someone who knows the password no longer needs access, or if you suspect unauthorized access. For home networks with WPA3, routine changes aren\'t strictly necessary. For WPA2 networks in shared environments (offices, rentals), consider changing it every 3-6 months.' },
             { q: 'Can someone hack my WiFi with a strong password?', a: 'With a 16-character random password and WPA2/WPA3, brute-forcing the password is computationally infeasible. Attackers would need to exploit router firmware vulnerabilities or use social engineering instead. Keep your router firmware updated and disable WPS (WiFi Protected Setup) for best security.' },
         ],
@@ -333,6 +335,12 @@ const DEFAULT_GUIDES = [
     { path: '/blog/how-to-share-passwords-securely', label: 'How to Share Passwords Securely', desc: 'Best practices for sending credentials safely' },
     { path: '/blog/strong-email-password', label: 'Creating a Strong Email Password', desc: 'Protect your most important account' },
     { path: '/blog/team-password-sharing', label: 'Team Password Sharing', desc: 'How teams can share credentials safely' },
+];
+
+const PRODUCT_LINKS = [
+    { path: '/', label: 'Create a One-Time Secret Link', desc: 'Share passwords, notes, and tokens through encrypted self-destruct links' },
+    { path: '/share-password-securely', label: 'Share Passwords Securely', desc: 'Send a password once, then let the link self-destruct after it is read' },
+    { path: '/secure-file-sharing', label: 'Send Encrypted Files', desc: 'Deliver documents and private files through one-time download links' },
 ];
 
 function secureRandom(max) {
@@ -663,6 +671,22 @@ export default function PasswordGenerator({ presetPath }) {
                         </dl>
                     </div>
                 )}
+            </section>
+
+            <section className="gen-related" aria-label="Secure sharing tools">
+                <h3 className="gen-related-heading">Share what you generated securely</h3>
+                <p className="gen-seo-text">
+                    Need to send this password, passphrase, WiFi key, or token to someone else? Use an encrypted
+                    one-time link instead of leaving it in chat, email, or a ticketing system.
+                </p>
+                <div className="gen-related-grid">
+                    {PRODUCT_LINKS.map(page => (
+                        <Link key={page.path} href={page.path} className="gen-related-card">
+                            <span className="gen-related-title">{page.label}</span>
+                            <span className="gen-related-desc">{page.desc}</span>
+                        </Link>
+                    ))}
+                </div>
             </section>
 
             {/* Internal links to other generator pages */}
