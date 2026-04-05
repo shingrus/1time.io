@@ -80,16 +80,6 @@
   font-weight: 600;
 }
 
-.article-body a:not(.btn) {
-  color: var(--accent);
-  text-decoration: underline;
-  text-underline-offset: 2px;
-}
-
-.article-body a:not(.btn):hover {
-  color: var(--accent-hover);
-}
-
 .article-body ul,
 .article-body ol {
   padding-left: 24px;
