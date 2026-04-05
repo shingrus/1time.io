@@ -6,7 +6,7 @@
 
 <p align="center">
   <strong>Zero-knowledge one-time secret sharing with end-to-end encryption</strong><br>
-  Share passwords, API keys, and sensitive text through self-destructing links.
+  Share passwords, API keys, sensitive text, and encrypted files through self-destructing links.
 </p>
 
 <p align="center">
@@ -37,6 +37,7 @@
 |---|---|---|
 | **🔐** | **Zero-knowledge encryption** | Secrets are encrypted in your browser with AES-GCM. The server never sees plaintext. |
 | **🔥** | **Self-destructing links** | Each link works exactly once, then the data is permanently deleted. |
+| **📁** | **Encrypted file sharing** | Send files with one-time download links. File contents and metadata stay inside the encrypted payload. |
 | **🏠** | **Self-hosted** | Run your own instance with Docker Compose in under 2 minutes. |
 | **👤** | **No signup required** | Paste a secret, get a link, share it. No accounts, no tracking. |
 | **🔑** | **Built-in generators** | Password, passphrase, API key, and WiFi password generators included. |
@@ -69,6 +70,8 @@ You                          Server                        Recipient
 
 The encryption key stays in the URL fragment (`#`), which is **never sent to the server**. Even with full database access, secrets cannot be read.
 
+The same zero-knowledge model also powers encrypted file sharing: the browser encrypts the file and its metadata before upload, and the server stores only encrypted bytes until the recipient downloads them once.
+
 **Cryptographic details:** Keys are derived using HKDF-SHA256 with a fixed salt. Two separate keys are produced — one for AES-256-GCM encryption and one for authentication (hash-based proof-of-knowledge). The server verifies the auth hash with constant-time comparison before releasing the encrypted blob, then permanently deletes it.
 
 ---
@@ -78,6 +81,8 @@ The encryption key stays in the URL fragment (`#`), which is **never sent to the
 ### Use the hosted version
 
 **[1time.io](https://1time.io)** — free, no signup, ready to use.
+
+Use the web app to share both text secrets and encrypted files with one-time links.
 
 ### CLI
 
@@ -90,6 +95,12 @@ printf 'postgres://user:pass@host/db' | 1time send
 
 # Read a secret
 1time read 'https://1time.io/v/#...'
+
+# Send an encrypted file
+1time send-file ./backup-codes.txt
+
+# Read an encrypted file
+1time read-file 'https://1time.io/f/#...'
 ```
 
 Pipe-friendly, no browser needed. Works with self-hosted instances via `--host`. See [CLI docs](cli/README.md) for more.
@@ -150,10 +161,12 @@ Put your own reverse proxy (Caddy, Traefik, nginx) in front for HTTPS/TLS termin
 
 ## Free Tools
 
+- [Secure File Sharing](https://1time.io/secure-file-sharing) — send encrypted files with one-time download links
 - [Password Generator](https://1time.io/password-generator) — strong random passwords
 - [Passphrase Generator](https://1time.io/passphrase-generator) — memorable multi-word passphrases
 - [API Key Generator](https://1time.io/api-key-generator) — random tokens for developers
 - [WiFi Password Generator](https://1time.io/wifi-password-generator) — easy-to-type network passwords
+- [Share Passwords with QR Code](https://1time.io/share-passwords-with-qr-code) — hand off secrets across devices and in person
 
 ---
 
