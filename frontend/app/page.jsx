@@ -4,7 +4,7 @@ import NewMessage from '../components/NewMessage';
 import {siteHost, siteUrl} from '../utils/siteConfig';
 
 export const metadata = {
-    title: `Share Secrets Securely — One-Time Links for Passwords, Files, and API Keys | ${siteHost}`,
+    title: `One-Time Links for Secure Sharing | ${siteHost}`,
     description: 'Share passwords, API keys, files, and private notes through encrypted one-time links and QR codes that self-destruct after reading. Zero-knowledge secret sharing, free and open source.',
     alternates: { canonical: '/' },
     openGraph: {
