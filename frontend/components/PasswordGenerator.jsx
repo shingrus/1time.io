@@ -337,6 +337,12 @@ const DEFAULT_GUIDES = [
     { path: '/blog/team-password-sharing', label: 'Team Password Sharing', desc: 'How teams can share credentials safely' },
 ];
 
+const PRODUCT_LINKS = [
+    { path: '/', label: 'Create a One-Time Secret Link', desc: 'Share passwords, notes, and tokens through encrypted self-destruct links' },
+    { path: '/share-password-securely', label: 'Share Passwords Securely', desc: 'Send a password once, then let the link self-destruct after it is read' },
+    { path: '/secure-file-sharing', label: 'Send Encrypted Files', desc: 'Deliver documents and private files through one-time download links' },
+];
+
 function secureRandom(max) {
     const arr = new Uint32Array(1);
     crypto.getRandomValues(arr);
@@ -665,6 +671,22 @@ export default function PasswordGenerator({ presetPath }) {
                         </dl>
                     </div>
                 )}
+            </section>
+
+            <section className="gen-related" aria-label="Secure sharing tools">
+                <h3 className="gen-related-heading">Share what you generated securely</h3>
+                <p className="gen-seo-text">
+                    Need to send this password, passphrase, WiFi key, or token to someone else? Use an encrypted
+                    one-time link instead of leaving it in chat, email, or a ticketing system.
+                </p>
+                <div className="gen-related-grid">
+                    {PRODUCT_LINKS.map(page => (
+                        <Link key={page.path} href={page.path} className="gen-related-card">
+                            <span className="gen-related-title">{page.label}</span>
+                            <span className="gen-related-desc">{page.desc}</span>
+                        </Link>
+                    ))}
+                </div>
             </section>
 
             {/* Internal links to other generator pages */}

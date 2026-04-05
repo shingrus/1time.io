@@ -4,12 +4,12 @@ import NewMessage from '../components/NewMessage';
 import {siteHost, siteUrl} from '../utils/siteConfig';
 
 export const metadata = {
-    title: `Share Passwords Securely — Free Encrypted One-Time Links | ${siteHost}`,
-    description: 'Share passwords, files, and secrets through encrypted one-time links and QR codes that self-destruct after reading. Zero-knowledge encryption, free, open source.',
+    title: `Share Secrets Securely — One-Time Links for Passwords, Files, and API Keys | ${siteHost}`,
+    description: 'Share passwords, API keys, files, and private notes through encrypted one-time links and QR codes that self-destruct after reading. Zero-knowledge secret sharing, free and open source.',
     alternates: { canonical: '/' },
     openGraph: {
-        title: `${siteHost} — Free Encrypted One-Time Secret Links`,
-        description: 'Send passwords and sensitive text through encrypted one-time links and QR codes. Zero-knowledge encryption, auto-destroyed after reading.',
+        title: `${siteHost} — Secure One-Time Links for Passwords and Files`,
+        description: 'Share passwords, API keys, and files through encrypted one-time links and QR codes. Zero-knowledge encryption, auto-destroyed after reading.',
         url: '/',
         images: [{ url: '/og-image.png', width: 1200, height: 630, alt: `${siteHost} — Encrypted One-Time Secret Links` }],
     },
@@ -20,11 +20,11 @@ const jsonLd = {
     '@type': 'WebApplication',
     name: siteHost,
     url: siteUrl,
-    description: 'Share passwords, tokens, and sensitive text through encrypted one-time self-destruct links. End-to-end encrypted — we never see your data.',
+    description: 'Share passwords, API keys, files, and sensitive notes through encrypted one-time self-destruct links. End-to-end encrypted — we never see your data.',
     applicationCategory: 'SecurityApplication',
     operatingSystem: 'Any',
     offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
-    featureList: 'End-to-end encryption, One-time access, Encrypted file sharing, QR code sharing, Auto-expiry, Password generator, CLI, Zero-knowledge architecture, Self-hosted',
+    featureList: 'End-to-end encryption, One-time secret links, Password sharing, API key sharing, Encrypted file sharing, QR code sharing, Auto-expiry, CLI, Zero-knowledge architecture, Self-hosted',
 };
 
 export default function HomePage() {
@@ -43,13 +43,14 @@ export default function HomePage() {
                 </nav>
                 <NewMessage />
                 <section className="seo-section">
-                    <h1>Share Secrets and Files with Encrypted One-Time Links</h1>
+                    <h1>Share Secrets Securely with Encrypted One-Time Links</h1>
                     <p>
-                        {siteHost} is a free, open-source tool for sharing passwords, text secrets, and{' '}
-                        <Link href="/secure-file-sharing/">encrypted files</Link> through
-                        one-time links. Each secret is encrypted in your browser using AES-256-GCM
-                        before being stored. The server never sees the plaintext. Links self-destruct after
-                        they are read once or after a set expiry period. No signup required.
+                        {siteHost} is a free, open-source tool for sharing{' '}
+                        <Link href="/share-password-securely/">passwords securely</Link>, sending API keys and private
+                        notes, and delivering <Link href="/secure-file-sharing/">encrypted files</Link> through
+                        one-time links. Each secret is encrypted in your browser using AES-256-GCM before being stored.
+                        The server never sees the plaintext, and each link self-destructs after it is read once or
+                        after a set expiry period. No signup required.
                     </p>
 
                     <div className="features-grid">
@@ -106,21 +107,30 @@ export default function HomePage() {
 
                     <h2>How it works</h2>
                     <p>
-                        Type or paste your secret above. {siteHost} encrypts it with a unique key directly in
-                        your browser. You get a one-time link containing the decryption key in the URL fragment.
-                        Share it with your recipient. Once they open it, the secret is decrypted locally and
-                        permanently deleted from our servers.
+                        Type or paste your secret above. {siteHost} encrypts it with a unique key directly in your
+                        browser. You get a one-time link containing the decryption key in the URL fragment, which is
+                        never sent to the server. Share it with your recipient. Once they open it, the secret is
+                        decrypted locally and permanently deleted from our servers.
                     </p>
 
                     <h2>Perfect for sharing</h2>
                     <p>
-                        Passwords, API keys, SSH keys, private notes, access tokens, two-factor backup codes,
-                        database credentials, configuration secrets, or any text you need to share securely just once.
+                        Passwords, API keys, SSH keys, private notes, access tokens, WiFi passwords, two-factor backup
+                        codes, database credentials, configuration secrets, or any text you need to share securely just once.
                     </p>
+
+                    <h2>Ways to share securely</h2>
+                    <nav className="seo-nav">
+                        <Link href="/share-password-securely/">Share Passwords Securely</Link>
+                        <Link href="/secure-file-sharing/">Secure File Sharing</Link>
+                        <Link href="/share-passwords-with-qr-code">Share via QR Code</Link>
+                        <Link href="/blog/how-to-share-passwords-securely">How to Share Passwords Securely</Link>
+                        <Link href="/blog/how-to-share-api-keys">How to Share API Keys Securely</Link>
+                        <Link href="/blog/share-secrets-from-terminal">Share Secrets from Terminal</Link>
+                    </nav>
 
                     <h2>Security tools</h2>
                     <nav className="seo-nav">
-                        <Link href="/secure-file-sharing/">Secure File Sharing</Link>
                         <Link href="/password-generator">Password Generator</Link>
                         <Link href="/passphrase-generator">Passphrase Generator</Link>
                         <Link href="/wifi-password-generator">WiFi Password Generator</Link>
@@ -135,12 +145,11 @@ export default function HomePage() {
                     <nav className="seo-nav">
                         <Link href="/blog/stop-sending-passwords-over-slack">Stop Sending Passwords Over Slack</Link>
                         <Link href="/blog/how-to-share-wifi-password">How to Share Your WiFi Password Securely</Link>
+                        <Link href="/blog/is-slack-safe-for-passwords">Is Slack Safe for Passwords?</Link>
                         <Link href="/blog/onetimesecret-alternative">1time.io vs OneTimeSecret</Link>
                         <Link href="/blog/privnote-alternative">1time.io vs Privnote</Link>
-                        <Link href="/blog/is-slack-safe-for-passwords">Is Slack Safe for Passwords?</Link>
-                        <Link href="/blog/how-to-share-passwords-securely">How to Share Passwords Securely</Link>
-                        <Link href="/blog/how-to-share-api-keys">How to Share API Keys Securely</Link>
-                        <Link href="/blog/share-secrets-from-terminal">Share Secrets from Terminal</Link>
+                        <Link href="/blog/team-password-sharing">Team Password Sharing</Link>
+                        <Link href="/blog/how-to-send-passwords-over-email">How to Send Passwords Over Email</Link>
                     </nav>
                 </section>
             </div>
