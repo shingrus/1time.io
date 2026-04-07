@@ -36,9 +36,17 @@ import datetime as dt
 import os
 from typing import Dict, Iterable, List, Sequence, Tuple
 
-import redis
-from google.oauth2 import service_account
-from googleapiclient.discovery import build
+try:
+    import redis
+except ImportError:  # pragma: no cover - handled in runtime checks
+    redis = None
+
+try:
+    from google.oauth2 import service_account
+    from googleapiclient.discovery import build
+except ImportError:  # pragma: no cover - handled in runtime checks
+    service_account = None
+    build = None
 
 STORED_TEXT_TOTAL_KEY = "stats:stored:text:total"
 STORED_FILE_TOTAL_KEY = "stats:stored:file:total"
@@ -95,6 +103,11 @@ def parse_args() -> argparse.Namespace:
 
 
 def build_redis_client(args: argparse.Namespace) -> redis.Redis:
+    if redis is None:
+        raise RuntimeError(
+            "Missing dependency 'redis'. Install it with: pip install redis"
+        )
+
     if args.redis_url:
         client = redis.Redis.from_url(args.redis_url, decode_responses=True)
     else:
@@ -135,6 +148,26 @@ def safe_int(value: str | None) -> int:
     return int(value)
 
 
+def build_page_hits_daily_rows(
+    page_hits_daily: Dict[str, Dict[str, int]],
+    known_pages: Iterable[str] = (),
+) -> List[List[object]]:
+    days = sorted(page_hits_daily)
+    rows: List[List[object]] = [["page", *days]]
+    if not days:
+        return rows
+
+    pages = sorted(
+        set(known_pages)
+        | {page for fields in page_hits_daily.values() for page in fields}
+    )
+
+    for page in pages:
+        rows.append([page, *[page_hits_daily.get(day, {}).get(page, 0) for day in days]])
+
+    return rows
+
+
 def collect_stats(client: redis.Redis) -> Dict[str, List[List[object]]]:
     exported_at = dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat()
 
@@ -162,12 +195,21 @@ def collect_stats(client: redis.Redis) -> Dict[str, List[List[object]]]:
             stored_file_daily.get(day, 0),
         ])
 
-    page_hits_daily_rows: List[List[object]] = [["day", "page", "hits"]]
+    page_hits_daily: Dict[str, Dict[str, int]] = {}
     for key in scan_keys(client, f"{PAGE_HIT_DAY_KEY_PREFIX}*"):
         day = key.removeprefix(PAGE_HIT_DAY_KEY_PREFIX)
         fields = client.hgetall(key)
-        for page, hits in sorted(fields.items(), key=lambda item: item[0]):
-            page_hits_daily_rows.append([day, page, safe_int(hits)])
+        page_hits_daily[day] = {
+            page: safe_int(hits)
+            for page, hits in sorted(fields.items(), key=lambda item: item[0])
+        }
+
+    page_hits_daily_rows = build_page_hits_daily_rows(
+        page_hits_daily,
+        known_pages=(page for page, _ in page_hits_total),
+    )
+    page_hits_daily_page_count = max(len(page_hits_daily_rows) - 1, 0)
+    page_hits_daily_day_count = max(len(page_hits_daily_rows[0]) - 1, 0)
 
     overview_rows: List[List[object]] = [
         ["metric", "value"],
@@ -176,7 +218,8 @@ def collect_stats(client: redis.Redis) -> Dict[str, List[List[object]]]:
         ["total_stored_files", total_stored_files],
         ["stored_daily_rows", max(len(stored_daily_rows) - 1, 0)],
         ["page_hits_total_rows", len(page_hits_total)],
-        ["page_hits_daily_rows", max(len(page_hits_daily_rows) - 1, 0)],
+        ["page_hits_daily_pages", page_hits_daily_page_count],
+        ["page_hits_daily_days", page_hits_daily_day_count],
     ]
 
     page_hits_total_rows: List[List[object]] = [["page", "hits"]]
@@ -192,6 +235,12 @@ def collect_stats(client: redis.Redis) -> Dict[str, List[List[object]]]:
 
 
 def build_sheets_service(service_account_json: str):
+    if service_account is None or build is None:
+        raise RuntimeError(
+            "Missing Google Sheets dependencies. Install them with: "
+            "pip install google-api-python-client google-auth"
+        )
+
     credentials = service_account.Credentials.from_service_account_file(
         service_account_json,
         scopes=SCOPES,
@@ -238,7 +287,7 @@ def write_tab(
 ) -> None:
     service.spreadsheets().values().clear(
         spreadsheetId=spreadsheet_id,
-        range=f"{title}!A:Z",
+        range=title,
     ).execute()
 
     service.spreadsheets().values().update(
