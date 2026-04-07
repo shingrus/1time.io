@@ -153,17 +153,14 @@ def build_page_hits_daily_rows(
     known_pages: Iterable[str] = (),
 ) -> List[List[object]]:
     days = sorted(page_hits_daily)
-    rows: List[List[object]] = [["page", *days]]
-    if not days:
-        return rows
-
     pages = sorted(
         set(known_pages)
         | {page for fields in page_hits_daily.values() for page in fields}
     )
 
-    for page in pages:
-        rows.append([page, *[page_hits_daily.get(day, {}).get(page, 0) for day in days]])
+    rows: List[List[object]] = [["date", *pages]]
+    for day in days:
+        rows.append([day, *[page_hits_daily.get(day, {}).get(page, 0) for page in pages]])
 
     return rows
 
@@ -208,8 +205,8 @@ def collect_stats(client: redis.Redis) -> Dict[str, List[List[object]]]:
         page_hits_daily,
         known_pages=(page for page, _ in page_hits_total),
     )
-    page_hits_daily_page_count = max(len(page_hits_daily_rows) - 1, 0)
-    page_hits_daily_day_count = max(len(page_hits_daily_rows[0]) - 1, 0)
+    page_hits_daily_day_count = max(len(page_hits_daily_rows) - 1, 0)
+    page_hits_daily_page_count = max(len(page_hits_daily_rows[0]) - 1, 0)
 
     overview_rows: List[List[object]] = [
         ["metric", "value"],
