@@ -84,11 +84,11 @@ export default function RootLayout({children}) {
                     <footer className="app-footer">
                         <nav className="app-footer-tools">
                             <Link href="/secure-file-sharing/">Secure File Sharing</Link>
-                            <Link href="/password-generator">Password Generator</Link>
-                            <Link href="/passphrase-generator">Passphrase</Link>
-                            <Link href="/wifi-password-generator">WiFi Password</Link>
-                            <Link href="/api-key-generator">API Key</Link>
-                            <Link href="/share-passwords-with-qr-code">QR Code</Link>
+                            <Link href="/password-generator/">Password Generator</Link>
+                            <Link href="/passphrase-generator/">Passphrase</Link>
+                            <Link href="/wifi-password-generator/">WiFi Password</Link>
+                            <Link href="/api-key-generator/">API Key</Link>
+                            <Link href="/share-passwords-with-qr-code/">QR Code</Link>
                         </nav>
                         <nav className="app-footer-tools">
                             {showBlog && <Link href="/blog">Blog</Link>}
