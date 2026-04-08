@@ -1,10 +1,17 @@
-FROM --platform=$BUILDPLATFORM node:22-alpine AS builder
+ARG NODE_VERSION=25.9.0
+ARG ALPINE_VERSION=3.23
+
+FROM --platform=$BUILDPLATFORM node:${NODE_VERSION}-alpine${ALPINE_VERSION} AS builder
+
+ARG NPM_VERSION=11.12.1
 
 WORKDIR /src/frontend
 
 ARG SHOW_BLOG=true
 
 ENV NEXT_PUBLIC_SHOW_BLOG=${SHOW_BLOG}
+
+RUN npm install -g npm@${NPM_VERSION}
 
 COPY frontend/package.json frontend/package-lock.json ./
 RUN npm ci
