@@ -4,7 +4,8 @@
 
 - Go backend lives in `backend/`.
 - Redis stores one-time secret metadata and counters.
-- `FILE_STORAGE_DIR` stores encrypted uploaded files on disk.
+- `FILE_STORAGE_DIR` stores encrypted uploaded files on disk as `*.enc` blobs.
+- File shares use Redis for one-time metadata plus disk storage for the encrypted blob itself.
 - React frontend lives in `frontend/` and uses Next.js with static export (`output: 'export'`).
 - Server-rendered HTML flows in `templates/` are deprecated.
 
@@ -13,6 +14,11 @@
 - Entry point: `backend/main.go`
 - HTTP handlers: `backend/handlers.go`
 - Redis access: `backend/storage.go`
+- File upload/download API endpoints live in `backend/handlers.go` as `/api/saveFile` and `/api/getFile`.
+- Backend file size limit is `10 MB` via `maxFileSize` in `backend/handlers.go`.
+- Uploaded encrypted files are written to `FILE_STORAGE_DIR/<id>.enc` and the Redis record stores the path plus hashed key.
+- `backend/storage.go` runs a file janitor every 2 hours and deletes expired `*.enc` files based on file mtime.
+- Stored file counters use Redis keys `stats:stored:file:total` and `stats:stored:file:day:YYYYMMDD`.
 - The backend listens on `127.0.0.1:8080`.
 - Required env:
   - `FILE_STORAGE_DIR=/absolute/path/to/encrypted-files`
@@ -50,6 +56,9 @@ make build
 - Prefer `stdin` for `send`; positional secrets leak through shell history and process listings.
 - `read` and `read-file` currently accept the full secret link as a positional argument only, which also exposes decryption material in shell history and process listings.
 - `send-file` and `read-file` support optional passphrases via `--passphrase` or `1TIME_PASSPHRASE`.
+- File links use the `/f/#<randomKey><id>` format.
+- `read-file --out <path>` refuses to start if the target path already exists.
+- `read-file` without `--out` writes into the current directory using the original filename and auto-suffixes collisions like `report (1).txt`.
 - Default host is `1time.io`; bare hosts normalize to `https://...`; plain `http://` is only allowed for loopback addresses such as `127.0.0.1`.
 
 Run locally:
@@ -106,7 +115,13 @@ npm run build
 - The `'use client'` directive is required on all interactive components (forms, buttons, state).
 - The active create/share flow renders the generated secret link inline on the current page.
 - The `/v/` route reads the secret key from the URL hash (`#key`), which is client-side only.
-- Pages with `robots: 'noindex, nofollow'` in metadata: `/v/`.
+- File sharing UI lives on `/secure-file-sharing/` and renders `frontend/components/SecureFileShare.jsx`.
+- File download UI lives on `/f/` and renders `frontend/components/ViewSecretFile.jsx`.
+- `SecureFileShare` encrypts the file in the browser, uploads with `XMLHttpRequest`, and shows upload progress.
+- `ViewSecretFile` reads the link key from the URL hash first; the component also contains a fallback parser for `/f/<key>` style paths, but generated file links are hash-based.
+- Frontend file size limit is `Constants.maxFileSizeBytes = 10 * 1024 * 1024` in `frontend/utils/util.js`; keep it aligned with the backend limit.
+- File metadata (`name`, `type`, `size`) is packed into the encrypted payload before upload; the web app server does not store that metadata separately.
+- Pages with `robots: 'noindex, nofollow'` in metadata: `/v/`, `/f/`.
 - Tests live in `frontend/src/App.test.jsx` and use vitest + React Testing Library.
 - The vitest config (`frontend/vitest.config.js`) uses esbuild with `jsx: 'automatic'` to handle JSX in components.
 
@@ -146,6 +161,8 @@ npm run build
 - Backend production binary from `make build`: `bin/1time-api`
 - Example nginx config: `configs/nginx/1time.conf`
 - nginx serves frontend statics and proxies `/api` to the Go app on `127.0.0.1:8080`.
+- nginx upload ceiling is `11m` in both `configs/nginx/1time.conf` and `docker/nginx/default.conf.template` to stay above the backend's `10 MB` multipart limit.
+- Host nginx has an exact `/f/` location with the same sensitive-header treatment as `/v/`.
 - The nginx `try_files` directive includes `$uri/index.html` for Next.js trailing-slash static export.
 
 ## Important Behavior
@@ -153,3 +170,5 @@ npm run build
 - The React frontend uses the JSON API routes under `/api`.
 - Each route generates its own `index.html` with full pre-rendered content and unique meta tags for SEO.
 - The deprecated server-rendered `/view/...` flow is separate from the SPA `/v/` flow.
+- File links are one-time and currently use the SPA `/f/` flow.
+- File downloads are consumed on the first authorized fetch attempt: the Redis file record is deleted before transfer completion is known, and the disk blob is removed after the stream attempt.
