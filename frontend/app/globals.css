@@ -232,14 +232,16 @@ body {
 
 /* Shared content links for prose-heavy sections */
 .article-body a:not(.btn),
-.seo-section p a {
+.seo-section p a,
+.gen-seo-text a {
   color: var(--accent);
   text-decoration: underline;
   text-underline-offset: 2px;
 }
 
 .article-body a:not(.btn):hover,
-.seo-section p a:hover {
+.seo-section p a:hover,
+.gen-seo-text a:hover {
   color: var(--accent-hover);
 }
 
