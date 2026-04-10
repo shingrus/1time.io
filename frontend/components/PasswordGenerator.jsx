@@ -232,14 +232,32 @@ const PRESETS = {
         options: { uppercase: true, lowercase: true, numbers: true, symbols: false },
         seoHeading: 'Generate a Random WiFi Password for Any Router',
         seoText: 'Your WiFi password protects your entire home or office network. A weak WiFi password can be cracked in minutes using widely available tools, giving attackers access to all devices on your network. Our WiFi password generator creates strong, random WPA2 and WPA3-compatible passwords without confusing symbols — making them easy to read and type on phones, smart TVs, and IoT devices. Works with any router brand: Netgear, TP-Link, Linksys, ASUS, and more. Generated entirely in your browser with cryptographic randomness. For maximum security, change your WiFi password periodically and use WPA3 if your router supports it.',
+        keyFacts: [
+            'WiFi passwords must be 8–63 printable ASCII characters for WPA2 and WPA3 compatibility.',
+            'A 16-character alphanumeric password provides ~95 bits of entropy — infeasible to brute-force.',
+            'WPA3 (SAE) eliminates offline dictionary attacks, but a strong password is still required per the Wi-Fi Alliance specification.',
+            'Avoid symbols in WiFi passwords — they are hard to type on smart TVs, game consoles, and IoT devices.',
+        ],
         seoSections: [
             {
                 heading: 'Why WiFi passwords need special treatment',
-                text: 'WiFi passwords are different from website passwords in two important ways. First, you need to type them manually on every device — phones, laptops, smart TVs, game consoles, printers, IoT devices. Symbols like #, @, and $ are hard to find on TV remotes and some device keyboards, which is why this generator uses only letters and numbers. Second, WiFi passwords can be attacked offline: an attacker captures the WPA handshake and brute-forces it on their own hardware without rate limiting. This makes length and randomness especially critical.',
+                text: ['WiFi passwords are different from website passwords in two important ways. First, you need to type them manually on every device — phones, laptops, smart TVs, game consoles, printers, IoT devices. Symbols like #, @, and $ are hard to find on TV remotes and some device keyboards, which is why this generator uses only letters and numbers. Second, WiFi passwords can be attacked offline: an attacker captures the WPA handshake and brute-forces it on their own hardware without rate limiting. This makes length and randomness especially critical — ', { link: 'NIST Special Publication 800-63B', href: 'https://pages.nist.gov/800-63-3/sp800-63b.html' }, ' recommends at least 8 characters, but for WiFi we recommend 16 or more.'],
             },
             {
                 heading: 'WPA2 vs WPA3: what your password protects',
-                text: 'With WPA2 (still the most common protocol), your password is hashed using PBKDF2 with 4,096 iterations of SHA-1. A determined attacker with a GPU cluster can test millions of guesses per second against the captured handshake. An 8-character alphanumeric password can be cracked in days. A 16-character one pushes the time well beyond feasibility. WPA3 uses SAE (Simultaneous Authentication of Equals), which makes offline brute-force attacks significantly harder. If your router supports WPA3, enable it — but use a strong password regardless.',
+                text: ['With WPA2 (still the most common protocol), your password is hashed using PBKDF2 with 4,096 iterations of SHA-1. A determined attacker with a GPU cluster can test millions of guesses per second against the captured handshake. An 8-character alphanumeric password can be cracked in days. A 16-character one pushes the time well beyond feasibility. WPA3 uses SAE (Simultaneous Authentication of Equals), which makes offline brute-force attacks significantly harder — as defined in the ', { link: 'Wi-Fi Alliance WPA3 specification', href: 'https://www.wi-fi.org/discover-wi-fi/security' }, '. If your router supports WPA3, enable it — but use a strong password regardless.'],
+                comparisonTable: {
+                    headers: ['', 'WPA2-Personal', 'WPA3-Personal'],
+                    rows: [
+                        ['Standard', 'IEEE 802.11i (2004)', 'Wi-Fi Alliance (2018)'],
+                        ['Key exchange', 'PSK (Pre-Shared Key)', 'SAE (Simultaneous Authentication of Equals)'],
+                        ['Offline brute-force', 'Vulnerable — attacker can crack captured handshake offline', 'Resistant — each attempt requires live interaction with the router'],
+                        ['Password length', '8–63 ASCII characters', '8–63 ASCII characters (1–128 in SAE spec)'],
+                        ['Recommended minimum', '16+ characters', '12+ characters (protocol is stronger)'],
+                        ['Forward secrecy', 'No — compromised password exposes past traffic', 'Yes — each session uses a unique key'],
+                        ['Protected Management Frames', 'Optional', 'Required'],
+                    ],
+                },
             },
             {
                 heading: 'How to change your WiFi password on any router',
@@ -651,10 +669,46 @@ export default function PasswordGenerator({ presetPath }) {
                 <h2 className="gen-seo-heading">{preset.seoHeading}</h2>
                 <p className="gen-seo-text">{preset.seoText}</p>
 
+                {preset.keyFacts && (
+                    <div className="gen-key-facts">
+                        <h3 className="gen-key-facts-heading">Key facts</h3>
+                        <ul className="gen-key-facts-list">
+                            {preset.keyFacts.map((fact, i) => (
+                                <li key={i} className="gen-faq-a">{fact}</li>
+                            ))}
+                        </ul>
+                    </div>
+                )}
+
                 {preset.seoSections && preset.seoSections.map((section, i) => (
                     <div key={i}>
                         <h3 className="gen-seo-subheading">{section.heading}</h3>
-                        <p className="gen-seo-text">{section.text}</p>
+                        <p className="gen-seo-text">{Array.isArray(section.text) ? section.text.map((chunk, j) => typeof chunk === 'string' ? chunk : <a key={j} href={chunk.href} target="_blank" rel="noopener noreferrer">{chunk.link}</a>) : section.text}</p>
+                        {section.comparisonTable && (
+                            <div className="gen-comparison-table-wrap">
+                                <table className="gen-comparison-table">
+                                    <caption className="gen-comparison-caption">WPA2 vs WPA3 — side-by-side comparison</caption>
+                                    <thead>
+                                        <tr>
+                                            {section.comparisonTable.headers.map((h, j) => (
+                                                <th key={j}>{h}</th>
+                                            ))}
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {section.comparisonTable.rows.map((row, j) => (
+                                            <tr key={j}>
+                                                {row.map((cell, k) => (
+                                                    k === 0
+                                                        ? <th key={k} scope="row">{cell}</th>
+                                                        : <td key={k}>{cell}</td>
+                                                ))}
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        )}
                     </div>
                 ))}
 
