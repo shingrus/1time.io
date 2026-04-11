@@ -5,7 +5,7 @@
   "dependencies": {
     "@fontsource-variable/bricolage-grotesque": "^5.2.10",
     "@fontsource-variable/outfit": "^5.2.8",
-    "next": "^16.1.7",
+    "next": "^16.2.3",
     "qrcode-generator": "^2.0.4",
     "react": "^19.2.4",
     "react-dom": "^19.2.4"
