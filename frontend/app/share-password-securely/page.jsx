@@ -64,19 +64,6 @@ const jsonLd = [
     },
     {
         '@context': 'https://schema.org',
-        '@type': 'HowTo',
-        name: 'How to share a password securely',
-        description: 'Share a password through an encrypted one-time link using 1time.io.',
-        step: [
-            { '@type': 'HowToStep', position: 1, name: 'Paste your password', text: 'Type or paste the password you want to share into the text field.' },
-            { '@type': 'HowToStep', position: 2, name: 'Set expiry and passphrase', text: 'Choose how long the link should live (1 to 30 days). Optionally add a passphrase for extra protection.' },
-            { '@type': 'HowToStep', position: 3, name: 'Create the link', text: 'Click "Create secret link". Your browser encrypts the password with AES-256-GCM before sending it to the server.' },
-            { '@type': 'HowToStep', position: 4, name: 'Send the link', text: 'Copy the one-time link and send it to the recipient via email, Slack, SMS, or any channel.' },
-            { '@type': 'HowToStep', position: 5, name: 'Recipient reads and link self-destructs', text: 'The recipient opens the link, sees the password, and the encrypted data is permanently deleted from the server.' },
-        ],
-    },
-    {
-        '@context': 'https://schema.org',
         '@type': 'FAQPage',
         mainEntity: faqItems.map((item) => ({
             '@type': 'Question',
@@ -207,14 +194,14 @@ export default function SharePasswordSecurelyPage() {
                     <h2>More ways to share securely</h2>
                     <nav className="seo-nav">
                         <Link href="/secure-file-sharing/">Send encrypted files</Link>
-                        <Link href="/share-passwords-with-qr-code">Share via QR code</Link>
-                        <Link href="/password-generator">Generate a strong password</Link>
-                        <Link href="/wifi-password-generator">WiFi password generator</Link>
-                        <Link href="/api-key-generator">API key generator</Link>
-                        <Link href="/blog/how-to-share-passwords-securely">Guide: How to share passwords securely</Link>
-                        <Link href="/blog/team-password-sharing">Guide: Team password sharing</Link>
-                        <Link href="/blog/is-slack-safe-for-passwords">Is Slack safe for passwords?</Link>
-                        <Link href="/blog/how-to-send-passwords-over-email">How to send passwords over email</Link>
+                        <Link href="/share-passwords-with-qr-code/">Share via QR code</Link>
+                        <Link href="/password-generator/">Generate a strong password</Link>
+                        <Link href="/wifi-password-generator/">WiFi password generator</Link>
+                        <Link href="/api-key-generator/">API key generator</Link>
+                        <Link href="/blog/how-to-share-passwords-securely/">Guide: How to share passwords securely</Link>
+                        <Link href="/blog/team-password-sharing/">Guide: Team password sharing</Link>
+                        <Link href="/blog/is-slack-safe-for-passwords/">Is Slack safe for passwords?</Link>
+                        <Link href="/blog/how-to-send-passwords-over-email/">How to send passwords over email</Link>
                     </nav>
                 </section>
             </div>

@@ -82,14 +82,14 @@ export default function HomePage() {
                             </div>
                             <p>Send encrypted files through one-time download links without exposing filenames or contents.</p>
                         </Link>
-                        <Link href="/password-generator" className="feature-card feature-card-link">
+                        <Link href="/password-generator/" className="feature-card feature-card-link">
                             <div className="feature-card-header">
                                 <div className="feature-card-icon" aria-hidden="true">&#x1f511;</div>
                                 <h2>Password Generator</h2>
                             </div>
                             <p>Create a strong, high-entropy password in your browser for critical accounts.</p>
                         </Link>
-                        <Link href="/share-passwords-with-qr-code" className="feature-card feature-card-link">
+                        <Link href="/share-passwords-with-qr-code/" className="feature-card feature-card-link">
                             <div className="feature-card-header">
                                 <div className="feature-card-icon" aria-hidden="true">&#x1f4f1;</div>
                                 <h2>QR Code Sharing</h2>
@@ -123,33 +123,33 @@ export default function HomePage() {
                     <nav className="seo-nav">
                         <Link href="/share-password-securely/">Share Passwords Securely</Link>
                         <Link href="/secure-file-sharing/">Secure File Sharing</Link>
-                        <Link href="/share-passwords-with-qr-code">Share via QR Code</Link>
-                        <Link href="/blog/how-to-share-passwords-securely">How to Share Passwords Securely</Link>
-                        <Link href="/blog/how-to-share-api-keys">How to Share API Keys Securely</Link>
-                        <Link href="/blog/share-secrets-from-terminal">Share Secrets from Terminal</Link>
+                        <Link href="/share-passwords-with-qr-code/">Share via QR Code</Link>
+                        <Link href="/blog/how-to-share-passwords-securely/">How to Share Passwords Securely</Link>
+                        <Link href="/blog/how-to-share-api-keys/">How to Share API Keys Securely</Link>
+                        <Link href="/blog/share-secrets-from-terminal/">Share Secrets from Terminal</Link>
                     </nav>
 
                     <h2>Security tools</h2>
                     <nav className="seo-nav">
-                        <Link href="/password-generator">Password Generator</Link>
-                        <Link href="/passphrase-generator">Passphrase Generator</Link>
-                        <Link href="/wifi-password-generator">WiFi Password Generator</Link>
-                        <Link href="/api-key-generator">API Key Generator</Link>
-                        <Link href="/password-generator-12-characters">12-Character Password</Link>
-                        <Link href="/password-generator-14-characters">14-Character Password</Link>
-                        <Link href="/password-generator-15-characters">15-Character Password</Link>
-                        <Link href="/password-generator-16-characters">16-Character Password</Link>
+                        <Link href="/password-generator/">Password Generator</Link>
+                        <Link href="/passphrase-generator/">Passphrase Generator</Link>
+                        <Link href="/wifi-password-generator/">WiFi Password Generator</Link>
+                        <Link href="/api-key-generator/">API Key Generator</Link>
+                        <Link href="/password-generator-12-characters/">12-Character Password</Link>
+                        <Link href="/password-generator-14-characters/">14-Character Password</Link>
+                        <Link href="/password-generator-15-characters/">15-Character Password</Link>
+                        <Link href="/password-generator-16-characters/">16-Character Password</Link>
                     </nav>
 
                     <h2>From the blog</h2>
                     <nav className="seo-nav">
-                        <Link href="/blog/stop-sending-passwords-over-slack">Stop Sending Passwords Over Slack</Link>
-                        <Link href="/blog/how-to-share-wifi-password">How to Share Your WiFi Password Securely</Link>
-                        <Link href="/blog/is-slack-safe-for-passwords">Is Slack Safe for Passwords?</Link>
-                        <Link href="/blog/onetimesecret-alternative">1time.io vs OneTimeSecret</Link>
-                        <Link href="/blog/privnote-alternative">1time.io vs Privnote</Link>
-                        <Link href="/blog/team-password-sharing">Team Password Sharing</Link>
-                        <Link href="/blog/how-to-send-passwords-over-email">How to Send Passwords Over Email</Link>
+                        <Link href="/blog/stop-sending-passwords-over-slack/">Stop Sending Passwords Over Slack</Link>
+                        <Link href="/blog/how-to-share-wifi-password/">How to Share Your WiFi Password Securely</Link>
+                        <Link href="/blog/is-slack-safe-for-passwords/">Is Slack Safe for Passwords?</Link>
+                        <Link href="/blog/onetimesecret-alternative/">1time.io vs OneTimeSecret</Link>
+                        <Link href="/blog/privnote-alternative/">1time.io vs Privnote</Link>
+                        <Link href="/blog/team-password-sharing/">Team Password Sharing</Link>
+                        <Link href="/blog/how-to-send-passwords-over-email/">How to Send Passwords Over Email</Link>
                     </nav>
                 </section>
             </div>

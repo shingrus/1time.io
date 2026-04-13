@@ -69,19 +69,6 @@ const jsonLd = [
     },
     {
         '@context': 'https://schema.org',
-        '@type': 'HowTo',
-        name: 'How to send a file securely with a one-time link',
-        description: 'Encrypt and share a file through a one-time download link using 1time.io.',
-        step: [
-            { '@type': 'HowToStep', position: 1, name: 'Choose a file', text: 'Select the file you want to share (up to 10 MB).' },
-            { '@type': 'HowToStep', position: 2, name: 'Add a passphrase (optional)', text: 'Set an optional passphrase for extra protection. The recipient will need it to decrypt.' },
-            { '@type': 'HowToStep', position: 3, name: 'Create the link', text: 'Click create. Your browser packs the file with its metadata, encrypts the payload locally, and uploads only the encrypted blob.' },
-            { '@type': 'HowToStep', position: 4, name: 'Send the link', text: 'Copy the one-time link and send it to the recipient via any channel.' },
-            { '@type': 'HowToStep', position: 5, name: 'Recipient downloads', text: 'The recipient opens the link. The browser decrypts the file locally and the server copy is destroyed.' },
-        ],
-    },
-    {
-        '@context': 'https://schema.org',
         '@type': 'FAQPage',
         mainEntity: faqItems.map((item) => ({
             '@type': 'Question',
@@ -182,11 +169,11 @@ export default function SecureFileSharingPage() {
                     <h2>Learn more</h2>
                     <nav className="seo-nav">
                         <Link href="/share-password-securely/">Share passwords securely</Link>
-                        <Link href="/blog/how-to-share-passwords-securely">How to share passwords securely</Link>
-                        <Link href="/blog/how-to-share-api-keys">How to share API keys securely</Link>
-                        <Link href="/blog/stop-sending-passwords-over-slack">Stop sending passwords over Slack</Link>
-                        <Link href="/blog/share-secrets-from-terminal">Share secrets from terminal</Link>
-                        <Link href="/about">About 1time.io</Link>
+                        <Link href="/blog/how-to-share-passwords-securely/">How to share passwords securely</Link>
+                        <Link href="/blog/how-to-share-api-keys/">How to share API keys securely</Link>
+                        <Link href="/blog/stop-sending-passwords-over-slack/">Stop sending passwords over Slack</Link>
+                        <Link href="/blog/share-secrets-from-terminal/">Share secrets from terminal</Link>
+                        <Link href="/about/">About 1time.io</Link>
                     </nav>
                 </section>
             </div>

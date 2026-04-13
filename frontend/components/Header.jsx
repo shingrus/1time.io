@@ -16,11 +16,11 @@ export default function Header() {
                 <span className="app-logo-text">1time<span>io</span></span>
             </Link>
             <nav className="app-nav">
-                <Link href="/password-generator">
+                <Link href="/password-generator/">
                     Password Generator
                 </Link>
                 {showBlog && (
-                    <Link href="/blog">
+                    <Link href="/blog/">
                         Blog
                     </Link>
                 )}

@@ -91,9 +91,9 @@ export default function RootLayout({children}) {
                             <Link href="/share-passwords-with-qr-code/">QR Code</Link>
                         </nav>
                         <nav className="app-footer-tools">
-                            {showBlog && <Link href="/blog">Blog</Link>}
-                            <Link href="/about">About</Link>
-                            <Link href="/privacy">Privacy</Link>
+                            {showBlog && <Link href="/blog/">Blog</Link>}
+                            <Link href="/about/">About</Link>
+                            <Link href="/privacy/">Privacy</Link>
                             <a href="https://www.npmjs.com/package/@1time/cli" target="_blank" rel="noopener noreferrer">CLI</a>
                             <a href="https://github.com/shingrus/1time" target="_blank" rel="noopener noreferrer">GitHub</a>
                         </nav>
@@ -101,7 +101,7 @@ export default function RootLayout({children}) {
                             Zero-knowledge
                             {' '}&middot;{' '}
                             {showBlog
-                                ? <Link href="/blog/quantum-safe-password-sharing">Quantum-safe encryption</Link>
+                                ? <Link href="/blog/quantum-safe-password-sharing/">Quantum-safe encryption</Link>
                                 : 'Quantum-safe encryption'
                             }
                             {' '}&middot; &copy; 2026 1time.io

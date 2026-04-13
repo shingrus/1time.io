@@ -29,8 +29,8 @@ const breadcrumbJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
     itemListElement: [
-        { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://1time.io' },
-        { '@type': 'ListItem', position: 2, name: 'Strong Password Generator', item: 'https://1time.io/password-generator' },
+        { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://1time.io/' },
+        { '@type': 'ListItem', position: 2, name: 'Strong Password Generator', item: 'https://1time.io/password-generator/' },
     ],
 };
 
