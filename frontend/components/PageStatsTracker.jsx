@@ -21,18 +21,10 @@ const trackerScript = `
         return;
     }
 
-    const send = () => fetch('/api/stat', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({page}),
-        keepalive: true,
-    }).catch(() => {});
-
-    if (typeof requestIdleCallback === 'function') {
-        requestIdleCallback(send);
-    } else {
-        setTimeout(send, 0);
-    }
+    navigator.sendBeacon('/api/stat', new Blob(
+        [JSON.stringify({page})],
+        {type: 'application/json'}
+    ));
 })();
 `;
 
