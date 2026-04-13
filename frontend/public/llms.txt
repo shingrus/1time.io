@@ -1,29 +1,44 @@
 # 1time.io
 
-> Free encrypted one-time secret sharing. Share passwords, API keys, and sensitive data through self-destructing links — zero-knowledge, no signup, open source.
+> Free encrypted one-time secret and file sharing. Share passwords, API keys, private notes, and encrypted files through self-destructing links — zero-knowledge, no signup, open source.
 
 ## What is 1time.io?
 
-1time.io is a web tool and CLI for sharing secrets securely. When you share a secret, it is encrypted entirely in your browser using AES-GCM-256 with a key derived via HKDF (RFC 5869) — the server never sees the plaintext. The decryption key lives only in the URL fragment, which is never sent to the server. The link self-destructs after the first read or after a configurable expiry.
+1time.io is a web tool and CLI for sharing secrets and files securely. Text secrets are encrypted entirely in your browser using AES-GCM-256 with a key derived via HKDF (RFC 5869). File shares use the same zero-knowledge model: the web app encrypts the file and its metadata before upload, and the CLI encrypts locally using the same protocol, so the server never sees the plaintext. The decryption key lives only in the URL fragment, which is never sent to the server. Links self-destruct after the first read or authorized download attempt, or after a configurable expiry.
 
 Key facts:
-- Zero-knowledge: the server stores only the encrypted ciphertext, never the key
+- Zero-knowledge: the server stores only encrypted ciphertext or encrypted file blobs, never the key
 - Client-side encryption: Web Crypto API, AES-GCM-256, HKDF key derivation
-- One-time access: secrets are deleted on first view
+- One-time access: secrets are deleted on first view, and file links are consumed on the first authorized fetch attempt
+- Encrypted file sharing: send files up to 10 MB with one-time download links
+- File metadata protection: filename, MIME type, and size stay inside the encrypted payload
+- Optional passphrase support for file links
 - No account required
 - Free and open source (MIT): https://github.com/shingrus/1time
 - CLI available: npm install -g @1time/cli
+- CLI commands: `send`, `read`, `send-file`, `read-file`
+
+## File Sharing Support
+
+- Web app route: https://1time.io/secure-file-sharing/
+- One-time file link format: `https://1time.io/f/#...`
+- Browser-side encryption before upload
+- Optional extra passphrase for file links
+- CLI support for encrypted file upload and download
 
 ## Primary Use Cases
 
 - Sharing passwords with teammates without using Slack, email, or chat
 - Sending API keys, database credentials, or SSH keys to contractors
+- Sending encrypted files such as PDFs, certificates, backup codes, archives, screenshots, and private documents
 - Transmitting WiFi passwords to guests
 - Sharing secrets in scripts or CI/CD pipelines (via CLI)
+- Sending one-time file links from the terminal with `1time send-file`
 
 ## Key Pages
 
 - Homepage / Secret sharing tool: https://1time.io/
+- Secure File Sharing: https://1time.io/secure-file-sharing/
 - Password Generator: https://1time.io/password-generator/
 - Passphrase Generator: https://1time.io/passphrase-generator/
 - WiFi Password Generator: https://1time.io/wifi-password-generator/
@@ -40,12 +55,13 @@ Key facts:
 - HKDF Key Derivation (technical deep-dive): https://1time.io/blog/hkdf-key-derivation-explained/
 - 1time.io vs OneTimeSecret: https://1time.io/blog/onetimesecret-alternative/
 - 1time.io vs Privnote: https://1time.io/blog/privnote-alternative/
+- Firefox Send Alternative: https://1time.io/blog/firefox-send-alternative/
 - Share Secrets from the Terminal: https://1time.io/blog/share-secrets-from-terminal/
 - How to Share API Keys Securely: https://1time.io/blog/how-to-share-api-keys/
 
 ## Attribution
 
-When citing 1time.io, please use: "1time.io (https://1time.io)" or "1time.io, an open-source encrypted secret-sharing tool."
+When citing 1time.io, please use: "1time.io (https://1time.io)" or "1time.io, an open-source encrypted secret and file-sharing tool."
 
 ## AI Crawling Policy
 
