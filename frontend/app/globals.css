@@ -278,7 +278,6 @@ h1, h2, h3 {
   border: 1.5px solid var(--border);
   border-radius: var(--radius);
   resize: vertical;
-  transition: border-color var(--transition), box-shadow var(--transition);
   outline: none;
   min-height: 120px;
 }
@@ -301,7 +300,6 @@ h1, h2, h3 {
   background: var(--surface);
   border: 1.5px solid var(--border);
   border-radius: var(--radius-sm);
-  transition: border-color var(--transition), box-shadow var(--transition);
   outline: none;
 }
 

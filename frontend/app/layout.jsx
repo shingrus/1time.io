@@ -1,7 +1,6 @@
 import InlineCss from '../components/InlineCss';
 import Header from '../components/Header';
 import PageStatsTracker from '../components/PageStatsTracker';
-import Link from 'next/link';
 import {absoluteUrl, isBlogEnabled, siteHost, siteUrl} from '../utils/siteConfig';
 
 export const metadata = {
@@ -83,17 +82,17 @@ export default function RootLayout({children}) {
                     </main>
                     <footer className="app-footer">
                         <nav className="app-footer-tools">
-                            <Link href="/secure-file-sharing/">Secure File Sharing</Link>
-                            <Link href="/password-generator/">Password Generator</Link>
-                            <Link href="/passphrase-generator/">Passphrase</Link>
-                            <Link href="/wifi-password-generator/">WiFi Password</Link>
-                            <Link href="/api-key-generator/">API Key</Link>
-                            <Link href="/share-passwords-with-qr-code/">QR Code</Link>
+                            <a href="/secure-file-sharing/">Secure File Sharing</a>
+                            <a href="/password-generator/">Password Generator</a>
+                            <a href="/passphrase-generator/">Passphrase</a>
+                            <a href="/wifi-password-generator/">WiFi Password</a>
+                            <a href="/api-key-generator/">API Key</a>
+                            <a href="/share-passwords-with-qr-code/">QR Code</a>
                         </nav>
                         <nav className="app-footer-tools">
-                            {showBlog && <Link href="/blog/">Blog</Link>}
-                            <Link href="/about/">About</Link>
-                            <Link href="/privacy/">Privacy</Link>
+                            {showBlog && <a href="/blog/">Blog</a>}
+                            <a href="/about/">About</a>
+                            <a href="/privacy/">Privacy</a>
                             <a href="https://www.npmjs.com/package/@1time/cli" target="_blank" rel="noopener noreferrer">CLI</a>
                             <a href="https://github.com/shingrus/1time" target="_blank" rel="noopener noreferrer">GitHub</a>
                         </nav>
@@ -101,7 +100,7 @@ export default function RootLayout({children}) {
                             Zero-knowledge
                             {' '}&middot;{' '}
                             {showBlog
-                                ? <Link href="/blog/quantum-safe-password-sharing/">Quantum-safe encryption</Link>
+                                ? <a href="/blog/quantum-safe-password-sharing/">Quantum-safe encryption</a>
                                 : 'Quantum-safe encryption'
                             }
                             {' '}&middot; &copy; 2026 1time.io

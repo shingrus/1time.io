@@ -1,4 +1,3 @@
-import Link from 'next/link';
 import {isBlogEnabled} from '../utils/siteConfig';
 
 export default function Header() {
@@ -6,7 +5,7 @@ export default function Header() {
 
     return (
         <header className="app-header">
-            <Link href="/" className="app-logo">
+            <a href="/" className="app-logo">
                 <svg width="28" height="28" viewBox="0 0 64 64" style={{color: 'var(--accent)'}}>
                     <rect width="64" height="64" rx="14" fill="currentColor"/>
                     <rect x="16" y="28" width="32" height="24" rx="4" fill="#fff"/>
@@ -14,15 +13,15 @@ export default function Header() {
                     <circle cx="32" cy="40" r="4" fill="currentColor"/>
                 </svg>
                 <span className="app-logo-text">1time<span>io</span></span>
-            </Link>
+            </a>
             <nav className="app-nav">
-                <Link href="/password-generator/">
+                <a href="/password-generator/">
                     Password Generator
-                </Link>
+                </a>
                 {showBlog && (
-                    <Link href="/blog/">
+                    <a href="/blog/">
                         Blog
-                    </Link>
+                    </a>
                 )}
                 <a
                     className="app-nav-icon"

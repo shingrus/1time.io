@@ -21,10 +21,12 @@ const trackerScript = `
         return;
     }
 
-    navigator.sendBeacon('/api/stat', new Blob(
-        [JSON.stringify({page})],
-        {type: 'application/json'}
-    ));
+    window.addEventListener('load', () => {
+        navigator.sendBeacon('/api/stat', new Blob(
+            [JSON.stringify({page})],
+            {type: 'application/json'}
+        ));
+    }, {once: true});
 })();
 `;
 
