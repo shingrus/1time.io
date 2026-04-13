@@ -102,6 +102,10 @@ export default function ShowNewLink({newLink = "", onReset}) {
                 </svg>
             </div>
             <p className="link-display-label">Your secret link is ready</p>
+            <p className="link-notice" aria-live="polite">
+                <strong>Do not open this link yourself.</strong> Opening it, even just to test it, will
+                consume the one-time secret immediately. Copy or forward the link to your recipient instead.
+            </p>
             <input
                 className="link-display-input"
                 aria-label="Secret one-time link"
@@ -186,8 +190,8 @@ export default function ShowNewLink({newLink = "", onReset}) {
                 >Create another</button>
             </div>
             <p className="link-notice">
-                This link works only once. After the recipient opens it, the message is
-                permanently destroyed. Even we cannot read it — encryption happens in your browser.
+                This link works only once. After it is opened, the secret is permanently destroyed.
+                Even we cannot read it because encryption happens in your browser.
             </p>
                 </>
             )}

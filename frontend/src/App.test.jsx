@@ -146,6 +146,8 @@ describe('ShowNewLink component', () => {
 
         const linkInput = await screen.findByLabelText(/secret one-time link/i);
         expect(linkInput).toBeInTheDocument();
+        expect(screen.getByText(/do not open this link yourself/i)).toBeInTheDocument();
+        expect(screen.getByText(/opening it, even just to test it, will consume the one-time secret immediately/i)).toBeInTheDocument();
         expect(linkInput.value).toContain('/v/#');
         expect(linkInput.value).toContain('AbCdEfGhIjKlMnOpQr-_');
         expect(linkInput.value).toContain('testId123');
@@ -278,7 +280,7 @@ describe('ViewSecretMessage component', () => {
     it('shows the pre-read state with decrypt button', () => {
         render(<ViewSecretMessage />);
 
-        expect(screen.getByText(/encrypted message/i)).toBeInTheDocument();
+        expect(screen.getByText(/someone sent you a secret/i)).toBeInTheDocument();
         expect(screen.getByRole('button', { name: /decrypt & read/i })).toBeInTheDocument();
     });
 

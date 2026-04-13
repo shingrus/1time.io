@@ -170,30 +170,31 @@ export default function ViewSecretMessage() {
                     </div>
                 )}
 
-                {/* Read button */}
+                {/* Pre-read gate */}
                 {isPreRead && (
                     <>
-                    <div className="message-panel message-panel-locked">
-                        <div className="message-panel-header">
-                            Encrypted message
+                    <div className="confirm-gate">
+                        <div className="confirm-gate-icon" aria-hidden="true">
+                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                                <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                                <circle cx="12" cy="16" r="1"/>
+                            </svg>
                         </div>
-                        <div className="message-panel-body message-panel-body-locked">
-                            <div className="view-secret-placeholder">
-                                <div className="view-secret-line view-secret-line-wide"></div>
-                                <div className="view-secret-line"></div>
-                                <div className="view-secret-line view-secret-line-short"></div>
-                                <div className="view-secret-line view-secret-line-medium"></div>
-                            </div>
-                            <div className="view-secret-fog">
-                                <button
-                                    className="btn btn-success btn-lg"
-                                    type="submit"
-                                    disabled={isLoading}
-                                >
-                                    {!isLoading ? "Decrypt & read" : "Decrypting..."}
-                                </button>
-                            </div>
-                        </div>
+                        <h2 className="confirm-gate-title">Someone sent you a secret</h2>
+                        <p className="confirm-gate-desc">
+                            This is a <strong>one-time link</strong>. The message will be revealed once and then <strong>permanently deleted</strong> from our servers.
+                        </p>
+                        <button
+                            className="btn btn-success btn-lg"
+                            type="submit"
+                            disabled={isLoading}
+                        >
+                            {!isLoading ? "Decrypt & read" : "Decrypting..."}
+                        </button>
+                        <p className="confirm-gate-warning">
+                            If you are the sender, do not open this — share the link with your recipient instead.
+                        </p>
                     </div>
                     {linkKey && (
                         <div className="view-secondary-actions">
