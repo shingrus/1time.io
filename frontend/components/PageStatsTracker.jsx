@@ -21,12 +21,18 @@ const trackerScript = `
         return;
     }
 
-    fetch('/api/stat', {
+    const send = () => fetch('/api/stat', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({page}),
         keepalive: true,
     }).catch(() => {});
+
+    if (typeof requestIdleCallback === 'function') {
+        requestIdleCallback(send);
+    } else {
+        setTimeout(send, 0);
+    }
 })();
 `;
 
