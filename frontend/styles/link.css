@@ -4,10 +4,19 @@
   padding: 20px 0;
 }
 
+.link-display-icon {
+  margin-bottom: 24px;
+  color: var(--success);
+}
+
+.link-display-label,
+.link-notice {
+  color: var(--text-muted);
+}
+
 .link-display-label {
   font-size: 14px;
   font-weight: 500;
-  color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.06em;
   margin-bottom: 12px;
@@ -41,7 +50,6 @@
 
 .link-notice {
   font-size: 14px;
-  color: var(--text-muted);
   margin-top: 20px;
   line-height: 1.6;
 }

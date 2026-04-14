@@ -146,6 +146,7 @@ describe('ShowNewLink component', () => {
 
         const linkInput = await screen.findByLabelText(/secret one-time link/i);
         expect(linkInput).toBeInTheDocument();
+        expect(screen.getByText(/this link works only once/i)).toBeInTheDocument();
         expect(linkInput.value).toContain('/v/#');
         expect(linkInput.value).toContain('AbCdEfGhIjKlMnOpQr-_');
         expect(linkInput.value).toContain('testId123');
@@ -275,11 +276,11 @@ describe('StatsSnapshot component', () => {
 });
 
 describe('ViewSecretMessage component', () => {
-    it('shows the pre-read state with decrypt button', () => {
+    it('shows the pre-read state with reveal button', () => {
         render(<ViewSecretMessage />);
 
-        expect(screen.getByText(/encrypted message/i)).toBeInTheDocument();
-        expect(screen.getByRole('button', { name: /decrypt & read/i })).toBeInTheDocument();
+        expect(screen.getByText(/someone sent you a secret/i)).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /reveal the secret/i })).toBeInTheDocument();
     });
 
     it('loads the QR UI on the view page only after the user requests it', async () => {
@@ -301,7 +302,7 @@ describe('ViewSecretMessage component', () => {
 
         render(<ViewSecretMessage />);
 
-        await user.click(await screen.findByRole('button', { name: /decrypt & read/i }));
+        await user.click(await screen.findByRole('button', { name: /reveal the secret/i }));
 
         expect(await screen.findByText(/already been read or has expired/i)).toBeInTheDocument();
         expect(fetch).not.toHaveBeenCalled();

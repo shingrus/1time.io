@@ -108,29 +108,32 @@ export default function ViewSecretFile() {
                     </div>
                 )}
 
-                {/* Pre-download state */}
+                {/* Pre-download gate */}
                 {isPreRead && (
-                    <div className="message-panel">
-                        <div className="message-panel-header">
-                            Encrypted file
+                    <div className="confirm-gate">
+                        <div className="confirm-gate-icon" aria-hidden="true">
+                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                                <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                                <circle cx="12" cy="16" r="1"/>
+                            </svg>
                         </div>
-                        <div className="message-panel-body view-download-panel">
-                            <p className="view-download-note">
-                                Downloading will decrypt the file in your browser and permanently remove it from our servers.
-                            </p>
-                            <button
-                                className="btn btn-success btn-lg"
-                                type="submit"
-                                disabled={isLoading}
-                            >
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                                    <polyline points="7 10 12 15 17 10"/>
-                                    <line x1="12" y1="15" x2="12" y2="3"/>
-                                </svg>
-                                {!isLoading ? 'Download the file' : 'Decrypting...'}
-                            </button>
-                        </div>
+                        <h2 className="confirm-gate-title">Someone sent you a file</h2>
+                        <p className="confirm-gate-desc">
+                            This is a <strong>one-time link</strong>. The file can be downloaded once and <strong>immediately deleted</strong> from our servers.
+                        </p>
+                        <button
+                            className="btn btn-success btn-lg"
+                            type="submit"
+                            disabled={isLoading}
+                        >
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                <polyline points="7 10 12 15 17 10"/>
+                                <line x1="12" y1="15" x2="12" y2="3"/>
+                            </svg>
+                            {!isLoading ? 'Download the file' : 'Decrypting...'}
+                        </button>
                     </div>
                 )}
 

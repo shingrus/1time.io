@@ -11,6 +11,7 @@ export default function ViewSecretPage() {
     return (
         <>
             <InlineCss file="styles/view.css" />
+            <InlineCss file="styles/qr-panel.css" />
             <ViewSecretMessage />
         </>
     );

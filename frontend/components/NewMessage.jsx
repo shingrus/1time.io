@@ -75,7 +75,7 @@ export default function NewMessage() {
                     disabled={secretMessage.length === 0 || isLoading}
                     type="submit"
                 >
-                    {!isLoading ? "Create secret link" : "Encrypting..."}
+                    {!isLoading ? "Create one-time link" : "Encrypting..."}
                 </button>
             </div>
 
