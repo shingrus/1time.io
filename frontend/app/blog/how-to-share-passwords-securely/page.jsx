@@ -134,7 +134,8 @@ export default function Article() {
                 <h3>1. Encrypted One-Time Links</h3>
                 <p>
                     The simplest approach: paste the password into a tool that generates an encrypted,
-                    self-destructing link. Send the link over any channel you want — Slack, email, text.
+                    {' '}<Link href="/blog/self-destructing-messages-explained/">self-destructing link</Link>.
+                    Send the link over any channel you want — Slack, email, text.
                     Once the recipient opens it, the password is permanently destroyed.
                 </p>
                 <p>
