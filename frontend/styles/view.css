@@ -94,6 +94,7 @@
   padding: 32px 20px;
   border: 1.5px solid var(--border);
   box-shadow: var(--shadow);
+  text-align: center;
 }
 
 .confirm-gate-icon {

@@ -249,14 +249,12 @@ export default function ViewSecretMessage() {
                     <div className="view-cta">
                         <p className="view-cta-destroyed">This message has been permanently destroyed from our servers.</p>
                         <div className="view-cta-box">
-                            <p className="view-cta-heading">Need to share a secret yourself?</p>
-                            <p className="view-cta-desc">Create an encrypted, self-destructing link in seconds. Free, no signup required.</p>
                             <button
                                 className="btn btn-primary"
                                 type="button"
                                 onClick={() => router.push('/')}
                             >
-                                Create a secure link
+                                Create a new link
                             </button>
                         </div>
                     </div>
