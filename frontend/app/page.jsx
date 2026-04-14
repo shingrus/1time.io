@@ -44,12 +44,16 @@ export default function HomePage() {
                 <section className="seo-section">
                     <h1>Share Secrets Securely with Encrypted One-Time Links</h1>
                     <p>
-                        {siteHost} is a free, open-source tool for sharing{' '}
-                        <a href="/share-password-securely/">passwords securely</a>, sending API keys and private
-                        notes, and delivering <a href="/secure-file-sharing/">encrypted files</a> through
-                        one-time links. Each secret is encrypted in your browser using AES-256-GCM before being stored.
-                        The server never sees the plaintext, and each link self-destructs after it is read once or
-                        after a set expiry period. No signup required.
+                        {siteHost} is a free, open-source tool for sharing passwords, API keys, and files through
+                        encrypted, self-destructing links. Messages are encrypted in your browser using AES-256-GCM —
+                        the server never sees your data. Each link works once, then the secret is permanently deleted.
+                        No signup required.
+                    </p>
+                    <p>
+                        Use it to <a href="/share-password-securely/">share passwords securely</a>, send
+                        database credentials to a contractor, deliver <a href="/secure-file-sharing/">encrypted
+                        files</a> up to 10 MB, or transmit any sensitive text without it lingering in Slack, email,
+                        or chat history.
                     </p>
 
                     <div className="features-grid">
