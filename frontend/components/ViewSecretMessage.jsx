@@ -183,48 +183,43 @@ export default function ViewSecretMessage() {
                         </div>
                         <h2 className="confirm-gate-title">Someone sent you a secret</h2>
                         <p className="confirm-gate-desc">
-                            This is a <strong>one-time link</strong>. The message will be revealed once and then <strong>permanently deleted</strong> from our servers.
+                            This is a <strong>one-time link</strong>. The message will be revealed once and <strong>immediately deleted</strong> from our servers.
                         </p>
                         <button
                             className="btn btn-success btn-lg"
                             type="submit"
                             disabled={isLoading}
                         >
-                            {!isLoading ? "Decrypt & read" : "Decrypting..."}
+                            {!isLoading ? "Reveal the secret" : "Revealing..."}
                         </button>
-                        <p className="confirm-gate-warning">
-                            If you are the sender, do not open this — share the link with your recipient instead.
-                        </p>
                     </div>
-                    {linkKey && (
-                        <div className="view-secondary-actions">
-                            <button
-                                className="btn btn-secondary btn-lg"
-                                disabled={isQrLoading}
-                                type="button"
-                                onClick={handleToggleQr}
-                            >
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                                    <path d="M3 3h6v6H3z"/>
-                                    <path d="M15 3h6v6h-6z"/>
-                                    <path d="M3 15h6v6H3z"/>
-                                    <path d="M15 15h3"/>
-                                    <path d="M18 12v3"/>
-                                    <path d="M21 15v6"/>
-                                    <path d="M15 21h3"/>
-                                    <path d="M21 21h.01"/>
-                                </svg>
-                                {isQrLoading ? "Loading QR..." : qrSvg ? "Hide QR code" : "Show QR code"}
-                            </button>
-                        </div>
-                    )}
+                    <div className="view-secondary-actions">
+                        <button
+                            className="btn btn-secondary btn-lg"
+                            disabled={!linkKey || isQrLoading}
+                            type="button"
+                            onClick={handleToggleQr}
+                        >
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                                <path d="M3 3h6v6H3z"/>
+                                <path d="M15 3h6v6h-6z"/>
+                                <path d="M3 15h6v6H3z"/>
+                                <path d="M15 15h3"/>
+                                <path d="M18 12v3"/>
+                                <path d="M21 15v6"/>
+                                <path d="M15 21h3"/>
+                                <path d="M21 21h.01"/>
+                            </svg>
+                            {isQrLoading ? "Loading QR..." : qrSvg ? "Hide QR code" : "Show QR code"}
+                        </button>
+                    </div>
                     {qrSvg && (
-                        <section className="view-qr-panel" aria-live="polite">
-                            <p className="view-qr-panel-title">Scan from another device</p>
-                            <p className="view-qr-panel-note">
+                        <section className="qr-panel" aria-live="polite">
+                            <p className="qr-panel-title">Scan from another device</p>
+                            <p className="qr-panel-note">
                                 This QR encodes the same one-time link for this secret.
                             </p>
-                            <div className="view-qr-panel-code">
+                            <div className="qr-panel-code">
                                 <div
                                     aria-label="Secret link QR code"
                                     dangerouslySetInnerHTML={{__html: qrSvg}}

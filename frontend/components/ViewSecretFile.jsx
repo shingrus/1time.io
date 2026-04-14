@@ -120,7 +120,7 @@ export default function ViewSecretFile() {
                         </div>
                         <h2 className="confirm-gate-title">Someone sent you a file</h2>
                         <p className="confirm-gate-desc">
-                            This is a <strong>one-time link</strong>. The file can be downloaded once and will then be <strong>permanently deleted</strong> from our servers.
+                            This is a <strong>one-time link</strong>. The file can be downloaded once and <strong>immediately deleted</strong> from our servers.
                         </p>
                         <button
                             className="btn btn-success btn-lg"
@@ -134,9 +134,6 @@ export default function ViewSecretFile() {
                             </svg>
                             {!isLoading ? 'Download the file' : 'Decrypting...'}
                         </button>
-                        <p className="confirm-gate-warning">
-                            If you are the sender, do not open this — share the link with your recipient instead.
-                        </p>
                     </div>
                 )}
 
