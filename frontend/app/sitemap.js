@@ -41,9 +41,9 @@ const blogRoutes = [
     ['/blog/privnote-alternative/', 0.6, 'monthly', '2026-03-19'],
     ['/blog/is-slack-safe-for-passwords/', 0.6, 'monthly', '2026-03-19'],
     ['/blog/how-to-send-passwords-over-email/', 0.6, 'monthly', '2026-03-19'],
-    ['/blog/onetimesecret-alternative/', 0.6, 'monthly', '2026-03-23'],
-    ['/blog/self-destructing-messages-explained/', 0.6, 'monthly', '2026-03-18'],
-    ['/blog/how-to-share-passwords-securely/', 0.6, 'monthly', '2026-03-18'],
+    ['/blog/onetimesecret-alternative/', 0.6, 'monthly', '2026-04-14'],
+    ['/blog/self-destructing-messages-explained/', 0.6, 'monthly', '2026-04-14'],
+    ['/blog/how-to-share-passwords-securely/', 0.6, 'monthly', '2026-04-14'],
     ['/blog/stop-sending-passwords-over-slack/', 0.6, 'monthly', '2026-03-31'],
 ];
 

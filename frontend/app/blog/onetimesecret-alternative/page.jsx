@@ -282,9 +282,9 @@ export default function Article() {
                         <span>1time.io vs Bitwarden Send</span>
                         <span>Dedicated tool vs password manager feature.</span>
                     </Link>
-                    <Link href="/blog/how-to-share-passwords-securely" className="related-article-card">
-                        <span>How to Share Passwords Securely</span>
-                        <span>The complete guide to secure credential sharing.</span>
+                    <Link href="/blog/self-destructing-messages-explained" className="related-article-card">
+                        <span>How Self-Destructing Links Work</span>
+                        <span>The encryption and deletion flow behind one-time links.</span>
                     </Link>
                 </div>
             </div>

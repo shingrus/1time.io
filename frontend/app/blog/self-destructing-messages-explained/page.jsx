@@ -20,6 +20,37 @@ export const metadata = {
     },
 };
 
+const faqItems = [
+    {
+        question: 'What is a self-destructing link?',
+        answer: 'A self-destructing link is a URL that reveals its content exactly once. The moment the recipient opens it, the underlying data is permanently deleted from the server and the same link becomes a dead 404 forever after. 1time.io generates free self-destructing links that are end-to-end encrypted in your browser.',
+    },
+    {
+        question: 'How do I create a self-destructing link?',
+        answer: 'Paste your secret into the form at the top of this page, click the button to generate a one-time link, and copy it. Share the link with your recipient. When they open it, the secret is decrypted in their browser and the server immediately deletes the encrypted data. No signup, no account, free.',
+    },
+    {
+        question: 'How long does a self-destructing link last?',
+        answer: 'A self-destructing link expires the instant it is read — that is the "self-destruct" trigger. As a safety net, unread links also auto-expire after a configurable window (1 to 30 days on 1time.io) so nothing sits on the server forever if the recipient never opens it.',
+    },
+    {
+        question: 'Is the self-destructing link generator free?',
+        answer: 'Yes. 1time.io is free and open source (MIT licensed). There is no paid tier, no signup, no usage limits for normal sharing, and no ads. You can also self-host the source code from GitHub if you want full control.',
+    },
+    {
+        question: 'Can a self-destructing link be recovered after it is read?',
+        answer: 'No. Once the recipient opens the link, the ciphertext is deleted from the server and cannot be restored. There is no admin backdoor, no backup, and no recovery path — even we cannot retrieve it. If you lose access, you have to create a new link.',
+    },
+    {
+        question: 'Are self-destructing links really deleted or just hidden?',
+        answer: 'On 1time.io, the encrypted blob is deleted from the database at the moment of first read — not hidden, not archived, not flagged. The server never saw the plaintext in the first place because encryption happens in your browser and the decryption key lives only in the URL fragment, which is never transmitted to the server.',
+    },
+    {
+        question: 'Can I send a self-destructing link from the terminal?',
+        answer: 'Yes. 1time.io ships a CLI you can install with `npm install -g @1time/cli`. Use `printf \'secret\' | 1time send` to generate a self-destructing link directly from your shell or a CI/CD pipeline.',
+    },
+];
+
 const jsonLd = [
     {
         '@context': 'https://schema.org',
@@ -41,6 +72,18 @@ const jsonLd = [
             { '@type': 'ListItem', position: 2, name: 'Blog', item: `${siteUrl}/blog/` },
             { '@type': 'ListItem', position: 3, name: 'Self-Destructing Links: How They Work', item: `${siteUrl}/blog/self-destructing-messages-explained/` },
         ],
+    },
+    {
+        '@context': 'https://schema.org',
+        '@type': 'FAQPage',
+        mainEntity: faqItems.map((item) => ({
+            '@type': 'Question',
+            name: item.question,
+            acceptedAnswer: {
+                '@type': 'Answer',
+                text: item.answer,
+            },
+        })),
     },
 ];
 
@@ -307,6 +350,14 @@ export default function Article() {
                     <li>Sensitive personal information (SSNs, account numbers)</li>
                     <li>Temporary access codes or PINs</li>
                 </ul>
+
+                <h2>Frequently asked questions about self-destructing links</h2>
+                {faqItems.map((item) => (
+                    <section key={item.question}>
+                        <h3>{item.question}</h3>
+                        <p>{item.answer}</p>
+                    </section>
+                ))}
 
                 <div className="article-cta">
                     <div className="article-cta-icon">💬</div>
