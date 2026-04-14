@@ -116,6 +116,16 @@ export default function HomePage() {
                         decrypted locally and permanently deleted from our servers.
                     </p>
 
+                    <h2>How self-destructing links work</h2>
+                    <p>
+                        A <strong>self-destructing link</strong> is a URL that reveals its content exactly
+                        once. The recipient clicks, reads the secret, and the server permanently deletes
+                        the data — the same link becomes a dead 404 forever after. {siteHost} generates
+                        these one-time links for free, with end-to-end encryption handled in your browser,
+                        so even we never see what you share. Learn more in our guide to{' '}
+                        <a href="/blog/self-destructing-messages-explained/">how self-destructing links work</a>.
+                    </p>
+
                     <h2>Perfect for sharing</h2>
                     <p>
                         Passwords, API keys, SSH keys, private notes, access tokens, WiFi passwords, two-factor backup
