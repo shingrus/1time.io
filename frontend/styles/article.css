@@ -53,6 +53,10 @@
   color: var(--text-muted);
 }
 
+.article-embed {
+  margin: 24px 0 36px;
+}
+
 /* Article body */
 .article-body h2 {
   font-size: 22px;

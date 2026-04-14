@@ -1,20 +1,22 @@
 import Link from 'next/link';
 import InlineCss from '../../../components/InlineCss';
+import NewMessage from '../../../components/NewMessage';
+import {siteHost, siteUrl} from '../../../utils/siteConfig';
 
 export const metadata = {
-    title: 'Self-Destructing Messages — How They Actually Work — 1time.io',
-    description: 'Learn how self-destructing messages work under the hood: encryption, one-time access, and permanent deletion. Plus why most "disappearing message" apps are less private than they claim.',
+    title: `Self-Destructing Links: How They Work + Free Generator | ${siteHost}`,
+    description: 'Create a self-destructing link that deletes itself after one read. Free, end-to-end encrypted, zero-knowledge. Learn how self-destruct links work and generate one instantly.',
     alternates: { canonical: '/blog/self-destructing-messages-explained' },
     openGraph: {
-        title: 'Self-Destructing Messages — How They Actually Work',
-        description: 'The encryption, deletion flow, and privacy reality behind disappearing messages.',
+        title: 'Self-Destructing Links: How They Work + Free Generator',
+        description: 'Generate a free self-destructing link. End-to-end encrypted, one-time access, permanently deleted after reading.',
         url: '/blog/self-destructing-messages-explained',
-        images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'Self-Destructing Messages Explained' }],
+        images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'Self-Destructing Link Generator' }],
     },
     twitter: {
         card: 'summary_large_image',
-        title: 'Self-Destructing Messages — How They Actually Work',
-        description: 'The encryption, deletion flow, and privacy reality behind disappearing messages.',
+        title: 'Self-Destructing Links: How They Work + Free Generator',
+        description: 'Generate a free self-destructing link. End-to-end encrypted, one-time access, permanently deleted after reading.',
     },
 };
 
@@ -22,22 +24,22 @@ const jsonLd = [
     {
         '@context': 'https://schema.org',
         '@type': 'Article',
-        headline: 'Self-Destructing Messages — How They Actually Work',
-        description: 'Learn how self-destructing messages work under the hood: encryption, one-time access, and permanent deletion.',
+        headline: 'Self-Destructing Links: How They Work + Free Generator',
+        description: 'Create a self-destructing link that deletes itself after one read. Learn how self-destruct links work and generate one for free.',
         datePublished: '2025-12-08',
-        dateModified: '2026-03-18',
-        author: { '@type': 'Person', name: 'Igor Ermakov', url: 'https://1time.io/about/' },
-        publisher: { '@type': 'Organization', name: '1time.io', url: 'https://1time.io', logo: { '@type': 'ImageObject', url: 'https://1time.io/logo-512.png', width: 512, height: 512 } },
-        mainEntityOfPage: 'https://1time.io/blog/self-destructing-messages-explained/',
-        image: ['https://1time.io/og-image.png'],
+        dateModified: '2026-04-14',
+        author: { '@type': 'Person', name: 'Igor Ermakov', url: `${siteUrl}/about/` },
+        publisher: { '@type': 'Organization', name: siteHost, url: siteUrl, logo: { '@type': 'ImageObject', url: `${siteUrl}/logo-512.png`, width: 512, height: 512 } },
+        mainEntityOfPage: `${siteUrl}/blog/self-destructing-messages-explained/`,
+        image: [`${siteUrl}/og-image.png`],
     },
     {
         '@context': 'https://schema.org',
         '@type': 'BreadcrumbList',
         itemListElement: [
-            { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://1time.io/' },
-            { '@type': 'ListItem', position: 2, name: 'Blog', item: 'https://1time.io/blog/' },
-            { '@type': 'ListItem', position: 3, name: 'Self-Destructing Messages — How They Actually Work', item: 'https://1time.io/blog/self-destructing-messages-explained/' },
+            { '@type': 'ListItem', position: 1, name: 'Home', item: `${siteUrl}/` },
+            { '@type': 'ListItem', position: 2, name: 'Blog', item: `${siteUrl}/blog/` },
+            { '@type': 'ListItem', position: 3, name: 'Self-Destructing Links: How They Work', item: `${siteUrl}/blog/self-destructing-messages-explained/` },
         ],
     },
 ];
@@ -52,15 +54,34 @@ export default function Article() {
             ))}
             <div className="article-header">
                 <span className="article-tag">How It Works</span>
-                <h1>Self-Destructing Messages — How They Actually Work</h1>
+                <h1>Self-Destructing Links: How They Work + Free Generator</h1>
                 <p className="article-subtitle">
-                    You send a message, the recipient reads it, and it vanishes forever.
-                    But what actually happens under the hood? And are all self-destructing messages equally private?
+                    A self-destructing link reveals a secret once, then deletes itself forever.
+                    Generate one below — or read on to learn exactly how self-destruct links work under the hood.
                 </p>
-                <div className="article-meta">By Igor Ermakov &middot; Dec 8, 2025 &middot; 6 min read</div>
+                <div className="article-meta">By Igor Ermakov &middot; Updated Apr 14, 2026 &middot; 6 min read</div>
+            </div>
+
+            <div className="article-embed">
+                <NewMessage />
             </div>
 
             <div className="article-body">
+                <h2>What is a self-destructing link?</h2>
+                <p>
+                    A <strong>self-destructing link</strong> (also called a <em>self-destruct link</em>,{' '}
+                    <em>one-time link</em>, or <em>disappearing link</em>) is a URL that reveals its content
+                    exactly once. The moment the recipient opens it, the underlying data is permanently
+                    deleted from the server. There is no cache, no backup, no second read — the link becomes
+                    a dead 404 the instant it is used.
+                </p>
+                <p>
+                    {siteHost} generates self-destructing links that are end-to-end encrypted in your browser
+                    using AES-256-GCM. The decryption key lives in the URL fragment and never touches the
+                    server, so even we cannot read what you share. Paste a secret above, hit the button, and
+                    copy the one-time link — that is the whole flow.
+                </p>
+
                 <h2>The Concept: Why Messages Should Self-Destruct</h2>
                 <p>
                     Most digital messages live forever by default. Emails sit in inboxes for years.
@@ -289,9 +310,9 @@ export default function Article() {
 
                 <div className="article-cta">
                     <div className="article-cta-icon">💬</div>
-                    <h2>Send a self-destructing message</h2>
-                    <p>End-to-end encrypted, zero-knowledge, destroyed after one read. Try it now.</p>
-                    <Link href="/" className="btn btn-primary btn-lg">Create a self-destructing message</Link>
+                    <h2>Generate a self-destructing link</h2>
+                    <p>End-to-end encrypted, zero-knowledge, destroyed after one read. Free, no signup.</p>
+                    <Link href="/" className="btn btn-primary btn-lg">Create a self-destructing link</Link>
                 </div>
             </div>
 
