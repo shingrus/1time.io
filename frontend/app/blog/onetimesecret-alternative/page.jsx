@@ -52,7 +52,7 @@ const jsonLd = [
         headline: '1time.io vs OneTimeSecret — A Transparent Comparison',
         description: 'An honest, transparent comparison between 1time.io and OneTimeSecret (onetimesecret.com). Compare encryption, privacy, features, pricing, and open-source status side by side.',
         datePublished: '2025-12-15',
-        dateModified: '2026-03-18',
+        dateModified: '2026-04-17',
         author: { '@type': 'Person', name: 'Igor Ermakov', url: 'https://1time.io/about/' },
         publisher: { '@type': 'Organization', name: '1time.io', url: 'https://1time.io', logo: { '@type': 'ImageObject', url: 'https://1time.io/logo-512.png', width: 512, height: 512 } },
         mainEntityOfPage: 'https://1time.io/blog/onetimesecret-alternative/',
@@ -98,7 +98,7 @@ export default function Article() {
                     comparison — where we are better, where we are similar, and where OneTimeSecret
                     has the edge.
                 </p>
-                <div className="article-meta">By Igor Ermakov &middot; Dec 15, 2025 &middot; 5 min read</div>
+                <div className="article-meta">By Igor Ermakov &middot; Updated Apr 17, 2026 &middot; 5 min read</div>
             </div>
 
             <div className="article-body">
