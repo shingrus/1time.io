@@ -18,6 +18,33 @@ export const metadata = {
     },
 };
 
+const faqItems = [
+    {
+        question: 'What is the safest way to share a password with a team?',
+        answer: 'The safest way to share a password with a team is via an end-to-end encrypted one-time link. The password is encrypted in your browser before it leaves your device, and the link self-destructs after the recipient opens it — so it never sits in a chat log, email thread, or inbox. 1time.io generates these links for free with no signup required.',
+    },
+    {
+        question: 'How do you share passwords securely without a password manager?',
+        answer: 'Without a password manager, use encrypted one-time links. Paste the password into 1time.io, generate a self-destructing link, and send it over Slack, email, or any channel. The recipient gets one chance to read it, then it is permanently deleted from the server. No account, no install, and the recipient does not need to know what tool you used.',
+    },
+    {
+        question: 'Is it safe to send passwords over Slack or email?',
+        answer: 'No. Slack and email store messages indefinitely — a password sent over these channels stays exposed in logs, search history, and backups long after it was needed. If either account is ever breached, those credentials are compromised. The alternative is an encrypted one-time link that self-destructs after one read and leaves no trace in any message history.',
+    },
+    {
+        question: 'How do you share credentials with contractors who are not in your password manager?',
+        answer: 'Encrypted one-time links are the right tool for contractors and external collaborators. They do not need an account or access to your internal systems — they just click the link, copy the credential, and the link is permanently destroyed. 1time.io supports this workflow with zero setup for either party.',
+    },
+    {
+        question: 'What should I do when onboarding a new team member who needs credentials?',
+        answer: 'Generate each credential as a separate encrypted one-time link and send it the moment the new team member is ready to receive it. With 1time.io you can generate a strong password and create a shareable link in one step — no waiting, no plaintext in email drafts.',
+    },
+    {
+        question: 'What happens if a one-time link is never opened?',
+        answer: 'Unread links auto-expire after a configurable window. On 1time.io the default is 7 days, with options from 5 minutes to 7 days. If the recipient never opens the link, the encrypted data is automatically deleted from the server when the expiry is reached — nothing persists indefinitely.',
+    },
+];
+
 const jsonLd = [
     {
         '@context': 'https://schema.org',
@@ -39,6 +66,18 @@ const jsonLd = [
             { '@type': 'ListItem', position: 2, name: 'Blog', item: 'https://1time.io/blog/' },
             { '@type': 'ListItem', position: 3, name: 'Team Password Sharing', item: 'https://1time.io/blog/team-password-sharing/' },
         ],
+    },
+    {
+        '@context': 'https://schema.org',
+        '@type': 'FAQPage',
+        mainEntity: faqItems.map((item) => ({
+            '@type': 'Question',
+            name: item.question,
+            acceptedAnswer: {
+                '@type': 'Answer',
+                text: item.answer,
+            },
+        })),
     },
 ];
 
@@ -212,6 +251,14 @@ export default function Article() {
                         Passwords should only be shared through encrypted one-time links.
                     </p>
                 </div>
+
+                <h2>Frequently asked questions about team password sharing</h2>
+                {faqItems.map((item) => (
+                    <section key={item.question}>
+                        <h3>{item.question}</h3>
+                        <p>{item.answer}</p>
+                    </section>
+                ))}
 
                 <div className="article-cta">
                     <div className="article-cta-icon">🔒</div>
