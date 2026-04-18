@@ -18,6 +18,33 @@ export const metadata = {
     },
 };
 
+const faqItems = [
+    {
+        question: 'What is the difference between 1time.io and OneTimeSecret?',
+        answer: 'The fundamental difference is where encryption happens. OneTimeSecret encrypts secrets on its server — meaning the server receives your plaintext before encrypting it, so the operator can read your secrets. 1time.io encrypts secrets in your browser using AES-GCM before anything leaves your device. The server only ever receives ciphertext it cannot decrypt. Both are open source and offer self-destructing links with no account required.',
+    },
+    {
+        question: 'Does OneTimeSecret use end-to-end encryption?',
+        answer: 'No. OneTimeSecret uses server-side encryption, not end-to-end encryption. Your secret is sent in plaintext over HTTPS to the OneTimeSecret server, where it is encrypted and stored. The server has access to your plaintext during this process. 1time.io uses true end-to-end encryption — the secret is encrypted locally in your browser and the server never sees the plaintext.',
+    },
+    {
+        question: 'Can the OneTimeSecret server read my secrets?',
+        answer: 'Yes, technically. Because OneTimeSecret encrypts secrets server-side, the server receives your plaintext before encrypting it. This means the operator, anyone with server access, or anyone with a legal order could access your unencrypted secrets. With 1time.io the server is cryptographically unable to read your data — encryption happens in the browser and the decryption key lives only in the URL fragment, which is never sent to the server.',
+    },
+    {
+        question: 'Is 1time.io free compared to OneTimeSecret?',
+        answer: '1time.io is completely free with no paid tiers, no feature limits, and no character restrictions. OneTimeSecret is also free for basic use, though longer expiry windows (up to 30 days) require a paid plan — the free tier caps at 14 days. 1time.io supports expiry from 5 minutes to 7 days on a single free tier with no account required.',
+    },
+    {
+        question: 'Is 1time.io open source like OneTimeSecret?',
+        answer: 'Yes. Both 1time.io and OneTimeSecret are open source. 1time.io is MIT licensed and the full source code — including the encryption protocol — is available on GitHub. You can verify the encryption implementation, self-host the entire stack, or contribute to the project.',
+    },
+    {
+        question: 'Which is better for developer automation: 1time.io or OneTimeSecret?',
+        answer: 'OneTimeSecret offers a server-side REST API, but because secrets are sent in plaintext to the server, the automation is not zero-knowledge. 1time.io offers a first-party CLI (`npm install -g @1time/cli`) that preserves end-to-end encryption: `printf "$SECRET" | 1time send`. The CLI also supports file sending and can be pointed at a self-hosted instance. For pipelines that require genuine zero-knowledge secret sharing, 1time.io is the better choice.',
+    },
+];
+
 const jsonLd = [
     {
         '@context': 'https://schema.org',
@@ -25,7 +52,7 @@ const jsonLd = [
         headline: '1time.io vs OneTimeSecret — A Transparent Comparison',
         description: 'An honest, transparent comparison between 1time.io and OneTimeSecret (onetimesecret.com). Compare encryption, privacy, features, pricing, and open-source status side by side.',
         datePublished: '2025-12-15',
-        dateModified: '2026-03-18',
+        dateModified: '2026-04-17',
         author: { '@type': 'Person', name: 'Igor Ermakov', url: 'https://1time.io/about/' },
         publisher: { '@type': 'Organization', name: '1time.io', url: 'https://1time.io', logo: { '@type': 'ImageObject', url: 'https://1time.io/logo-512.png', width: 512, height: 512 } },
         mainEntityOfPage: 'https://1time.io/blog/onetimesecret-alternative/',
@@ -39,6 +66,18 @@ const jsonLd = [
             { '@type': 'ListItem', position: 2, name: 'Blog', item: 'https://1time.io/blog/' },
             { '@type': 'ListItem', position: 3, name: '1time.io vs OneTimeSecret', item: 'https://1time.io/blog/onetimesecret-alternative/' },
         ],
+    },
+    {
+        '@context': 'https://schema.org',
+        '@type': 'FAQPage',
+        mainEntity: faqItems.map((item) => ({
+            '@type': 'Question',
+            name: item.question,
+            acceptedAnswer: {
+                '@type': 'Answer',
+                text: item.answer,
+            },
+        })),
     },
 ];
 
@@ -59,7 +98,7 @@ export default function Article() {
                     comparison — where we are better, where we are similar, and where OneTimeSecret
                     has the edge.
                 </p>
-                <div className="article-meta">By Igor Ermakov &middot; Dec 15, 2025 &middot; 5 min read</div>
+                <div className="article-meta">By Igor Ermakov &middot; Updated Apr 17, 2026 &middot; 5 min read</div>
             </div>
 
             <div className="article-body">
@@ -192,7 +231,7 @@ export default function Article() {
                         <tr>
                             <td><strong>Auto-expiry options</strong></td>
                             <td><span className="check">✓</span> 5 min to 7 days</td>
-                            <td><span className="check">✓</span> Up to 14 days (paid)</td>
+                            <td><span className="check">✓</span> Up to 14 days (free), 30 days (paid)</td>
                         </tr>
                         <tr>
                             <td><strong>Password generator</strong></td>
@@ -206,8 +245,8 @@ export default function Article() {
                         </tr>
                         <tr>
                             <td><strong>Free tier</strong></td>
-                            <td><span className="check">✓</span> Fully free</td>
-                            <td><span className="partial">~</span> Limited (25 chars for anon)</td>
+                            <td><span className="check">✓</span> Fully free, no account</td>
+                            <td><span className="partial">~</span> Free with account, paid for longer expiry</td>
                         </tr>
                         <tr>
                             <td><strong>Automation</strong></td>
@@ -262,6 +301,14 @@ export default function Article() {
                         share.
                     </p>
                 </div>
+
+                <h2>Frequently asked questions about 1time.io vs OneTimeSecret</h2>
+                {faqItems.map((item) => (
+                    <section key={item.question}>
+                        <h3>{item.question}</h3>
+                        <p>{item.answer}</p>
+                    </section>
+                ))}
 
                 <div className="article-cta">
                     <div className="article-cta-icon">🔒</div>
