@@ -10,7 +10,7 @@ export const metadata = {
         title: 'Passphrase Generator — Memorable & Secure Multi-Word Passwords',
         description: 'Generate memorable multi-word passphrases that are easy to type and hard to crack. Uses cryptographic randomness.',
         url: '/passphrase-generator',
-        images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'Passphrase Generator' }],
+        images: [{ url: '/1time-og-c1.png', width: 1200, height: 630, alt: 'Passphrase Generator' }],
     },
 };
 

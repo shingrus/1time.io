@@ -10,7 +10,7 @@ export const metadata = {
         title: `${siteHost} — Secure One-Time Links for Passwords and Files`,
         description: 'Share passwords, API keys, and files through encrypted one-time links and QR codes. Zero-knowledge encryption, auto-destroyed after reading.',
         url: '/',
-        images: [{ url: '/og-image.png', width: 1200, height: 630, alt: `${siteHost} — Encrypted One-Time Secret Links` }],
+        images: [{ url: '/1time-og-c1.png', width: 1200, height: 630, alt: `${siteHost} — Encrypted One-Time Secret Links` }],
     },
 };
 

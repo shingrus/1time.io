@@ -9,7 +9,7 @@ export const metadata = {
         title: 'How to Share API Keys Securely with Your Team',
         description: 'API keys in Slack channels are a security disaster. Here is the safe way to share credentials with developers.',
         url: '/blog/how-to-share-api-keys',
-        images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'How to Share API Keys Securely' }],
+        images: [{ url: '/1time-og-c1.png', width: 1200, height: 630, alt: 'How to Share API Keys Securely' }],
     },
     twitter: {
         card: 'summary_large_image',
@@ -29,7 +29,7 @@ const jsonLd = [
         author: { '@type': 'Person', name: 'Igor Ermakov', url: 'https://1time.io/about/' },
         publisher: { '@type': 'Organization', name: '1time.io', url: 'https://1time.io', logo: { '@type': 'ImageObject', url: 'https://1time.io/logo-512.png', width: 512, height: 512 } },
         mainEntityOfPage: 'https://1time.io/blog/how-to-share-api-keys/',
-        image: ['https://1time.io/og-image.png'],
+        image: ['https://1time.io/1time-og-c1.png'],
     },
     {
         '@context': 'https://schema.org',

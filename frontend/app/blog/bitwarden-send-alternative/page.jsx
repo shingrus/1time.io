@@ -9,7 +9,7 @@ export const metadata = {
         title: '1time.io vs Bitwarden Send — A Practical Comparison',
         description: 'Bitwarden Send vs a dedicated one-time link tool. Which is better for sharing passwords and secrets?',
         url: '/blog/bitwarden-send-alternative',
-        images: [{ url: '/og-image.png', width: 1200, height: 630, alt: '1time.io vs Bitwarden Send' }],
+        images: [{ url: '/1time-og-c1.png', width: 1200, height: 630, alt: '1time.io vs Bitwarden Send' }],
     },
     twitter: {
         card: 'summary_large_image',
@@ -29,7 +29,7 @@ const jsonLd = [
         author: { '@type': 'Person', name: 'Igor Ermakov', url: 'https://1time.io/about/' },
         publisher: { '@type': 'Organization', name: '1time.io', url: 'https://1time.io', logo: { '@type': 'ImageObject', url: 'https://1time.io/logo-512.png', width: 512, height: 512 } },
         mainEntityOfPage: 'https://1time.io/blog/bitwarden-send-alternative/',
-        image: ['https://1time.io/og-image.png'],
+        image: ['https://1time.io/1time-og-c1.png'],
     },
     {
         '@context': 'https://schema.org',

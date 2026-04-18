@@ -10,7 +10,7 @@ export const metadata = {
         title: 'Firefox Send Alternative — Encrypted File Sharing That Still Works',
         description: 'Firefox Send is gone. 1time.io picks up where it left off: encrypted one-time file sharing with zero-knowledge architecture.',
         url: '/blog/firefox-send-alternative',
-        images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'Firefox Send Alternative — 1time.io' }],
+        images: [{ url: '/1time-og-c1.png', width: 1200, height: 630, alt: 'Firefox Send Alternative — 1time.io' }],
     },
     twitter: {
         card: 'summary_large_image',
@@ -30,7 +30,7 @@ const jsonLd = [
         author: { '@type': 'Person', name: 'Igor Ermakov', url: 'https://1time.io/about/' },
         publisher: { '@type': 'Organization', name: '1time.io', url: 'https://1time.io', logo: { '@type': 'ImageObject', url: 'https://1time.io/logo-512.png', width: 512, height: 512 } },
         mainEntityOfPage: 'https://1time.io/blog/firefox-send-alternative/',
-        image: ['https://1time.io/og-image.png'],
+        image: ['https://1time.io/1time-og-c1.png'],
     },
     {
         '@context': 'https://schema.org',

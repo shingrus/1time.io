@@ -12,7 +12,7 @@ export const metadata = {
         description: 'Send passwords and sensitive data through encrypted one-time links. Zero-knowledge encryption, auto-destroyed after reading.',
         type: 'website',
         url: '/',
-        images: [{ url: '/og-image.png', width: 1200, height: 630, alt: `${siteHost} — Encrypted One-Time Secret Links` }],
+        images: [{ url: '/1time-og-c1.png', width: 1200, height: 630, alt: `${siteHost} — Encrypted One-Time Secret Links` }],
     },
     twitter: {
         card: 'summary_large_image',

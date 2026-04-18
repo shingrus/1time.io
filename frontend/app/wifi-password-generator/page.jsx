@@ -10,7 +10,7 @@ export const metadata = {
         title: `WiFi Password Generator — Secure WPA2/WPA3 Keys | ${siteHost}`,
         description: 'Generate random WiFi passwords that are secure yet easy to type. Share via encrypted one-time link. Free, runs in your browser.',
         url: '/wifi-password-generator',
-        images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'WiFi Password Generator' }],
+        images: [{ url: '/1time-og-c1.png', width: 1200, height: 630, alt: 'WiFi Password Generator' }],
     },
 };
 

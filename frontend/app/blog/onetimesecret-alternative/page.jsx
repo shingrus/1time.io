@@ -9,7 +9,7 @@ export const metadata = {
         title: '1time.io vs OneTimeSecret — A Transparent Comparison',
         description: 'Side-by-side comparison of two one-time secret sharing tools. Encryption, privacy, features, and pricing.',
         url: '/blog/onetimesecret-alternative',
-        images: [{ url: '/og-image.png', width: 1200, height: 630, alt: '1time.io vs OneTimeSecret' }],
+        images: [{ url: '/1time-og-c1.png', width: 1200, height: 630, alt: '1time.io vs OneTimeSecret' }],
     },
     twitter: {
         card: 'summary_large_image',
@@ -56,7 +56,7 @@ const jsonLd = [
         author: { '@type': 'Person', name: 'Igor Ermakov', url: 'https://1time.io/about/' },
         publisher: { '@type': 'Organization', name: '1time.io', url: 'https://1time.io', logo: { '@type': 'ImageObject', url: 'https://1time.io/logo-512.png', width: 512, height: 512 } },
         mainEntityOfPage: 'https://1time.io/blog/onetimesecret-alternative/',
-        image: ['https://1time.io/og-image.png'],
+        image: ['https://1time.io/1time-og-c1.png'],
     },
     {
         '@context': 'https://schema.org',

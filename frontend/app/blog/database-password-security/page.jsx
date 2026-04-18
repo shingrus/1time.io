@@ -9,7 +9,7 @@ export const metadata = {
         title: 'Database Password Security Best Practices',
         description: 'How to generate, store, and share database credentials securely.',
         url: '/blog/database-password-security',
-        images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'Database Password Security' }],
+        images: [{ url: '/1time-og-c1.png', width: 1200, height: 630, alt: 'Database Password Security' }],
     },
     twitter: {
         card: 'summary_large_image',
@@ -29,7 +29,7 @@ const jsonLd = [
         author: { '@type': 'Person', name: 'Igor Ermakov', url: 'https://1time.io/about/' },
         publisher: { '@type': 'Organization', name: '1time.io', url: 'https://1time.io', logo: { '@type': 'ImageObject', url: 'https://1time.io/logo-512.png', width: 512, height: 512 } },
         mainEntityOfPage: 'https://1time.io/blog/database-password-security/',
-        image: ['https://1time.io/og-image.png'],
+        image: ['https://1time.io/1time-og-c1.png'],
     },
     {
         '@context': 'https://schema.org',

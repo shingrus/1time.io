@@ -10,7 +10,7 @@ export const metadata = {
         title: 'How to Share Secrets from the Terminal with End-to-End Encryption',
         description: 'Share passwords and API keys from your terminal. Pipe in a secret, get an encrypted self-destructing link. No browser needed.',
         url: '/blog/share-secrets-from-terminal',
-        images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'Share Secrets from the Terminal' }],
+        images: [{ url: '/1time-og-c1.png', width: 1200, height: 630, alt: 'Share Secrets from the Terminal' }],
     },
     twitter: {
         card: 'summary_large_image',
@@ -30,7 +30,7 @@ const jsonLd = [
         author: { '@type': 'Person', name: 'Igor Ermakov', url: 'https://1time.io/about/' },
         publisher: { '@type': 'Organization', name: '1time.io', url: 'https://1time.io', logo: { '@type': 'ImageObject', url: 'https://1time.io/logo-512.png', width: 512, height: 512 } },
         mainEntityOfPage: 'https://1time.io/blog/share-secrets-from-terminal/',
-        image: ['https://1time.io/og-image.png'],
+        image: ['https://1time.io/1time-og-c1.png'],
     },
     {
         '@context': 'https://schema.org',

@@ -10,7 +10,7 @@ export const metadata = {
         title: `Strong Password Generator — Free & Secure | ${siteHost}`,
         description: 'Generate strong, random passwords instantly in your browser. Cryptographically secure, nothing sent to a server.',
         url: '/password-generator',
-        images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'Free Password Generator' }],
+        images: [{ url: '/1time-og-c1.png', width: 1200, height: 630, alt: 'Free Password Generator' }],
     },
 };
 

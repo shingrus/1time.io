@@ -9,7 +9,7 @@ export const metadata = {
         title: 'How to Create a Strong Password for Your Crypto Wallet',
         description: 'Why crypto wallets need the strongest passwords and how to generate one.',
         url: '/blog/password-for-crypto-wallet',
-        images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'Crypto Wallet Password Generator' }],
+        images: [{ url: '/1time-og-c1.png', width: 1200, height: 630, alt: 'Crypto Wallet Password Generator' }],
     },
     twitter: {
         card: 'summary_large_image',
@@ -29,7 +29,7 @@ const jsonLd = [
         author: { '@type': 'Person', name: 'Igor Ermakov', url: 'https://1time.io/about/' },
         publisher: { '@type': 'Organization', name: '1time.io', url: 'https://1time.io', logo: { '@type': 'ImageObject', url: 'https://1time.io/logo-512.png', width: 512, height: 512 } },
         mainEntityOfPage: 'https://1time.io/blog/password-for-crypto-wallet/',
-        image: ['https://1time.io/og-image.png'],
+        image: ['https://1time.io/1time-og-c1.png'],
     },
     {
         '@context': 'https://schema.org',

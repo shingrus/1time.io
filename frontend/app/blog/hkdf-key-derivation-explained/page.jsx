@@ -9,7 +9,7 @@ export const metadata = {
         title: 'What Is HKDF and Why We Use It for End-to-End Encryption',
         description: 'How 1time.io uses HKDF to derive separate encryption and authentication keys from one master secret.',
         url: '/blog/hkdf-key-derivation-explained',
-        images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'HKDF Key Derivation Explained' }],
+        images: [{ url: '/1time-og-c1.png', width: 1200, height: 630, alt: 'HKDF Key Derivation Explained' }],
     },
     twitter: {
         card: 'summary_large_image',
@@ -29,7 +29,7 @@ const jsonLd = [
         author: { '@type': 'Person', name: 'Igor Ermakov', url: 'https://1time.io/about/' },
         publisher: { '@type': 'Organization', name: '1time.io', url: 'https://1time.io', logo: { '@type': 'ImageObject', url: 'https://1time.io/logo-512.png', width: 512, height: 512 } },
         mainEntityOfPage: 'https://1time.io/blog/hkdf-key-derivation-explained/',
-        image: ['https://1time.io/og-image.png'],
+        image: ['https://1time.io/1time-og-c1.png'],
     },
     {
         '@context': 'https://schema.org',

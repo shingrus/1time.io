@@ -10,7 +10,7 @@ export const metadata = {
         title: '15-Character Password Generator — Free & Secure | 1time.io',
         description: 'Generate a strong 15-character password with letters, numbers, and symbols. Meets enterprise and compliance requirements.',
         url: '/password-generator-15-characters',
-        images: [{ url: '/og-image.png', width: 1200, height: 630, alt: '15-Character Password Generator' }],
+        images: [{ url: '/1time-og-c1.png', width: 1200, height: 630, alt: '15-Character Password Generator' }],
     },
 };
 
