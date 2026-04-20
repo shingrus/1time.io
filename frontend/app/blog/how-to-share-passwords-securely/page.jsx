@@ -115,6 +115,10 @@ export default function Article() {
                     <li><strong>Sticky notes and whiteboards</strong> — The physical equivalent of a plaintext password. Visible to anyone who walks by.</li>
                     <li><strong>SMS or iMessage</strong> — No encryption guarantee between platforms, messages backed up to cloud services, visible in notifications on lock screens.</li>
                 </ol>
+                <p>
+                    If Microsoft Teams is the tool you are trying to fix, start with our
+                    {' '}<Link href="/share-passwords-microsoft-teams/">Microsoft Teams password-sharing guide</Link>.
+                </p>
 
                 <div className="callout callout-warning">
                     <span className="callout-icon">⚠️</span>

@@ -170,7 +170,9 @@ export default function Article() {
                 <p>
                     Everything in this article applies equally to Microsoft Teams. Teams messages are
                     stored on Microsoft servers, searchable, accessible by admins through compliance
-                    tools, and retained according to corporate policies. The risks are identical.
+                    tools, and retained according to corporate policies. The risks are identical. If your
+                    team uses Microsoft Teams, see our
+                    {' '}<Link href="/share-passwords-microsoft-teams/">guide to sharing passwords safely in Microsoft Teams</Link>.
                 </p>
 
                 <p>
@@ -210,6 +212,10 @@ export default function Article() {
                     <Link href="/blog/how-to-send-passwords-over-email" className="related-article-card">
                         <span>How to Send Passwords Over Email</span>
                         <span>Why emailing passwords is dangerous and what to do instead.</span>
+                    </Link>
+                    <Link href="/share-passwords-microsoft-teams/" className="related-article-card">
+                        <span>Microsoft Teams Password Sharing</span>
+                        <span>A dedicated guide for replacing Teams chat secrets with one-time encrypted links.</span>
                     </Link>
                 </div>
             </div>

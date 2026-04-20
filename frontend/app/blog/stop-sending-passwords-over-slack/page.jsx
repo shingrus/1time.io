@@ -390,6 +390,10 @@ SHOW_BLOG=false`}</code></pre>
                         <span>Share Secrets from the Terminal</span>
                         <span>Use the 1time CLI to share encrypted secrets without leaving your terminal.</span>
                     </Link>
+                    <Link href="/share-passwords-microsoft-teams/" className="related-article-card">
+                        <span>Share Passwords in Microsoft Teams</span>
+                        <span>The Teams equivalent — retention-safe, eDiscovery-safe, zero-knowledge.</span>
+                    </Link>
                 </div>
             </div>
         </article>

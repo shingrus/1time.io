@@ -228,6 +228,11 @@ export default function Article() {
                     credential, they get a <Link href="/share-password-securely/">one-time link</Link>. This is easy to enforce because
                     it takes the same amount of effort — paste the password, get a link, send the link.
                 </p>
+                <p>
+                    If your team mainly works in Microsoft Teams, use the
+                    {' '}<Link href="/share-passwords-microsoft-teams/">Teams-specific sharing guide</Link>
+                    {' '}to roll out the same workflow there.
+                </p>
 
                 <h3>Step 3: Rotate on departure</h3>
                 <p>
@@ -282,6 +287,10 @@ export default function Article() {
                     <Link href="/secure-file-sharing/" className="related-article-card">
                         <span>Secure File Sharing</span>
                         <span>Use one-time encrypted downloads for onboarding files, certificates, and handoff bundles.</span>
+                    </Link>
+                    <Link href="/share-passwords-microsoft-teams/" className="related-article-card">
+                        <span>Share Passwords in Microsoft Teams</span>
+                        <span>Give Teams users a dedicated workflow for one-time encrypted secret sharing.</span>
                     </Link>
                 </div>
             </div>

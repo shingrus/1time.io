@@ -18,6 +18,7 @@ const coreRoutes = [
     ['/api-key-generator/', 0.8, 'weekly', '2026-03-23'],
     ['/share-password-securely/', 0.9, 'weekly', '2026-04-05'],
     ['/share-passwords-with-qr-code/', 0.7, 'weekly', '2026-03-31'],
+    ['/share-passwords-microsoft-teams/', 0.8, 'weekly', '2026-04-20'],
     // About & legal
     ['/about/', 0.5, 'monthly', '2026-03-23'],
     ['/privacy/', 0.4, 'monthly', '2026-03-22'],
