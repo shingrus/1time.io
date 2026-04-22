@@ -10,6 +10,19 @@ Expected Redis key layout from the Go app:
   - stats:page:hits:total                    -> hash: page -> total hits
   - stats:page:hits:day:YYYYMMDD             -> hash: page -> daily hits
 
+Nginx sender/receiver analytics:
+  - Reads /var/log/nginx/1time.access.log and /var/log/nginx/1time.access.log.1
+    by default.
+  - Use --nginx-log PATH one or more times to override the default log paths.
+  - Counts unique IP + User-Agent pairs per UTC date.
+  - Successful text sends are POST /api/saveSecret responses without the known
+    error response body size.
+  - Successful text reads are POST /api/get responses without the known
+    "no message", "wrong key", or generic error response body sizes.
+  - File sends/reads are counted separately from text sends/reads.
+  - The senders_receivers tab is merged by date: recalculated dates replace
+    existing rows, while dates outside the current log window are preserved.
+
 Dependencies:
   pip install redis google-api-python-client google-auth
 
@@ -27,6 +40,11 @@ Examples:
   export REDISHOST=127.0.0.1:6379
   export REDISPASS=
   python3 scripts/export_redis_stats_to_gsheets.py --spreadsheet-id your_spreadsheet_id
+
+  # Override nginx logs:
+  python3 scripts/export_redis_stats_to_gsheets.py \
+    --nginx-log /var/log/nginx/1time.access.log \
+    --nginx-log /var/log/nginx/1time.access.log.1
 """
 
 from __future__ import annotations
@@ -34,7 +52,10 @@ from __future__ import annotations
 import argparse
 import datetime as dt
 import os
+import re
+import sys
 from typing import Dict, Iterable, List, Sequence, Tuple
+from urllib.parse import urlsplit
 
 try:
     import redis
@@ -56,7 +77,29 @@ PAGE_HIT_TOTAL_KEY = "stats:page:hits:total"
 PAGE_HIT_DAY_KEY_PREFIX = "stats:page:hits:day:"
 
 SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
-TAB_NAMES = ("overview", "stored_daily", "page_hits_total", "page_hits_daily")
+TAB_NAMES = (
+    "overview",
+    "stored_daily",
+    "page_hits_total",
+    "page_hits_daily",
+    "senders_receivers",
+)
+DEFAULT_NGINX_LOG_PATHS = (
+    "/var/log/nginx/1time.access.log",
+    "/var/log/nginx/1time.access.log.1",
+)
+
+NGINX_COMBINED_LOG_RE = re.compile(
+    r"^(?P<remote_addr>\S+) \S+ \S+ \[(?P<time>[^\]]+)\] "
+    r'"(?P<request>(?:[^"\\]|\\.)*)" '
+    r"(?P<status>\d{3}) (?P<body_bytes_sent>\S+) "
+    r'"(?P<referer>(?:[^"\\]|\\.)*)" '
+    r'"(?P<user_agent>(?:[^"\\]|\\.)*)"(?: .*)?$'
+)
+
+TEXT_READ_FAILURE_BODY_SIZES = {39, 43, 44}
+FILE_READ_FAILURE_BODY_SIZES = {22, 23}
+SAVE_FAILURE_BODY_SIZES = {30}
 
 
 def parse_args() -> argparse.Namespace:
@@ -99,7 +142,27 @@ def parse_args() -> argparse.Namespace:
         default=os.getenv("GOOGLE_SHEETS_TAB_PREFIX", "1time_"),
         help="Prefix added to tab names inside the spreadsheet",
     )
+    parser.add_argument(
+        "--nginx-log",
+        dest="nginx_logs",
+        action="append",
+        default=None,
+        help=(
+            "Path to an nginx access log to include in sender/receiver analytics. "
+            "May be repeated. Defaults to /var/log/nginx/1time.access.log and .1."
+        ),
+    )
     return parser.parse_args()
+
+
+def warn(message: str) -> None:
+    print(f"Warning: {message}", file=sys.stderr)
+
+
+def get_nginx_log_paths(args: argparse.Namespace) -> List[str]:
+    if args.nginx_logs:
+        return args.nginx_logs
+    return list(DEFAULT_NGINX_LOG_PATHS)
 
 
 def build_redis_client(args: argparse.Namespace) -> redis.Redis:
@@ -165,7 +228,133 @@ def build_page_hits_daily_rows(
     return rows
 
 
-def collect_stats(client: redis.Redis) -> Dict[str, List[List[object]]]:
+def parse_nginx_body_size(value: str) -> int | None:
+    if value == "-":
+        return None
+    try:
+        return int(value)
+    except ValueError:
+        return None
+
+
+def parse_nginx_access_line(line: str) -> Dict[str, object] | None:
+    match = NGINX_COMBINED_LOG_RE.match(line.rstrip("\n"))
+    if not match:
+        return None
+
+    values = match.groupdict()
+    request_parts = values["request"].split()
+    if len(request_parts) < 2:
+        return None
+
+    try:
+        timestamp = dt.datetime.strptime(values["time"], "%d/%b/%Y:%H:%M:%S %z")
+    except ValueError:
+        return None
+
+    method, target = request_parts[0], request_parts[1]
+    path = urlsplit(target).path
+    if not path:
+        path = target
+
+    return {
+        "day": timestamp.astimezone(dt.timezone.utc).date().isoformat(),
+        "ip": values["remote_addr"],
+        "method": method,
+        "path": path,
+        "status": int(values["status"]),
+        "body_size": parse_nginx_body_size(values["body_bytes_sent"]),
+        "user_agent": values["user_agent"],
+    }
+
+
+def successful_nginx_metric(entry: Dict[str, object]) -> str | None:
+    if entry["method"] != "POST":
+        return None
+    if not (200 <= int(entry["status"]) <= 299):
+        return None
+
+    path = entry["path"]
+    body_size = entry["body_size"]
+    if path == "/api/saveSecret":
+        return None if body_size in SAVE_FAILURE_BODY_SIZES else "text_senders"
+    if path == "/api/saveFile":
+        return None if body_size in SAVE_FAILURE_BODY_SIZES else "file_senders"
+    if path == "/api/get":
+        return None if body_size in TEXT_READ_FAILURE_BODY_SIZES else "text_receivers"
+    if path == "/api/getFile":
+        return None if body_size in FILE_READ_FAILURE_BODY_SIZES else "file_receivers"
+
+    return None
+
+
+def collect_nginx_daily_uniques(log_paths: Sequence[str]) -> List[List[object]]:
+    columns = [
+        "date",
+        "text_senders",
+        "text_receivers",
+        "file_senders",
+        "file_receivers",
+    ]
+    daily: Dict[str, Dict[str, set[Tuple[str, str]]]] = {}
+    readable_logs = 0
+
+    for log_path in log_paths:
+        try:
+            with open(log_path, encoding="utf-8", errors="replace") as log_file:
+                readable_logs += 1
+                for line in log_file:
+                    entry = parse_nginx_access_line(line)
+                    if entry is None:
+                        continue
+
+                    metric = successful_nginx_metric(entry)
+                    if metric is None:
+                        continue
+
+                    day = str(entry["day"])
+                    identity = (str(entry["ip"]), str(entry["user_agent"]))
+                    day_metrics = daily.setdefault(
+                        day,
+                        {
+                            "text_senders": set(),
+                            "text_receivers": set(),
+                            "file_senders": set(),
+                            "file_receivers": set(),
+                        },
+                    )
+                    day_metrics[metric].add(identity)
+        except FileNotFoundError:
+            warn(f"Nginx access log not found, skipping: {log_path}")
+        except PermissionError as exc:
+            warn(f"Nginx access log not readable, skipping: {log_path}: {exc}")
+        except OSError as exc:
+            warn(f"Nginx access log could not be read, skipping: {log_path}: {exc}")
+
+    if readable_logs == 0:
+        warn(
+            "No readable nginx access logs; "
+            "senders_receivers tab will contain headers only."
+        )
+
+    rows: List[List[object]] = [columns]
+    for day in sorted(daily):
+        day_metrics = daily[day]
+        rows.append([
+            day,
+            len(day_metrics["text_senders"]),
+            len(day_metrics["text_receivers"]),
+            len(day_metrics["file_senders"]),
+            len(day_metrics["file_receivers"]),
+        ])
+
+    return rows
+
+
+def collect_stats(
+    client: redis.Redis,
+    nginx_log_paths: Sequence[str],
+) -> Dict[str, List[List[object]]]:
     exported_at = dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat()
 
     total_stored_text = safe_int(client.get(STORED_TEXT_TOTAL_KEY))
@@ -228,6 +417,7 @@ def collect_stats(client: redis.Redis) -> Dict[str, List[List[object]]]:
         "stored_daily": stored_daily_rows,
         "page_hits_total": page_hits_total_rows,
         "page_hits_daily": page_hits_daily_rows,
+        "senders_receivers": collect_nginx_daily_uniques(nginx_log_paths),
     }
 
 
@@ -322,6 +512,46 @@ def write_tab(
     ).execute()
 
 
+def read_tab_rows(service, spreadsheet_id: str, title: str) -> List[List[object]]:
+    result = (
+        service.spreadsheets()
+        .values()
+        .get(spreadsheetId=spreadsheet_id, range=f"{title}!A1:Z")
+        .execute()
+    )
+    return result.get("values", [])
+
+
+def merge_daily_rows_by_date(
+    existing_rows: Sequence[Sequence[object]],
+    recalculated_rows: Sequence[Sequence[object]],
+) -> List[List[object]]:
+    if not recalculated_rows:
+        return [list(row) for row in existing_rows]
+
+    header = list(recalculated_rows[0])
+    merged_by_date: Dict[str, List[object]] = {}
+
+    for row in existing_rows[1:]:
+        if not row:
+            continue
+        day = str(row[0])
+        if day:
+            merged_by_date[day] = list(row)
+
+    for row in recalculated_rows[1:]:
+        if not row:
+            continue
+        day = str(row[0])
+        if day:
+            merged_by_date[day] = list(row)
+
+    rows: List[List[object]] = [header]
+    for day in sorted(merged_by_date):
+        rows.append(merged_by_date[day])
+    return rows
+
+
 def main() -> int:
     args = parse_args()
 
@@ -335,7 +565,7 @@ def main() -> int:
         )
 
     redis_client = build_redis_client(args)
-    stats = collect_stats(redis_client)
+    stats = collect_stats(redis_client, get_nginx_log_paths(args))
 
     service = build_sheets_service(args.service_account_json)
     full_tab_names = {
@@ -345,6 +575,10 @@ def main() -> int:
 
     for base_name, rows in stats.items():
         title = full_tab_names[base_name]
+        if base_name == "senders_receivers":
+            existing_rows = read_tab_rows(service, args.spreadsheet_id, title)
+            rows = merge_daily_rows_by_date(existing_rows, rows)
+
         write_tab(
             service=service,
             spreadsheet_id=args.spreadsheet_id,
