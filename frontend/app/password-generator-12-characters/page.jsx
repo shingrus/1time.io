@@ -10,7 +10,7 @@ export const metadata = {
         title: '12-Character Password Generator — Free & Secure | 1time.io',
         description: 'Generate a secure 12-character password with letters, numbers, and symbols. The minimum recommended length for most accounts.',
         url: '/password-generator-12-characters',
-        images: [{ url: '/1time-og-c1.png', width: 1200, height: 630, alt: '12-Character Password Generator' }],
+        images: [{ url: '/1time-og-main.png', width: 1200, height: 630, alt: '12-Character Password Generator' }],
     },
 };
 

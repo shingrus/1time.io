@@ -10,7 +10,7 @@ export const metadata = {
         title: `About ${siteHost} — Zero-Knowledge Secret Sharing, Open Source`,
         description: `Learn how ${siteHost} uses end-to-end encryption to share secrets securely.`,
         url: '/about',
-        images: [{ url: '/1time-og-c1.png', width: 1200, height: 630, alt: `About ${siteHost}` }],
+        images: [{ url: '/1time-og-main.png', width: 1200, height: 630, alt: `About ${siteHost}` }],
     },
 };
 

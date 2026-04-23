@@ -11,12 +11,13 @@ export const metadata = {
         title: `Share Passwords Safely in Microsoft Teams | ${siteHost}`,
         description: 'One-time encrypted links for sharing passwords, API keys, and secrets inside Microsoft Teams. Retention-safe, eDiscovery-safe, zero-knowledge.',
         url: '/share-passwords-microsoft-teams',
-        images: [{ url: '/1time-og-c1.png', width: 1200, height: 630, alt: 'Share passwords safely in Microsoft Teams with encrypted one-time links' }],
+        images: [{ url: '/1time-og-main.png', width: 1200, height: 630, alt: 'Share passwords safely in Microsoft Teams with encrypted one-time links' }],
     },
     twitter: {
         card: 'summary_large_image',
         title: `Share Passwords Safely in Microsoft Teams | ${siteHost}`,
         description: 'One-time encrypted links for sharing secrets inside Microsoft Teams. Retention-safe, eDiscovery-safe, zero-knowledge.',
+        images: ['/1time-og-main.png'],
     },
 };
 

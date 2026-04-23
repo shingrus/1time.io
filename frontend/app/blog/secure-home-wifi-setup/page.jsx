@@ -9,12 +9,13 @@ export const metadata = {
         title: 'How to Set Up a Secure Home WiFi Network',
         description: 'Step-by-step guide to WiFi security: strong passwords, WPA3, and router hardening.',
         url: '/blog/secure-home-wifi-setup',
-        images: [{ url: '/1time-og-c1.png', width: 1200, height: 630, alt: 'Secure Home WiFi Setup' }],
+        images: [{ url: '/1time-og-main.png', width: 1200, height: 630, alt: 'Secure Home WiFi Setup' }],
     },
     twitter: {
         card: 'summary_large_image',
         title: 'How to Set Up a Secure Home WiFi Network',
         description: 'Step-by-step guide to WiFi security: strong passwords, WPA3, and router hardening.',
+        images: ['/1time-og-main.png'],
     },
 };
 
@@ -29,7 +30,7 @@ const jsonLd = [
         author: { '@type': 'Person', name: 'Igor Ermakov', url: 'https://1time.io/about/' },
         publisher: { '@type': 'Organization', name: '1time.io', url: 'https://1time.io', logo: { '@type': 'ImageObject', url: 'https://1time.io/logo-512.png', width: 512, height: 512 } },
         mainEntityOfPage: 'https://1time.io/blog/secure-home-wifi-setup/',
-        image: ['https://1time.io/1time-og-c1.png'],
+        image: ['https://1time.io/1time-og-main.png'],
     },
     {
         '@context': 'https://schema.org',

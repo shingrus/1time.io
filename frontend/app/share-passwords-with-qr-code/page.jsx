@@ -10,12 +10,13 @@ export const metadata = {
         title: 'Share Passwords with a QR Code Securely',
         description: 'Use one-time QR codes to share passwords and secrets on another device without exposing them in chat history.',
         url: '/share-passwords-with-qr-code',
-        images: [{ url: '/1time-og-c1.png', width: 1200, height: 630, alt: 'Share passwords with a QR code securely' }],
+        images: [{ url: '/1time-og-main.png', width: 1200, height: 630, alt: 'Share passwords with a QR code securely' }],
     },
     twitter: {
         card: 'summary_large_image',
         title: 'Share Passwords with a QR Code Securely',
         description: 'Use one-time QR codes to share passwords and secrets on another device without exposing them in chat history.',
+        images: ['/1time-og-main.png'],
     },
 };
 

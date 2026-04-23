@@ -10,7 +10,7 @@ export const metadata = {
         title: `16-Character Password Generator — ${siteHost}`,
         description: 'Generate a strong 16-character password with letters, numbers, and symbols. Created in your browser instantly.',
         url: '/password-generator-16-characters',
-        images: [{ url: '/1time-og-c1.png', width: 1200, height: 630, alt: '16-Character Password Generator' }],
+        images: [{ url: '/1time-og-main.png', width: 1200, height: 630, alt: '16-Character Password Generator' }],
     },
 };
 

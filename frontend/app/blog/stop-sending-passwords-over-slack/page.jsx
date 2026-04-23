@@ -10,12 +10,13 @@ export const metadata = {
         title: 'Stop Sending Passwords Over Slack: Here\'s What I Built Instead',
         description: 'I caught plaintext credentials sitting in our Slack history for months. So I built an open-source secret sharing tool with real zero-knowledge encryption.',
         url: '/blog/stop-sending-passwords-over-slack',
-        images: [{ url: '/1time-og-c1.png', width: 1200, height: 630, alt: 'Stop Sending Passwords Over Slack' }],
+        images: [{ url: '/1time-og-main.png', width: 1200, height: 630, alt: 'Stop Sending Passwords Over Slack' }],
     },
     twitter: {
         card: 'summary_large_image',
         title: 'Stop Sending Passwords Over Slack: Here\'s What I Built Instead',
         description: 'I caught plaintext credentials sitting in our Slack history for months. So I built an open-source secret sharing tool with real zero-knowledge encryption.',
+        images: ['/1time-og-main.png'],
     },
 };
 
@@ -30,7 +31,7 @@ const jsonLd = [
         author: { '@type': 'Person', name: 'Igor Ermakov', url: 'https://1time.io/about/' },
         publisher: { '@type': 'Organization', name: '1time.io', url: 'https://1time.io', logo: { '@type': 'ImageObject', url: 'https://1time.io/logo-512.png', width: 512, height: 512 } },
         mainEntityOfPage: 'https://1time.io/blog/stop-sending-passwords-over-slack/',
-        image: ['https://1time.io/1time-og-c1.png'],
+        image: ['https://1time.io/1time-og-main.png'],
     },
     {
         '@context': 'https://schema.org',

@@ -9,12 +9,13 @@ export const metadata = {
         title: 'How to Create a Strong Email Password',
         description: 'Your email is the master key to your digital life. Learn how to protect it.',
         url: '/blog/strong-email-password',
-        images: [{ url: '/1time-og-c1.png', width: 1200, height: 630, alt: 'Strong Email Password' }],
+        images: [{ url: '/1time-og-main.png', width: 1200, height: 630, alt: 'Strong Email Password' }],
     },
     twitter: {
         card: 'summary_large_image',
         title: 'How to Create a Strong Email Password',
         description: 'Your email is the master key to your digital life. Learn how to protect it.',
+        images: ['/1time-og-main.png'],
     },
 };
 
@@ -29,7 +30,7 @@ const jsonLd = [
         author: { '@type': 'Person', name: 'Igor Ermakov', url: 'https://1time.io/about/' },
         publisher: { '@type': 'Organization', name: '1time.io', url: 'https://1time.io', logo: { '@type': 'ImageObject', url: 'https://1time.io/logo-512.png', width: 512, height: 512 } },
         mainEntityOfPage: 'https://1time.io/blog/strong-email-password/',
-        image: ['https://1time.io/1time-og-c1.png'],
+        image: ['https://1time.io/1time-og-main.png'],
     },
     {
         '@context': 'https://schema.org',

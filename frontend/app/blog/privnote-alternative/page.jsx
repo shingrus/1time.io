@@ -9,12 +9,13 @@ export const metadata = {
         title: '1time.io vs Privnote — Why Encryption Matters',
         description: 'Privnote deletes messages but does not encrypt them end-to-end. Here is why that matters.',
         url: '/blog/privnote-alternative',
-        images: [{ url: '/1time-og-c1.png', width: 1200, height: 630, alt: '1time.io vs Privnote' }],
+        images: [{ url: '/1time-og-main.png', width: 1200, height: 630, alt: '1time.io vs Privnote' }],
     },
     twitter: {
         card: 'summary_large_image',
         title: '1time.io vs Privnote — Why Encryption Matters',
         description: 'Privnote deletes messages but does not encrypt them end-to-end. Here is why that matters.',
+        images: ['/1time-og-main.png'],
     },
 };
 
@@ -56,7 +57,7 @@ const jsonLd = [
         author: { '@type': 'Person', name: 'Igor Ermakov', url: 'https://1time.io/about/' },
         publisher: { '@type': 'Organization', name: '1time.io', url: 'https://1time.io', logo: { '@type': 'ImageObject', url: 'https://1time.io/logo-512.png', width: 512, height: 512 } },
         mainEntityOfPage: 'https://1time.io/blog/privnote-alternative/',
-        image: ['https://1time.io/1time-og-c1.png'],
+        image: ['https://1time.io/1time-og-main.png'],
     },
     {
         '@context': 'https://schema.org',

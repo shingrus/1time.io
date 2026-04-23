@@ -11,12 +11,13 @@ export const metadata = {
         title: `Secure File Sharing with One-Time Links | ${siteHost}`,
         description: 'Encrypted file sharing with one-time download links. Files are encrypted in your browser and destroyed after download or expiry.',
         url: '/secure-file-sharing',
-        images: [{ url: '/1time-og-c1.png', width: 1200, height: 630, alt: 'Secure file sharing with encrypted one-time links' }],
+        images: [{ url: '/1time-og-main.png', width: 1200, height: 630, alt: 'Secure file sharing with encrypted one-time links' }],
     },
     twitter: {
         card: 'summary_large_image',
         title: `Secure File Sharing with One-Time Links | ${siteHost}`,
         description: 'Encrypted file sharing with one-time download links. Files are encrypted in your browser and destroyed after download or expiry.',
+        images: ['/1time-og-main.png'],
     },
 };
 

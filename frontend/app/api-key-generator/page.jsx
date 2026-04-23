@@ -10,7 +10,7 @@ export const metadata = {
         title: `API Key Generator — ${siteHost}`,
         description: 'Generate random API keys and tokens in your browser. Cryptographically secure and instant.',
         url: '/api-key-generator',
-        images: [{ url: '/1time-og-c1.png', width: 1200, height: 630, alt: 'API Key Generator' }],
+        images: [{ url: '/1time-og-main.png', width: 1200, height: 630, alt: 'API Key Generator' }],
     },
 };
 

@@ -10,6 +10,7 @@ export const metadata = {
         title: `Privacy Policy — ${siteHost}`,
         description: `Privacy policy for ${siteHost}. Zero-knowledge, no tracking, no cookies.`,
         url: '/privacy',
+        images: [{ url: '/1time-og-main.png', width: 1200, height: 630, alt: `${siteHost} — Encrypted One-Time Secret Links` }],
     },
 };
 

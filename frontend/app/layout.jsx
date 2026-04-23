@@ -12,12 +12,13 @@ export const metadata = {
         description: 'Send passwords and sensitive data through encrypted one-time links. Zero-knowledge encryption, auto-destroyed after reading.',
         type: 'website',
         url: '/',
-        images: [{ url: '/1time-og-c1.png', width: 1200, height: 630, alt: `${siteHost} — Encrypted One-Time Secret Links` }],
+        images: [{ url: '/1time-og-main.png', width: 1200, height: 630, alt: `${siteHost} — Encrypted One-Time Secret Links` }],
     },
     twitter: {
         card: 'summary_large_image',
         title: `${siteHost} — Encrypted One-Time Secret Links`,
         description: 'Share passwords and private data securely. End-to-end encrypted, self-destruct after reading.',
+        images: ['/1time-og-main.png'],
     },
     icons: {
         icon: '/favicon.svg',

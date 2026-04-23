@@ -9,12 +9,13 @@ export const metadata = {
         title: 'Quantum-Safe Password Sharing — No RSA, No ECC, No Problem',
         description: 'Most secret sharing tools rely on RSA or ECC, which quantum computers will break. 1time.io uses pure symmetric encryption — quantum-safe password sharing with no asymmetric cryptography.',
         url: '/blog/quantum-safe-password-sharing',
-        images: [{ url: '/1time-og-c1.png', width: 1200, height: 630, alt: 'Quantum-Safe Password Sharing — 1time.io' }],
+        images: [{ url: '/1time-og-main.png', width: 1200, height: 630, alt: 'Quantum-Safe Password Sharing — 1time.io' }],
     },
     twitter: {
         card: 'summary_large_image',
         title: 'Quantum-Safe Password Sharing — No RSA, No ECC, No Problem',
         description: 'Most secret sharing tools rely on RSA or ECC, which quantum computers will break. 1time.io uses pure symmetric encryption — quantum-safe password sharing with no asymmetric cryptography.',
+        images: ['/1time-og-main.png'],
     },
 };
 
@@ -29,7 +30,7 @@ const jsonLd = [
         author: { '@type': 'Person', name: 'Igor Ermakov', url: 'https://1time.io/about/' },
         publisher: { '@type': 'Organization', name: '1time.io', url: 'https://1time.io', logo: { '@type': 'ImageObject', url: 'https://1time.io/logo-512.png', width: 512, height: 512 } },
         mainEntityOfPage: 'https://1time.io/blog/quantum-safe-password-sharing/',
-        image: ['https://1time.io/1time-og-c1.png'],
+        image: ['https://1time.io/1time-og-main.png'],
     },
     {
         '@context': 'https://schema.org',

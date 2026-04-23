@@ -11,7 +11,7 @@ export const metadata = {
         title: `Share Passwords Securely — One-Time Encrypted Links | ${siteHost}`,
         description: 'Send passwords through encrypted one-time links. Zero-knowledge encryption — we never see your password. Link self-destructs after reading.',
         url: '/share-password-securely',
-        images: [{ url: '/1time-og-c1.png', width: 1200, height: 630, alt: 'Share passwords securely with encrypted one-time links' }],
+        images: [{ url: '/1time-og-main.png', width: 1200, height: 630, alt: 'Share passwords securely with encrypted one-time links' }],
     },
 };
 

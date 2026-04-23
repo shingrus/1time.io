@@ -24,7 +24,7 @@ export const metadata = {
         title: 'Password Security Blog — Encryption and Secure Sharing | 1time.io',
         description: 'Guides on secure password sharing, self-destructing messages, and protecting sensitive data online.',
         url: '/blog',
-        images: [{ url: '/1time-og-c1.png', width: 1200, height: 630, alt: '1time.io Blog' }],
+        images: [{ url: '/1time-og-main.png', width: 1200, height: 630, alt: '1time.io Blog' }],
     },
 };
 

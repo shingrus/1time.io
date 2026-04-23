@@ -11,12 +11,13 @@ export const metadata = {
         title: 'Self-Destructing Links: How They Work + Free Generator',
         description: 'Generate a free self-destructing link. End-to-end encrypted, one-time access, permanently deleted after reading.',
         url: '/blog/self-destructing-messages-explained',
-        images: [{ url: '/1time-og-c1.png', width: 1200, height: 630, alt: 'Self-Destructing Link Generator' }],
+        images: [{ url: '/1time-og-main.png', width: 1200, height: 630, alt: 'Self-Destructing Link Generator' }],
     },
     twitter: {
         card: 'summary_large_image',
         title: 'Self-Destructing Links: How They Work + Free Generator',
         description: 'Generate a free self-destructing link. End-to-end encrypted, one-time access, permanently deleted after reading.',
+        images: ['/1time-og-main.png'],
     },
 };
 
@@ -62,7 +63,7 @@ const jsonLd = [
         author: { '@type': 'Person', name: 'Igor Ermakov', url: `${siteUrl}/about/` },
         publisher: { '@type': 'Organization', name: siteHost, url: siteUrl, logo: { '@type': 'ImageObject', url: `${siteUrl}/logo-512.png`, width: 512, height: 512 } },
         mainEntityOfPage: `${siteUrl}/blog/self-destructing-messages-explained/`,
-        image: [`${siteUrl}/1time-og-c1.png`],
+        image: [`${siteUrl}/1time-og-main.png`],
     },
     {
         '@context': 'https://schema.org',
