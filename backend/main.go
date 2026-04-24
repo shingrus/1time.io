@@ -29,6 +29,7 @@ func main() {
 
 	appStats.Start()
 	startFileJanitor()
+	logWebPushConfig()
 	http.HandleFunc("/api/", apiHandler)
 	log.Fatal(http.ListenAndServe(listenAddr, nil))
 }

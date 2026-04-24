@@ -28,7 +28,7 @@ export function buildSecretLink(randomString, newId) {
 }
 
 export async function createSecretLink(secretMessage, options = {}) {
-    const {secretKey = '', durationDays = Constants.defaultDuration} = options;
+    const {secretKey = '', durationDays = Constants.defaultDuration, pushSub = null} = options;
 
     if (!secretMessage) {
         throw new Error('Secret message is required');
@@ -38,11 +38,16 @@ export async function createSecretLink(secretMessage, options = {}) {
     const fullSecretKey = secretKey + randomKey;
     const {encryptedMessage, hashedKey} = await encryptSecretMessage(secretMessage, fullSecretKey);
 
-    const data = await postJson('saveSecret', {
+    const payload = {
         secretMessage: encryptedMessage,
         hashedKey,
         duration: durationDays * 86400,
-    });
+    };
+    if (pushSub) {
+        payload.push_sub = pushSub;
+    }
+
+    const data = await postJson('saveSecret', payload);
 
     if (data.status !== 'ok' || !data.newId) {
         throw new Error('Failed to create secret link');

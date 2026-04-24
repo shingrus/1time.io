@@ -2,6 +2,7 @@
 
 import {lazy, Suspense, useState} from "react";
 import {Constants, createSecretLink, SHARE_DURATION_OPTIONS} from '../utils/util';
+import {NotifyWhenOpenedField, useNotifyWhenOpened} from './NotifyWhenOpened';
 
 const ShowNewLink = lazy(() => import('./ShowNewLink'));
 
@@ -19,15 +20,18 @@ export default function NewMessage() {
     const [duration, setDuration] = useState(Constants.defaultDuration);
     const [isLoading, setIsLoading] = useState(false);
     const [newLink, setNewLink] = useState("");
+    const notificationState = useNotifyWhenOpened();
 
     const handleSubmit = async (event) => {
         event.preventDefault();
         setIsLoading(true);
 
         try {
+            const pushSub = await notificationState.getPushSubscription();
             const {link} = await createSecretLink(secretMessage, {
                 secretKey,
                 durationDays: duration,
+                pushSub,
             });
 
             if (link) {
@@ -68,6 +72,8 @@ export default function NewMessage() {
                     onChange={(event) => setSecretMessage(event.target.value)}
                 />
             </div>
+
+            <NotifyWhenOpenedField state={notificationState} disabled={isLoading} />
 
             <div className="form-actions share-primary-actions">
                 <button

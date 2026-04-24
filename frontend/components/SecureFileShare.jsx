@@ -4,6 +4,7 @@ import {lazy, Suspense, useRef, useState} from "react";
 import {Constants, SHARE_DURATION_OPTIONS} from '../utils/util';
 import {encryptFile} from '../utils/fileProtocol';
 import {saveFile} from '../utils/fileApi';
+import {NotifyWhenOpenedField, useNotifyWhenOpened} from './NotifyWhenOpened';
 
 const ShowNewLink = lazy(() => import('./ShowNewLink'));
 
@@ -26,6 +27,7 @@ export default function SecureFileShare() {
     const [isUploading, setIsUploading] = useState(false);
     const [uploadProgress, setUploadProgress] = useState(0);
     const fileInputRef = useRef(null);
+    const notificationState = useNotifyWhenOpened();
 
     const isLoading = isEncrypting || isUploading;
 
@@ -96,6 +98,7 @@ export default function SecureFileShare() {
         setUploadProgress(0);
 
         try {
+            const pushSub = await notificationState.getPushSubscription();
             const {encryptedBlob, hashedKey, randomKey} = await encryptFile(selectedFile, secretKey);
 
             setIsEncrypting(false);
@@ -105,6 +108,7 @@ export default function SecureFileShare() {
                 hashedKey,
                 duration,
                 (progress) => setUploadProgress(Math.min(100, Math.max(0, Math.round(progress * 100)))),
+                pushSub ? {pushSub} : undefined,
             );
 
             if (data.status === 'ok' && data.newId) {
@@ -196,6 +200,8 @@ export default function SecureFileShare() {
                     <p className="form-help form-help-error">{fileError}</p>
                 )}
             </div>
+
+            <NotifyWhenOpenedField state={notificationState} disabled={isLoading} />
 
             {isLoading && (
                 <div className="file-progress" aria-live="polite">

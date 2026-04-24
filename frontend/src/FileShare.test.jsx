@@ -99,6 +99,7 @@ describe('SecureFileShare component', () => {
             'hashed-upload-key',
             Constants.defaultDuration,
             expect.any(Function),
+            undefined,
         );
 
         const linkInput = await screen.findByLabelText(/secret one-time link/i);

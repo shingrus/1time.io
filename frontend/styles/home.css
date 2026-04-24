@@ -58,6 +58,31 @@
   margin-bottom: 16px;
 }
 
+.notify-option {
+  margin: 0 0 16px;
+}
+
+.notify-option-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.notify-option-label input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--accent);
+}
+
+.notify-option-label-disabled {
+  color: var(--text-muted);
+  cursor: not-allowed;
+}
+
 @media (min-width: 480px) {
   .options-grid {
     grid-template-columns: 1fr 1fr;

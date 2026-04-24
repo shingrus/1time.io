@@ -74,8 +74,9 @@ describe('NewMessage component', () => {
 
         render(<NewMessage />);
 
-        const submitButton = screen.getByRole('button', { name: /create secret link/i });
+        const submitButton = screen.getByRole('button', { name: /create one-time link/i });
         expect(submitButton).toBeDisabled();
+        expect(screen.getByLabelText(/notify me when opened/i)).toBeDisabled();
         expect(screen.getByLabelText(/additional passphrase/i)).toBeInTheDocument();
         expect(screen.getByLabelText(/expire after/i)).toBeInTheDocument();
 
@@ -108,7 +109,7 @@ describe('NewMessage component', () => {
         render(<NewMessage />);
 
         await user.type(screen.getByLabelText(/your secret message/i), 'ship it');
-        await user.click(screen.getByRole('button', { name: /create secret link/i }));
+        await user.click(screen.getByRole('button', { name: /create one-time link/i }));
 
         await waitFor(() => {
             expect(fetch.mock.calls.some(([url]) => url === '/api/saveSecret')).toBe(true);

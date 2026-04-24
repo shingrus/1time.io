@@ -18,7 +18,7 @@ export default function PrivacyPage() {
     return (
         <div className="about-page">
             <h1>Privacy Policy</h1>
-            <p className="subtitle">Last updated: March 22, 2026</p>
+            <p className="subtitle">Last updated: April 24, 2026</p>
 
             <div className="about-section">
                 <h2>The short version</h2>
@@ -53,6 +53,12 @@ export default function PrivacyPage() {
                         shared and page visits by category (home, blog, tools). These are plain numbers,
                         not per-user or per-session. No IP addresses, no identifiers, no way to link
                         a count to any individual.
+                    </li>
+                    <li>
+                        <strong>Optional read notifications:</strong> If you enable browser notifications
+                        for a one-time link, we store that browser push endpoint and its public subscription
+                        keys with the encrypted record until the link is opened or expires. We use it only
+                        to send a generic opened-link notification.
                     </li>
                 </ul>
             </div>

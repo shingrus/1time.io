@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"encoding/json"
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
@@ -28,6 +29,70 @@ func TestAPIHandlerRequiresPOST(t *testing.T) {
 		if got := rec.Header().Get("Allow"); got != http.MethodPost {
 			t.Fatalf("%s: got Allow header %q, want %q", path, got, http.MethodPost)
 		}
+	}
+}
+
+func TestAPIFrontConfigReturnsVAPIDPublicKey(t *testing.T) {
+	t.Setenv(vapidPublicKeyEnv, "public-test-key")
+	t.Setenv(vapidPrivateKeyEnv, "private-test-key")
+	t.Setenv(vapidSubjectEnv, "admin@example.com")
+
+	req := httptest.NewRequest(http.MethodPost, "/api/frontConfig", nil)
+	rec := httptest.NewRecorder()
+
+	apiHandler(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("got status %d, want %d", rec.Code, http.StatusOK)
+	}
+
+	var response struct {
+		VAPIDPublicKey string `json:"vapidPublicKey"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &response); err != nil {
+		t.Fatalf("Unmarshal error: %v", err)
+	}
+	if response.VAPIDPublicKey != "public-test-key" {
+		t.Fatalf("vapidPublicKey = %q, want %q", response.VAPIDPublicKey, "public-test-key")
+	}
+}
+
+func TestAPIFrontConfigHidesPartialVAPIDConfig(t *testing.T) {
+	tests := []struct {
+		name       string
+		publicKey  string
+		privateKey string
+		subject    string
+	}{
+		{name: "public only", publicKey: "public-test-key"},
+		{name: "private only", privateKey: "private-test-key"},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			t.Setenv(vapidPublicKeyEnv, test.publicKey)
+			t.Setenv(vapidPrivateKeyEnv, test.privateKey)
+			t.Setenv(vapidSubjectEnv, test.subject)
+
+			req := httptest.NewRequest(http.MethodPost, "/api/frontConfig", nil)
+			rec := httptest.NewRecorder()
+
+			apiHandler(rec, req)
+
+			if rec.Code != http.StatusOK {
+				t.Fatalf("got status %d, want %d", rec.Code, http.StatusOK)
+			}
+
+			var response struct {
+				VAPIDPublicKey string `json:"vapidPublicKey"`
+			}
+			if err := json.Unmarshal(rec.Body.Bytes(), &response); err != nil {
+				t.Fatalf("Unmarshal error: %v", err)
+			}
+			if response.VAPIDPublicKey != "" {
+				t.Fatalf("vapidPublicKey = %q, want empty", response.VAPIDPublicKey)
+			}
+		})
 	}
 }
 

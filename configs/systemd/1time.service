@@ -12,6 +12,9 @@ Environment=LISTEN_ADDR=127.0.0.1:8080
 Environment=REDISHOST=127.0.0.1:6379
 Environment=REDISPASS=
 Environment=FILE_STORAGE_DIR=/opt/1time/files
+Environment=VAPID_PUBLIC_KEY=
+Environment=VAPID_PRIVATE_KEY=
+Environment=VAPID_SUBJECT=https://1time.io
 ExecStart=/opt/1time/bin/1time-api
 Restart=always
 RestartSec=3

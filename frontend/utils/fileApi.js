@@ -9,11 +9,14 @@ import {Constants} from './util';
  * Upload encrypted file blob to server
  * Returns { status, newId }
  */
-export function saveFile(encryptedBlob, hashedKey, durationDays, onProgress) {
+export function saveFile(encryptedBlob, hashedKey, durationDays, onProgress, options = {}) {
     const formData = new FormData();
     formData.append('file', encryptedBlob, 'encrypted.bin');
     formData.append('hashedKey', hashedKey);
     formData.append('duration', String(durationDays * 86400));
+    if (options.pushSub) {
+        formData.append('push_sub', JSON.stringify(options.pushSub));
+    }
 
     return new Promise((resolve, reject) => {
         const xhr = new XMLHttpRequest();

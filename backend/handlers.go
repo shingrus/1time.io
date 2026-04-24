@@ -14,15 +14,17 @@ import (
 const FILE_STORAGE_DIR_VAR = "FILE_STORAGE_DIR"
 
 type StoredMessage struct {
-	Encrypted bool   `json:"encrypted"`
-	Message   string `json:"message"`
-	HashedKey string `json:"hashedKey"`
+	Encrypted bool              `json:"encrypted"`
+	Message   string            `json:"message"`
+	HashedKey string            `json:"hashedKey"`
+	PushSub   *PushSubscription `json:"pushSub,omitempty"`
 }
 
 type StoredFile struct {
-	Encrypted bool   `json:"encrypted"`
-	FileUri   string `json:"fileUri"`
-	HashedKey string `json:"hashedKey"`
+	Encrypted bool              `json:"encrypted"`
+	FileUri   string            `json:"fileUri"`
+	HashedKey string            `json:"hashedKey"`
+	PushSub   *PushSubscription `json:"pushSub,omitempty"`
 }
 
 const maxFileSize = 10 * 1024 * 1024 // 10MB
@@ -41,9 +43,10 @@ func apiSaveSecret(r *http.Request) (responseCode int, response []byte) {
 	}
 
 	var payload struct {
-		SecretMessage string `json:"secretMessage"`
-		HashedKey     string `json:"hashedKey"`
-		Duration      int    `json:"duration"`
+		SecretMessage string            `json:"secretMessage"`
+		HashedKey     string            `json:"hashedKey"`
+		Duration      int               `json:"duration"`
+		PushSub       *PushSubscription `json:"push_sub"`
 	}
 	dec := json.NewDecoder(r.Body)
 
@@ -51,11 +54,17 @@ func apiSaveSecret(r *http.Request) (responseCode int, response []byte) {
 		err := dec.Decode(&payload)
 		if err == nil {
 			if len(payload.SecretMessage) > 0 && len(payload.HashedKey) > 0 {
+				pushSub, err := validatePushSubscription(payload.PushSub)
+				if err != nil {
+					log.Printf("warning: dropping invalid push subscription in saveSecret payload: %v", err)
+					pushSub = nil
+				}
 
 				newMessage := StoredMessage{
 					Encrypted: true,
 					Message:   payload.SecretMessage,
 					HashedKey: payload.HashedKey,
+					PushSub:   pushSub,
 				}
 
 				if payload.Duration <= 0 || payload.Duration > maxDuration {
@@ -78,7 +87,6 @@ func apiSaveSecret(r *http.Request) (responseCode int, response []byte) {
 		} else {
 			log.Println(err)
 		}
-		// log.Printf("Got payload: %v\n", payload)
 	}
 	response, _ = json.Marshal(jResponse)
 	return
@@ -99,8 +107,7 @@ func apiGetMessage(r *http.Request) (responseCode int, response []byte) {
 		Status         string `json:"status"`
 		CryptedMessage string `json:"cryptedMessage"`
 	}{
-		Status: "error",
-		// NewId:strconv.FormatInt(32, 16)
+		Status:         "error",
 		CryptedMessage: "0",
 	}
 
@@ -123,6 +130,7 @@ func apiGetMessage(r *http.Request) (responseCode int, response []byte) {
 					case "ok":
 						jResponse.Status = "ok"
 						jResponse.CryptedMessage = storedMessage.Message
+						sendReadNotificationAsync(storedMessage.PushSub)
 					case "wrong key":
 						jResponse.Status = "wrong key"
 						log.Println("Hashes aren't equal")
@@ -170,6 +178,11 @@ func apiSaveSecretFile(r *http.Request) (responseCode int, response []byte) {
 
 	hashedKey := r.FormValue("hashedKey")
 	durationStr := r.FormValue("duration")
+	pushSub, err := parsePushSubscriptionField(r.FormValue("push_sub"))
+	if err != nil {
+		log.Printf("warning: dropping invalid push subscription in saveFile payload: %v", err)
+		pushSub = nil
+	}
 
 	file, fileHeader, err := r.FormFile("file")
 	if err != nil {
@@ -258,6 +271,7 @@ func apiSaveSecretFile(r *http.Request) (responseCode int, response []byte) {
 			Encrypted: true,
 			FileUri:   filePath,
 			HashedKey: hashedKey,
+			PushSub:   pushSub,
 		}
 		valueToStore, _ := json.Marshal(record)
 		ok, err := getRedisClient().SetNX(getFileStoreKey(storeKey), valueToStore, ttl).Result()
@@ -328,6 +342,8 @@ func apiGetFile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	sendReadNotificationAsync(storedFile.PushSub)
+
 	// Stream file to client
 	f, err := os.Open(storedFile.FileUri)
 	if err != nil {
@@ -348,6 +364,17 @@ func apiGetFile(w http.ResponseWriter, r *http.Request) {
 	if err := os.Remove(storedFile.FileUri); err != nil {
 		log.Printf("Remove file error: %v", err)
 	}
+}
+
+func apiFrontConfig() (responseCode int, response []byte) {
+	responseCode = http.StatusOK
+	jResponse := struct {
+		VAPIDPublicKey string `json:"vapidPublicKey"`
+	}{
+		VAPIDPublicKey: getFrontendVAPIDPublicKey(),
+	}
+	response, _ = json.Marshal(jResponse)
+	return
 }
 
 func apiHandler(w http.ResponseWriter, r *http.Request) {
@@ -391,6 +418,8 @@ func apiHandler(w http.ResponseWriter, r *http.Request) {
 		responseCode, response = apiStat(r)
 	case "ss":
 		responseCode, response = apiStatSnapshot()
+	case "frontConfig":
+		responseCode, response = apiFrontConfig()
 	default:
 		jResponse := struct {
 			Code        int    `json:"code"`

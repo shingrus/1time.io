@@ -30,6 +30,9 @@ services:
       REDISHOST: redis:6379
       REDISPASS: ""
       FILE_STORAGE_DIR: /data/files
+      VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY:-}
+      VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY:-}
+      VAPID_SUBJECT: ${VAPID_SUBJECT:-https://1time.io}
     volumes:
       - ${DATA_DIR:-./data}:/data
     depends_on:
