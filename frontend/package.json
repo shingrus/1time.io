@@ -10,6 +10,9 @@
     "react": "^19.2.4",
     "react-dom": "^19.2.4"
   },
+  "overrides": {
+    "postcss": "^8.5.10"
+  },
   "scripts": {
     "dev": "next dev --port 3001",
     "build": "next build && node scripts/postbuild-export.mjs",
