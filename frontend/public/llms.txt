@@ -29,6 +29,7 @@ Key facts:
 ## Primary Use Cases
 
 - Sharing passwords with teammates without using Slack, email, or chat
+- Sharing passwords safely inside Microsoft Teams chat (avoids retention policies and eDiscovery exposure)
 - Sending API keys, database credentials, or SSH keys to contractors
 - Sending encrypted files such as PDFs, certificates, backup codes, archives, screenshots, and private documents
 - Transmitting WiFi passwords to guests
@@ -38,7 +39,9 @@ Key facts:
 ## Key Pages
 
 - Homepage / Secret sharing tool: https://1time.io/
+- Share Passwords Securely: https://1time.io/share-password-securely/
 - Secure File Sharing: https://1time.io/secure-file-sharing/
+- Share Passwords Safely in Microsoft Teams: https://1time.io/share-passwords-microsoft-teams/
 - Password Generator: https://1time.io/password-generator/
 - Passphrase Generator: https://1time.io/passphrase-generator/
 - WiFi Password Generator: https://1time.io/wifi-password-generator/
