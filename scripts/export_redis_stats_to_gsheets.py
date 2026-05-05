@@ -484,6 +484,15 @@ def write_tab(
         body={"values": list(rows)},
     ).execute()
 
+    format_tab(service, spreadsheet_id, sheet_id, rows)
+
+
+def format_tab(
+    service,
+    spreadsheet_id: str,
+    sheet_id: int,
+    rows: Sequence[Sequence[object]],
+) -> None:
     column_count = max((len(row) for row in rows), default=1)
     requests = [
         {
@@ -512,6 +521,122 @@ def write_tab(
     ).execute()
 
 
+def write_senders_receivers_tab(
+    service,
+    spreadsheet_id: str,
+    sheet_id: int,
+    title: str,
+    rows: Sequence[Sequence[object]],
+) -> int:
+    """Write only dates present in the current nginx log export."""
+    if not rows:
+        return 0
+
+    header = list(rows[0])
+    current_log_rows = [
+        list(row)
+        for row in rows[1:]
+        if row and str(row[0])
+    ]
+    if not current_log_rows:
+        warn(
+            f"No current nginx log dates found; leaving tab {title} unchanged."
+        )
+        return 0
+
+    existing_rows = read_tab_rows(service, spreadsheet_id, title)
+    column_count = max(len(header), *(len(row) for row in current_log_rows))
+    column_end = column_letter(column_count)
+
+    if not existing_rows:
+        values = [
+            pad_row(header, column_count),
+            *[pad_row(row, column_count) for row in current_log_rows],
+        ]
+        service.spreadsheets().values().batchUpdate(
+            spreadsheetId=spreadsheet_id,
+            body={
+                "valueInputOption": "RAW",
+                "data": [{
+                    "range": f"{title}!A1:{column_end}{len(values)}",
+                    "values": values,
+                }],
+            },
+        ).execute()
+        format_tab(service, spreadsheet_id, sheet_id, values)
+        return len(current_log_rows)
+
+    existing_row_numbers_by_date: Dict[str, int] = {}
+    for row_number, row in enumerate(existing_rows[1:], start=2):
+        if not row:
+            continue
+        day = str(row[0])
+        if not day:
+            continue
+        if day in existing_row_numbers_by_date:
+            warn(
+                f"Duplicate date {day} in tab {title}; updating first occurrence only."
+            )
+            continue
+        existing_row_numbers_by_date[day] = row_number
+
+    updates = []
+    new_rows: List[List[object]] = []
+
+    for row in current_log_rows:
+        day = str(row[0])
+        padded_row = pad_row(row, column_count)
+        existing_row_number = existing_row_numbers_by_date.get(day)
+        if existing_row_number is None:
+            new_rows.append(padded_row)
+        else:
+            updates.append({
+                "range": f"{title}!A{existing_row_number}:{column_end}{existing_row_number}",
+                "values": [padded_row],
+            })
+
+    changed_row_count = len(updates) + len(new_rows)
+    if new_rows:
+        start_row = len(existing_rows) + 1
+        end_row = start_row + len(new_rows) - 1
+        updates.append({
+            "range": f"{title}!A{start_row}:{column_end}{end_row}",
+            "values": new_rows,
+        })
+
+    if updates:
+        service.spreadsheets().values().batchUpdate(
+            spreadsheetId=spreadsheet_id,
+            body={
+                "valueInputOption": "RAW",
+                "data": updates,
+            },
+        ).execute()
+
+    if updates or new_rows:
+        format_tab(service, spreadsheet_id, sheet_id, [header, *current_log_rows])
+
+    return changed_row_count
+
+
+def pad_row(row: Sequence[object], column_count: int) -> List[object]:
+    padded = list(row)
+    if len(padded) < column_count:
+        padded.extend([""] * (column_count - len(padded)))
+    return padded
+
+
+def column_letter(column_number: int) -> str:
+    if column_number < 1:
+        raise ValueError("column_number must be at least 1")
+
+    letters = ""
+    while column_number:
+        column_number, remainder = divmod(column_number - 1, 26)
+        letters = chr(ord("A") + remainder) + letters
+    return letters
+
+
 def read_tab_rows(service, spreadsheet_id: str, title: str) -> List[List[object]]:
     result = (
         service.spreadsheets()
@@ -520,36 +645,6 @@ def read_tab_rows(service, spreadsheet_id: str, title: str) -> List[List[object]
         .execute()
     )
     return result.get("values", [])
-
-
-def merge_daily_rows_by_date(
-    existing_rows: Sequence[Sequence[object]],
-    recalculated_rows: Sequence[Sequence[object]],
-) -> List[List[object]]:
-    if not recalculated_rows:
-        return [list(row) for row in existing_rows]
-
-    header = list(recalculated_rows[0])
-    merged_by_date: Dict[str, List[object]] = {}
-
-    for row in existing_rows[1:]:
-        if not row:
-            continue
-        day = str(row[0])
-        if day:
-            merged_by_date[day] = list(row)
-
-    for row in recalculated_rows[1:]:
-        if not row:
-            continue
-        day = str(row[0])
-        if day:
-            merged_by_date[day] = list(row)
-
-    rows: List[List[object]] = [header]
-    for day in sorted(merged_by_date):
-        rows.append(merged_by_date[day])
-    return rows
 
 
 def main() -> int:
@@ -576,17 +671,23 @@ def main() -> int:
     for base_name, rows in stats.items():
         title = full_tab_names[base_name]
         if base_name == "senders_receivers":
-            existing_rows = read_tab_rows(service, args.spreadsheet_id, title)
-            rows = merge_daily_rows_by_date(existing_rows, rows)
-
-        write_tab(
-            service=service,
-            spreadsheet_id=args.spreadsheet_id,
-            sheet_id=sheet_map[title],
-            title=title,
-            rows=rows,
-        )
-        print(f"Wrote {len(rows) - 1 if rows else 0} data rows to tab {title}")
+            changed_rows = write_senders_receivers_tab(
+                service=service,
+                spreadsheet_id=args.spreadsheet_id,
+                sheet_id=sheet_map[title],
+                title=title,
+                rows=rows,
+            )
+            print(f"Updated/appended {changed_rows} current-log rows in tab {title}")
+        else:
+            write_tab(
+                service=service,
+                spreadsheet_id=args.spreadsheet_id,
+                sheet_id=sheet_map[title],
+                title=title,
+                rows=rows,
+            )
+            print(f"Wrote {len(rows) - 1 if rows else 0} data rows to tab {title}")
 
     print("Export completed successfully.")
     return 0
