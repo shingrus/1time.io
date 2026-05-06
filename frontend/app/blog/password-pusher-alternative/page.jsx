@@ -2,19 +2,19 @@ import Link from 'next/link';
 import InlineCss from '../../../components/InlineCss';
 
 export const metadata = {
-    title: '1time.io vs Password Pusher (pwpush) — Better Alternative — 1time.io',
-    description: 'Compare 1time.io and Password Pusher (pwpush.com) for sharing passwords securely. See the differences in encryption, features, and usability.',
+    title: 'Password Pusher Alternative — Zero-Knowledge & Free',
+    description: 'Compare Password Pusher with 1time.io. Share passwords using browser-side encryption, one-time links, no signup, and open-source code.',
     alternates: { canonical: '/blog/password-pusher-alternative' },
     openGraph: {
-        title: '1time.io vs Password Pusher — Which Is More Secure?',
-        description: 'Password Pusher vs 1time.io. Compare encryption models, features, and ease of use.',
+        title: 'Password Pusher Alternative — Zero-Knowledge & Free',
+        description: 'Compare Password Pusher with 1time.io. Share passwords using browser-side encryption, one-time links, no signup, and open-source code.',
         url: '/blog/password-pusher-alternative',
         images: [{ url: '/1time-og-main.png', width: 1200, height: 630, alt: '1time.io vs Password Pusher' }],
     },
     twitter: {
         card: 'summary_large_image',
-        title: '1time.io vs Password Pusher — Which Is More Secure?',
-        description: 'Password Pusher vs 1time.io. Compare encryption models, features, and ease of use.',
+        title: 'Password Pusher Alternative — Zero-Knowledge & Free',
+        description: 'Compare Password Pusher with 1time.io. Share passwords using browser-side encryption, one-time links, no signup, and open-source code.',
         images: ['/1time-og-main.png'],
     },
 };
@@ -23,8 +23,8 @@ const jsonLd = [
     {
         '@context': 'https://schema.org',
         '@type': 'Article',
-        headline: '1time.io vs Password Pusher — Which Is More Secure?',
-        description: 'Compare 1time.io and Password Pusher (pwpush.com) for sharing passwords securely.',
+        headline: 'Password Pusher Alternative — Zero-Knowledge & Free',
+        description: 'Compare Password Pusher with 1time.io. Share passwords using browser-side encryption, one-time links, no signup, and open-source code.',
         datePublished: '2026-01-29',
         dateModified: '2026-03-20',
         author: { '@type': 'Person', name: 'Igor Ermakov', url: 'https://1time.io/about/' },
@@ -53,7 +53,7 @@ export default function Article() {
             ))}
             <div className="article-header">
                 <span className="article-tag">Comparison</span>
-                <h1>1time.io vs Password Pusher — Which Is More Secure?</h1>
+                <h1>Password Pusher Alternative — Zero-Knowledge & Free</h1>
                 <p className="article-subtitle">
                     Password Pusher (pwpush.com) is a popular open-source tool for sharing passwords
                     through expiring links. Here is how it compares to 1time.io in terms of

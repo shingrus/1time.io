@@ -3,12 +3,12 @@ import NewMessage from '../components/NewMessage';
 import {siteHost, siteUrl} from '../utils/siteConfig';
 
 export const metadata = {
-    title: `One-Time Links for Secure Sharing | ${siteHost}`,
-    description: 'Share passwords, API keys, files, and private notes through encrypted one-time links and QR codes that self-destruct after reading. Zero-knowledge secret sharing, free and open source.',
+    title: `${siteHost} — Encrypted One-Time Secret Links | Free, No Signup`,
+    description: 'Share passwords, API keys, and files via self-destructing links. Zero-knowledge AES-256 encryption in your browser. Open source.',
     alternates: { canonical: '/' },
     openGraph: {
-        title: `${siteHost} — Secure One-Time Links for Passwords and Files`,
-        description: 'Share passwords, API keys, and files through encrypted one-time links and QR codes. Zero-knowledge encryption, auto-destroyed after reading.',
+        title: `${siteHost} — Encrypted One-Time Secret Links`,
+        description: 'Share passwords, API keys, and files via self-destructing links. Zero-knowledge encryption, free, open source, and no signup.',
         url: '/',
         images: [{ url: '/1time-og-main.png', width: 1200, height: 630, alt: `${siteHost} — Encrypted One-Time Secret Links` }],
     },
@@ -19,7 +19,7 @@ const jsonLd = {
     '@type': 'WebApplication',
     name: siteHost,
     url: siteUrl,
-    description: 'Share passwords, API keys, files, and sensitive notes through encrypted one-time self-destruct links. End-to-end encrypted — we never see your data.',
+    description: 'Share passwords, API keys, and files via encrypted one-time secret links. Zero-knowledge encryption, free, open source, and no signup.',
     applicationCategory: 'SecurityApplication',
     operatingSystem: 'Any',
     offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },

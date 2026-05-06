@@ -2,20 +2,20 @@ import Link from 'next/link';
 import InlineCss from '../../../components/InlineCss';
 
 export const metadata = {
-    title: 'Firefox Send Alternative — Encrypted One-Time File Sharing | 1time.io',
-    description: 'Firefox Send was shut down in 2020. 1time.io offers the same encrypted one-time file sharing with browser-side encryption, optional passphrase, and self-hosting.',
+    title: 'Best Firefox Send Alternative — Free & Self-Hostable',
+    description: 'Firefox Send is gone. Share encrypted files with zero-knowledge one-time links. Free, open source, no signup, and self-hostable.',
     alternates: { canonical: '/blog/firefox-send-alternative' },
     openGraph: {
         type: 'article',
-        title: 'Firefox Send Alternative — Encrypted File Sharing That Still Works',
-        description: 'Firefox Send is gone. 1time.io picks up where it left off: encrypted one-time file sharing with zero-knowledge architecture.',
+        title: 'Best Firefox Send Alternative — Free & Self-Hostable',
+        description: 'Firefox Send is gone. Share encrypted files with zero-knowledge one-time links. Free, open source, no signup, and self-hostable.',
         url: '/blog/firefox-send-alternative',
         images: [{ url: '/1time-og-main.png', width: 1200, height: 630, alt: 'Firefox Send Alternative — 1time.io' }],
     },
     twitter: {
         card: 'summary_large_image',
-        title: 'Firefox Send Alternative — Encrypted File Sharing That Still Works',
-        description: 'Firefox Send is gone. 1time.io picks up where it left off: encrypted one-time file sharing with zero-knowledge architecture.',
+        title: 'Best Firefox Send Alternative — Free & Self-Hostable',
+        description: 'Firefox Send is gone. Share encrypted files with zero-knowledge one-time links. Free, open source, no signup, and self-hostable.',
         images: ['/1time-og-main.png'],
     },
 };
@@ -24,8 +24,8 @@ const jsonLd = [
     {
         '@context': 'https://schema.org',
         '@type': 'Article',
-        headline: 'Firefox Send Alternative — Encrypted One-Time File Sharing',
-        description: 'Firefox Send was shut down in 2020. 1time.io offers the same encrypted one-time file sharing with browser-side encryption, optional passphrase, and self-hosting.',
+        headline: 'Best Firefox Send Alternative — Free & Self-Hostable',
+        description: 'Firefox Send is gone. Share encrypted files with zero-knowledge one-time links. Free, open source, no signup, and self-hostable.',
         datePublished: '2026-04-04',
         dateModified: '2026-04-04',
         author: { '@type': 'Person', name: 'Igor Ermakov', url: 'https://1time.io/about/' },
@@ -54,7 +54,7 @@ export default function Article() {
             ))}
             <div className="article-header">
                 <span className="article-tag">Comparison</span>
-                <h1>Firefox Send Alternative — Encrypted One-Time File Sharing</h1>
+                <h1>Best Firefox Send Alternative — Free & Self-Hostable</h1>
                 <p className="article-subtitle">
                     Firefox Send was one of the best ways to share files securely. Mozilla shut it
                     down in 2020. Here is what happened, what the alternatives look like, and why
