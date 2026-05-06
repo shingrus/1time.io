@@ -29,6 +29,16 @@ const maxFileSize = 10 * 1024 * 1024 // 10MB
 
 var fileStorageDir = os.Getenv("FILE_STORAGE_DIR")
 
+var (
+	saveToStorageFunc                 = saveToStorage
+	consumeMessageFromStorageFunc     = consumeMessageFromStorage
+	consumeFileMessageFromStorageFunc = consumeFileMessageFromStorage
+	setFileRecordFunc                 = func(storeKey string, value interface{}, ttl time.Duration) (bool, error) {
+		return getRedisClient().SetNX(getFileStoreKey(storeKey), value, ttl).Result()
+	}
+	incrementStoredFileCountersFunc = incrementStoredFileCounters
+)
+
 func apiSaveSecret(r *http.Request) (responseCode int, response []byte) {
 	responseCode = 200
 
@@ -66,7 +76,7 @@ func apiSaveSecret(r *http.Request) (responseCode int, response []byte) {
 					log.Printf("payload -> storage: %v, HashedKey: %v, Duration: %v\n", payload.SecretMessage, payload.HashedKey, payload.Duration)
 				}
 				valueToStore, _ := json.Marshal(newMessage)
-				storeKey, err := saveToStorage(valueToStore, time.Duration(payload.Duration)*time.Second)
+				storeKey, err := saveToStorageFunc(valueToStore, time.Duration(payload.Duration)*time.Second)
 				if err == nil {
 					jResponse.NewId = storeKey
 					jResponse.Status = "ok"
@@ -117,7 +127,7 @@ func apiGetMessage(r *http.Request) (responseCode int, response []byte) {
 				if DEBUG {
 					log.Printf("payload <- storage: %v, %v\n", payload.Id, payload.HashedKey)
 				}
-				storedMessage, status, err := consumeMessageFromStorage(payload.Id, payload.HashedKey)
+				storedMessage, status, err := consumeMessageFromStorageFunc(payload.Id, payload.HashedKey)
 				if err == nil {
 					switch status {
 					case "ok":
@@ -260,7 +270,7 @@ func apiSaveSecretFile(r *http.Request) (responseCode int, response []byte) {
 			HashedKey: hashedKey,
 		}
 		valueToStore, _ := json.Marshal(record)
-		ok, err := getRedisClient().SetNX(getFileStoreKey(storeKey), valueToStore, ttl).Result()
+		ok, err := setFileRecordFunc(storeKey, valueToStore, ttl)
 		if err != nil {
 			_ = os.Remove(filePath)
 			log.Printf("SetNX error: %v", err)
@@ -272,7 +282,7 @@ func apiSaveSecretFile(r *http.Request) (responseCode int, response []byte) {
 			continue
 		}
 
-		if err := incrementStoredFileCounters(now); err != nil {
+		if err := incrementStoredFileCountersFunc(now); err != nil {
 			log.Printf("incrementStoredFileCounters error: %v", err)
 		}
 
@@ -308,7 +318,7 @@ func apiGetFile(w http.ResponseWriter, r *http.Request) {
 		log.Printf("payload <- file storage: %v, %v\n", payload.Id, payload.HashedKey)
 	}
 
-	storedFile, status, err := consumeFileMessageFromStorage(payload.Id, payload.HashedKey)
+	storedFile, status, err := consumeFileMessageFromStorageFunc(payload.Id, payload.HashedKey)
 	if err != nil {
 		log.Printf("consumeFileMessageFromStorage error: %v", err)
 		http.Error(w, `{"status":"error"}`, http.StatusInternalServerError)
