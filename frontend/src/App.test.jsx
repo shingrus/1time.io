@@ -28,6 +28,10 @@ import { Constants, decryptSecretMessage, encryptSecretMessage, getRandomString,
 
 beforeEach(() => {
     vi.clearAllMocks();
+    Object.defineProperty(window.navigator, 'platform', {
+        configurable: true,
+        value: 'Win32',
+    });
     mockPathname.mockReturnValue('/');
     mockClipboardWriteText.mockResolvedValue(undefined);
     window.history.pushState({}, '', '/');
@@ -74,7 +78,7 @@ describe('NewMessage component', () => {
 
         render(<NewMessage />);
 
-        const submitButton = screen.getByRole('button', { name: /create secret link/i });
+        const submitButton = screen.getByRole('button', { name: /create one-time link/i });
         expect(submitButton).toBeDisabled();
         expect(screen.getByLabelText(/additional passphrase/i)).toBeInTheDocument();
         expect(screen.getByLabelText(/expire after/i)).toBeInTheDocument();
@@ -108,7 +112,7 @@ describe('NewMessage component', () => {
         render(<NewMessage />);
 
         await user.type(screen.getByLabelText(/your secret message/i), 'ship it');
-        await user.click(screen.getByRole('button', { name: /create secret link/i }));
+        await user.click(screen.getByRole('button', { name: /create one-time link/i }));
 
         await waitFor(() => {
             expect(fetch.mock.calls.some(([url]) => url === '/api/saveSecret')).toBe(true);
@@ -138,6 +142,7 @@ describe('NewMessage component', () => {
         expect(linkInput.value).toContain('abc123');
         expect(mockPush).not.toHaveBeenCalled();
     });
+
 });
 
 describe('ShowNewLink component', () => {
@@ -172,6 +177,23 @@ describe('ShowNewLink component', () => {
 
         await screen.findByText(/scan from another device/i);
         expect(await screen.findByLabelText(/secret link qr code/i)).toBeInTheDocument();
+    });
+
+    it('shows the bookmark nudge with the Mac shortcut', async () => {
+        Object.defineProperty(window.navigator, 'platform', {
+            configurable: true,
+            value: 'MacIntel',
+        });
+
+        render(<ShowNewLink newLink="http://localhost:3001/v/#AbCdEfGhIjKlMnOpQr-_testId123" onReset={vi.fn()} />);
+
+        expect(await screen.findByText(/bookmark 1time\.io so you can find it next time/i)).toHaveTextContent('⌘D');
+    });
+
+    it('shows the bookmark nudge with the Ctrl shortcut by default', async () => {
+        render(<ShowNewLink newLink="http://localhost:3001/v/#AbCdEfGhIjKlMnOpQr-_testId123" onReset={vi.fn()} />);
+
+        expect(await screen.findByText(/bookmark 1time\.io so you can find it next time/i)).toHaveTextContent('Ctrl+D');
     });
 });
 
@@ -305,7 +327,44 @@ describe('ViewSecretMessage component', () => {
         await user.click(await screen.findByRole('button', { name: /reveal the secret/i }));
 
         expect(await screen.findByText(/already been read or has expired/i)).toBeInTheDocument();
+        await user.click(screen.getByRole('button', { name: /create your own secret link/i }));
+        expect(mockPush).toHaveBeenCalledWith('/?reply=1');
         expect(fetch).not.toHaveBeenCalled();
+    });
+
+    it('shows the reply CTA after a secret is read', async () => {
+        const user = userEvent.setup();
+        const randomKey = 'AbCdEfGhIjKlMnOpQr-_';
+        const encryptedMessage = await encryptSecretMessage('thanks for the access', randomKey);
+
+        window.history.pushState({}, '', `/v/#${randomKey}testId123`);
+        fetch.mockImplementation(async (url) => {
+            if (url === '/api/get') {
+                return {
+                    ok: true,
+                    json: async () => ({
+                        status: 'ok',
+                        cryptedMessage: encryptedMessage.encryptedMessage,
+                    }),
+                };
+            }
+
+            return {
+                ok: true,
+                json: async () => ({}),
+            };
+        });
+
+        render(<ViewSecretMessage />);
+
+        await user.click(await screen.findByRole('button', { name: /reveal the secret/i }));
+
+        expect(await screen.findByText(/message destroyed/i)).toBeInTheDocument();
+        expect(screen.getByText(/need to send something back/i)).toBeInTheDocument();
+        expect(screen.getByText(/paste your reply into the same thread/i)).toBeInTheDocument();
+
+        await user.click(screen.getByRole('button', { name: /reply with a secret/i }));
+        expect(mockPush).toHaveBeenCalledWith('/?reply=1');
     });
 });
 
