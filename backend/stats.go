@@ -63,6 +63,12 @@ type StatsManager struct {
 
 var appStats = NewStatsManager()
 
+var (
+	flushPageHitCountersFunc             = flushPageHitCounters
+	getOverallStoredCounterFromRedisFunc = getOverallStoredCounterFromRedis
+	incrementStoredCounterFunc           = incrementStoredCounter
+)
+
 func NewStatsManager() *StatsManager {
 	return &StatsManager{}
 }
@@ -119,12 +125,12 @@ func (s *StatsManager) GetSnapshot() StatsSnapshot {
 }
 
 func (s *StatsManager) loadOverallStoredCounters() error {
-	textTotal, err := getOverallStoredCounterFromRedis(storedCounterText)
+	textTotal, err := getOverallStoredCounterFromRedisFunc(storedCounterText)
 	if err != nil {
 		return err
 	}
 
-	fileTotal, err := getOverallStoredCounterFromRedis(storedCounterFile)
+	fileTotal, err := getOverallStoredCounterFromRedisFunc(storedCounterFile)
 	if err != nil {
 		return err
 	}
@@ -152,7 +158,7 @@ func (s *StatsManager) FlushPageHits() error {
 		return nil
 	}
 
-	if err := flushPageHitCounters(pageHits, time.Now().UTC()); err != nil {
+	if err := flushPageHitCountersFunc(pageHits, time.Now().UTC()); err != nil {
 		s.mergePageHits(pageHits)
 		return err
 	}
@@ -236,11 +242,11 @@ func getPageHitDayKey(now time.Time) string {
 }
 
 func incrementStoredSecretCounters(now time.Time) error {
-	return incrementStoredCounter(storedCounterText, now)
+	return incrementStoredCounterFunc(storedCounterText, now)
 }
 
 func incrementStoredFileCounters(now time.Time) error {
-	return incrementStoredCounter(storedCounterFile, now)
+	return incrementStoredCounterFunc(storedCounterFile, now)
 }
 
 func incrementStoredCounter(kind storedCounterKind, now time.Time) error {

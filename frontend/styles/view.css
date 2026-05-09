@@ -188,7 +188,7 @@
 .view-cta-desc {
   font-size: 14px;
   color: var(--text-secondary);
-  margin-bottom: 16px;
+  margin: 14px 0 0;
   line-height: 1.5;
 }
 

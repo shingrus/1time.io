@@ -7,6 +7,7 @@ import {createQrSvg} from '../utils/qr';
 
 export default function ViewSecretMessage() {
     const router = useRouter();
+    const replyPath = '/?reply=1';
     const [isLoading, setIsLoading] = useState(false);
     const [secretMessage, setSecretMessage] = useState("");
     const [secretKey, setSecretKey] = useState("");
@@ -237,7 +238,7 @@ export default function ViewSecretMessage() {
                         <button
                             className="btn btn-primary"
                             type="button"
-                            onClick={() => router.push('/')}
+                            onClick={() => router.push(replyPath)}
                         >
                             Create your own secret link
                         </button>
@@ -247,15 +248,17 @@ export default function ViewSecretMessage() {
                 {/* Post-read CTA */}
                 {hasSecretMessage && (
                     <div className="view-cta">
-                        <p className="view-cta-destroyed">This message has been permanently destroyed from our servers.</p>
+                        <p className="view-cta-destroyed">Message destroyed.</p>
                         <div className="view-cta-box">
+                            <p className="view-cta-heading">Need to send something back?</p>
                             <button
                                 className="btn btn-primary"
                                 type="button"
-                                onClick={() => router.push('/')}
+                                onClick={() => router.push(replyPath)}
                             >
-                                Create a new link
+                                Reply with a secret →
                             </button>
+                            <p className="view-cta-desc">Paste your reply into the same thread where you got this one.</p>
                         </div>
                     </div>
                 )}

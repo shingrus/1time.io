@@ -4,19 +4,19 @@ import SecureFileShare from '../../components/SecureFileShare';
 import {absoluteUrl, siteHost} from '../../utils/siteConfig';
 
 export const metadata = {
-    title: `Secure File Sharing — Send Encrypted Files with One-Time Links | ${siteHost}`,
-    description: 'Send files securely through end-to-end encrypted one-time links. Share documents, PDFs, certificates, and confidential files with auto-expiry and zero-knowledge encryption.',
+    title: `Secure File Sharing — Encrypted One-Time Links | ${siteHost}`,
+    description: 'Send encrypted files with one-time download links. Browser-side zero-knowledge encryption, optional passphrase, no signup.',
     alternates: { canonical: '/secure-file-sharing' },
     openGraph: {
-        title: `Secure File Sharing with One-Time Links | ${siteHost}`,
-        description: 'Encrypted file sharing with one-time download links. Files are encrypted in your browser and destroyed after download or expiry.',
+        title: `Secure File Sharing — Encrypted One-Time Links | ${siteHost}`,
+        description: 'Send encrypted files with one-time download links. Browser-side encryption, optional passphrase, no signup.',
         url: '/secure-file-sharing',
         images: [{ url: '/1time-og-main.png', width: 1200, height: 630, alt: 'Secure file sharing with encrypted one-time links' }],
     },
     twitter: {
         card: 'summary_large_image',
-        title: `Secure File Sharing with One-Time Links | ${siteHost}`,
-        description: 'Encrypted file sharing with one-time download links. Files are encrypted in your browser and destroyed after download or expiry.',
+        title: `Secure File Sharing — Encrypted One-Time Links | ${siteHost}`,
+        description: 'Send encrypted files with one-time download links. Browser-side encryption, optional passphrase, no signup.',
         images: ['/1time-og-main.png'],
     },
 };
@@ -45,7 +45,7 @@ const jsonLd = [
         '@context': 'https://schema.org',
         '@type': 'WebPage',
         name: 'Secure File Sharing',
-        description: 'Send encrypted files with one-time links. Browser-side encryption, optional passphrase, and auto-expiry.',
+        description: 'Send encrypted files with one-time download links. Browser-side zero-knowledge encryption, optional passphrase, and no signup.',
         url: absoluteUrl('/secure-file-sharing/'),
         isPartOf: absoluteUrl('/'),
     },
@@ -62,7 +62,7 @@ const jsonLd = [
         '@type': 'WebApplication',
         name: 'Secure File Sharing',
         url: absoluteUrl('/secure-file-sharing/'),
-        description: 'Send encrypted files with one-time download links. Browser-side encryption, optional passphrase, and auto-expiry.',
+        description: 'Send encrypted files with one-time download links. Browser-side zero-knowledge encryption, optional passphrase, and no signup.',
         applicationCategory: 'SecurityApplication',
         operatingSystem: 'Any',
         offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },

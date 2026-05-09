@@ -2,19 +2,19 @@ import Link from 'next/link';
 import InlineCss from '../../../components/InlineCss';
 
 export const metadata = {
-    title: '1time.io vs Bitwarden Send - Better Alternative - 1time.io',
-    description: 'Compare 1time.io and Bitwarden Send for sharing secrets securely. See why a dedicated one-time link tool is faster and easier than Bitwarden Send.',
+    title: 'Bitwarden Send Alternative — Free, No Account Required',
+    description: 'Need to share a secret without a Bitwarden account? Use zero-knowledge one-time links for encrypted password and file sharing.',
     alternates: { canonical: '/blog/bitwarden-send-alternative' },
     openGraph: {
-        title: '1time.io vs Bitwarden Send — A Practical Comparison',
-        description: 'Bitwarden Send vs a dedicated one-time link tool. Which is better for sharing passwords and secrets?',
+        title: 'Bitwarden Send Alternative — Free, No Account Required',
+        description: 'Need to share a secret without a Bitwarden account? Use zero-knowledge one-time links for encrypted password and file sharing.',
         url: '/blog/bitwarden-send-alternative',
         images: [{ url: '/1time-og-main.png', width: 1200, height: 630, alt: '1time.io vs Bitwarden Send' }],
     },
     twitter: {
         card: 'summary_large_image',
-        title: '1time.io vs Bitwarden Send — A Practical Comparison',
-        description: 'Bitwarden Send vs a dedicated one-time link tool. Which is better for sharing passwords and secrets?',
+        title: 'Bitwarden Send Alternative — Free, No Account Required',
+        description: 'Need to share a secret without a Bitwarden account? Use zero-knowledge one-time links for encrypted password and file sharing.',
         images: ['/1time-og-main.png'],
     },
 };
@@ -23,8 +23,8 @@ const jsonLd = [
     {
         '@context': 'https://schema.org',
         '@type': 'Article',
-        headline: '1time.io vs Bitwarden Send — A Practical Comparison',
-        description: 'Compare 1time.io and Bitwarden Send for sharing secrets securely. See why a dedicated one-time link tool is faster and easier than Bitwarden Send.',
+        headline: 'Bitwarden Send Alternative — Free, No Account Required',
+        description: 'Need to share a secret without a Bitwarden account? Use zero-knowledge one-time links for encrypted password and file sharing.',
         datePublished: '2026-03-06',
         dateModified: '2026-03-21',
         author: { '@type': 'Person', name: 'Igor Ermakov', url: 'https://1time.io/about/' },
@@ -53,7 +53,7 @@ export default function Article() {
             ))}
             <div className="article-header">
                 <span className="article-tag">Comparison</span>
-                <h1>1time.io vs Bitwarden Send — A Practical Comparison</h1>
+                <h1>Bitwarden Send Alternative — Free, No Account Required</h1>
                 <p className="article-subtitle">
                     Bitwarden is an excellent password manager. But when you just need to send a secret
                     to someone quickly, Bitwarden Send adds friction. Here is how the two compare for

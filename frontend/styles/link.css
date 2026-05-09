@@ -54,6 +54,21 @@
   line-height: 1.6;
 }
 
+.link-display .callout {
+  border-radius: var(--radius);
+  font-size: 14px;
+  line-height: 1.5;
+  margin: 28px 0 0;
+  padding: 12px 14px;
+  text-align: left;
+}
+
+.link-display .callout-tip {
+  background: var(--tip-bg);
+  border: 1px solid var(--tip-border);
+  color: var(--tip-fg);
+}
+
 @media (max-width: 480px) {
   .link-actions {
     flex-direction: column;

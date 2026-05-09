@@ -39,6 +39,27 @@ func TestGenerateStorageIDUniqueness(t *testing.T) {
 	}
 }
 
+func TestStorageKeyHelpers(t *testing.T) {
+	if got := getStoreKey("abc123"); got != "messageKeyabc123" {
+		t.Fatalf("getStoreKey() = %q, want messageKeyabc123", got)
+	}
+	if got := getFileStoreKey("abc123"); got != "fileKeyabc123" {
+		t.Fatalf("getFileStoreKey() = %q, want fileKeyabc123", got)
+	}
+}
+
+func TestCleanupExpiredFilesMissingDirectoryIsNoop(t *testing.T) {
+	originalDir := fileStorageDir
+	fileStorageDir = filepath.Join(t.TempDir(), "missing")
+	defer func() {
+		fileStorageDir = originalDir
+	}()
+
+	if err := cleanupExpiredFiles(time.Now().UTC()); err != nil {
+		t.Fatalf("cleanupExpiredFiles() error = %v, want nil for missing directory", err)
+	}
+}
+
 func TestCleanupExpiredFilesRemovesOnlyExpiredEncFiles(t *testing.T) {
 	tempDir := t.TempDir()
 	originalDir := fileStorageDir
