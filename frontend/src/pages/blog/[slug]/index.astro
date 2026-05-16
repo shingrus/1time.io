@@ -1,0 +1,38 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import InlineCss from '../../../components/InlineCss.astro';
+import {blogPosts, getBlogPost} from '../../../lib/blog-posts';
+
+export function getStaticPaths() {
+    return blogPosts.map((post) => ({
+        params: {slug: post.slug},
+    }));
+}
+
+const slug = Astro.params.slug!;
+const post = getBlogPost(slug);
+
+// defensive — getStaticPaths covers every slug, so this is unreachable in static build
+if (!post) {
+    return Astro.redirect('/404.html');
+}
+
+const canonical = `/blog/${post.slug}/`;
+---
+<BaseLayout
+    title={post.title}
+    description={post.description}
+    canonical={canonical}
+    ogTitle={post.ogTitle}
+    ogDescription={post.ogDescription}
+    ogImageAlt={post.ogImageAlt}
+    ogType="article"
+    trackStats
+>
+    <InlineCss slot="head" name="article" />
+    {post.schemas.map((schema) => (
+        <script slot="head" type="application/ld+json" set:html={JSON.stringify(schema)} is:inline></script>
+    ))}
+
+    <Fragment set:html={post.html} />
+</BaseLayout>

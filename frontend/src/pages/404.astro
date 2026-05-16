@@ -1,0 +1,22 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import InlineCss from '../components/InlineCss.astro';
+import {siteHost} from '../lib/siteConfig.js';
+
+const title = `Page not found — ${siteHost}`;
+const description = 'This page does not exist on 1time.io.';
+---
+<BaseLayout
+    title={title}
+    description={description}
+    ogImageAlt={`${siteHost} — Encrypted One-Time Secret Links`}
+    robots="noindex, nofollow"
+>
+    <InlineCss slot="head" name="view" />
+
+    <div class="error-page">
+        <h2>404</h2>
+        <p>This page doesn't exist.</p>
+        <a class="btn btn-primary" href="/">Go home</a>
+    </div>
+</BaseLayout>
