@@ -1,0 +1,15 @@
+{
+  "short_name": "1time.io",
+  "name": "1time.io — One-Time Secret Links",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ],
+  "start_url": "/",
+  "display": "standalone",
+  "theme_color": "#C2410C",
+  "background_color": "#FAF9F6"
+}

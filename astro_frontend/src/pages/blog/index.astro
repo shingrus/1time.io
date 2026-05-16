@@ -1,0 +1,40 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import InlineCss from '../../components/InlineCss.astro';
+import {blogIndex, blogIndexPosts} from '../../lib/blog-posts';
+
+const canonical = '/blog/';
+const formatCardMeta = (meta: string) => meta.replace(/^By Igor Ermakov · /, '');
+---
+<BaseLayout
+    title={blogIndex.title}
+    description={blogIndex.description}
+    canonical={canonical}
+    ogTitle={blogIndex.ogTitle}
+    ogDescription={blogIndex.ogDescription}
+    ogImageAlt={blogIndex.ogImageAlt}
+    trackStats
+>
+    <InlineCss slot="head" name="blog-index" />
+    {blogIndex.schemas.map((schema) => (
+        <script slot="head" type="application/ld+json" set:html={JSON.stringify(schema)} is:inline></script>
+    ))}
+
+    <div class="blog-index">
+        <h1>Blog</h1>
+        <p class="subtitle">Guides on secure sharing, encryption, and protecting sensitive data.</p>
+        <p class="blog-intro">
+            Practical guides on password security, zero-knowledge encryption, and safe secret sharing for developers and teams. Learn why common methods like Slack DMs and email are insecure, how to share API keys and credentials safely, and how the encryption behind 1time.io actually works.
+        </p>
+        <div class="blog-list">
+            {blogIndexPosts.map((post) => (
+                <a class="blog-card" href={`/blog/${post.slug}/`}>
+                    <span class="blog-card-tag">{post.tag}</span>
+                    <h2>{post.heading}</h2>
+                    <p>{post.excerpt}</p>
+                    <div class="blog-card-meta">{formatCardMeta(post.meta)}</div>
+                </a>
+            ))}
+        </div>
+    </div>
+</BaseLayout>

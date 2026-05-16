@@ -9,7 +9,7 @@ interface Props {
     trackStats?: boolean;
 }
 
-const {presetPath, trackStats = true} = Astro.props;
+const {presetPath, trackStats} = Astro.props;
 const preset = PRESETS[presetPath]!;
 const schemas = buildJsonLd(preset);
 ---

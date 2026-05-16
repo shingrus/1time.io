@@ -35,7 +35,11 @@ import LinkReadyTemplate from './LinkReadyTemplate.astro';
         </div>
     </div>
 
-    <p class="form-help form-help-error" data-message-error hidden></p>
+    <p class="form-help form-help-error" data-message-error role="alert" hidden></p>
 </form>
 
 <LinkReadyTemplate />
+
+<script>
+    import '../islands/new-message.ts';
+</script>
