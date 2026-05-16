@@ -8,6 +8,9 @@ import linkCss from '../styles/link.css?raw';
 import qrPanelCss from '../styles/qr-panel.css?raw';
 import viewCss from '../styles/view.css?raw';
 import statsCss from '../styles/stats.css?raw';
+import generatorCss from '../styles/generator.css?raw';
+import aboutCss from '../styles/about.css?raw';
+import articleCss from '../styles/article.css?raw';
 
 const cssByName = {
     globals: globalsCss,
@@ -17,6 +20,9 @@ const cssByName = {
     'qr-panel': qrPanelCss,
     view: viewCss,
     stats: statsCss,
+    generator: generatorCss,
+    about: aboutCss,
+    article: articleCss,
 } as const;
 
 const minified = new Map<string, string>();
