@@ -16,6 +16,7 @@ interface Props {
     ogType?: string;
     ogUrl?: string;
     robots?: string;
+    trackStats?: boolean;
 }
 
 const {
@@ -29,6 +30,7 @@ const {
     ogType = 'website',
     ogUrl = canonical ?? '/',
     robots,
+    trackStats = false,
 } = Astro.props;
 
 const canonicalHref = canonical ? absoluteUrl(canonical) : undefined;
@@ -92,7 +94,7 @@ const websiteSchema = {
     </head>
     <body>
         <div class="app-layout">
-            <PageStatsTracker />
+            {trackStats && <PageStatsTracker />}
             <Header />
             <main class="app-main">
                 <slot />

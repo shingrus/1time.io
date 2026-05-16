@@ -1,31 +1,6 @@
 ---
-import BaseLayout from '../../layouts/BaseLayout.astro';
-import InlineCss from '../../components/InlineCss.astro';
-import PasswordGenerator from '../../components/PasswordGenerator.astro';
-import {PRESETS, buildJsonLd} from '../../lib/generator-presets';
+import GeneratorPage from '../../components/GeneratorPage.astro';
 
 const PATH = '/password-generator';
-const preset = PRESETS[PATH]!;
-const schemas = buildJsonLd(preset);
 ---
-<BaseLayout
-    title={preset.meta.title}
-    description={preset.meta.description}
-    canonical={`${PATH}/`}
-    ogTitle={preset.meta.ogTitle}
-    ogDescription={preset.meta.ogDescription}
-    ogImageAlt={preset.meta.ogImageAlt}
->
-    <InlineCss slot="head" name="generator" />
-    <InlineCss slot="head" name="link" />
-    <InlineCss slot="head" name="qr-panel" />
-    {schemas.map((schema) => (
-        <script slot="head" type="application/ld+json" set:html={JSON.stringify(schema)} is:inline></script>
-    ))}
-
-    <PasswordGenerator presetPath={PATH} />
-
-    <script>
-        import '../../islands/password-generator.ts';
-    </script>
-</BaseLayout>
+<GeneratorPage presetPath={PATH} />
