@@ -31,7 +31,7 @@ const wordlist = [
   "high","hike","hill","hint","hire","hold","hole","holy","home","hood",
   "hook","hope","horn","host","hour","huge","hull","hung","hunt","hurt",
   "icon","idea","inch","info","into","iron","isle","item","jack","jade",
-  "jail","jazz","jean","jest","jobs","join","joke","jump","June","jury",
+  "jail","jazz","jean","jest","jobs","join","joke","jump","june","jury",
   "just","keen","keep","kept","kick","kids","kill","kind","king","kiss",
   "kite","knee","knew","knit","knob","knot","know","lace","lack","laid",
   "lake","lamb","lamp","land","lane","last","late","lawn","lazy","lead",
