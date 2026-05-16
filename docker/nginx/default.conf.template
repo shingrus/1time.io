@@ -11,10 +11,40 @@ server {
     index  index.html;
     client_max_body_size 11m;
 
+    gzip on;
+    gzip_vary on;
+    gzip_proxied any;
+    gzip_comp_level 6;
+    gzip_min_length 256;
+    gzip_types
+        text/plain
+        text/css
+        text/javascript
+        text/xml
+        application/javascript
+        application/json
+        application/xml
+        application/rss+xml
+        image/svg+xml;
+
     error_page 404 /404.html;
 
     location = /404.html {
         internal;
+    }
+
+    location ^~ /_astro/ {
+        expires 1y;
+        add_header Cache-Control "public, max-age=31536000, immutable";
+        access_log off;
+        try_files $uri =404;
+    }
+
+    location ~* \.(?:woff2|woff|ttf|otf|eot)$ {
+        expires 30d;
+        add_header Cache-Control "public, max-age=2592000";
+        access_log off;
+        try_files $uri =404;
     }
 
     location = /api/saveSecret {

@@ -9,7 +9,7 @@ WORKDIR /src/frontend
 
 ARG SHOW_BLOG=true
 
-ENV NEXT_PUBLIC_SHOW_BLOG=${SHOW_BLOG}
+ENV PUBLIC_SHOW_BLOG=${SHOW_BLOG}
 
 RUN npm install -g npm@${NPM_VERSION}
 

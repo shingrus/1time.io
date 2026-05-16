@@ -67,6 +67,6 @@ jobs:
           platforms: linux/amd64,linux/arm64
           build-args: |
             APP_HOSTNAME=1time.io
-            SHOW_BLOG=false
+            SHOW_BLOG=true
           cache-from: type=gha,scope=web
           cache-to: type=gha,mode=max,scope=web
