@@ -1,0 +1,231 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import InlineCss from '../../components/InlineCss.astro';
+import LinkReadyTemplate from '../../components/LinkReadyTemplate.astro';
+import {absoluteUrl, siteHost} from '../../lib/siteConfig.js';
+import {Constants} from '../../lib/util.js';
+
+const title = `Secure File Sharing — Encrypted One-Time Links | ${siteHost}`;
+const description = 'Send encrypted files with one-time download links. Browser-side zero-knowledge encryption, optional passphrase, no signup.';
+const maxMb = Constants.maxFileSizeBytes / (1024 * 1024);
+
+const faqItems = [
+    {
+        question: 'How does secure file sharing work on 1time.io?',
+        answer: 'Your file is packed and encrypted in the browser before upload. The server stores only encrypted bytes. The download link works once, and the file is deleted after it is downloaded or when the expiry time is reached.',
+    },
+    {
+        question: 'Can the server see my file name or contents?',
+        answer: 'No. The file contents and file metadata stay inside the encrypted payload. For now, the filename, MIME type, and size are not stored separately on the server.',
+    },
+    {
+        question: 'Can I protect the file link with an extra passphrase?',
+        answer: 'Yes. Add an optional passphrase when creating the link. The recipient will need both the link and that passphrase to decrypt the file.',
+    },
+    {
+        question: 'What files can I send securely?',
+        answer: `Any file up to ${maxMb} MB, including PDFs, text files, archives, certificates, configuration exports, screenshots, and private documents.`,
+    },
+];
+
+const jsonLd = [
+    {
+        '@context': 'https://schema.org',
+        '@type': 'WebPage',
+        name: 'Secure File Sharing',
+        description: 'Send encrypted files with one-time download links. Browser-side zero-knowledge encryption, optional passphrase, and no signup.',
+        url: absoluteUrl('/secure-file-sharing/'),
+        isPartOf: absoluteUrl('/'),
+    },
+    {
+        '@context': 'https://schema.org',
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+            {'@type': 'ListItem', position: 1, name: 'Home', item: absoluteUrl('/')},
+            {'@type': 'ListItem', position: 2, name: 'Secure File Sharing', item: absoluteUrl('/secure-file-sharing/')},
+        ],
+    },
+    {
+        '@context': 'https://schema.org',
+        '@type': 'WebApplication',
+        name: 'Secure File Sharing',
+        url: absoluteUrl('/secure-file-sharing/'),
+        description: 'Send encrypted files with one-time download links. Browser-side zero-knowledge encryption, optional passphrase, and no signup.',
+        applicationCategory: 'SecurityApplication',
+        operatingSystem: 'Any',
+        offers: {'@type': 'Offer', price: '0', priceCurrency: 'USD'},
+        featureList: 'End-to-end file encryption, One-time download, Optional passphrase, Auto-expiry, Zero-knowledge architecture',
+    },
+    {
+        '@context': 'https://schema.org',
+        '@type': 'FAQPage',
+        mainEntity: faqItems.map((item) => ({
+            '@type': 'Question',
+            name: item.question,
+            acceptedAnswer: {'@type': 'Answer', text: item.answer},
+        })),
+    },
+];
+---
+<BaseLayout
+    title={title}
+    description={description}
+    canonical="/secure-file-sharing/"
+    ogImage="/1time-og-main.png"
+    ogImageAlt="Secure file sharing with encrypted one-time links"
+>
+    <InlineCss slot="head" name="home" />
+    <InlineCss slot="head" name="file-sharing" />
+    <InlineCss slot="head" name="link" />
+    <InlineCss slot="head" name="qr-panel" />
+    {jsonLd.map((schema) => (
+        <script slot="head" type="application/ld+json" set:html={JSON.stringify(schema)} is:inline></script>
+    ))}
+
+    <div class="share-flow-page">
+        <nav class="share-mode-nav" aria-label="Choose sharing mode">
+            <a href="/share-password-securely/" class="share-mode-link">Text Secret</a>
+            <a href="/secure-file-sharing/" class="share-mode-link share-mode-link-active">Secure File Sharing</a>
+        </nav>
+
+        <form id="secure-file-form">
+            <div class="form-field">
+                <label class="form-label">Your file, end-to-end encrypted.</label>
+                <div class="file-drop-zone" data-drop-zone>
+                    <input type="file" data-file-input style="display:none" />
+                    <div class="file-drop-prompt" data-file-prompt>
+                        <span class="file-drop-btn">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="M3 7.5A2.5 2.5 0 0 1 5.5 5H10l2 2h6.5A2.5 2.5 0 0 1 21 9.5v7A2.5 2.5 0 0 1 18.5 19h-13A2.5 2.5 0 0 1 3 16.5z" />
+                                <path d="M3 10h18" />
+                            </svg>
+                            Choose a file
+                        </span>
+                        <p>or drop it here</p>
+                        <p class="file-drop-limit">Max {maxMb} MB</p>
+                    </div>
+                    <div class="file-selected" data-file-selected hidden>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                        <span class="file-selected-name" data-file-name></span>
+                        <span class="file-selected-size" data-file-size></span>
+                        <button type="button" class="file-selected-remove" data-file-remove aria-label="Remove file">&times;</button>
+                    </div>
+                </div>
+                <p class="form-help form-help-error" data-file-error hidden></p>
+            </div>
+
+            <div class="file-progress" data-file-progress hidden aria-live="polite">
+                <div class="file-progress-head">
+                    <span class="file-progress-label" data-progress-label></span>
+                    <span class="file-progress-value" data-progress-value></span>
+                </div>
+                <div class="file-progress-track" data-progress-track>
+                    <div class="file-progress-fill" data-progress-fill style="width:0%"></div>
+                </div>
+                <p class="form-help" data-progress-help></p>
+            </div>
+
+            <div class="form-actions share-primary-actions">
+                <button class="btn btn-primary btn-lg" disabled type="submit">Create file link</button>
+            </div>
+
+            <div class="options-grid">
+                <div class="form-field" style="margin-bottom:0">
+                    <label class="form-label" for="secretKey">Additional passphrase</label>
+                    <input class="form-input" id="secretKey" placeholder="Optional extra security" type="text" />
+                    <p class="form-help">Recipient will need this to decrypt</p>
+                </div>
+                <div class="form-field" style="margin-bottom:0">
+                    <label class="form-label" for="duration">Expire after</label>
+                    <select class="form-select" id="duration">
+                        <option value="1" selected>1 day</option>
+                        <option value="3">3 days</option>
+                        <option value="7">7 days</option>
+                        <option value="30">30 days</option>
+                    </select>
+                    <p class="form-help">Link expires even if unread</p>
+                </div>
+            </div>
+        </form>
+
+        <LinkReadyTemplate />
+
+        <section class="seo-section">
+            <h1>Send Files Securely with Encrypted One-Time Links</h1>
+            <h2>Why use one-time encrypted file sharing?</h2>
+            <p>
+                Regular file sharing leaves copies sitting in chat history, email inboxes, and cloud
+                folders for far longer than necessary. {siteHost} is built for the opposite use case:
+                deliver a sensitive file once, let the recipient download it, and remove it from the server.
+            </p>
+
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-card-header">
+                        <div class="feature-card-icon" aria-hidden="true">&#x1f4c2;</div>
+                        <h2>Encrypted before upload</h2>
+                    </div>
+                    <p>The browser encrypts the file first. The server only receives encrypted bytes.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-card-header">
+                        <div class="feature-card-icon" aria-hidden="true">&#x1f510;</div>
+                        <h2>Optional passphrase</h2>
+                    </div>
+                    <p>Add a second factor so the link alone is not enough to decrypt the file.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-card-header">
+                        <div class="feature-card-icon" aria-hidden="true">&#x1f4a3;</div>
+                        <h2>One-time download</h2>
+                    </div>
+                    <p>Once the recipient downloads the file, the stored copy is deleted from the server.</p>
+                </div>
+                <a href="/share-password-securely/" class="feature-card feature-card-link">
+                    <div class="feature-card-header">
+                        <div class="feature-card-icon" aria-hidden="true">&#x1f4dd;</div>
+                        <h2>Text Secret Sharing</h2>
+                    </div>
+                    <p>Need to send a password, API key, or short note instead of a file? Use secure password sharing.</p>
+                </a>
+            </div>
+
+            <h2>What secure file sharing is good for</h2>
+            <p>
+                This page is best for one-off handoffs: configuration exports, client certificates,
+                NDA PDFs, database backups, screenshots with sensitive data, support bundles, and internal
+                documents that should not live forever in Slack, email, or a shared drive.
+            </p>
+
+            <h2>How the encrypted file flow works</h2>
+            <p>
+                Choose a file, optionally add a passphrase, and create the link. The browser packs the file
+                together with its metadata, encrypts the whole payload locally, and uploads only the encrypted blob.
+                The recipient gets a one-time download link. On open, the browser decrypts the file locally and
+                the server-side copy is destroyed.
+            </p>
+
+            <h2>Frequently asked questions</h2>
+            {faqItems.map((item) => (
+                <div class="feature-card" style="margin-bottom:12px">
+                    <div class="feature-card-header"><h2>{item.question}</h2></div>
+                    <p>{item.answer}</p>
+                </div>
+            ))}
+
+            <h2>Learn more</h2>
+            <nav class="seo-nav">
+                <a href="/share-password-securely/">Share passwords securely</a>
+                <a href="/blog/how-to-share-passwords-securely/">How to share passwords securely</a>
+                <a href="/blog/how-to-share-api-keys/">How to share API keys securely</a>
+                <a href="/blog/stop-sending-passwords-over-slack/">Stop sending passwords over Slack</a>
+                <a href="/blog/share-secrets-from-terminal/">Share secrets from terminal</a>
+                <a href="/about/">About 1time.io</a>
+            </nav>
+        </section>
+    </div>
+
+    <script>
+        import '../../islands/secure-file-share.ts';
+    </script>
+</BaseLayout>

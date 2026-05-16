@@ -1,0 +1,206 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import InlineCss from '../components/InlineCss.astro';
+import LinkReadyTemplate from '../components/LinkReadyTemplate.astro';
+import {siteHost, siteUrl} from '../lib/siteConfig.js';
+
+const title = `${siteHost} — Encrypted One-Time Secret Links | Free, No Signup`;
+const description = 'Share passwords, API keys, and files via self-destructing links. Zero-knowledge AES-256 encryption in your browser. Open source.';
+
+const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: siteHost,
+    url: siteUrl,
+    description: 'Share passwords, API keys, and files via encrypted one-time secret links. Zero-knowledge encryption, free, open source, and no signup.',
+    applicationCategory: 'SecurityApplication',
+    operatingSystem: 'Any',
+    offers: {'@type': 'Offer', price: '0', priceCurrency: 'USD'},
+    featureList: 'End-to-end encryption, One-time secret links, Password sharing, API key sharing, Encrypted file sharing, QR code sharing, Auto-expiry, CLI, Zero-knowledge architecture, Self-hosted',
+};
+---
+<BaseLayout
+    title={title}
+    description={description}
+    canonical="/"
+    ogImage="/1time-og-main.png"
+    ogImageAlt={`${siteHost} — Encrypted One-Time Secret Links`}
+>
+    <InlineCss slot="head" name="home" />
+    <InlineCss slot="head" name="link" />
+    <InlineCss slot="head" name="qr-panel" />
+    <script slot="head" type="application/ld+json" set:html={JSON.stringify(jsonLd)} is:inline></script>
+
+    <div class="share-flow-page">
+        <nav class="share-mode-nav" aria-label="Choose sharing mode">
+            <a href="/" class="share-mode-link share-mode-link-active">Text Secret</a>
+            <a href="/secure-file-sharing/" class="share-mode-link">Secure File Sharing</a>
+        </nav>
+
+        <form id="new-message-form">
+            <div class="form-field">
+                <label class="form-label" for="secretMessage">Your secret message, end-to-end encrypted.</label>
+                <textarea
+                    autofocus
+                    class="form-textarea"
+                    id="secretMessage"
+                    placeholder="Paste a password, API key, private note, or any sensitive text..."
+                    rows="5"
+                ></textarea>
+            </div>
+
+            <div class="form-actions share-primary-actions">
+                <button class="btn btn-primary btn-lg" disabled type="submit">Create one-time link</button>
+            </div>
+
+            <div class="options-grid">
+                <div class="form-field" style="margin-bottom:0">
+                    <label class="form-label" for="secretKey">Additional passphrase</label>
+                    <input class="form-input" id="secretKey" placeholder="Optional extra security" type="text" />
+                    <p class="form-help">Recipient will need this to decrypt</p>
+                </div>
+                <div class="form-field" style="margin-bottom:0">
+                    <label class="form-label" for="duration">Expire after</label>
+                    <select class="form-select" id="duration">
+                        <option value="1" selected>1 day</option>
+                        <option value="3">3 days</option>
+                        <option value="7">7 days</option>
+                        <option value="30">30 days</option>
+                    </select>
+                    <p class="form-help">Link expires even if unread</p>
+                </div>
+            </div>
+        </form>
+
+        <LinkReadyTemplate />
+
+        <section class="seo-section">
+            <h1>Share Secrets Securely with Encrypted One-Time Links</h1>
+            <p>
+                {siteHost} is a free, open-source tool for sharing passwords, API keys, and files through
+                encrypted, self-destructing links. Messages are encrypted in your browser using AES-256-GCM —
+                the server never sees your data. Each link works once, then the secret is permanently deleted.
+                No signup required.
+            </p>
+            <p>
+                Use it to <a href="/share-password-securely/">share passwords securely</a>, send
+                database credentials to a contractor, deliver <a href="/secure-file-sharing/">encrypted
+                files</a> up to 10 MB, or transmit any sensitive text without it lingering in Slack, email,
+                or chat history.
+            </p>
+
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-card-header">
+                        <div class="feature-card-icon" aria-hidden="true">&#x1f512;</div>
+                        <h2>End-to-end encrypted</h2>
+                    </div>
+                    <p>AES encryption happens in your browser. The server only stores ciphertext.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-card-header">
+                        <div class="feature-card-icon" aria-hidden="true">&#x1f4a5;</div>
+                        <h2>One-time access</h2>
+                    </div>
+                    <p>Each link works exactly once. After reading, the data is permanently deleted.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-card-header">
+                        <div class="feature-card-icon" aria-hidden="true">&#x23f1;&#xfe0f;</div>
+                        <h2>Auto-expiry</h2>
+                    </div>
+                    <p>Links self-destruct after 1 to 30 days, even if nobody opens them.</p>
+                </div>
+                <a href="/secure-file-sharing/" class="feature-card feature-card-link">
+                    <div class="feature-card-header">
+                        <div class="feature-card-icon" aria-hidden="true">&#x1f4c1;</div>
+                        <h2>Secure File Sharing</h2>
+                    </div>
+                    <p>Send encrypted files through one-time download links without exposing filenames or contents.</p>
+                </a>
+                <a href="/password-generator/" class="feature-card feature-card-link">
+                    <div class="feature-card-header">
+                        <div class="feature-card-icon" aria-hidden="true">&#x1f511;</div>
+                        <h2>Password Generator</h2>
+                    </div>
+                    <p>Create a strong, high-entropy password in your browser for critical accounts.</p>
+                </a>
+                <a href="/share-passwords-with-qr-code/" class="feature-card feature-card-link">
+                    <div class="feature-card-header">
+                        <div class="feature-card-icon" aria-hidden="true">&#x1f4f1;</div>
+                        <h2>QR Code Sharing</h2>
+                    </div>
+                    <p>Reveal a one-time QR code for nearby or cross-device password sharing.</p>
+                </a>
+                <a href="https://www.npmjs.com/package/@1time/cli" class="feature-card feature-card-link" target="_blank" rel="noopener noreferrer">
+                    <div class="feature-card-header">
+                        <div class="feature-card-icon" aria-hidden="true">&#x1f4bb;</div>
+                        <h2>CLI</h2>
+                    </div>
+                    <p>Share secrets from your terminal. <code style="font-size:0.85em">printf 'secret' | 1time send</code></p>
+                </a>
+            </div>
+
+            <h2>How it works</h2>
+            <p>
+                Type or paste your secret above. {siteHost} encrypts it with a unique key directly in your
+                browser. You get a one-time link containing the decryption key in the URL fragment, which is
+                never sent to the server. Share it with your recipient. Once they open it, the secret is
+                decrypted locally and permanently deleted from our servers.
+            </p>
+
+            <h2>How self-destructing links work</h2>
+            <p>
+                A <strong>self-destructing link</strong> is a URL that reveals its content exactly
+                once. The recipient clicks, reads the secret, and the server permanently deletes
+                the data — the same link becomes a dead 404 forever after. {siteHost} generates
+                these one-time links for free, with end-to-end encryption handled in your browser,
+                so even we never see what you share. Learn more in our guide to{' '}
+                <a href="/blog/self-destructing-messages-explained/">how self-destructing links work</a>.
+            </p>
+
+            <h2>Perfect for sharing</h2>
+            <p>
+                Passwords, API keys, SSH keys, private notes, access tokens, WiFi passwords, two-factor backup
+                codes, database credentials, configuration secrets, or any text you need to share securely just once.
+            </p>
+
+            <h2>Ways to share securely</h2>
+            <nav class="seo-nav">
+                <a href="/share-password-securely/">Share Passwords Securely</a>
+                <a href="/secure-file-sharing/">Secure File Sharing</a>
+                <a href="/share-passwords-with-qr-code/">Share via QR Code</a>
+                <a href="/blog/how-to-share-passwords-securely/">How to Share Passwords Securely</a>
+                <a href="/blog/how-to-share-api-keys/">How to Share API Keys Securely</a>
+                <a href="/blog/share-secrets-from-terminal/">Share Secrets from Terminal</a>
+            </nav>
+
+            <h2>Security tools</h2>
+            <nav class="seo-nav">
+                <a href="/password-generator/">Password Generator</a>
+                <a href="/passphrase-generator/">Passphrase Generator</a>
+                <a href="/wifi-password-generator/">WiFi Password Generator</a>
+                <a href="/api-key-generator/">API Key Generator</a>
+                <a href="/password-generator-12-characters/">12-Character Password</a>
+                <a href="/password-generator-14-characters/">14-Character Password</a>
+                <a href="/password-generator-15-characters/">15-Character Password</a>
+                <a href="/password-generator-16-characters/">16-Character Password</a>
+            </nav>
+
+            <h2>From the blog</h2>
+            <nav class="seo-nav">
+                <a href="/blog/stop-sending-passwords-over-slack/">Stop Sending Passwords Over Slack</a>
+                <a href="/blog/how-to-share-wifi-password/">How to Share Your WiFi Password Securely</a>
+                <a href="/blog/is-slack-safe-for-passwords/">Is Slack Safe for Passwords?</a>
+                <a href="/blog/onetimesecret-alternative/">1time.io vs OneTimeSecret</a>
+                <a href="/blog/privnote-alternative/">1time.io vs Privnote</a>
+                <a href="/blog/team-password-sharing/">Team Password Sharing</a>
+                <a href="/blog/how-to-send-passwords-over-email/">How to Send Passwords Over Email</a>
+            </nav>
+        </section>
+    </div>
+
+    <script>
+        import '../islands/new-message.ts';
+    </script>
+</BaseLayout>

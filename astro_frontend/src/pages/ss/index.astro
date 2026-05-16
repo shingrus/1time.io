@@ -1,0 +1,49 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import InlineCss from '../../components/InlineCss.astro';
+import {siteHost} from '../../lib/siteConfig.js';
+
+const title = `In-Memory Stats — ${siteHost}`;
+const description = `Current in-memory stats snapshot for ${siteHost}.`;
+---
+<BaseLayout
+    title={title}
+    description={description}
+    robots="noindex, nofollow"
+>
+    <InlineCss slot="head" name="stats" />
+
+    <div class="stats-page" id="stats-page">
+        <div class="stats-header">
+            <h1>In-Memory Stats</h1>
+        </div>
+
+        <div class="stats-grid">
+            <section class="stats-card">
+                <span class="stats-label">Shared texts</span>
+                <strong class="stats-value" data-stat-secrets>0</strong>
+            </section>
+            <section class="stats-card">
+                <span class="stats-label">Shared files</span>
+                <strong class="stats-value" data-stat-files>0</strong>
+            </section>
+            <section class="stats-card">
+                <span class="stats-label">Buffered page hits</span>
+                <strong class="stats-value" data-stat-pending>0</strong>
+            </section>
+        </div>
+
+        <section class="stats-table-card">
+            <div class="stats-table-header">
+                <h2>Pending page-hit buckets</h2>
+                <span class="stats-status stats-status-loading" data-stat-status>loading</span>
+            </div>
+            <p class="stats-empty" data-stat-empty>No buffered page hits at the moment.</p>
+            <div class="stats-table" data-stat-table hidden></div>
+        </section>
+    </div>
+
+    <script>
+        import '../../islands/stats-snapshot.ts';
+    </script>
+</BaseLayout>
