@@ -2,6 +2,8 @@
 
 > Free encrypted one-time secret and file sharing. Share passwords, API keys, private notes, and encrypted files through self-destructing links — zero-knowledge, no signup, open source.
 
+Also known as: one-time link, self-destructing link, one-time URL, single-use link, disappearing link, one-time file sharing.
+
 ## What is 1time.io?
 
 1time.io is a web tool and CLI for sharing secrets and files securely. Text secrets are encrypted entirely in your browser using AES-GCM-256 with a key derived via HKDF (RFC 5869). File shares use the same zero-knowledge model: the web app encrypts the file and its metadata before upload, and the CLI encrypts locally using the same protocol, so the server never sees the plaintext. The decryption key lives only in the URL fragment, which is never sent to the server. Links self-destruct after the first read or authorized download attempt, or after a configurable expiry.
@@ -18,7 +20,7 @@ Key facts:
 - CLI available: npm install -g @1time/cli
 - CLI commands: `send`, `read`, `send-file`, `read-file`
 
-## File Sharing Support
+## One-Time File Sharing Support
 
 - Web app route: https://1time.io/secure-file-sharing/
 - One-time file link format: `https://1time.io/f/#...`
@@ -40,7 +42,7 @@ Key facts:
 
 - Homepage / Secret sharing tool: https://1time.io/
 - Share Passwords Securely: https://1time.io/share-password-securely/
-- Secure File Sharing: https://1time.io/secure-file-sharing/
+- One-Time File Sharing: https://1time.io/secure-file-sharing/
 - Share Passwords Safely in Microsoft Teams: https://1time.io/share-passwords-microsoft-teams/
 - Password Generator: https://1time.io/password-generator/
 - Passphrase Generator: https://1time.io/passphrase-generator/

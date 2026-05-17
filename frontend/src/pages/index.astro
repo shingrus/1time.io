@@ -4,15 +4,15 @@ import InlineCss from '../components/InlineCss.astro';
 import NewMessageForm from '../components/NewMessageForm.astro';
 import {siteHost, siteUrl} from '../lib/siteConfig.js';
 
-const title = `${siteHost} — Encrypted One-Time Secret Links | Free, No Signup`;
-const description = 'Share passwords, API keys, and files via self-destructing links. Zero-knowledge AES-256 encryption in your browser. Open source.';
+const title = `One-Time Link to Share Passwords, API Keys & Files | Free, No Signup`;
+const description = 'Create a one-time link to share passwords, API keys, and files. Self-destructing, end-to-end encrypted in your browser with AES-256. Free, open source, no signup.';
 
 const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'WebApplication',
     name: siteHost,
     url: siteUrl,
-    description: 'Share passwords, API keys, and files via encrypted one-time secret links. Zero-knowledge encryption, free, open source, and no signup.',
+    description: 'Create a one-time link to share passwords, API keys, and files. Self-destructing, end-to-end encrypted in your browser. Free, open source, no signup.',
     applicationCategory: 'SecurityApplication',
     operatingSystem: 'Any',
     offers: {'@type': 'Offer', price: '0', priceCurrency: 'USD'},
@@ -24,7 +24,7 @@ const jsonLd = {
     description={description}
     canonical="/"
     ogImage="/1time-og-main.png"
-    ogImageAlt={`${siteHost} — Encrypted One-Time Secret Links`}
+    ogImageAlt={`${siteHost} — One-time link to share passwords, API keys, and files`}
     trackStats
 >
     <InlineCss slot="head" name="home" />
@@ -35,7 +35,7 @@ const jsonLd = {
     <div class="share-flow-page">
         <nav class="share-mode-nav" aria-label="Choose sharing mode">
             <a href="/" class="share-mode-link share-mode-link-active">Text Secret</a>
-            <a href="/secure-file-sharing/" class="share-mode-link">Secure File Sharing</a>
+            <a href="/secure-file-sharing/" class="share-mode-link">One-Time File Sharing</a>
         </nav>
 
         <NewMessageForm />
@@ -50,9 +50,9 @@ const jsonLd = {
             </p>
             <p>
                 Use it to <a href="/share-password-securely/">share passwords securely</a>, send
-                database credentials to a contractor, deliver <a href="/secure-file-sharing/">encrypted
-                files</a> up to 10 MB, or transmit any sensitive text without it lingering in Slack, email,
-                or chat history.
+                database credentials to a contractor, deliver <a href="/secure-file-sharing/">one-time
+                file links</a> up to 10 MB, or transmit any sensitive text without it lingering in Slack,
+                email, or chat history.
             </p>
 
             <div class="features-grid">
@@ -80,7 +80,7 @@ const jsonLd = {
                 <a href="/secure-file-sharing/" class="feature-card feature-card-link">
                     <div class="feature-card-header">
                         <div class="feature-card-icon" aria-hidden="true">&#x1f4c1;</div>
-                        <h2>Secure File Sharing</h2>
+                        <h2>One-Time File Sharing</h2>
                     </div>
                     <p>Send encrypted files through one-time download links without exposing filenames or contents.</p>
                 </a>
@@ -117,11 +117,14 @@ const jsonLd = {
 
             <h2>How self-destructing links work</h2>
             <p>
-                A <strong>self-destructing link</strong> is a URL that reveals its content exactly
-                once. The recipient clicks, reads the secret, and the server permanently deletes
-                the data — the same link becomes a dead 404 forever after. {siteHost} generates
-                these one-time links for free, with end-to-end encryption handled in your browser,
-                so even we never see what you share. Learn more in our guide to{' '}
+                A <strong>self-destructing link</strong> — also called a one-time link, single-use link,
+                or disappearing link — is a URL that reveals its content exactly once. The recipient
+                clicks, reads the secret, and the server permanently deletes the data; the same
+                one-time URL becomes a dead 404 forever after. {siteHost} generates these one-time
+                links for free, with end-to-end encryption handled in your browser, so even we never
+                see what you share. Whether you call it a self-destruct link, a one-time secret link,
+                or a disappearing message, the mechanism is the same: encrypt locally, share once,
+                destroy on read. Learn more in our guide to{' '}
                 <a href="/blog/self-destructing-messages-explained/">how self-destructing links work</a>.
             </p>
 
@@ -134,7 +137,7 @@ const jsonLd = {
             <h2>Ways to share securely</h2>
             <nav class="seo-nav">
                 <a href="/share-password-securely/">Share Passwords Securely</a>
-                <a href="/secure-file-sharing/">Secure File Sharing</a>
+                <a href="/secure-file-sharing/">One-Time File Sharing</a>
                 <a href="/share-passwords-with-qr-code/">Share via QR Code</a>
                 <a href="/blog/how-to-share-passwords-securely/">How to Share Passwords Securely</a>
                 <a href="/blog/how-to-share-api-keys/">How to Share API Keys Securely</a>
