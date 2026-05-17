@@ -81,6 +81,244 @@ test('run send warns when the secret is passed as a positional argv argument', a
     assert.match(stdout.getOutput(), /^https:\/\/1time\.io\/v\/#/);
 });
 
+test('run send accepts compact --expires-in day and hour units', async () => {
+    const stdout = createWritableCapture();
+    const stderr = createWritableCapture();
+    let requestBody = null;
+
+    const exitCode = await run(['send', '--expires-in', '2d23h', 'argv secret'], {
+        stdin: createStdin('', true),
+        stdout: stdout.stream,
+        stderr: stderr.stream,
+        env: {},
+        fetchImpl: async (_url, options) => {
+            requestBody = JSON.parse(options.body);
+            return {
+                ok: true,
+                json: async () => ({
+                    status: 'ok',
+                    newId: 'abc123',
+                }),
+            };
+        },
+    });
+
+    assert.equal(exitCode, 0);
+    assert.equal(requestBody.duration, 255600);
+    assert.match(stderr.getOutput(), /Warning: passing the secret in argv/);
+    assert.match(stdout.getOutput(), /^https:\/\/1time\.io\/v\/#/);
+});
+
+test('run send accepts --expires-in equals form', async () => {
+    const stdout = createWritableCapture();
+    const stderr = createWritableCapture();
+    let requestBody = null;
+
+    const exitCode = await run(['send', '--expires-in=2d23h', 'argv secret'], {
+        stdin: createStdin('', true),
+        stdout: stdout.stream,
+        stderr: stderr.stream,
+        env: {},
+        fetchImpl: async (_url, options) => {
+            requestBody = JSON.parse(options.body);
+            return {
+                ok: true,
+                json: async () => ({
+                    status: 'ok',
+                    newId: 'abc123',
+                }),
+            };
+        },
+    });
+
+    assert.equal(exitCode, 0);
+    assert.equal(requestBody.duration, 255600);
+    assert.match(stderr.getOutput(), /Warning: passing the secret in argv/);
+    assert.match(stdout.getOutput(), /^https:\/\/1time\.io\/v\/#/);
+});
+
+test('run send rejects --expires-in units in reverse order', async () => {
+    const stdout = createWritableCapture();
+    const stderr = createWritableCapture();
+    let fetchCalled = false;
+
+    const exitCode = await run(['send', '--expires-in', '23h2d', 'argv secret'], {
+        stdin: createStdin('', true),
+        stdout: stdout.stream,
+        stderr: stderr.stream,
+        env: {},
+        fetchImpl: async () => {
+            fetchCalled = true;
+            throw new Error('should not fetch');
+        },
+    });
+
+    assert.equal(exitCode, 1);
+    assert.equal(stdout.getOutput(), '');
+    assert.equal(fetchCalled, false);
+    assert.match(stderr.getOutput(), /"23h2d": use d and h units/);
+});
+
+test('run send accepts --expires-in at the maximum boundary', async () => {
+    const stdout = createWritableCapture();
+    const stderr = createWritableCapture();
+    let requestBody = null;
+
+    const exitCode = await run(['send', '--expires-in', '30d', 'argv secret'], {
+        stdin: createStdin('', true),
+        stdout: stdout.stream,
+        stderr: stderr.stream,
+        env: {},
+        fetchImpl: async (_url, options) => {
+            requestBody = JSON.parse(options.body);
+            return {
+                ok: true,
+                json: async () => ({
+                    status: 'ok',
+                    newId: 'abc123',
+                }),
+            };
+        },
+    });
+
+    assert.equal(exitCode, 0);
+    assert.equal(requestBody.duration, 2592000);
+    assert.match(stderr.getOutput(), /Warning: passing the secret in argv/);
+    assert.match(stdout.getOutput(), /^https:\/\/1time\.io\/v\/#/);
+});
+
+test('run send rejects whitespace inside --expires-in', async () => {
+    const stdout = createWritableCapture();
+    const stderr = createWritableCapture();
+    let fetchCalled = false;
+
+    const exitCode = await run(['send', '--expires-in', '2d 23h', 'argv secret'], {
+        stdin: createStdin('', true),
+        stdout: stdout.stream,
+        stderr: stderr.stream,
+        env: {},
+        fetchImpl: async () => {
+            fetchCalled = true;
+            throw new Error('should not fetch');
+        },
+    });
+
+    assert.equal(exitCode, 1);
+    assert.equal(stdout.getOutput(), '');
+    assert.equal(fetchCalled, false);
+    assert.match(stderr.getOutput(), /"2d 23h": use d and h units/);
+});
+
+test('run send rejects zero --expires-in values', async () => {
+    const stdout = createWritableCapture();
+    const stderr = createWritableCapture();
+    let fetchCalled = false;
+
+    const exitCode = await run(['send', '--expires-in', '0d', 'argv secret'], {
+        stdin: createStdin('', true),
+        stdout: stdout.stream,
+        stderr: stderr.stream,
+        env: {},
+        fetchImpl: async () => {
+            fetchCalled = true;
+            throw new Error('should not fetch');
+        },
+    });
+
+    assert.equal(exitCode, 1);
+    assert.equal(stdout.getOutput(), '');
+    assert.equal(fetchCalled, false);
+    assert.match(stderr.getOutput(), /"0d": duration must be greater than 0/);
+});
+
+test('run send rejects empty --expires-in values', async () => {
+    const stdout = createWritableCapture();
+    const stderr = createWritableCapture();
+    let fetchCalled = false;
+
+    const exitCode = await run(['send', '--expires-in', '', 'argv secret'], {
+        stdin: createStdin('', true),
+        stdout: stdout.stream,
+        stderr: stderr.stream,
+        env: {},
+        fetchImpl: async () => {
+            fetchCalled = true;
+            throw new Error('should not fetch');
+        },
+    });
+
+    assert.equal(exitCode, 1);
+    assert.equal(stdout.getOutput(), '');
+    assert.equal(fetchCalled, false);
+    assert.match(stderr.getOutput(), /Invalid expires-in value "": use d and h units/);
+});
+
+test('run send rejects --expires-in above the maximum', async () => {
+    const stdout = createWritableCapture();
+    const stderr = createWritableCapture();
+    let fetchCalled = false;
+
+    const exitCode = await run(['send', '--expires-in', '30d1h', 'argv secret'], {
+        stdin: createStdin('', true),
+        stdout: stdout.stream,
+        stderr: stderr.stream,
+        env: {},
+        fetchImpl: async () => {
+            fetchCalled = true;
+            throw new Error('should not fetch');
+        },
+    });
+
+    assert.equal(exitCode, 1);
+    assert.equal(stdout.getOutput(), '');
+    assert.equal(fetchCalled, false);
+    assert.match(stderr.getOutput(), /"30d1h": maximum is 30d/);
+});
+
+test('run send rejects unsupported --expires-in units', async () => {
+    const stdout = createWritableCapture();
+    const stderr = createWritableCapture();
+    let fetchCalled = false;
+
+    const exitCode = await run(['send', '--expires-in', '30m', 'argv secret'], {
+        stdin: createStdin('', true),
+        stdout: stdout.stream,
+        stderr: stderr.stream,
+        env: {},
+        fetchImpl: async () => {
+            fetchCalled = true;
+            throw new Error('should not fetch');
+        },
+    });
+
+    assert.equal(exitCode, 1);
+    assert.equal(stdout.getOutput(), '');
+    assert.equal(fetchCalled, false);
+    assert.match(stderr.getOutput(), /"30m": use d and h units/);
+});
+
+test('run send rejects duplicate --expires-in units', async () => {
+    const stdout = createWritableCapture();
+    const stderr = createWritableCapture();
+    let fetchCalled = false;
+
+    const exitCode = await run(['send', '--expires-in', '1d2d', 'argv secret'], {
+        stdin: createStdin('', true),
+        stdout: stdout.stream,
+        stderr: stderr.stream,
+        env: {},
+        fetchImpl: async () => {
+            fetchCalled = true;
+            throw new Error('should not fetch');
+        },
+    });
+
+    assert.equal(exitCode, 1);
+    assert.equal(stdout.getOutput(), '');
+    assert.equal(fetchCalled, false);
+    assert.match(stderr.getOutput(), /"1d2d": use d and h units/);
+});
+
 test('createSecretLink and revealSecret round-trip through the API protocol', async () => {
     let storedPayload = null;
     const createdLink = await createSecretLink({
@@ -151,6 +389,38 @@ test('run send-file uploads a file and prints the created file link', async () =
     assert.ok(requestBody.get('file') instanceof Blob);
     assert.match(stdout.getOutput(), /^https:\/\/1time\.example\/f\/#/);
     assert.match(stdout.getOutput(), /file123/);
+});
+
+test('run send-file accepts --expires-in', async () => {
+    const tempDir = await mkdtemp(join(tmpdir(), '1time-cli-send-file-'));
+    const sourcePath = join(tempDir, 'secret.txt');
+    await writeFile(sourcePath, 'file from cli');
+
+    const stdout = createWritableCapture();
+    const stderr = createWritableCapture();
+    let requestBody = null;
+
+    const exitCode = await run(['send-file', '--expires-in', '23h', sourcePath], {
+        stdin: createStdin('', true),
+        stdout: stdout.stream,
+        stderr: stderr.stream,
+        env: {},
+        fetchImpl: async (_url, options) => {
+            requestBody = options.body;
+            return new Response(JSON.stringify({
+                status: 'ok',
+                newId: 'file123',
+            }), {
+                status: 200,
+                headers: {'Content-Type': 'application/json'},
+            });
+        },
+    });
+
+    assert.equal(exitCode, 0);
+    assert.equal(stderr.getOutput(), '');
+    assert.equal(requestBody.get('duration'), '82800');
+    assert.match(stdout.getOutput(), /^https:\/\/1time\.io\/f\/#/);
 });
 
 test('run read-file downloads the decrypted file into the current directory', async () => {

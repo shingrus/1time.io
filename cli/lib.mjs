@@ -19,6 +19,10 @@ const secretArgWarning = 'Warning: passing the secret in argv may leak via shell
 const passphraseArgWarning = 'Warning: passing the passphrase in argv may leak via shell history or process listings.\n';
 const textEncoder = new TextEncoder();
 const textDecoder = new TextDecoder();
+const secondsPerHour = 60 * 60;
+const secondsPerDay = secondsPerHour * 24;
+const maxExpiresInSeconds = 30 * secondsPerDay;
+const defaultExpiresInSeconds = ProtocolConstants.defaultDuration * secondsPerDay;
 
 function write(stream, text) {
     if (text) {
@@ -30,9 +34,9 @@ export function getHelpText() {
     return `1time v0
 
 Usage:
-  1time send [--host <host-or-origin>] [secret]
+  1time send [--host <host-or-origin>] [--expires-in <Nd|Nh|NdNh>] [secret]
   1time read [--host <host-or-origin>] <link>
-  1time send-file [--host <host-or-origin>] [--passphrase <passphrase>] <path>
+  1time send-file [--host <host-or-origin>] [--expires-in <Nd|Nh|NdNh>] [--passphrase <passphrase>] <path>
   1time read-file [--host <host-or-origin>] [--passphrase <passphrase>] [--out <path>] <link>
   1time --help
 
@@ -42,9 +46,8 @@ Input precedence for send:
   3. positional secret argument (warns because argv is not safe)
 
 Notes:
-  - read only supports links passed as an argument in v0
   - send-file/read-file support optional passphrases via --passphrase or 1TIME_PASSPHRASE
-  - custom expiry is not supported in v0
+  - --expires-in supports h and d units, for example 23h, 2d, or 2d23h (default 1d, max 30d)
   - http:// is only allowed for loopback hosts such as 127.0.0.1
 `;
 }
@@ -91,6 +94,30 @@ function resolveOptionalPassphrase({env, values, stderr}) {
     return '';
 }
 
+function parseExpiresIn(value) {
+    if (value === undefined) {
+        return defaultExpiresInSeconds;
+    }
+
+    const raw = String(value).trim().toLowerCase();
+    const match = /^(?:(\d+)d)?(?:(\d+)h)?$/.exec(raw);
+    if (!match || (!match[1] && !match[2])) {
+        throw new Error(`Invalid expires-in value "${raw}": use d and h units, for example 23h, 2d, or 2d23h.`);
+    }
+
+    const totalSeconds = Number(match[1] || 0) * secondsPerDay + Number(match[2] || 0) * secondsPerHour;
+
+    if (totalSeconds <= 0) {
+        throw new Error(`Invalid expires-in value "${raw}": duration must be greater than 0.`);
+    }
+
+    if (totalSeconds > maxExpiresInSeconds) {
+        throw new Error(`Invalid expires-in value "${raw}": maximum is 30d.`);
+    }
+
+    return totalSeconds;
+}
+
 async function postJson({origin, path, payload, fetchImpl}) {
     const response = await fetchImpl(buildApiUrl(origin, path), {
         method: 'POST',
@@ -107,7 +134,7 @@ async function postJson({origin, path, payload, fetchImpl}) {
     return response.json();
 }
 
-export async function createSecretLink({host, secret, fetchImpl}) {
+export async function createSecretLink({host, secret, expiresInSeconds = defaultExpiresInSeconds, fetchImpl}) {
     const origin = normalizeOrigin(host || ProtocolConstants.defaultHost);
     const generatedKey = getRandomString(ProtocolConstants.randomKeyLen);
     //left for later passphrase
@@ -118,7 +145,7 @@ export async function createSecretLink({host, secret, fetchImpl}) {
         payload: {
             secretMessage: encryptedMessage,
             hashedKey,
-            duration: ProtocolConstants.defaultDuration * 86400,
+            duration: expiresInSeconds,
         },
         fetchImpl,
     });
@@ -188,7 +215,7 @@ async function writeFileToAvailablePath(targetPath, fileBytes) {
     throw new Error(`Failed to allocate output path for ${targetPath}`);
 }
 
-async function createFileLink({host, filePath, passphrase = '', fetchImpl}) {
+async function createFileLink({host, filePath, passphrase = '', expiresInSeconds = defaultExpiresInSeconds, fetchImpl}) {
     const origin = normalizeOrigin(host || ProtocolConstants.defaultHost);
     const fileBytes = await readFile(filePath);
     const meta = {
@@ -204,7 +231,7 @@ async function createFileLink({host, filePath, passphrase = '', fetchImpl}) {
     const formData = new FormData();
     formData.append('file', new Blob([encryptedBytes]), 'encrypted.bin');
     formData.append('hashedKey', hashedKey);
-    formData.append('duration', String(ProtocolConstants.defaultDuration * 86400));
+    formData.append('duration', String(expiresInSeconds));
 
     const response = await fetchImpl(buildApiUrl(origin, 'saveFile'), {
         method: 'POST',
@@ -322,6 +349,9 @@ function parseSendArgs(args) {
             host: {
                 type: 'string',
             },
+            'expires-in': {
+                type: 'string',
+            },
         },
     });
 }
@@ -336,6 +366,9 @@ function parseSendFileArgs(args) {
                 short: 'h',
             },
             host: {
+                type: 'string',
+            },
+            'expires-in': {
                 type: 'string',
             },
             passphrase: {
@@ -414,6 +447,7 @@ export async function run(argv = process.argv.slice(2), io = {}) {
         }
 
         try {
+            const expiresInSeconds = parseExpiresIn(values['expires-in']);
             const secret = await resolveSecret({
                 stdin,
                 env,
@@ -426,6 +460,7 @@ export async function run(argv = process.argv.slice(2), io = {}) {
             const link = await createSecretLink({
                 host: values.host,
                 secret,
+                expiresInSeconds,
                 fetchImpl,
             });
             write(stdout, `${link}\n`);
@@ -448,10 +483,12 @@ export async function run(argv = process.argv.slice(2), io = {}) {
         }
 
         try {
+            const expiresInSeconds = parseExpiresIn(values['expires-in']);
             const link = await createFileLink({
                 host: values.host,
                 filePath: positionals[0],
                 passphrase: resolveOptionalPassphrase({env, values, stderr}),
+                expiresInSeconds,
                 fetchImpl,
             });
             write(stdout, `${link}\n`);
