@@ -1,0 +1,45 @@
+---
+import LinkReadyTemplate from './LinkReadyTemplate.astro';
+---
+<form id="new-message-form">
+    <div class="form-field">
+        <label class="form-label" for="secretMessage">Your secret message, end-to-end encrypted.</label>
+        <textarea
+            autofocus
+            class="form-textarea"
+            id="secretMessage"
+            placeholder="Paste a password, API key, private note, or any sensitive text..."
+            rows="5"
+        ></textarea>
+    </div>
+
+    <div class="form-actions share-primary-actions">
+        <button class="btn btn-primary btn-lg" disabled type="submit">Create one-time link</button>
+    </div>
+
+    <div class="options-grid">
+        <div class="form-field" style="margin-bottom:0">
+            <label class="form-label" for="secretKey">Additional passphrase</label>
+            <input class="form-input" id="secretKey" placeholder="Optional extra security" type="text" />
+            <p class="form-help">Recipient will need this to decrypt</p>
+        </div>
+        <div class="form-field" style="margin-bottom:0">
+            <label class="form-label" for="duration">Expire after</label>
+            <select class="form-select" id="duration">
+                <option value="1" selected>1 day</option>
+                <option value="3">3 days</option>
+                <option value="7">7 days</option>
+                <option value="30">30 days</option>
+            </select>
+            <p class="form-help">Link expires even if unread</p>
+        </div>
+    </div>
+
+    <p class="form-help form-help-error" data-message-error role="alert" hidden></p>
+</form>
+
+<LinkReadyTemplate />
+
+<script>
+    import '../islands/new-message.ts';
+</script>

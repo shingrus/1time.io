@@ -104,6 +104,14 @@ printf 'hello' | 1time send --host https://1time.io
 printf 'hello' | 1time send --host http://127.0.0.1:8080
 ```
 
+Set a custom expiry:
+
+```bash
+printf 'hello' | 1time send --expires-in 23h
+printf 'hello' | 1time send --expires-in 2d
+printf 'hello' | 1time send --expires-in 2d23h
+```
+
 ### `1time read <link>`
 
 Fetch and decrypt a one-time link.
@@ -136,6 +144,10 @@ Examples:
 1time send-file --host http://127.0.0.1:8080 --passphrase 'extra-passphrase' ./report.zip
 ```
 
+```bash
+1time send-file --expires-in 2d23h ./report.zip
+```
+
 ### `1time read-file <link>`
 
 Fetch, decrypt, and save a one-time file link.
@@ -159,6 +171,7 @@ Examples:
 ## Command Reference
 
 - `--host <host-or-origin>`
+- `--expires-in <duration>` for `send` and `send-file`; supports `h` and `d`, for example `23h`, `2d`, or `2d23h`; default is `1d`; maximum is `30d`
 - `--passphrase <passphrase>` for `send-file` and `read-file`
 - `--out <path>` for `read-file`
 - `-h`, `--help`
@@ -176,11 +189,10 @@ Examples:
 - `1time send 'secret'` is supported for convenience, but it is insecure because command-line arguments can leak through shell history and process listings.
 - `1time read <link>` also places the full secret link in command history and process listings. In this protocol, the URL fragment contains the decryption material.
 - `send-file` and `read-file` support optional passphrases via `--passphrase` or `1TIME_PASSPHRASE`.
-- Custom expiry is not yet supported from the CLI.
+- `--expires-in` is validated locally before the CLI sends the secret or file.
 
 ## Current Limitations
 
-- no custom expiry support yet
 - `read` currently accepts the link as a command argument only
 
 ## Local Development

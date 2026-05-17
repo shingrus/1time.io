@@ -42,7 +42,7 @@
 | **👤** | **No signup required** | Paste a secret, get a link, share it. No accounts, no tracking. |
 | **🔑** | **Built-in generators** | Password, passphrase, API key, and WiFi password generators included. |
 | **💻** | **First-party CLI** | `npm i -g @1time/cli` — pipe secrets from your terminal, perfect for DevOps workflows. |
-| **⚡** | **Lightweight stack** | Go + Redis backend, static Next.js frontend. Minimal resource usage. |
+| **⚡** | **Lightweight stack** | Go + Redis backend, static Astro frontend. Minimal resource usage. |
 
 ---
 
@@ -136,22 +136,11 @@ Both options start on `http://localhost:8080` with Redis persistence, encrypted 
 | `APP_HOSTNAME` | `1time.io` | Public hostname for links and metadata |
 | `APP_PORT` | `8080` | External HTTP port |
 | `DATA_DIR` | `./data` | Host path for Redis persistence and encrypted file storage |
-| `SHOW_BLOG` | `false` | Enable blog routes (for hosted version) |
-| `VAPID_PUBLIC_KEY` | empty | Public VAPID key for optional browser read notifications |
-| `VAPID_PRIVATE_KEY` | empty | Private VAPID key used by the backend to send push notifications |
-| `VAPID_SUBJECT` | `https://1time.io` | Push sender contact, usually an email address or `https://` URL |
+| `SHOW_BLOG` | `true` | Build-time flag for source-built web images |
 
 Put your own reverse proxy (Caddy, Traefik, nginx) in front for HTTPS/TLS termination.
 
 > **Note:** The frontend image is generic — changing `APP_HOSTNAME` does not require rebuilding. The hostname is injected at container startup.
-
-> **Push notifications:** browser read notifications require VAPID keys on the backend. The frontend loads the public key from `/api/frontConfig`; if it is missing, the notification checkbox remains disabled.
-
-Generate a VAPID key pair with OpenSSL:
-
-```bash
-tmp="$(mktemp)" && openssl ecparam -name prime256v1 -genkey -noout -out "$tmp" && printf 'VAPID_PRIVATE_KEY=' && openssl ec -in "$tmp" -noout -text 2>/dev/null | awk '/priv:/{p=1;next}/pub:/{p=0}p{gsub(/[: ]/,"");printf}' | xxd -r -p | base64 | tr '+/' '-_' | tr -d '=\n' && printf '\nVAPID_PUBLIC_KEY=' && openssl ec -in "$tmp" -pubout -outform DER 2>/dev/null | tail -c 65 | base64 | tr '+/' '-_' | tr -d '=\n' && printf '\n' && rm "$tmp"
-```
 
 ---
 
@@ -187,7 +176,7 @@ tmp="$(mktemp)" && openssl ecparam -name prime256v1 -genkey -noout -out "$tmp" &
 |---|---|
 | Backend | Go (stdlib, no frameworks) |
 | Storage | Redis plus encrypted file blobs on disk |
-| Frontend | Next.js (static export) |
+| Frontend | Astro static build |
 | CLI | Node.js ([`@1time/cli`](https://www.npmjs.com/package/@1time/cli)) |
 | Encryption | Web Crypto API (AES-256-GCM, HKDF-SHA256) |
 | Deployment | Docker Compose + nginx |
@@ -210,10 +199,6 @@ mkdir -p /tmp/1time-files
 export FILE_STORAGE_DIR=/tmp/1time-files
 export REDISHOST=127.0.0.1:6379
 export REDISPASS=
-# Optional browser push notifications
-export VAPID_PUBLIC_KEY=
-export VAPID_PRIVATE_KEY=
-export VAPID_SUBJECT=https://1time.io
 
 # Run the backend
 go run ./backend
@@ -234,8 +219,8 @@ npm run dev
 # Production build
 npm run build
 
-# Tests
-npm test
+# Type/content check
+npm run check
 ```
 
 ### CLI

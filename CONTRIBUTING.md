@@ -35,7 +35,7 @@ export REDISPASS=
 go run ./backend
 ```
 
-### Frontend (Next.js)
+### Frontend (Astro)
 
 ```bash
 cd frontend
@@ -82,7 +82,7 @@ docker compose -f docker-compose.dev.yml up
 ## Architecture
 
 - **Backend:** Go stdlib HTTP server + Redis
-- **Frontend:** Next.js static export (React 19)
+- **Frontend:** Astro static build
 - **CLI:** Node.js ES modules
 - **Encryption:** Web Crypto API (AES-256-GCM, HKDF-SHA256)
 
@@ -95,7 +95,7 @@ See [AGENTS.md](AGENTS.md) for detailed architecture documentation.
 GOCACHE=/tmp/go-cache go test ./backend/...
 
 # Frontend
-cd frontend && npm test
+cd frontend && npm run check
 
 # CLI
 cd cli && npm test

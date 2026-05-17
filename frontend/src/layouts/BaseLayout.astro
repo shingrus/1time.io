@@ -1,0 +1,105 @@
+---
+import InlineCss from '../components/InlineCss.astro';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import PageStatsTracker from '../components/PageStatsTracker.astro';
+import {absoluteUrl, siteHost, siteUrl} from '../lib/siteConfig.js';
+
+interface Props {
+    title: string;
+    description: string;
+    canonical?: string;
+    ogTitle?: string;
+    ogDescription?: string;
+    ogImage?: string;
+    ogImageAlt?: string;
+    ogType?: string;
+    ogUrl?: string;
+    robots?: string;
+    trackStats?: boolean;
+}
+
+const {
+    title,
+    description,
+    canonical,
+    ogTitle = title,
+    ogDescription = description,
+    ogImage = '/1time-og-main.png',
+    ogImageAlt = `${siteHost} — Encrypted One-Time Secret Links`,
+    ogType = 'website',
+    ogUrl = canonical ?? '/',
+    robots,
+    trackStats = false,
+} = Astro.props;
+
+const canonicalHref = canonical ? absoluteUrl(canonical) : undefined;
+const ogImageAbsolute = absoluteUrl(ogImage);
+const ogUrlAbsolute = absoluteUrl(ogUrl);
+
+const orgSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'Organization',
+    '@id': `${siteUrl}#organization`,
+    name: siteHost,
+    url: siteUrl,
+    description: 'Free encrypted one-time secret sharing with zero-knowledge architecture. Share passwords, API keys, and secrets via self-destructing links. No signup required, open source.',
+    logo: {
+        '@type': 'ImageObject',
+        url: absoluteUrl('/logo-512.png'),
+        width: 512,
+        height: 512,
+    },
+    sameAs: [
+        'https://github.com/shingrus/1time',
+        'https://www.npmjs.com/package/@1time/cli',
+    ],
+};
+
+const websiteSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    name: siteHost,
+    url: siteUrl,
+};
+---
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta name="theme-color" content="#C2410C" />
+        <title>{title}</title>
+        <meta name="description" content={description} />
+        {robots && <meta name="robots" content={robots} />}
+        {canonicalHref && <link rel="canonical" href={canonicalHref} />}
+        <link rel="icon" href="/favicon.svg" />
+        <link rel="manifest" href="/manifest.webmanifest" />
+        <meta property="og:title" content={ogTitle} />
+        <meta property="og:description" content={ogDescription} />
+        <meta property="og:type" content={ogType} />
+        <meta property="og:url" content={ogUrlAbsolute} />
+        <meta property="og:image" content={ogImageAbsolute} />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
+        <meta property="og:image:alt" content={ogImageAlt} />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={ogTitle} />
+        <meta name="twitter:description" content={ogDescription} />
+        <meta name="twitter:image" content={ogImageAbsolute} />
+        <InlineCss name="globals" />
+        <script type="application/ld+json" set:html={JSON.stringify(orgSchema)} is:inline></script>
+        <script type="application/ld+json" set:html={JSON.stringify(websiteSchema)} is:inline></script>
+        <slot name="head" />
+    </head>
+    <body>
+        <div class="app-layout">
+            {trackStats && <PageStatsTracker />}
+            <Header />
+            <main class="app-main">
+                <slot />
+            </main>
+            <Footer />
+        </div>
+    </body>
+</html>
