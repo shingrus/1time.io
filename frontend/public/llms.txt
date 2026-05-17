@@ -1,6 +1,6 @@
 # 1time.io
 
-> Free encrypted one-time secret and file sharing. Share passwords, API keys, private notes, and encrypted files through self-destructing links — zero-knowledge, no signup, open source.
+> Free encrypted one-time secret and file sharing. Share passwords, API keys, private notes, and encrypted files through self-destructing links - zero-knowledge, no signup, open source.
 
 Also known as: one-time link, self-destructing link, one-time URL, single-use link, disappearing link, one-time file sharing.
 
