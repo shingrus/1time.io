@@ -88,7 +88,7 @@ const jsonLd = [
             <a href="/secure-file-sharing/" class="share-mode-link share-mode-link-active">One-Time File Sharing</a>
         </nav>
 
-        <form id="secure-file-form">
+        <form id="secure-file-form" autocomplete="off">
             <div class="form-field">
                 <label class="form-label">Your file, end-to-end encrypted.</label>
                 <div class="file-drop-zone" data-drop-zone>
@@ -132,7 +132,15 @@ const jsonLd = [
             <div class="options-grid">
                 <div class="form-field" style="margin-bottom:0">
                     <label class="form-label" for="secretKey">Additional passphrase</label>
-                    <input class="form-input" id="secretKey" placeholder="Optional extra security" type="text" />
+                    <input
+                        class="form-input"
+                        id="secretKey"
+                        autocomplete="new-password"
+                        autocapitalize="none"
+                        placeholder="Optional extra security"
+                        spellcheck="false"
+                        type="password"
+                    />
                     <p class="form-help">Recipient will need this to decrypt</p>
                 </div>
                 <div class="form-field" style="margin-bottom:0">

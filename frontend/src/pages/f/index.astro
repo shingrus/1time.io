@@ -17,7 +17,7 @@ const description = 'Open an encrypted one-time file link shared through 1time.i
     <InlineCss slot="head" name="view" />
 
     <div>
-        <form id="view-file-form">
+        <form id="view-file-form" autocomplete="off">
             <div class="alert alert-warning" data-wrong-key hidden>
                 Wrong passphrase. Please try again.
             </div>
@@ -28,8 +28,11 @@ const description = 'Open an encrypted one-time file link shared through 1time.i
                     autofocus
                     class="form-input"
                     id="secretKey"
+                    autocomplete="new-password"
+                    autocapitalize="none"
                     placeholder="Enter the passphrase from the sender"
-                    type="text"
+                    spellcheck="false"
+                    type="password"
                 />
             </div>
 
