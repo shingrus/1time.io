@@ -36,6 +36,7 @@ const jsonLd = [
         description: 'Send a one-time file through an encrypted self-destructing download link. Browser-side zero-knowledge encryption, optional passphrase, and no signup.',
         url: absoluteUrl('/secure-file-sharing/'),
         isPartOf: absoluteUrl('/'),
+        dateModified: '2026-06-12',
     },
     {
         '@context': 'https://schema.org',
@@ -222,6 +223,30 @@ const jsonLd = [
                 The recipient gets a one-time download link. On open, the browser decrypts the file locally and
                 the server-side copy is destroyed.
             </p>
+
+            <h2>A Firefox Send and WeTransfer alternative for one-time files</h2>
+            <p>
+                If you used <strong>Mozilla Send</strong> (Firefox Send) before Mozilla shut it down, or
+                you reach for WeTransfer to move a sensitive file, {siteHost} covers the same one-time
+                file transfer need with stronger guarantees. Firefox Send was discontinued in 2020;
+                {siteHost} is an actively maintained, open-source replacement. Unlike WeTransfer — which
+                stores files in a form the company can read — every file here is encrypted in your browser
+                before upload, delivered through a single-use download link, and destroyed on first
+                download. It works for one-time file sharing, one-time file transfer, and one-time
+                download links without any account.
+            </p>
+
+            <h2>Key terms, briefly defined</h2>
+            <dl class="seo-glossary">
+                <dt>One-time download link</dt>
+                <dd>A URL that delivers a file exactly once. The first successful download triggers permanent deletion of the encrypted file on the server.</dd>
+                <dt>Browser-side file encryption</dt>
+                <dd>Encryption performed entirely in the sender's browser using AES-256-GCM via the Web Crypto API. The file never leaves your device in plaintext form.</dd>
+                <dt>Encrypted file metadata</dt>
+                <dd>Filename, MIME type, and size are bundled inside the encrypted payload — not stored separately on the server. The server cannot tell what was sent or how large the original file was.</dd>
+                <dt>Self-destructing file</dt>
+                <dd>A file that is automatically deleted after a single download or when the expiry timer fires, whichever comes first — leaving no copy on any server.</dd>
+            </dl>
 
             <h2>Frequently asked questions</h2>
             {faqItems.map((item) => (
