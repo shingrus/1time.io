@@ -10,11 +10,11 @@
         "check": "astro check"
     },
     "dependencies": {
-        "astro": "^6.3.3",
+        "astro": "^6.4.7",
         "qrcode-generator": "^2.0.4"
     },
     "devDependencies": {
-        "@astrojs/check": "^0.9.2",
+        "@astrojs/check": "^0.9.9",
         "@types/node": "^22.10.5",
         "typescript": "^5.6.3"
     },
