@@ -116,26 +116,51 @@ export async function saveFile(encryptedBlob, hashedKey, durationDays, onProgres
 }
 
 /**
- * Download encrypted file blob from server (one-time, deletes on read)
- * Returns Uint8Array of encrypted bytes
+ * Download encrypted file blob from server (one-time, deletes on read).
+ *
+ * Reports byte progress via onProgress(loaded, total); total is 0 when the
+ * server sends no Content-Length (chunked) so the caller shows an indeterminate
+ * state. Uses XHR (not fetch) because fetch + arrayBuffer() gives no progress —
+ * on a slow link the download would otherwise be a silent, frozen wait.
+ *
+ * IMPORTANT: never retry a failed download. The backend consumes (deletes) the
+ * record the instant the request lands — before streaming a byte — so a retry
+ * just returns {status:"no message"}. The caller surfaces a transport failure
+ * honestly instead of masking a drop as "already read".
+ *
+ * Returns { status: 'ok', data: Uint8Array } on success, or { status } for a
+ * JSON error response ('no message' | 'wrong key').
  */
-export async function getFile(id, hashedKey) {
-    const response = await fetch(`${Constants.apiBaseUrl}getFile`, {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({id, hashedKey}),
+export function getFile(id, hashedKey, onProgress) {
+    return new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', `${Constants.apiBaseUrl}getFile`);
+        xhr.responseType = 'arraybuffer';
+        xhr.setRequestHeader('Content-Type', 'application/json');
+
+        xhr.onprogress = (event) => {
+            if (typeof onProgress === 'function') {
+                onProgress(event.loaded, event.lengthComputable ? event.total : 0);
+            }
+        };
+        xhr.onerror = () => reject(new Error('Download failed (network error)'));
+        xhr.onload = () => {
+            if (xhr.status < 200 || xhr.status >= 300) {
+                reject(new Error(`Download failed with status ${xhr.status}`));
+                return;
+            }
+            const contentType = xhr.getResponseHeader('Content-Type') || '';
+            if (contentType.includes('application/json')) {
+                // { status: "no message" } or { status: "wrong key" }
+                try {
+                    resolve(JSON.parse(new TextDecoder().decode(xhr.response)));
+                } catch (error) {
+                    reject(new Error('Download returned invalid JSON'));
+                }
+                return;
+            }
+            resolve({status: 'ok', data: new Uint8Array(xhr.response)});
+        };
+        xhr.send(JSON.stringify({id, hashedKey}));
     });
-
-    if (!response.ok) {
-        throw new Error(`Download failed with status ${response.status}`);
-    }
-
-    // Check if response is JSON (error) or binary (file)
-    const contentType = response.headers.get('Content-Type') || '';
-    if (contentType.includes('application/json')) {
-        return response.json(); // { status: "no message" } or { status: "wrong key" }
-    }
-
-    const buffer = await response.arrayBuffer();
-    return {status: 'ok', data: new Uint8Array(buffer)};
 }
