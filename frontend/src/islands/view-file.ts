@@ -34,9 +34,13 @@ if (form) {
         return `${n} B`;
     };
 
+    let isDownloading = false;
     type Phase = 'idle' | 'downloading' | 'decrypting';
     const setPhase = (phase: Phase) => {
-        downloadBtn.disabled = phase !== 'idle';
+        const busy = phase !== 'idle';
+        isDownloading = busy;
+        downloadBtn.disabled = busy;
+        secretKeyInput.disabled = busy;
         if (phase === 'idle') {
             downloadLabel.textContent = 'Download the file';
             progress.toggleAttribute('hidden', true);
@@ -74,6 +78,9 @@ if (form) {
 
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
+        if (isDownloading) {
+            return; 
+        }
         wrongKeyAlert.toggleAttribute('hidden', true);
         if (!linkKey || linkKey.length <= Constants.randomKeyLen) {
             showOnly(noMessageSection);
