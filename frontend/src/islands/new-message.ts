@@ -7,8 +7,14 @@ if (form) {
     const keyInput = form.querySelector<HTMLInputElement>('#secretKey')!;
     const durationSelect = form.querySelector<HTMLSelectElement>('#duration')!;
     const submitBtn = form.querySelector<HTMLButtonElement>('button[type="submit"]')!;
+    const labelEl = submitBtn.querySelector<HTMLElement>('.btn-label')!;
+    const kbdHint = submitBtn.querySelector<HTMLElement>('[data-shortcut-hint]')!;
     const errorEl = form.querySelector<HTMLElement>('[data-message-error]')!;
-    const defaultLabel = submitBtn.textContent ?? 'Create one-time link';
+    const defaultLabel = labelEl.textContent ?? 'Create one-time link';
+
+    const isMac = /Mac|iPhone|iPad|iPod/.test(navigator.userAgent);
+    kbdHint.textContent = isMac ? '⌘↵' : 'Ctrl+↵';
+    submitBtn.title = `${isMac ? '⌘' : 'Ctrl'}+Enter`;
 
     const setError = (msg: string) => {
         errorEl.textContent = msg;
@@ -17,7 +23,7 @@ if (form) {
 
     const updateSubmitState = (isLoading = false) => {
         submitBtn.disabled = isLoading || textarea.value.length === 0;
-        submitBtn.textContent = isLoading ? 'Encrypting...' : defaultLabel;
+        labelEl.textContent = isLoading ? 'Encrypting...' : defaultLabel;
     };
 
     textarea.addEventListener('input', () => {
@@ -25,6 +31,14 @@ if (form) {
         updateSubmitState(false);
     });
     updateSubmitState(false);
+
+    form.addEventListener('keydown', (event) => {
+        if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
+            event.preventDefault();
+            if (submitBtn.disabled) return;
+            form.requestSubmit(submitBtn);
+        }
+    });
 
     form.addEventListener('submit', async (event) => {
         event.preventDefault();

@@ -25,9 +25,7 @@ const schemas = buildJsonLd(preset);
     <InlineCss slot="head" name="generator" />
     <InlineCss slot="head" name="link" />
     <InlineCss slot="head" name="qr-panel" />
-    {schemas.map((schema) => (
-        <script slot="head" type="application/ld+json" set:html={JSON.stringify(schema)} is:inline></script>
-    ))}
+    <script slot="head" type="application/ld+json" set:html={JSON.stringify(schemas)} is:inline></script>
 
     <PasswordGenerator presetPath={presetPath} />
 

@@ -410,6 +410,13 @@ h1, h2, h3 {
   font-size: 14px;
 }
 
+.btn-kbd {
+  font-family: inherit; /* override UA monospace for <kbd> */
+  font-size: 0.9em;
+  opacity: 0.65;
+  margin: 0 -0.35em 0 0.5em;
+}
+
 /* Actions bar */
 .form-actions {
   display: flex;
