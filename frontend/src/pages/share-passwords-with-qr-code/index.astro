@@ -34,9 +34,7 @@ const jsonLd = [
     ogImageAlt="Share passwords with a QR code securely"
 >
     <InlineCss slot="head" name="article" />
-    {jsonLd.map((schema) => (
-        <script slot="head" type="application/ld+json" set:html={JSON.stringify(schema)} is:inline></script>
-    ))}
+    <script slot="head" type="application/ld+json" set:html={JSON.stringify(jsonLd)} is:inline></script>
 
     <article class="article">
         <div class="article-header">

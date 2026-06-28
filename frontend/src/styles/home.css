@@ -52,6 +52,10 @@
   margin-bottom: 16px;
 }
 
+.share-primary-actions .btn-lg {
+  padding-inline: 18px;
+}
+
 @media (min-width: 480px) {
   .options-grid {
     grid-template-columns: 1fr 1fr;
