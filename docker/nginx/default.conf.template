@@ -54,7 +54,7 @@ server {
 
     location = /api/saveSecret {
         limit_req zone=api_write burst=10 nodelay;
-        proxy_pass http://backend:8080;
+        proxy_pass http://${BACKEND_UPSTREAM};
         proxy_http_version 1.1;
         proxy_set_header Host $host;
         proxy_set_header X-Forwarded-Host $host;
@@ -64,7 +64,7 @@ server {
 
     location = /api/get {
         limit_req zone=api_read burst=15 nodelay;
-        proxy_pass http://backend:8080;
+        proxy_pass http://${BACKEND_UPSTREAM};
         proxy_http_version 1.1;
         proxy_set_header Host $host;
         proxy_set_header X-Forwarded-Host $host;
@@ -74,7 +74,7 @@ server {
 
     location = /api/stat {
         limit_req zone=api_stats burst=30 nodelay;
-        proxy_pass http://backend:8080;
+        proxy_pass http://${BACKEND_UPSTREAM};
         proxy_http_version 1.1;
         proxy_set_header Host $host;
         proxy_set_header X-Forwarded-Host $host;
@@ -84,7 +84,7 @@ server {
 
     location /api/ {
         limit_req zone=api_read burst=15 nodelay;
-        proxy_pass http://backend:8080;
+        proxy_pass http://${BACKEND_UPSTREAM};
         proxy_http_version 1.1;
         proxy_set_header Host $host;
         proxy_set_header X-Forwarded-Host $host;
