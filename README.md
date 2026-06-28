@@ -136,6 +136,7 @@ Both options start on `http://localhost:8080` with Redis persistence, encrypted 
 | `APP_HOSTNAME` | `1time.io` | Public hostname for links and metadata |
 | `APP_PORT` | `8080` | External HTTP port |
 | `DATA_DIR` | `./data` | Host path for Redis persistence and encrypted file storage |
+| `BACKEND_UPSTREAM` | `backend:8080` | Backend upstream (`host:port`) nginx proxies `/api/` requests to |
 | `SHOW_BLOG` | `true` | Build-time flag for source-built web images |
 
 Put your own reverse proxy (Caddy, Traefik, nginx) in front for HTTPS/TLS termination.
