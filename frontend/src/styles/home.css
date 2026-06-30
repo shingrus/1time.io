@@ -15,15 +15,11 @@
   align-items: center;
   justify-content: center;
   padding: 8px 16px;
-  border: none;
-  background: transparent;
-  font-family: var(--font-body);
   font-size: 14px;
   font-weight: 500;
   color: var(--text-muted);
-  cursor: pointer;
-  transition: background var(--transition), color var(--transition);
   text-decoration: none;
+  transition: background var(--transition), color var(--transition);
 }
 
 .share-mode-link:hover {
@@ -36,9 +32,7 @@
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
 }
 
-.share-flow-page:has(.link-ready-fallback) .share-mode-nav,
 .share-flow-page:has(.link-display) .share-mode-nav,
-.share-flow-page:has(.link-ready-fallback) .seo-section,
 .share-flow-page:has(.link-display) .seo-section {
   display: none;
 }
@@ -58,29 +52,8 @@
   margin-bottom: 16px;
 }
 
-.notify-option {
-  margin: 0 0 16px;
-}
-
-.notify-option-label {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--text);
-  cursor: pointer;
-}
-
-.notify-option-label input {
-  width: 16px;
-  height: 16px;
-  accent-color: var(--accent);
-}
-
-.notify-option-label-disabled {
-  color: var(--text-muted);
-  cursor: not-allowed;
+.share-primary-actions .btn-lg {
+  padding-inline: 18px;
 }
 
 @media (min-width: 480px) {
@@ -100,14 +73,11 @@
 .seo-section h2 {
   font-size: 24px;
   margin-bottom: 16px;
-  color: var(--text);
 }
 
 .seo-section h3 {
   font-size: 18px;
-  margin-top: 24px;
-  margin-bottom: 8px;
-  color: var(--text);
+  margin: 24px 0 8px;
 }
 
 .seo-section p {
@@ -160,11 +130,8 @@
 }
 
 .feature-card h2 {
-  font-family: var(--font-display);
   font-size: 16px;
-  font-weight: 700;
   margin: 0;
-  color: var(--text);
 }
 
 .feature-card p {
@@ -194,4 +161,23 @@
 .seo-nav a:hover {
   border-color: var(--text-muted);
   color: var(--text);
+}
+
+.glossary {
+  margin: 16px 0 24px;
+}
+
+.glossary dt {
+  font-weight: 600;
+  margin-top: 14px;
+}
+
+.glossary dt:first-child {
+  margin-top: 0;
+}
+
+.glossary dd {
+  margin: 4px 0 0;
+  color: var(--text-secondary);
+  line-height: 1.6;
 }

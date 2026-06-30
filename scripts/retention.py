@@ -17,6 +17,8 @@ Output:
     - Daily new-sender count
     - Cohort retention table (Day 0, 1, 3, 7, 14, 30)
     - Headline metrics: D1, D7, D30 average retention; total uniques; repeat ratio
+    - Sender conversion funnel: per-day homepage visitors -> savers (conv%),
+      and recipients -> who-also-sent (viral%)
 """
 
 from __future__ import annotations
@@ -33,12 +35,22 @@ from pathlib import Path
 # ---------- Config ----------
 DEFAULT_GLOB = "/var/log/nginx/1time.access.log*"
 SAVE_PATHS = ("/api/saveSecret", "/api/saveFile")
+READ_PATHS = ("/api/get",)  # /api/get and /api/getFile both start with this
 LOOKBACK_DAYS = 30
 RETENTION_OFFSETS = (0, 1, 3, 7, 14, 30)
 
 # Combined nginx log format: $remote_addr - $remote_user [$time_local] "$request" $status ...
 LINE_RE = re.compile(
     r'^(?P<ip>\S+)\s+\S+\s+\S+\s+\[(?P<ts>[^\]]+)\]\s+"(?P<req>[^"]*)"\s+(?P<status>\d+)\s+\S+\s+"[^"]*"\s+"(?P<ua>[^"]*)"'
+)
+
+# Crawlers / preview-bots / scripts — excluded from the "visitor" count so the
+# conversion rate reflects real humans, not Googlebot/Slackbot/scanners.
+BOT_RE = re.compile(
+    r"bot|crawl|spider|slurp|preview|whatsapp|telegram|facebookexternalhit|discord|"
+    r"skype|censys|expanse|monitor|headlesschrome|python-|curl|wget|go-http|okhttp|"
+    r"libwww|scan|fetch|node-fetch|axios|ahrefs|semrush|bytespider|applebot|gptbot",
+    re.IGNORECASE,
 )
 
 TS_FMT = "%d/%b/%Y:%H:%M:%S %z"
@@ -175,6 +187,78 @@ def cohort_table(sender_days: dict[str, set[str]]) -> None:
         print(f"  Average active days per user:  {avg_days:.2f}")
 
 
+def parse_funnel(paths: list[Path]):
+    """Per-day unique-IP sets for the conversion funnel.
+
+    Returns (visitors, savers, recipients), each {YYYY-MM-DD: set(ip)}:
+      - visitors:   human GET / (homepage = the create page), bots excluded
+      - savers:     POST /api/saveSecret|saveFile (200)
+      - recipients: POST /api/get|getFile (200)
+    """
+    visitors: dict[str, set[str]] = defaultdict(set)
+    savers: dict[str, set[str]] = defaultdict(set)
+    recipients: dict[str, set[str]] = defaultdict(set)
+
+    for p in paths:
+        try:
+            with open_log(p) as f:
+                for line in f:
+                    m = LINE_RE.match(line)
+                    if not m:
+                        continue
+                    req = m.group("req")
+                    if " " not in req:
+                        continue
+                    method, _, rest = req.partition(" ")
+                    path, _, _ = rest.partition(" ")
+                    if m.group("status") != "200":
+                        continue
+                    try:
+                        date = datetime.strptime(m.group("ts"), TS_FMT).strftime("%Y-%m-%d")
+                    except ValueError:
+                        continue
+                    ip = m.group("ip")
+                    if method == "GET" and path == "/" and not BOT_RE.search(m.group("ua")):
+                        visitors[date].add(ip)
+                    elif method == "POST":
+                        if any(path.startswith(sp) for sp in SAVE_PATHS):
+                            savers[date].add(ip)
+                        elif any(path.startswith(rp) for rp in READ_PATHS):
+                            recipients[date].add(ip)
+        except Exception as e:  # noqa: BLE001
+            print(f"warning: failed to read {p}: {e}", file=sys.stderr)
+
+    return visitors, savers, recipients
+
+
+def conversion_table(visitors, savers, recipients) -> None:
+    print("\n# sender conversion funnel (per day)")
+    print(f"{'date':<12} {'visitors':>9} {'savers':>7} {'conv%':>7} {'recips':>7} {'viral%':>7}")
+    print("-" * 54)
+
+    dates = sorted(set(visitors) | set(savers) | set(recipients))
+    convs, virals = [], []
+    for d in dates:
+        v = len(visitors.get(d, ()))
+        s = len(savers.get(d, ()))
+        r = len(recipients.get(d, ()))
+        both = len(savers.get(d, set()) & recipients.get(d, set()))
+        conv = 100.0 * s / v if v else 0.0
+        viral = 100.0 * both / r if r else 0.0
+        if v:
+            convs.append(conv)
+        if r:
+            virals.append(viral)
+        print(f"{d:<12} {v:>9} {s:>7} {conv:>6.1f}% {r:>7} {viral:>6.1f}%")
+
+    print("\n# funnel averages")
+    if convs:
+        print(f"  Sender conversion (savers / homepage visitors): {sum(convs)/len(convs):.1f}%")
+    if virals:
+        print(f"  Viral rate (recipients who also sent):          {sum(virals)/len(virals):.1f}%")
+    print("  (visitors = human GET / ; IP-based, directional ±15%)")
+
+
 def main() -> int:
     args = sys.argv[1:]
     if not args:
@@ -189,6 +273,8 @@ def main() -> int:
     print(f"# reading {len(paths)} files: {[p.name for p in paths]}", file=sys.stderr)
     sender_days = parse_logs(paths)
     cohort_table(sender_days)
+    visitors, savers, recipients = parse_funnel(paths)
+    conversion_table(visitors, savers, recipients)
     return 0
 
 

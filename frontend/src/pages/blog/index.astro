@@ -16,9 +16,7 @@ const formatCardMeta = (meta: string) => meta.replace(/^By Igor Ermakov · /, ''
     trackStats
 >
     <InlineCss slot="head" name="blog-index" />
-    {blogIndex.schemas.map((schema) => (
-        <script slot="head" type="application/ld+json" set:html={JSON.stringify(schema)} is:inline></script>
-    ))}
+    <script slot="head" type="application/ld+json" set:html={JSON.stringify(blogIndex.schemas)} is:inline></script>
 
     <div class="blog-index">
         <h1>Blog</h1>

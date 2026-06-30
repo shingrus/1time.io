@@ -49,6 +49,7 @@ services:
     environment:
       APP_HOSTNAME: ${APP_HOSTNAME:-1time.io}
       NGINX_PORT: 8080
+      BACKEND_UPSTREAM: ${BACKEND_UPSTREAM:-backend:8080}
     depends_on:
       - backend
     ports:

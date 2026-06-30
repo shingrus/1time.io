@@ -1,26 +1,40 @@
 ---
 import LinkReadyTemplate from './LinkReadyTemplate.astro';
 ---
-<form id="new-message-form">
+<form id="new-message-form" autocomplete="off">
     <div class="form-field">
         <label class="form-label" for="secretMessage">Your secret message, end-to-end encrypted.</label>
         <textarea
             autofocus
             class="form-textarea"
             id="secretMessage"
+            autocomplete="off"
+            autocapitalize="none"
             placeholder="Paste a password, API key, private note, or any sensitive text..."
             rows="5"
+            spellcheck="false"
         ></textarea>
     </div>
 
     <div class="form-actions share-primary-actions">
-        <button class="btn btn-primary btn-lg" disabled type="submit">Create one-time link</button>
+        <button class="btn btn-primary btn-lg" disabled type="submit">
+            <span class="btn-label">Create one-time link</span>
+            <kbd class="btn-kbd" data-shortcut-hint aria-hidden="true" hidden></kbd>
+        </button>
     </div>
 
     <div class="options-grid">
         <div class="form-field" style="margin-bottom:0">
             <label class="form-label" for="secretKey">Additional passphrase</label>
-            <input class="form-input" id="secretKey" placeholder="Optional extra security" type="text" />
+            <input
+                class="form-input"
+                id="secretKey"
+                autocomplete="off"
+                autocapitalize="none"
+                placeholder="Optional extra security"
+                spellcheck="false"
+                type="text"
+            />
             <p class="form-help">Recipient will need this to decrypt</p>
         </div>
         <div class="form-field" style="margin-bottom:0">

@@ -17,7 +17,7 @@ const description = 'Open an encrypted one-time file link shared through 1time.i
     <InlineCss slot="head" name="view" />
 
     <div>
-        <form id="view-file-form">
+        <form id="view-file-form" autocomplete="off">
             <div class="alert alert-warning" data-wrong-key hidden>
                 Wrong passphrase. Please try again.
             </div>
@@ -28,7 +28,10 @@ const description = 'Open an encrypted one-time file link shared through 1time.i
                     autofocus
                     class="form-input"
                     id="secretKey"
+                    autocomplete="off"
+                    autocapitalize="none"
                     placeholder="Enter the passphrase from the sender"
+                    spellcheck="false"
                     type="text"
                 />
             </div>
@@ -54,6 +57,12 @@ const description = 'Open an encrypted one-time file link shared through 1time.i
                         </svg>
                         <span data-download-label>Download the file</span>
                     </button>
+                    <div class="dl-progress" data-progress hidden aria-live="polite">
+                        <div class="dl-progress-track">
+                            <div class="dl-progress-fill" data-progress-fill></div>
+                        </div>
+                        <span class="dl-progress-text" data-progress-text>Starting…</span>
+                    </div>
                 </div>
             </div>
 
@@ -72,6 +81,14 @@ const description = 'Open an encrypted one-time file link shared through 1time.i
                 <div class="destroyed-notice">
                     <p>This file has already been downloaded or has expired.</p>
                     <a class="btn btn-primary" href="/secure-file-sharing/">Share a file</a>
+                </div>
+            </div>
+
+            <div data-state="error" hidden>
+                <div class="destroyed-notice">
+                    <p><strong>Download interrupted.</strong> Your connection dropped before the file finished arriving.</p>
+                    <p class="dl-note">Because this is a one-time link, it may already be used up. Try once more — and if it still doesn't load, ask the sender for a new link.</p>
+                    <button class="btn btn-primary" type="submit" data-download-retry>Try again</button>
                 </div>
             </div>
         </form>

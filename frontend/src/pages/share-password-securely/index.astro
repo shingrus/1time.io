@@ -4,11 +4,13 @@ import InlineCss from '../../components/InlineCss.astro';
 import NewMessageForm from '../../components/NewMessageForm.astro';
 import {absoluteUrl, siteHost} from '../../lib/siteConfig.js';
 
-const title = `Share Passwords Securely — Encrypted One-Time Links | ${siteHost}`;
-const description = 'Share passwords securely through encrypted one-time links that self-destruct after reading. End-to-end encrypted in your browser, free, no signup required.';
+const title = `Share Passwords Securely — Send a Password via Secret Link | ${siteHost}`;
+const description = 'Share a password securely and send it through an encrypted secret link that self-destructs after reading. Safe password sharing, end-to-end encrypted, free, no signup.';
 
 const faqItems = [
     {question: 'How do I share a password securely?', answer: 'Paste the password above, click "Create secret link", and send the link to the recipient. The password is encrypted in your browser before being stored. The recipient opens the link, sees the password once, and the data is permanently deleted from the server.'},
+    {question: 'What is the safest way to send a password to someone?', answer: 'The safest way to send a password is an encrypted one-time link instead of typing it into email, chat, or SMS. Create a secret link here, share the link, and it works exactly once — the password is encrypted in your browser, never stored in plaintext, and deleted after the recipient reads it, so it never lingers in any inbox or message history.'},
+    {question: 'What is a secret link?', answer: 'A secret link (or one-time secret link) is a URL that reveals a password or secret exactly once. After the recipient opens it, the encrypted data is permanently deleted and the link stops working. It is the simplest way to share a password securely without leaving a copy behind on any server.'},
     {question: 'Is it safe to send passwords over email or Slack?', answer: 'No. Emails are stored indefinitely on mail servers, and Slack messages persist in searchable history that admins can export. Both channels leave your password exposed long after it was shared. One-time encrypted links solve this: the password is encrypted end-to-end and destroyed after a single view.'},
     {question: 'Can the server see my password?', answer: 'No. Your password is encrypted in the browser using AES-256-GCM before it reaches the server. The decryption key stays in the URL fragment, which is never sent to the server. This is called zero-knowledge architecture — we cannot read your secrets even if we wanted to.'},
     {question: 'What happens after the recipient reads the password?', answer: 'The encrypted data is permanently deleted from the server. The link stops working immediately. Nobody — including the sender — can retrieve the password again. If the link is not opened, it expires automatically after the set time period (1 to 30 days).'},
@@ -58,14 +60,12 @@ const jsonLd = [
     <InlineCss slot="head" name="home" />
     <InlineCss slot="head" name="link" />
     <InlineCss slot="head" name="qr-panel" />
-    {jsonLd.map((schema) => (
-        <script slot="head" type="application/ld+json" set:html={JSON.stringify(schema)} is:inline></script>
-    ))}
+    <script slot="head" type="application/ld+json" set:html={JSON.stringify(jsonLd)} is:inline></script>
 
     <div class="share-flow-page">
         <nav class="share-mode-nav" aria-label="Choose sharing mode">
             <a href="/share-password-securely/" class="share-mode-link share-mode-link-active">Text Secret</a>
-            <a href="/secure-file-sharing/" class="share-mode-link">Secure File Sharing</a>
+            <a href="/secure-file-sharing/" class="share-mode-link">One-Time File Sharing</a>
         </nav>
 
         <NewMessageForm />
@@ -74,9 +74,10 @@ const jsonLd = [
             <h1>Share Passwords Securely with Encrypted One-Time Links</h1>
             <p>
                 Stop pasting passwords into Slack messages, emails, and spreadsheets where they sit indefinitely.{' '}
-                {siteHost} lets you share a password through an encrypted one-time link that self-destructs
-                after the recipient reads it. The password is encrypted in your browser using AES-256-GCM
-                before it ever touches the server. No signup, no account, completely free.
+                {siteHost} lets you share a password securely through an encrypted <strong>secret link</strong> that
+                self-destructs after the recipient reads it. Send a password, API key, or any secret — it is
+                encrypted in your browser using AES-256-GCM before it ever touches the server. No signup,
+                no account, completely free.
             </p>
 
             <div class="features-grid">
@@ -156,6 +157,18 @@ const jsonLd = [
                 different channel than the link.
             </p>
 
+            <h2>Key terms, briefly defined</h2>
+            <dl class="glossary">
+                <dt>Secret link</dt>
+                <dd>A one-time URL that reveals a password or secret exactly once, then permanently deletes it. Also called a one-time secret link.</dd>
+                <dt>Password sharing</dt>
+                <dd>Sending a credential to another person. Done securely, the password is encrypted before it leaves your device and is never stored in plaintext anywhere.</dd>
+                <dt>Secure share</dt>
+                <dd>Sharing a secret so that only the intended recipient can read it once — the link self-destructs after a single view and leaves no copy behind.</dd>
+                <dt>Zero-knowledge</dt>
+                <dd>The server stores only ciphertext it cannot decrypt. The key lives in the URL fragment and never reaches the server, so we can never read what you share.</dd>
+            </dl>
+
             <h2>Frequently asked questions</h2>
             {faqItems.map((item) => (
                 <div class="feature-card" style="margin-bottom:12px">
@@ -166,7 +179,8 @@ const jsonLd = [
 
             <h2>More ways to share securely</h2>
             <nav class="seo-nav">
-                <a href="/secure-file-sharing/">Send encrypted files</a>
+                <a href="/">Create a one-time link</a>
+                <a href="/secure-file-sharing/">One-time file sharing</a>
                 <a href="/share-passwords-with-qr-code/">Share via QR code</a>
                 <a href="/password-generator/">Generate a strong password</a>
                 <a href="/wifi-password-generator/">WiFi password generator</a>

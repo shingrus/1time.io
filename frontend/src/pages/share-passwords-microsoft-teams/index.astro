@@ -4,8 +4,8 @@ import InlineCss from '../../components/InlineCss.astro';
 import NewMessageForm from '../../components/NewMessageForm.astro';
 import {absoluteUrl, siteHost} from '../../lib/siteConfig.js';
 
-const title = `Share Passwords Safely in Microsoft Teams — One-Time Encrypted Links | ${siteHost}`;
-const description = 'Stop pasting passwords into Teams chat. Send a one-time encrypted link instead — survives retention policies, eDiscovery, and Purview. Free, zero-knowledge, no signup.';
+const title = `Share Passwords in Microsoft Teams — Secure One-Time Links`;
+const description = 'Stop pasting passwords into Teams chat. Send a one-time encrypted link instead — survives retention policies, eDiscovery, and Purview. Free, no signup.';
 
 const faqItems = [
     {question: 'Is it safe to send passwords in Microsoft Teams chat?', answer: 'No. Teams messages are retained according to your tenant\'s retention policy (often years), indexed by Microsoft Purview, and discoverable through eDiscovery. Global admins and compliance officers can read the plaintext. Even after you delete a message, copies persist in compliance archives and backups. A password pasted into Teams chat is effectively a long-lived credential leak.'},
@@ -26,7 +26,7 @@ const jsonLd = [
         url: absoluteUrl('/share-passwords-microsoft-teams/'),
         isPartOf: absoluteUrl('/'),
         datePublished: '2026-04-20',
-        dateModified: '2026-04-20',
+        dateModified: '2026-06-12',
     },
     {
         '@context': 'https://schema.org',
@@ -60,14 +60,12 @@ const jsonLd = [
     <InlineCss slot="head" name="home" />
     <InlineCss slot="head" name="link" />
     <InlineCss slot="head" name="qr-panel" />
-    {jsonLd.map((schema) => (
-        <script slot="head" type="application/ld+json" set:html={JSON.stringify(schema)} is:inline></script>
-    ))}
+    <script slot="head" type="application/ld+json" set:html={JSON.stringify(jsonLd)} is:inline></script>
 
     <div class="share-flow-page">
         <nav class="share-mode-nav" aria-label="Choose sharing mode">
             <a href="/share-password-securely/" class="share-mode-link share-mode-link-active">Text Secret</a>
-            <a href="/secure-file-sharing/" class="share-mode-link">Secure File Sharing</a>
+            <a href="/secure-file-sharing/" class="share-mode-link">One-Time File Sharing</a>
         </nav>
 
         <NewMessageForm />

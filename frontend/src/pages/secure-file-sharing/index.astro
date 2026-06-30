@@ -5,8 +5,8 @@ import LinkReadyTemplate from '../../components/LinkReadyTemplate.astro';
 import {absoluteUrl, siteHost} from '../../lib/siteConfig.js';
 import {Constants} from '../../lib/util.js';
 
-const title = `Secure File Sharing — Encrypted One-Time Links | ${siteHost}`;
-const description = 'Send encrypted files with one-time download links. Browser-side zero-knowledge encryption, optional passphrase, no signup.';
+const title = `One-Time File Sharing — Encrypted Self-Destructing Download Links`;
+const description = 'Send a one-time file through an encrypted self-destructing download link. Browser-side zero-knowledge encryption, optional passphrase. A free Firefox Send alternative, no signup.';
 const maxMb = Constants.maxFileSizeBytes / (1024 * 1024);
 
 const faqItems = [
@@ -32,25 +32,26 @@ const jsonLd = [
     {
         '@context': 'https://schema.org',
         '@type': 'WebPage',
-        name: 'Secure File Sharing',
-        description: 'Send encrypted files with one-time download links. Browser-side zero-knowledge encryption, optional passphrase, and no signup.',
+        name: 'One-Time File Sharing',
+        description: 'Send a one-time file through an encrypted self-destructing download link. Browser-side zero-knowledge encryption, optional passphrase, and no signup.',
         url: absoluteUrl('/secure-file-sharing/'),
         isPartOf: absoluteUrl('/'),
+        dateModified: '2026-06-12',
     },
     {
         '@context': 'https://schema.org',
         '@type': 'BreadcrumbList',
         itemListElement: [
             {'@type': 'ListItem', position: 1, name: 'Home', item: absoluteUrl('/')},
-            {'@type': 'ListItem', position: 2, name: 'Secure File Sharing', item: absoluteUrl('/secure-file-sharing/')},
+            {'@type': 'ListItem', position: 2, name: 'One-Time File Sharing', item: absoluteUrl('/secure-file-sharing/')},
         ],
     },
     {
         '@context': 'https://schema.org',
         '@type': 'WebApplication',
-        name: 'Secure File Sharing',
+        name: 'One-Time File Sharing',
         url: absoluteUrl('/secure-file-sharing/'),
-        description: 'Send encrypted files with one-time download links. Browser-side zero-knowledge encryption, optional passphrase, and no signup.',
+        description: 'Send a one-time file through an encrypted self-destructing download link. Browser-side zero-knowledge encryption, optional passphrase, and no signup.',
         applicationCategory: 'SecurityApplication',
         operatingSystem: 'Any',
         offers: {'@type': 'Offer', price: '0', priceCurrency: 'USD'},
@@ -72,23 +73,21 @@ const jsonLd = [
     description={description}
     canonical="/secure-file-sharing/"
     ogImage="/1time-og-main.png"
-    ogImageAlt="Secure file sharing with encrypted one-time links"
+    ogImageAlt="One-time file sharing with encrypted self-destructing download links"
 >
     <InlineCss slot="head" name="home" />
     <InlineCss slot="head" name="file-sharing" />
     <InlineCss slot="head" name="link" />
     <InlineCss slot="head" name="qr-panel" />
-    {jsonLd.map((schema) => (
-        <script slot="head" type="application/ld+json" set:html={JSON.stringify(schema)} is:inline></script>
-    ))}
+    <script slot="head" type="application/ld+json" set:html={JSON.stringify(jsonLd)} is:inline></script>
 
     <div class="share-flow-page">
         <nav class="share-mode-nav" aria-label="Choose sharing mode">
             <a href="/share-password-securely/" class="share-mode-link">Text Secret</a>
-            <a href="/secure-file-sharing/" class="share-mode-link share-mode-link-active">Secure File Sharing</a>
+            <a href="/secure-file-sharing/" class="share-mode-link share-mode-link-active">One-Time File Sharing</a>
         </nav>
 
-        <form id="secure-file-form">
+        <form id="secure-file-form" autocomplete="off">
             <div class="form-field">
                 <label class="form-label">Your file, end-to-end encrypted.</label>
                 <div class="file-drop-zone" data-drop-zone>
@@ -132,7 +131,15 @@ const jsonLd = [
             <div class="options-grid">
                 <div class="form-field" style="margin-bottom:0">
                     <label class="form-label" for="secretKey">Additional passphrase</label>
-                    <input class="form-input" id="secretKey" placeholder="Optional extra security" type="text" />
+                    <input
+                        class="form-input"
+                        id="secretKey"
+                        autocomplete="off"
+                        autocapitalize="none"
+                        placeholder="Optional extra security"
+                        spellcheck="false"
+                        type="text"
+                    />
                     <p class="form-help">Recipient will need this to decrypt</p>
                 </div>
                 <div class="form-field" style="margin-bottom:0">
@@ -151,12 +158,22 @@ const jsonLd = [
         <LinkReadyTemplate />
 
         <section class="seo-section">
-            <h1>Send Files Securely with Encrypted One-Time Links</h1>
+            <h1>Send a One-Time File — Encrypted, Self-Destructing Download Link</h1>
+            <h2>What is a one-time file?</h2>
+            <p>
+                A <strong>one-time file</strong> is a file you send through a single-use download link.
+                The recipient downloads it once, then the encrypted copy is permanently deleted from
+                the server. There is no second download, no copy left behind in chat history, no
+                long-lived URL sitting in someone's inbox. It is the file-sharing equivalent of a
+                self-destructing message: a one-time URL that disappears after the file lands.
+            </p>
             <h2>Why use one-time encrypted file sharing?</h2>
             <p>
                 Regular file sharing leaves copies sitting in chat history, email inboxes, and cloud
                 folders for far longer than necessary. {siteHost} is built for the opposite use case:
-                deliver a sensitive file once, let the recipient download it, and remove it from the server.
+                deliver a one-time file, let the recipient download it, and remove it from the server.
+                It works as a drop-in <a href="/blog/firefox-send-alternative/">Firefox Send alternative</a>{' '}
+                for one-shot encrypted file delivery.
             </p>
 
             <div class="features-grid">
@@ -205,17 +222,41 @@ const jsonLd = [
                 the server-side copy is destroyed.
             </p>
 
+            <h2>A Firefox Send and WeTransfer alternative for one-time files</h2>
+            <p>
+                If you used <strong>Mozilla Send</strong> (Firefox Send) before Mozilla shut it down, or
+                you reach for WeTransfer to move a sensitive file, {siteHost} covers the same one-time
+                file transfer need with stronger guarantees. Firefox Send was discontinued in 2020;
+                {siteHost} is an actively maintained, open-source replacement. Unlike WeTransfer — which
+                stores files in a form the company can read — every file here is encrypted in your browser
+                before upload, delivered through a single-use download link, and destroyed on first
+                download. It works for one-time file sharing, one-time file transfer, and one-time
+                download links without any account.
+            </p>
+
+            <h2>Key terms, briefly defined</h2>
+            <dl class="glossary">
+                <dt>One-time download link</dt>
+                <dd>A URL that delivers a file exactly once. The first successful download triggers permanent deletion of the encrypted file on the server.</dd>
+                <dt>Browser-side file encryption</dt>
+                <dd>Encryption performed entirely in the sender's browser using AES-256-GCM via the Web Crypto API. The file never leaves your device in plaintext form.</dd>
+                <dt>Encrypted file metadata</dt>
+                <dd>Filename, MIME type, and size are bundled inside the encrypted payload — not stored separately on the server. The server cannot tell what was sent or how large the original file was.</dd>
+                <dt>Self-destructing file</dt>
+                <dd>A file that is automatically deleted after a single download or when the expiry timer fires, whichever comes first — leaving no copy on any server.</dd>
+            </dl>
+
             <h2>Frequently asked questions</h2>
             {faqItems.map((item) => (
                 <div class="feature-card" style="margin-bottom:12px">
-                    <div class="feature-card-header"><h2>{item.question}</h2></div>
+                    <div class="feature-card-header"><h3>{item.question}</h3></div>
                     <p>{item.answer}</p>
                 </div>
             ))}
 
             <h2>Learn more</h2>
             <nav class="seo-nav">
-                <a href="/share-password-securely/">Share passwords securely</a>
+                <a href="/share-password-securely/">Share a password via one-time link</a>
                 <a href="/blog/how-to-share-passwords-securely/">How to share passwords securely</a>
                 <a href="/blog/how-to-share-api-keys/">How to share API keys securely</a>
                 <a href="/blog/stop-sending-passwords-over-slack/">Stop sending passwords over Slack</a>

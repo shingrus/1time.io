@@ -364,6 +364,11 @@ func apiGetFile(w http.ResponseWriter, r *http.Request) {
 	defer f.Close()
 
 	w.Header().Set("Content-Type", "application/octet-stream")
+	if info, statErr := f.Stat(); statErr == nil {
+		w.Header().Set("Content-Length", strconv.FormatInt(info.Size(), 10))
+	} else {
+		log.Printf("Stat file error: %v", statErr)
+	}
 	w.WriteHeader(http.StatusOK)
 	_, err = io.Copy(w, f)
 	if err != nil {

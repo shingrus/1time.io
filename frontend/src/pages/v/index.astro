@@ -18,7 +18,7 @@ const description = 'Open an encrypted one-time secret link shared through 1time
     <InlineCss slot="head" name="qr-panel" />
 
     <div>
-        <form id="view-secret-form">
+        <form id="view-secret-form" autocomplete="off">
             <div class="alert alert-warning" data-wrong-key hidden>
                 Wrong passphrase. Please try again.
             </div>
@@ -29,7 +29,10 @@ const description = 'Open an encrypted one-time secret link shared through 1time
                     autofocus
                     class="form-input"
                     id="secretKey"
+                    autocomplete="off"
+                    autocapitalize="none"
                     placeholder="Enter the passphrase from the sender"
+                    spellcheck="false"
                     type="text"
                 />
             </div>
