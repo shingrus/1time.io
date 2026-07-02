@@ -1,5 +1,6 @@
 ---
 import LinkReadyTemplate from './LinkReadyTemplate.astro';
+import NotifyWhenOpenedField from './NotifyWhenOpenedField.astro';
 ---
 <form id="new-message-form" autocomplete="off">
     <div class="form-field">
@@ -48,6 +49,8 @@ import LinkReadyTemplate from './LinkReadyTemplate.astro';
             <p class="form-help">Link expires even if unread</p>
         </div>
     </div>
+
+    <NotifyWhenOpenedField />
 
     <p class="form-help form-help-error" data-message-error role="alert" hidden></p>
 </form>

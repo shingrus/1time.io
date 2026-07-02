@@ -1,4 +1,5 @@
 import {createSecretLink, Constants} from '../lib/util.js';
+import {attachReadNotificationControls} from '../lib/pushNotifications.js';
 import {showLinkReady} from './show-link-ready.js';
 
 const form = document.querySelector<HTMLFormElement>('#new-message-form');
@@ -11,6 +12,8 @@ if (form) {
     const kbdHint = submitBtn.querySelector<HTMLElement>('[data-shortcut-hint]')!;
     const errorEl = form.querySelector<HTMLElement>('[data-message-error]')!;
     const defaultLabel = labelEl.textContent ?? 'Create one-time link';
+    const notifications = attachReadNotificationControls(form);
+    let isPreparing = false;
 
     const setError = (msg: string) => {
         errorEl.textContent = msg;
@@ -28,8 +31,8 @@ if (form) {
     };
 
     const updateSubmitState = (isLoading = false) => {
-        submitBtn.disabled = isLoading || textarea.value.length === 0;
-        labelEl.textContent = isLoading ? 'Encrypting...' : defaultLabel;
+        submitBtn.disabled = isPreparing || isLoading || textarea.value.length === 0;
+        labelEl.textContent = isPreparing ? 'Preparing...' : isLoading ? 'Encrypting...' : defaultLabel;
         if (!submitBtn.disabled) showShortcutHint();
     };
 
@@ -51,17 +54,23 @@ if (form) {
         event.preventDefault();
         if (textarea.value.length === 0) return;
         setError('');
-        updateSubmitState(true);
+        isPreparing = true;
+        updateSubmitState(false);
         try {
+            const pushSub = await notifications.getPushSubscription();
+            isPreparing = false;
+            updateSubmitState(true);
             const {link} = await createSecretLink(textarea.value, {
                 secretKey: keyInput.value,
                 durationDays: Number(durationSelect.value),
+                pushSub,
             });
             if (link) {
                 showLinkReady(form, link, () => {
                     textarea.value = '';
                     keyInput.value = '';
                     durationSelect.value = String(Constants.defaultDuration);
+                    notifications.reset();
                     updateSubmitState(false);
                     textarea.focus();
                 });
@@ -70,6 +79,7 @@ if (form) {
         } catch {
             setError('Could not create the link. Please try again.');
         }
+        isPreparing = false;
         updateSubmitState(false);
     });
 }

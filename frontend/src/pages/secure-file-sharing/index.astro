@@ -2,6 +2,7 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import InlineCss from '../../components/InlineCss.astro';
 import LinkReadyTemplate from '../../components/LinkReadyTemplate.astro';
+import NotifyWhenOpenedField from '../../components/NotifyWhenOpenedField.astro';
 import {absoluteUrl, siteHost} from '../../lib/siteConfig.js';
 import {Constants} from '../../lib/util.js';
 
@@ -153,6 +154,8 @@ const jsonLd = [
                     <p class="form-help">Link expires even if unread</p>
                 </div>
             </div>
+
+            <NotifyWhenOpenedField />
         </form>
 
         <LinkReadyTemplate />

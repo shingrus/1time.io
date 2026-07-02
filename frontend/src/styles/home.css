@@ -56,6 +56,36 @@
   padding-inline: 18px;
 }
 
+.notify-option {
+  margin-bottom: 16px;
+}
+
+.notify-option-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.notify-option-label input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--accent);
+}
+
+.notify-option-label-disabled {
+  color: var(--text-muted);
+  cursor: default;
+}
+
+.notify-option .form-help {
+  margin-top: 6px;
+}
+
 @media (min-width: 480px) {
   .options-grid {
     grid-template-columns: 1fr 1fr;

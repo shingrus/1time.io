@@ -1,6 +1,7 @@
 import {Constants, SHARE_DURATION_OPTIONS} from '../lib/util.js';
 import {encryptFile} from '../lib/fileProtocol.js';
 import {saveFile} from '../lib/fileApi.js';
+import {attachReadNotificationControls} from '../lib/pushNotifications.js';
 import {showLinkReady} from './show-link-ready.js';
 
 const form = document.querySelector<HTMLFormElement>('#secure-file-form');
@@ -22,8 +23,10 @@ if (form) {
     const submitBtn = form.querySelector<HTMLButtonElement>('button[type="submit"]')!;
     const keyInput = form.querySelector<HTMLInputElement>('#secretKey')!;
     const durationSelect = form.querySelector<HTMLSelectElement>('#duration')!;
+    const notifications = attachReadNotificationControls(form);
 
     let selectedFile: File | null = null;
+    let isPreparingPush = false;
     let isEncrypting = false;
     let isUploading = false;
     let uploadProgress = 0;
@@ -55,9 +58,11 @@ if (form) {
     };
 
     const updateSubmit = () => {
-        const loading = isEncrypting || isUploading;
+        const loading = isPreparingPush || isEncrypting || isUploading;
         submitBtn.disabled = !selectedFile || loading;
-        submitBtn.textContent = isEncrypting
+        submitBtn.textContent = isPreparingPush
+            ? 'Preparing...'
+            : isEncrypting
             ? 'Encrypting...'
             : isUploading
                 ? `Uploading ${uploadProgress}%...`
@@ -124,6 +129,10 @@ if (form) {
         e.preventDefault();
         if (!selectedFile) return;
         setError('');
+        isPreparingPush = true;
+        updateSubmit();
+        const pushSub = await notifications.getPushSubscription();
+        isPreparingPush = false;
         isEncrypting = true;
         isUploading = false;
         uploadProgress = 0;
@@ -144,6 +153,7 @@ if (form) {
                     renderProgress();
                     updateSubmit();
                 },
+                {pushSub},
             );
             if (data.status === 'ok' && data.newId) {
                 const link = `${window.location.origin}/f/#${randomKey}${data.newId}`;
@@ -155,6 +165,7 @@ if (form) {
                     clearSelection();
                     keyInput.value = '';
                     durationSelect.value = String(Constants.defaultDuration);
+                    notifications.reset();
                     updateSubmit();
                 });
                 return;
