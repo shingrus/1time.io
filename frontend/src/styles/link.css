@@ -77,3 +77,10 @@
     width: 100%;
   }
 }
+
+/* Layout only — accent color + underline come from the shared link rule in globals.css */
+.link-my-secrets {
+  display: inline-block;
+  margin-top: 14px;
+  font-size: 14px;
+}

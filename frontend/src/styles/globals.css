@@ -207,10 +207,11 @@ body {
   color: var(--accent);
 }
 
-/* Shared content links for prose-heavy sections */
+/* Shared accent text links (prose sections + standalone CTAs) */
 .article-body a:not(.btn),
 .seo-section p a,
-.gen-seo-text a {
+.gen-seo-text a,
+.link-my-secrets {
   color: var(--accent);
   text-decoration: underline;
   text-underline-offset: 2px;
@@ -218,7 +219,8 @@ body {
 
 .article-body a:not(.btn):hover,
 .seo-section p a:hover,
-.gen-seo-text a:hover {
+.gen-seo-text a:hover,
+.link-my-secrets:hover {
   color: var(--accent-hover);
 }
 
