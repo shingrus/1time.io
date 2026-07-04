@@ -27,6 +27,15 @@ type StoredFile struct {
 
 const maxFileSize = 10 * 1024 * 1024 // 10MB
 
+// maxStatusIDs bounds how many ids /api/secretStatus will check per request.
+// Matches the client-side secrets cap so the my-secrets page fits in a single request.
+const maxStatusIDs = 128
+
+// maxStatusBodyBytes caps the /api/secretStatus request body. 128 ids of 22
+// base64url chars is ~3.2KB of JSON; 8KB leaves slack for whitespace while
+// bounding the payload far below nginx's generic client_max_body_size.
+const maxStatusBodyBytes = 8 * 1024
+
 var fileStorageDir = os.Getenv("FILE_STORAGE_DIR")
 
 var (
@@ -37,6 +46,7 @@ var (
 		return getRedisClient().SetNX(getFileStoreKey(storeKey), value, ttl).Result()
 	}
 	incrementStoredFileCountersFunc = incrementStoredFileCounters
+	secretsExistFunc                = secretsExist
 )
 
 func apiSaveSecret(r *http.Request) (responseCode int, response []byte) {
@@ -146,6 +156,57 @@ func apiGetMessage(r *http.Request) (responseCode int, response []byte) {
 			}
 		}
 	}
+	response, _ = json.Marshal(jResponse)
+	return
+}
+
+// apiSecretStatus reports, for a batch of ids, whether each secret still exists
+// in storage. It is NON-CONSUMING: it never reads or deletes a secret, requires
+// no hashedKey, and returns only existence. A secret that was consumed or
+// expired is already gone from Redis, so it reports false.
+func apiSecretStatus(r *http.Request) (responseCode int, response []byte) {
+	responseCode = 200
+
+	jResponse := struct {
+		Status  string          `json:"status"`
+		Secrets map[string]bool `json:"secrets"`
+	}{
+		Status:  "error",
+		Secrets: map[string]bool{},
+	}
+
+	r.Body = http.MaxBytesReader(nil, r.Body, maxStatusBodyBytes)
+
+	var payload struct {
+		Ids []string `json:"ids"`
+	}
+	dec := json.NewDecoder(r.Body)
+
+	if dec.More() {
+		if err := dec.Decode(&payload); err == nil {
+			// Keep only well-formed storage ids, capped at maxStatusIDs.
+			ids := make([]string, 0, len(payload.Ids))
+			for _, id := range payload.Ids {
+				if !isValidStorageID(id) {
+					continue
+				}
+				ids = append(ids, id)
+				if len(ids) >= maxStatusIDs {
+					break
+				}
+			}
+			statuses, err := secretsExistFunc(ids)
+			if err == nil {
+				jResponse.Status = "ok"
+				jResponse.Secrets = statuses
+			} else {
+				log.Println(err)
+			}
+		} else {
+			log.Println(err)
+		}
+	}
+
 	response, _ = json.Marshal(jResponse)
 	return
 }
@@ -397,6 +458,8 @@ func apiHandler(w http.ResponseWriter, r *http.Request) {
 		responseCode, response = apiSaveSecret(r)
 	case "get":
 		responseCode, response = apiGetMessage(r)
+	case "secretStatus":
+		responseCode, response = apiSecretStatus(r)
 	case "saveFile":
 		responseCode, response = apiSaveSecretFile(r)
 	case "getFile":

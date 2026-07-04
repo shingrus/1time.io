@@ -1,0 +1,40 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import InlineCss from '../../components/InlineCss.astro';
+import {siteHost} from '../../lib/siteConfig.js';
+
+const title = `My Secrets — ${siteHost}`;
+const description = 'Track the one-time secrets you created in this browser.';
+---
+<BaseLayout
+    title={title}
+    description={description}
+    canonical="/my-secrets/"
+    robots="noindex, nofollow"
+>
+    <InlineCss slot="head" name="my-secrets" />
+
+    <section class="my-secrets">
+        <header class="my-secrets-head">
+            <h1 class="my-secrets-title">My Secrets</h1>
+            <p class="my-secrets-subtitle">
+                Saved in this browser. Status checks send only secret IDs, never
+                secret contents or decryption keys.
+            </p>
+            <a class="btn btn-primary my-secrets-create" data-my-secrets-create href="/">Create a new secret</a>
+        </header>
+
+        <p class="my-secrets-loading" data-my-secrets-loading>Loading…</p>
+
+        <ul class="my-secrets-list" data-my-secrets-list hidden></ul>
+
+        <div class="my-secrets-empty" data-my-secrets-empty hidden>
+            <p>No secrets yet.</p>
+            <a class="btn btn-primary" href="/">Create a one-time secret</a>
+        </div>
+    </section>
+
+    <script>
+        import '../../islands/mySecrets.ts';
+    </script>
+</BaseLayout>

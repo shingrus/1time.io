@@ -146,6 +146,11 @@ if (form) {
                 },
             );
             if (data.status === 'ok' && data.newId) {
+                // Lazy so the my-secrets store stays off the file page's initial load.
+                const days = Number(durationSelect.value);
+                void import('../lib/mySecrets.js')
+                    .then(({recordSecret}) => recordSecret({id: data.newId, kind: 'file', durationDays: days}))
+                    .catch(() => {});
                 const link = `${window.location.origin}/f/#${randomKey}${data.newId}`;
                 isEncrypting = false;
                 isUploading = false;
