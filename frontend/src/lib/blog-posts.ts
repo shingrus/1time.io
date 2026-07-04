@@ -206,9 +206,9 @@ export const blogPosts: BlogPost[] = [
     {
         "slug": "firefox-send-alternative",
         "title": "Firefox Send Alternative (2026) — Open Source, No Signup",
-        "description": "Drag-and-drop encrypted file sharing to replace Firefox Send. One-time download links, up to 10 MB, no signup, open source.",
+        "description": "Firefox Send alternative for encrypted one-time file sharing. Encrypted in your browser, one-time download links, up to 10 MB, no signup, open source.",
         "ogTitle": "Firefox Send Alternative (2026) — Open Source, No Signup",
-        "ogDescription": "Drag-and-drop encrypted file sharing to replace Firefox Send. One-time download links, up to 10 MB, no signup, open source.",
+        "ogDescription": "Firefox Send alternative for encrypted one-time file sharing. Encrypted in your browser, one-time download links, up to 10 MB, no signup, open source.",
         "ogImageAlt": "Firefox Send Alternative — 1time.io",
         "tag": "Comparison",
         "heading": "Best Firefox Send Alternative — Free & Self-Hostable",
@@ -1051,9 +1051,9 @@ export const blogPosts: BlogPost[] = [
     {
         "slug": "quantum-safe-password-sharing",
         "title": "Quantum-Safe Password Sharing — Why 1time.io Uses No RSA or ECC | 1time.io",
-        "description": "Most secret sharing tools rely on RSA or ECC, which quantum computers will break. 1time.io uses pure symmetric encryption (AES-256-GCM + HKDF) — a quantum-safe one-time link with no asymmetric cryptography to attack.",
+        "description": "Quantum-safe password sharing using pure symmetric encryption (AES-256-GCM + HKDF) — no RSA or ECC for a quantum computer to break. Free, no signup.",
         "ogTitle": "Quantum-Safe Password Sharing — No RSA, No ECC, No Problem",
-        "ogDescription": "Most secret sharing tools rely on RSA or ECC, which quantum computers will break. 1time.io uses pure symmetric encryption — quantum-safe password sharing with no asymmetric cryptography.",
+        "ogDescription": "Quantum-safe password sharing using pure symmetric encryption (AES-256-GCM + HKDF) — no RSA or ECC for a quantum computer to break. Free, no signup.",
         "ogImageAlt": "Quantum-Safe Password Sharing — 1time.io",
         "tag": "Security",
         "heading": "No RSA, No ECC, No Problem: Why 1time.io Is Already Quantum-Safe",
