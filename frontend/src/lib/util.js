@@ -48,13 +48,6 @@ export async function createSecretLink(secretMessage, options = {}) {
         throw new Error('Failed to create secret link');
     }
 
-    // Record to the local secrets list lazily so the store never lands in the shared
-    // util chunk (which every page loads). Fire-and-forget: best-effort, must not
-    // delay showing the link or run on pages that don't create secrets.
-    void import('./mySecrets.js')
-        .then(({recordSecret}) => recordSecret({id: data.newId, kind: 'message', durationDays}))
-        .catch(() => {});
-
     return {
         randomKey,
         newId: data.newId,

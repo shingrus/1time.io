@@ -21,7 +21,6 @@ func restoreHandlerHooks(t *testing.T) {
 	originalConsumeFileMessage := consumeFileMessageFromStorageFunc
 	originalSetFileRecord := setFileRecordFunc
 	originalIncrementStoredFileCounters := incrementStoredFileCountersFunc
-	originalSecretsExist := secretsExistFunc
 
 	t.Cleanup(func() {
 		saveToStorageFunc = originalSaveToStorage
@@ -29,7 +28,6 @@ func restoreHandlerHooks(t *testing.T) {
 		consumeFileMessageFromStorageFunc = originalConsumeFileMessage
 		setFileRecordFunc = originalSetFileRecord
 		incrementStoredFileCountersFunc = originalIncrementStoredFileCounters
-		secretsExistFunc = originalSecretsExist
 	})
 }
 
@@ -159,166 +157,6 @@ func TestAPIGetMessageStatuses(t *testing.T) {
 				t.Fatalf("response = %s, missing %s", response, tt.wantBody)
 			}
 		})
-	}
-}
-
-func TestAPISecretStatusReturnsExistenceMap(t *testing.T) {
-	restoreHandlerHooks(t)
-
-	idA, _ := generateStorageID()
-	idB, _ := generateStorageID()
-
-	var gotIDs []string
-	secretsExistFunc = func(ids []string) (map[string]bool, error) {
-		gotIDs = ids
-		return map[string]bool{idA: true, idB: false}, nil
-	}
-
-	body, _ := json.Marshal(struct {
-		Ids []string `json:"ids"`
-	}{Ids: []string{idA, idB}})
-
-	req := httptest.NewRequest(http.MethodPost, "/api/secretStatus", bytes.NewReader(body))
-	responseCode, response := apiSecretStatus(req)
-
-	if responseCode != http.StatusOK {
-		t.Fatalf("apiSecretStatus() code = %d, want %d", responseCode, http.StatusOK)
-	}
-	if len(gotIDs) != 2 || gotIDs[0] != idA || gotIDs[1] != idB {
-		t.Fatalf("secretsExist got ids %v, want [%s %s]", gotIDs, idA, idB)
-	}
-
-	var parsed struct {
-		Status  string          `json:"status"`
-		Secrets map[string]bool `json:"secrets"`
-	}
-	if err := json.Unmarshal(response, &parsed); err != nil {
-		t.Fatalf("response is not JSON: %v (%s)", err, response)
-	}
-	if parsed.Status != "ok" {
-		t.Fatalf("status = %q, want ok", parsed.Status)
-	}
-	if parsed.Secrets[idA] != true || parsed.Secrets[idB] != false {
-		t.Fatalf("secrets = %v, want %s:true %s:false", parsed.Secrets, idA, idB)
-	}
-}
-
-func TestAPISecretStatusCapsIDs(t *testing.T) {
-	restoreHandlerHooks(t)
-
-	var gotLen int
-	secretsExistFunc = func(ids []string) (map[string]bool, error) {
-		gotLen = len(ids)
-		return map[string]bool{}, nil
-	}
-
-	ids := make([]string, maxStatusIDs+50)
-	for i := range ids {
-		id, err := generateStorageID()
-		if err != nil {
-			t.Fatalf("generateStorageID error: %v", err)
-		}
-		ids[i] = id
-	}
-	body, _ := json.Marshal(struct {
-		Ids []string `json:"ids"`
-	}{Ids: ids})
-
-	req := httptest.NewRequest(http.MethodPost, "/api/secretStatus", bytes.NewReader(body))
-	if _, response := apiSecretStatus(req); !strings.Contains(string(response), `"status":"ok"`) {
-		t.Fatalf("response = %s, want ok", response)
-	}
-	if gotLen != maxStatusIDs {
-		t.Fatalf("secretsExist got %d ids, want capped at %d", gotLen, maxStatusIDs)
-	}
-}
-
-func TestAPISecretStatusFiltersInvalidIDs(t *testing.T) {
-	restoreHandlerHooks(t)
-
-	var got []string
-	secretsExistFunc = func(ids []string) (map[string]bool, error) {
-		got = ids
-		return map[string]bool{}, nil
-	}
-
-	valid, err := generateStorageID()
-	if err != nil {
-		t.Fatalf("generateStorageID error: %v", err)
-	}
-
-	body, _ := json.Marshal(struct {
-		Ids []string `json:"ids"`
-	}{Ids: []string{valid, "tooshort", "bad*chars/not+base64url", "", valid + "extra"}})
-
-	req := httptest.NewRequest(http.MethodPost, "/api/secretStatus", bytes.NewReader(body))
-	if _, response := apiSecretStatus(req); !strings.Contains(string(response), `"status":"ok"`) {
-		t.Fatalf("response = %s, want ok", response)
-	}
-	if len(got) != 1 || got[0] != valid {
-		t.Fatalf("secretsExist got %v, want only the valid id %q", got, valid)
-	}
-}
-
-func TestAPISecretStatusRejectsOversizedBody(t *testing.T) {
-	restoreHandlerHooks(t)
-
-	called := false
-	secretsExistFunc = func(ids []string) (map[string]bool, error) {
-		called = true
-		return map[string]bool{}, nil
-	}
-
-	huge := strings.Repeat("a", maxStatusBodyBytes+100)
-	req := httptest.NewRequest(http.MethodPost, "/api/secretStatus", strings.NewReader(`{"ids":["`+huge+`"]}`))
-	_, response := apiSecretStatus(req)
-
-	if called {
-		t.Fatal("secretsExist must not be called when the body exceeds maxStatusBodyBytes")
-	}
-	if !strings.Contains(string(response), `"status":"error"`) {
-		t.Fatalf("response = %s, want error", response)
-	}
-}
-
-func TestIsValidStorageID(t *testing.T) {
-	valid, err := generateStorageID()
-	if err != nil {
-		t.Fatalf("generateStorageID error: %v", err)
-	}
-	if !isValidStorageID(valid) {
-		t.Fatalf("generated id %q should be valid", valid)
-	}
-
-	for _, bad := range []string{
-		"",
-		"short",
-		valid + "x",           // too long
-		valid[:len(valid)-1],  // too short
-		"has space" + valid[9:],  // right length, illegal char (space)
-		valid[:len(valid)-1] + "+", // right length, illegal base64url char (+)
-	} {
-		if isValidStorageID(bad) {
-			t.Fatalf("id %q should be invalid", bad)
-		}
-	}
-}
-
-func TestAPISecretStatusReportsBackendError(t *testing.T) {
-	restoreHandlerHooks(t)
-
-	secretsExistFunc = func(ids []string) (map[string]bool, error) {
-		return nil, errStorageIDCollision
-	}
-
-	req := httptest.NewRequest(http.MethodPost, "/api/secretStatus", strings.NewReader(`{"ids":["a"]}`))
-	responseCode, response := apiSecretStatus(req)
-
-	if responseCode != http.StatusOK {
-		t.Fatalf("code = %d, want %d", responseCode, http.StatusOK)
-	}
-	if !strings.Contains(string(response), `"status":"error"`) {
-		t.Fatalf("response = %s, want error status", response)
 	}
 }
 

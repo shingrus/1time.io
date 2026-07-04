@@ -12,7 +12,6 @@ import generatorCss from '../styles/generator.css?raw';
 import aboutCss from '../styles/about.css?raw';
 import articleCss from '../styles/article.css?raw';
 import blogIndexCss from '../styles/blog-index.css?raw';
-import mySecretsCss from '../styles/mySecrets.css?raw';
 
 const cssByName = {
     globals: globalsCss,
@@ -26,7 +25,6 @@ const cssByName = {
     about: aboutCss,
     article: articleCss,
     'blog-index': blogIndexCss,
-    'my-secrets': mySecretsCss,
 } as const;
 
 const minified = new Map<string, string>();

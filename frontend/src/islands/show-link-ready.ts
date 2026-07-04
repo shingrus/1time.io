@@ -1,5 +1,4 @@
 import {copyTextToClipboard} from '../lib/util.js';
-import {parseSecretLink} from '../lib/protocol.mjs';
 
 /**
  * Replace `formEl` with the populated #link-ready-template clone.
@@ -14,25 +13,6 @@ export function showLinkReady(formEl: HTMLElement, link: string, onReset: () => 
 
     const input = clone.querySelector<HTMLInputElement>('[data-link-input]')!;
     input.value = link;
-
-    const fingerprintNameEl = clone.querySelector<HTMLElement>('[data-fingerprint-name]');
-    if (fingerprintNameEl) {
-        // Lazy-load the word list so it stays off the initial home bundle;
-        // it's only needed once a link has actually been created.
-        void (async () => {
-            try {
-                const {id} = parseSecretLink(link);
-                if (!id) return;
-                const {nameForId} = await import('../lib/secretName.js');
-                const name = nameForId(id);
-                if (name) {
-                    fingerprintNameEl.textContent = ` ("${name}")`;
-                }
-            } catch {
-                // Leave the title unchanged if the link can't be parsed.
-            }
-        })();
-    }
 
     const bookmarkEl = clone.querySelector<HTMLElement>('[data-bookmark-shortcut]')!;
     bookmarkEl.textContent = /Mac|iPhone|iPad|iPod/.test(navigator.userAgent || '') ? '⌘D' : 'Ctrl+D';

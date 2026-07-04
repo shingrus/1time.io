@@ -5,7 +5,7 @@ const AGENTS = ['*', 'GPTBot', 'OAI-SearchBot', 'ClaudeBot', 'PerplexityBot', 'G
 
 export const GET: APIRoute = () => {
     const body = [
-        ...AGENTS.flatMap((agent) => [`User-Agent: ${agent}`, 'Allow: /', 'Disallow: /my-secrets/', '']),
+        ...AGENTS.flatMap((agent) => [`User-Agent: ${agent}`, 'Allow: /', '']),
         `Sitemap: ${absoluteUrl('/sitemap.xml')}`,
         '',
     ].join('\n');

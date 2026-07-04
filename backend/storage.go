@@ -84,28 +84,6 @@ func generateStorageID() (string, error) {
 	return base64.RawURLEncoding.EncodeToString(randomBytes), nil
 }
 
-// storageIDLen is the encoded length of an id produced by generateStorageID.
-var storageIDLen = base64.RawURLEncoding.EncodedLen(storageIDByteLen)
-
-// isValidStorageID reports whether id has exactly the shape generateStorageID
-// produces: base64url characters (A–Z, a–z, 0–9, '-', '_') of the fixed encoded
-// length. Rejecting anything else keeps malformed or oversized keys out of Redis.
-func isValidStorageID(id string) bool {
-	if len(id) != storageIDLen {
-		return false
-	}
-	for i := 0; i < len(id); i++ {
-		c := id[i]
-		switch {
-		case c >= 'A' && c <= 'Z', c >= 'a' && c <= 'z', c >= '0' && c <= '9', c == '-', c == '_':
-			continue
-		default:
-			return false
-		}
-	}
-	return true
-}
-
 /*
 This function constructs key for messages using format like 'messageKey<id>'
 */
@@ -115,45 +93,6 @@ func getStoreKey(key string) string {
 
 func getFileStoreKey(key string) string {
 	return "fileKey" + key
-}
-
-// secretsExist reports which of the given ids still have a stored secret, in a
-// single pipelined round-trip. A secret may live in either the message store or
-// the file store, so each id is checked against both keys with one EXISTS; the
-// id is present if either key exists. Duplicate and empty ids are ignored. This
-// is read-only — it never mutates or consumes a secret.
-func secretsExist(ids []string) (map[string]bool, error) {
-	result := make(map[string]bool, len(ids))
-	if len(ids) == 0 {
-		return result, nil
-	}
-
-	client := getRedisClient()
-	pipe := client.Pipeline()
-	cmds := make(map[string]*redis.IntCmd, len(ids))
-	for _, id := range ids {
-		if id == "" {
-			continue
-		}
-		if _, seen := cmds[id]; seen {
-			continue
-		}
-		// EXISTS returns the count of the listed keys that exist (0, 1, or 2).
-		cmds[id] = pipe.Exists(getStoreKey(id), getFileStoreKey(id))
-	}
-
-	if len(cmds) == 0 {
-		return result, nil
-	}
-
-	if _, err := pipe.Exec(); err != nil {
-		return nil, err
-	}
-
-	for id, cmd := range cmds {
-		result[id] = cmd.Val() > 0
-	}
-	return result, nil
 }
 
 func consumeFileMessageFromStorage(key string, hashedKey string) (storedFile StoredFile, status string, err error) {
