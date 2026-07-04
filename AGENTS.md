@@ -9,12 +9,23 @@
 - Astro frontend lives in `frontend/` and builds static HTML into `frontend/build`.
 - Server-rendered HTML flows in `templates/` are deprecated.
 
+## How It Works (zero-knowledge protocol)
+
+The server never sees plaintext or the decryption key. All crypto is client-side; the canonical implementation is `frontend/src/lib/protocol.mjs` — a shared, dependency-free module that runs in the browser **and** Node, reused by the web app, the CLI, and the Zapier app.
+
+- **Create:** the client generates a 20-char `randomKey` (`getRandomString`). With an optional passphrase, `fullSecretKey = passphrase + randomKey`. HKDF-SHA256 (salt `onetimelink:v2`) derives (a) an AES-256-GCM key (`info=encrypt`) and (b) `hashedKey` (`info=auth`, hex) — the **only** key material ever sent to the server.
+- The client AES-256-GCM-encrypts the secret/file (12-byte IV prepended) and POSTs `{ciphertext, hashedKey, duration}`. The server stores `{ciphertext, hashedKey}` under a server-generated id — never the key or plaintext.
+- **Link:** `/v/#<randomKey><id>` (text) or `/f/#<randomKey><id>` (file). `randomKey` lives **only** in the URL fragment and is never sent to the server.
+- **Read (one-time):** the recipient's browser re-derives `hashedKey` from the fragment and POSTs `{id, hashedKey}`; the server constant-time-verifies it, returns the ciphertext, and **deletes** the record. The browser decrypts locally. File downloads delete the record *before* streaming (delete-before-stream), so a failed download cannot be retried.
+- **Status ("My Secrets"):** `POST /api/secretStatus` reports, for a batch of ids, whether each secret still exists — **without consuming it**. "Gone" means read or expired.
+
 ## Backend
 
 - Entry point: `backend/main.go`
 - HTTP handlers: `backend/handlers.go`
 - Redis access: `backend/storage.go`
 - File upload/download API endpoints live in `backend/handlers.go` as `/api/saveFile` and `/api/getFile`.
+- `/api/secretStatus` (`apiSecretStatus` in `backend/handlers.go`) is a **non-consuming** batch existence check used by the Outbox / "My Secrets" page — it reads whether ids still exist and never deletes.
 - Backend file size limit is `10 MB` via `maxFileSize` in `backend/handlers.go`.
 - Uploaded encrypted files are written to `FILE_STORAGE_DIR/<id>.enc` and the Redis record stores the path plus hashed key.
 - `backend/storage.go` runs a file janitor every 2 hours and deletes expired `*.enc` files based on file mtime.
@@ -77,6 +88,21 @@ npm test
 npm pack --dry-run
 ```
 
+## Zapier Integration
+
+- Lives in `zap/` — a Zapier Platform CLI app (CommonJS). Public action: **Create One-Time Link** (`zap/creates/create_one_time_link.js`).
+- Reuses the shared crypto: `zap/scripts/sync-protocol.mjs` generates `zap/lib/protocol.js` (CJS) from `frontend/src/lib/protocol.mjs`. **Run `npm run sync` before `zapier push`** — Zapier does not run npm scripts, and `lib/protocol.js` is gitignored (a build artifact). `pretest` auto-syncs.
+- Tests use Node's built-in runner (`npm test` → `node --test`); no jest. They round-trip encrypt→link→decrypt to prove byte-compatibility with `/v/`.
+- **Not end-to-end zero-knowledge:** encryption runs on Zapier's servers, so the plaintext passes through Zapier. This is disclosed in the action description. The website and CLI remain the zero-knowledge paths.
+
+## Analytics & Ops Scripts
+
+- `scripts/` holds operational analytics run against nginx logs / Redis — **not part of the served app**:
+  - `retention.py` — sender cohort retention + conversion funnel from nginx logs.
+  - `b2b_referrers.py` — maintains a private CSV roster of B2B / work-app referrers (Atlassian, MS Teams, ClickUp, Sonae, …). `KNOWN_COMPANY_HOSTS` maps self-hosted company domains.
+  - `export_redis_stats_to_gsheets.py` — exports Redis counters + nginx sender/receiver stats to a Google Sheet.
+- Owner/self traffic is identified by hits to `/ss` (the private stats page); analytics exclude it.
+
 ## Frontend
 
 - Toolchain: Astro static build
@@ -86,7 +112,7 @@ npm pack --dry-run
 - Pages: `frontend/src/pages/**/index.astro` plus generated `robots.txt.ts` and `sitemap.xml.ts`
 - Components: `frontend/src/components/*.astro`
 - Browser islands: `frontend/src/islands/*.ts`
-- Utils: `frontend/src/lib/util.js` (encryption), `frontend/src/lib/wordlist.js`
+- Crypto: `frontend/src/lib/protocol.mjs` is the canonical shared client-side encryption (AES-256-GCM + HKDF-SHA256); it is the single source synced into the CLI and Zapier app. `frontend/src/lib/util.js` wraps it for the web (`createSecretLink`, API calls) and `frontend/src/lib/fileProtocol.js` handles file packing. **Do not fork the crypto — edit `protocol.mjs` and re-sync.**
 - Styles: `frontend/src/styles/*.css`, inlined per route where needed
 
 Run locally:
@@ -122,6 +148,7 @@ npm run build
 - Frontend file size limit is `Constants.maxFileSizeBytes = 10 * 1024 * 1024` in `frontend/src/lib/util.js`; keep it aligned with the backend limit.
 - File metadata (`name`, `type`, `size`) is packed into the encrypted payload before upload; the web app server does not store that metadata separately.
 - Pages with `robots: 'noindex, nofollow'` in metadata: `/v/`, `/f/`.
+- Outbox / "My Secrets": the `/my-secrets/` page + `frontend/src/islands/mySecrets.ts` keep a `localStorage` list of the secrets **this browser** created and batch-check their read status via `POST /api/secretStatus` (non-consuming). Linked from the success screen (`components/LinkReadyTemplate.astro`) and the footer. localStorage is per-browser — no cross-device, no account.
 - Frontend validation is `npm run check`; there is no React/Vitest suite after the Astro migration.
 
 ## Frontend CSS Performance
