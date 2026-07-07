@@ -25,7 +25,10 @@ type StoredFile struct {
 	HashedKey string `json:"hashedKey"`
 }
 
-const maxFileSize = 10 * 1024 * 1024 // 10MB
+const maxFileSize = 50 * 1024 * 1024 // 50MB
+
+// maxMultipartMemory caps how much of an upload ParseMultipartForm buffers in
+const maxMultipartMemory = 4 * 1024 * 1024 // 4MB
 
 // maxStatusIDs bounds how many ids /api/secretStatus will check per request.
 // Matches the client-side secrets cap so the my-secrets page fits in a single request.
@@ -220,7 +223,7 @@ func apiSaveSecretFile(r *http.Request) (responseCode int, response []byte) {
 
 	r.Body = http.MaxBytesReader(nil, r.Body, maxFileSize+1024) // file + form fields
 
-	if err := r.ParseMultipartForm(maxFileSize); err != nil {
+	if err := r.ParseMultipartForm(maxMultipartMemory); err != nil {
 		if r.MultipartForm != nil {
 			if removeErr := r.MultipartForm.RemoveAll(); removeErr != nil {
 				log.Printf("RemoveAll error: %v", removeErr)

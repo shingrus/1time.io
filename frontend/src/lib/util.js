@@ -11,7 +11,7 @@ export var Constants = {
     ...ProtocolConstants,
     isDebug: import.meta.env.DEV,
     apiBaseUrl: import.meta.env.PUBLIC_API_URL || '/api/',
-    maxFileSizeBytes: 10 * 1024 * 1024,
+    maxFileSizeBytes: 50 * 1024 * 1024,
 };
 
 export const SHARE_DURATION_OPTIONS = [

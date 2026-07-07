@@ -90,6 +90,8 @@ if (form) {
         if (file.size > Constants.maxFileSizeBytes) {
             clearSelection();
             setError(`File is too large. Maximum size is ${Constants.maxFileSizeBytes / (1024 * 1024)} MB.`);
+            const mb = Math.round(file.size / (1024 * 1024));
+            fetch(`/stat-reject-limit-${mb}mb`, {method: 'HEAD', keepalive: true}).catch(() => {});
             return;
         }
         setError('');
