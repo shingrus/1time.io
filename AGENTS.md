@@ -95,6 +95,16 @@ npm pack --dry-run
 - Tests use Node's built-in runner (`npm test` → `node --test`); no jest. They round-trip encrypt→link→decrypt to prove byte-compatibility with `/v/`.
 - **Not end-to-end zero-knowledge:** encryption runs on Zapier's servers, so the plaintext passes through Zapier. This is disclosed in the action description. The website and CLI remain the zero-knowledge paths.
 
+## Chrome Extension
+
+- Lives in `extension/` — a Manifest V3 extension, loaded unpacked (not on the Web Store).
+- Share flow: select text → keyboard shortcut (default `Alt+Shift+S`, also the toolbar icon) → `background.js` reads the selection via `chrome.scripting`, encrypts it with the shared protocol, POSTs `/api/saveSecret`, then injects a page script that writes the one-time link to the clipboard and shows a toast.
+- Zero-knowledge like the web app: encryption happens in the extension's service worker; only ciphertext and `hashedKey` leave the browser.
+- Target server is configurable on the options page (`options.html`); custom origins are granted via `optional_host_permissions` at save time. `https://1time.io` is pre-granted. HTTP only for loopback.
+- Shared encryption protocol: `extension/protocol.mjs` is synced from `frontend/src/lib/protocol.mjs` via `extension/scripts/sync-protocol.mjs` — same rule as CLI/Zapier: **never edit the copy**.
+- Smoke test (needs a running backend): `node extension/scripts/smoke-test.mjs http://127.0.0.1:8080` round-trips encrypt → save → get → decrypt.
+- The shortcut is remappable at `chrome://extensions/shortcuts`; the options page links there.
+
 ## Analytics & Ops Scripts
 
 - `scripts/` holds operational analytics run against nginx logs / Redis — **not part of the served app**:
