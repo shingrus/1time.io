@@ -16,7 +16,15 @@ const commands = await chrome.commands.getAll();
 const shareCommand = commands.find((command) => command.name === 'share-selection');
 if (shareCommand?.shortcut) {
     document.getElementById('shortcut').textContent = shareCommand.shortcut;
+    document.getElementById('shortcut-current').textContent = shareCommand.shortcut;
 }
+
+document.getElementById('share').addEventListener('click', () => {
+    // The background worker reads the selection from the page and shows the
+    // result toast there; close the popup so the toast is visible.
+    chrome.runtime.sendMessage({type: 'share-selection'});
+    window.close();
+});
 
 document.getElementById('save').addEventListener('click', async () => {
     let origin;

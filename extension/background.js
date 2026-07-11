@@ -136,6 +136,11 @@ chrome.commands.onCommand.addListener((command, tab) => {
     }
 });
 
-chrome.action.onClicked.addListener((tab) => {
-    shareSelection(tab);
+// Sent by the popup's share button; the popup closes itself right away, so
+// the tab lookup and the toast happen here.
+chrome.runtime.onMessage.addListener((message) => {
+    if (message?.type === 'share-selection') {
+        chrome.tabs.query({active: true, lastFocusedWindow: true})
+            .then(([tab]) => shareSelection(tab));
+    }
 });

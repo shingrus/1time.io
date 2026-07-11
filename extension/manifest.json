@@ -15,10 +15,11 @@
         "type": "module"
     },
     "action": {
-        "default_title": "Share selection as one-time link"
+        "default_title": "1time — One-Time Secret Links",
+        "default_popup": "popup.html"
     },
     "options_ui": {
-        "page": "options.html",
+        "page": "popup.html",
         "open_in_tab": true
     },
     "permissions": [

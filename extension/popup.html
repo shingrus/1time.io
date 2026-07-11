@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>1time — One-Time Secret Links</title>
+    <style>
+        @font-face {
+            font-family: 'Bricolage Grotesque Variable';
+            font-style: normal;
+            font-display: swap;
+            font-weight: 200 800;
+            src: url('bricolage-grotesque-latin-wght-normal.woff2') format('woff2-variations');
+        }
+
+        :root {
+            --bg: #FAF9F6;
+            --surface: #FFFFFF;
+            --text: #1C1917;
+            --text-secondary: #57534E;
+            --text-muted: #78716C;
+            --accent: #C2410C;
+            --accent-hover: #9A3412;
+            --accent-light: #FFF7ED;
+            --border: #E7E5E4;
+            --success: #15803D;
+            --danger: #DC2626;
+            --radius: 10px;
+            --radius-sm: 6px;
+            --shadow-sm: 0 1px 2px rgba(28, 25, 23, 0.05);
+            --font-display: 'Bricolage Grotesque Variable', system-ui, sans-serif;
+            --font-body: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        }
+
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            width: 340px;
+            margin: 0 auto;
+            font-family: var(--font-body);
+            font-size: 14px;
+            line-height: 1.5;
+            color: var(--text);
+            background: var(--bg);
+        }
+
+        header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 14px 16px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        header img {
+            width: 24px;
+            height: 24px;
+        }
+
+        header .brand {
+            font-family: var(--font-display);
+            font-weight: 700;
+            font-size: 17px;
+        }
+
+        header .brand span {
+            color: var(--accent);
+        }
+
+        main {
+            padding: 16px;
+        }
+
+        .share {
+            width: 100%;
+            padding: 10px 14px;
+            font: 600 14px var(--font-body);
+            color: #fff;
+            background: var(--accent);
+            border: none;
+            border-radius: var(--radius);
+            cursor: pointer;
+            transition: background 150ms ease;
+        }
+
+        .share:hover {
+            background: var(--accent-hover);
+        }
+
+        .share-hint {
+            margin-top: 8px;
+            font-size: 12px;
+            color: var(--text-muted);
+            text-align: center;
+        }
+
+        .share-hint kbd {
+            font: 11px var(--font-body);
+            padding: 1px 5px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-bottom-width: 2px;
+            border-radius: 4px;
+        }
+
+        section {
+            margin-top: 16px;
+            padding: 14px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-sm);
+        }
+
+        section h2 {
+            font-family: var(--font-display);
+            font-size: 13px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            color: var(--text-secondary);
+            margin-bottom: 10px;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 8px 10px;
+            font: 14px var(--font-body);
+            color: var(--text);
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        .row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .row button {
+            padding: 7px 14px;
+            font: 600 13px var(--font-body);
+            color: var(--text);
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+        }
+
+        .row button:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        #status {
+            font-size: 12px;
+        }
+
+        #status.ok {
+            color: var(--success);
+        }
+
+        #status.error {
+            color: var(--danger);
+        }
+
+        .shortcut-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+        }
+
+        .shortcut-row kbd {
+            font: 600 13px var(--font-body);
+            padding: 3px 8px;
+            background: var(--accent-light);
+            color: var(--accent);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+        }
+
+        .shortcut-row button {
+            padding: 6px 12px;
+            font: 600 12px var(--font-body);
+            color: var(--text);
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+        }
+
+        .shortcut-row button:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        footer {
+            padding: 10px 16px 14px;
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <img src="icons/icon-48.png" alt="">
+        <div class="brand">1time<span>.io</span></div>
+    </header>
+
+    <main>
+        <button id="share" class="share">Share selection as one-time link</button>
+        <p class="share-hint">or press <kbd id="shortcut">no shortcut set</kbd> on any page</p>
+
+        <section>
+            <h2>Target server</h2>
+            <input type="text" id="host" placeholder="https://1time.io" spellcheck="false">
+            <div class="row">
+                <button id="save">Save</button>
+                <span id="status"></span>
+            </div>
+        </section>
+
+        <section>
+            <h2>Keyboard shortcut</h2>
+            <div class="shortcut-row">
+                <kbd id="shortcut-current">not set</kbd>
+                <button id="edit-shortcut">Change</button>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        Text is encrypted in your browser before upload — the server never sees
+        the plaintext or the key. Links work exactly once.
+    </footer>
+
+    <script type="module" src="popup.js"></script>
+</body>
+</html>
