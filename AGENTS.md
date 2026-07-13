@@ -98,7 +98,9 @@ npm pack --dry-run
 ## Chrome Extension
 
 - Lives in `extension/` — a Manifest V3 extension, loaded unpacked (not on the Web Store).
-- Share flow: select text → keyboard shortcut (default `Alt+Shift+S`) or the share button in the toolbar popup → `background.js` reads the selection via `chrome.scripting`, encrypts it with the shared protocol, POSTs `/api/saveSecret`, then injects a page script that writes the one-time link to the clipboard and shows a toast.
+- Share flow: select text → keyboard shortcut (default `Alt+Shift+S`), the selection context-menu item, or the share button in the toolbar popup → `background.js` reads the selection via `chrome.scripting`, encrypts it with the shared protocol, POSTs `/api/saveSecret`, copies the one-time link via an **offscreen document**, then injects a **generic** status toast into the page.
+- **Never put the link in the page DOM:** the clipboard write happens in `offscreen.html`/`offscreen.js` (an extension-owned context), and the injected toast only ever shows generic text. Isolated-world scripts share the page's DOM, so the secret fragment must never be rendered or inserted there.
+- The created link is also saved to `chrome.storage.session` (in-memory, not disk, not synced, not readable by pages) and shown in the popup's "Last link" card (copy / clear) — the popup is extension-owned, so this is safe. Preferences use `chrome.storage.local` (never `sync`, since a self-hosted host can be sensitive).
 - Zero-knowledge like the web app: encryption happens in the extension's service worker; only ciphertext and `hashedKey` leave the browser.
 - Toolbar popup (`popup.html`/`popup.js`, styled with the site's design tokens) doubles as the options page: share button, target server, shortcut display. Custom origins are granted via `optional_host_permissions` at save time. `https://1time.io` is pre-granted. HTTP only for loopback.
 - Shared encryption protocol: `extension/protocol.mjs` is synced from `frontend/src/lib/protocol.mjs` via `extension/scripts/sync-protocol.mjs` — same rule as CLI/Zapier: **never edit the copy**.

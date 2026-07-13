@@ -11,66 +11,83 @@ import {SettingsDefaults} from './settings.mjs';
 async function readSelection(tabId) {
     const [injection] = await chrome.scripting.executeScript({
         target: {tabId},
-        func: () => String(window.getSelection()),
+        // window.getSelection() ignores text selected inside <input>/<textarea>,
+        // so check the focused field first — that covers "share what I just
+        // typed", including password fields.
+        func: () => {
+            const active = document.activeElement;
+            if (active
+                && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA')
+                && typeof active.selectionStart === 'number'
+                && active.selectionStart !== active.selectionEnd) {
+                return active.value.slice(active.selectionStart, active.selectionEnd);
+            }
+
+            return String(window.getSelection());
+        },
     });
 
     return injection?.result ?? '';
 }
 
-// Runs inside the page: copies the link (if any) and shows a short toast.
-// The clipboard write happens in the tab because the service worker has no
-// DOM and no reliable clipboard access.
-function deliverToPage(message, link) {
-    const showToast = (text) => {
-        const toast = document.createElement('div');
-        toast.textContent = text;
-        Object.assign(toast.style, {
-            position: 'fixed',
-            top: '16px',
-            right: '16px',
-            zIndex: '2147483647',
-            maxWidth: '360px',
-            padding: '10px 14px',
-            background: '#16181d',
-            color: '#fff',
-            font: '13px/1.4 system-ui, sans-serif',
-            borderRadius: '8px',
-            boxShadow: '0 4px 16px rgba(0, 0, 0, 0.35)',
-            wordBreak: 'break-all',
-        });
-        document.documentElement.appendChild(toast);
-        setTimeout(() => toast.remove(), 4000);
-    };
-
-    if (!link) {
-        showToast(message);
-        return;
-    }
-
-    const copyViaTextarea = () => {
-        const area = document.createElement('textarea');
-        area.value = link;
-        area.style.position = 'fixed';
-        area.style.opacity = '0';
-        document.documentElement.appendChild(area);
-        area.select();
-        const copied = document.execCommand('copy');
-        area.remove();
-        return copied;
-    };
-
-    navigator.clipboard.writeText(link).then(
-        () => showToast(message),
-        () => showToast(copyViaTextarea() ? message : `Could not access the clipboard. Link: ${link}`),
-    );
+// Runs inside the page: shows a short, generic status toast. It deliberately
+// never receives the secret link. An isolated-world script shares the page's
+// DOM, so anything rendered here — or any element inserted here — is readable
+// by page JavaScript. The link (and its secret key fragment) must never reach
+// the page; the clipboard write happens in an offscreen document instead.
+function deliverToPage(message) {
+    const toast = document.createElement('div');
+    toast.textContent = message;
+    Object.assign(toast.style, {
+        position: 'fixed',
+        top: '16px',
+        right: '16px',
+        zIndex: '2147483647',
+        maxWidth: '360px',
+        padding: '10px 14px',
+        background: '#16181d',
+        color: '#fff',
+        font: '13px/1.4 system-ui, sans-serif',
+        borderRadius: '8px',
+        boxShadow: '0 4px 16px rgba(0, 0, 0, 0.35)',
+        wordBreak: 'break-all',
+    });
+    document.documentElement.appendChild(toast);
+    setTimeout(() => toast.remove(), 4000);
 }
 
-function notify(tabId, message, link = null) {
+function notify(tabId, message) {
     return chrome.scripting.executeScript({
         target: {tabId},
         func: deliverToPage,
-        args: [message, link],
+        args: [message],
     });
+}
+
+// The clipboard write runs in an extension-owned offscreen document, not in the
+// page. The service worker has no DOM of its own, and injecting the link into
+// the tab would expose the secret fragment to page scripts through the shared
+// DOM. The offscreen document is a private extension context the page cannot
+// observe.
+async function ensureOffscreenDocument() {
+    const contexts = await chrome.runtime.getContexts({
+        contextTypes: ['OFFSCREEN_DOCUMENT'],
+    });
+
+    if (contexts.length === 0) {
+        await chrome.offscreen.createDocument({
+            url: 'offscreen.html',
+            reasons: ['CLIPBOARD'],
+            justification: 'Copy the one-time link to the clipboard without exposing it to the page.',
+        });
+    }
+}
+
+async function copyToClipboard(text) {
+    await ensureOffscreenDocument();
+    const copied = await chrome.runtime.sendMessage({target: 'offscreen', type: 'copy', data: text});
+
+    return copied === true;
 }
 
 async function createOneTimeLink(origin, secret, expiresInSeconds) {
@@ -99,19 +116,22 @@ async function createOneTimeLink(origin, secret, expiresInSeconds) {
     return buildSecretLink(origin, randomKey, data.newId);
 }
 
-async function shareSelection(tab) {
+// presetSelection is supplied by the context menu (info.selectionText), which
+// already resolves selections inside iframes. Reading via chrome.scripting only
+// targets the top frame, so it would miss those — use the preset when we have it.
+async function shareSelection(tab, presetSelection) {
     if (!tab?.id) {
         return;
     }
 
     try {
-        const selection = await readSelection(tab.id);
+        const selection = presetSelection ?? await readSelection(tab.id);
         if (!selection.trim()) {
             await notify(tab.id, 'Select some text first, then press the shortcut again.');
             return;
         }
 
-        const {host, expiresInSeconds} = await chrome.storage.sync.get(SettingsDefaults);
+        const {host, expiresInSeconds} = await chrome.storage.local.get(SettingsDefaults);
         const origin = normalizeOrigin(host);
 
         const granted = await chrome.permissions.contains({origins: [`${origin}/*`]});
@@ -122,13 +142,39 @@ async function shareSelection(tab) {
         }
 
         const link = await createOneTimeLink(origin, selection, expiresInSeconds);
-        await notify(tab.id, 'One-time link copied to your clipboard.', link);
+        // Keep the link in session storage (in-memory, never on disk, never
+        // synced, not readable by pages) so the popup can show and re-copy it.
+        await chrome.storage.session.set({lastLink: link});
+
+        const copied = await copyToClipboard(link);
+        await notify(
+            tab.id,
+            copied
+                ? 'One-time link copied to your clipboard.'
+                : 'Link created — open the 1time popup to copy it.',
+        );
     } catch (error) {
         // On restricted pages (chrome://, Web Store) even the toast injection
         // fails — nothing more we can do there.
         await notify(tab.id, `1time: ${error.message}`).catch(() => {});
     }
 }
+
+const CONTEXT_MENU_ID = 'share-selection';
+
+chrome.runtime.onInstalled.addListener(() => {
+    chrome.contextMenus.create({
+        id: CONTEXT_MENU_ID,
+        title: 'Share as one-time link',
+        contexts: ['selection'],
+    });
+});
+
+chrome.contextMenus.onClicked.addListener((info, tab) => {
+    if (info.menuItemId === CONTEXT_MENU_ID) {
+        shareSelection(tab, info.selectionText);
+    }
+});
 
 chrome.commands.onCommand.addListener((command, tab) => {
     if (command === 'share-selection') {
