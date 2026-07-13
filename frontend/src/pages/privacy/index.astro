@@ -87,6 +87,27 @@ const description = `Privacy policy for ${siteHost}. Zero-knowledge architecture
         </div>
 
         <div class="about-section">
+            <h2>Browser extension</h2>
+            <p>
+                The 1time browser extension reads the text you select only when you
+                explicitly trigger it — via the shortcut, the right-click menu, or the
+                toolbar button. That text is encrypted in your browser before upload, so
+                the same zero-knowledge guarantees apply: the server never sees plaintext
+                or keys. The generated one-time link is written to your clipboard, and
+                nothing else leaves your browser.
+            </p>
+            <p>
+                The extension stores your preferences — the target server and the
+                link expiry — in your browser's local storage, never synced to any
+                account or server. It also holds the most recently created link in
+                temporary session memory so you can re-copy it from the popup; that
+                clears when you close the browser, or immediately when you press
+                Clear. It never stores your plaintext secrets, your browsing history,
+                or a lasting record of the links you create.
+            </p>
+        </div>
+
+        <div class="about-section">
             <h2>Self-hosting</h2>
             <p>
                 {siteHost} is <a href="https://github.com/shingrus/1time" target="_blank" rel="noopener noreferrer">open source</a>.

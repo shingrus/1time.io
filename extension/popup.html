@@ -1,0 +1,344 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>1time — One-Time Secret Links</title>
+    <style>
+        @font-face {
+            font-family: 'Bricolage Grotesque Variable';
+            font-style: normal;
+            font-display: optional;
+            font-weight: 200 800;
+            src: url('bricolage-grotesque-latin-wght-normal.woff2') format('woff2-variations');
+        }
+
+        :root {
+            --bg: #FAF9F6;
+            --surface: #FFFFFF;
+            --text: #1C1917;
+            --text-secondary: #57534E;
+            --text-muted: #78716C;
+            --accent: #C2410C;
+            --accent-hover: #9A3412;
+            --accent-light: #FFF7ED;
+            --border: #E7E5E4;
+            --border-focus: #C2410C;
+            --focus-ring: 0 0 0 3px rgba(194, 65, 12, 0.12);
+            --success: #15803D;
+            --danger: #DC2626;
+            --radius: 10px;
+            --radius-sm: 6px;
+            --shadow-sm: 0 1px 2px rgba(28, 25, 23, 0.05);
+            --shadow: 0 1px 3px rgba(28, 25, 23, 0.08), 0 1px 2px rgba(28, 25, 23, 0.04);
+            --transition: 150ms ease;
+            --font-display: 'Bricolage Grotesque Variable', 'Bricolage Grotesque', system-ui, sans-serif;
+            --font-body: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        }
+
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            width: 340px;
+            margin: 0 auto;
+            font-family: var(--font-body);
+            font-size: 14px;
+            line-height: 1.5;
+            color: var(--text);
+            background: var(--bg);
+        }
+
+        header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 14px 16px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        header img {
+            width: 24px;
+            height: 24px;
+        }
+
+        header .brand {
+            font-family: var(--font-display);
+            font-weight: 800;
+            font-size: 18px;
+            letter-spacing: -0.02em;
+        }
+
+        header .brand span {
+            color: var(--accent);
+        }
+
+        main {
+            padding: 16px;
+        }
+
+        .share {
+            width: 100%;
+            padding: 10px 14px;
+            font: 600 15px var(--font-body);
+            color: #fff;
+            background: var(--accent);
+            border: none;
+            border-radius: var(--radius);
+            cursor: pointer;
+            transition: all var(--transition);
+        }
+
+        .share:hover {
+            background: var(--accent-hover);
+            transform: translateY(-1px);
+            box-shadow: var(--shadow);
+        }
+
+        .share:active {
+            transform: translateY(0);
+        }
+
+        .share-hint {
+            margin-top: 8px;
+            font-size: 12px;
+            color: var(--text-muted);
+            text-align: center;
+        }
+
+        .share-hint kbd {
+            font: 11px var(--font-body);
+            padding: 1px 5px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-bottom-width: 2px;
+            border-radius: 4px;
+        }
+
+        section {
+            margin-top: 16px;
+            padding: 14px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-sm);
+        }
+
+        section h2 {
+            font-family: var(--font-display);
+            font-size: 13px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            color: var(--text-secondary);
+            margin-bottom: 10px;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 10px 14px;
+            font: 15px var(--font-body);
+            color: var(--text);
+            background: var(--surface);
+            border: 1.5px solid var(--border);
+            border-radius: var(--radius-sm);
+            outline: none;
+        }
+
+        input[type="text"]:focus {
+            border-color: var(--border-focus);
+            box-shadow: var(--focus-ring);
+        }
+
+        .field-label {
+            display: block;
+            margin-top: 12px;
+            margin-bottom: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            letter-spacing: 0.01em;
+            color: var(--text);
+        }
+
+        select {
+            width: 100%;
+            padding: 10px 14px;
+            padding-right: 32px;
+            font: 15px var(--font-body);
+            color: var(--text);
+            background: var(--surface);
+            border: 1.5px solid var(--border);
+            border-radius: var(--radius-sm);
+            outline: none;
+            cursor: pointer;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2378716C' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+        }
+
+        select:focus {
+            border-color: var(--border-focus);
+            box-shadow: var(--focus-ring);
+        }
+
+        .row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        #status {
+            min-height: 16px;
+            font-size: 12px;
+        }
+
+        #status:empty,
+        #last-link-status:empty {
+            display: none;
+        }
+
+        #status.ok,
+        #last-link-status.ok {
+            color: var(--success);
+        }
+
+        #status.error,
+        #last-link-status.error {
+            color: var(--danger);
+        }
+
+        #last-link-status {
+            min-height: 16px;
+            font-size: 12px;
+        }
+
+        input[type="text"].link-readonly {
+            font: 13px 'SF Mono', 'Fira Code', 'Fira Mono', monospace;
+            letter-spacing: -0.01em;
+            background: var(--bg);
+            cursor: pointer;
+        }
+
+        .btn-copy {
+            padding: 7px 14px;
+            font: 600 13px var(--font-body);
+            color: #fff;
+            background: var(--accent);
+            border: none;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            transition: all var(--transition);
+        }
+
+        .btn-copy:hover {
+            background: var(--accent-hover);
+        }
+
+        #last-link {
+            margin-bottom: 20px;
+        }
+
+        .last-link-notice {
+            margin-top: 10px;
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .btn-neutral {
+            padding: 7px 14px;
+            font: 600 13px var(--font-body);
+            color: var(--text-secondary);
+            background: transparent;
+            border: 1.5px solid var(--border);
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            transition: all var(--transition);
+        }
+
+        .btn-neutral:hover {
+            color: var(--text);
+            border-color: var(--text-secondary);
+            background: rgba(28, 25, 23, 0.02);
+        }
+
+        .shortcut-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+        }
+
+        .shortcut-row kbd {
+            font: 600 13px var(--font-body);
+            padding: 3px 8px;
+            background: var(--accent-light);
+            color: var(--accent);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+        }
+
+        footer {
+            padding: 10px 16px 14px;
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <img src="icons/icon-48.png" alt="">
+        <div class="brand">1time<span>.io</span></div>
+    </header>
+
+    <main>
+        <section id="last-link" hidden>
+            <h2>Last link</h2>
+            <input type="text" id="last-link-input" class="link-readonly" readonly aria-label="Last one-time link">
+            <div class="row">
+                <button id="copy-last" class="btn-copy">Copy link</button>
+                <button id="clear-last" class="btn-neutral">Clear</button>
+                <span id="last-link-status"></span>
+            </div>
+            <p class="last-link-notice">Works once — after it's opened, the secret is destroyed.</p>
+        </section>
+
+        <button id="share" class="share">Share selection as one-time link</button>
+        <p class="share-hint">or press <kbd id="shortcut">no shortcut set</kbd> on any page</p>
+
+        <section>
+            <h2>Target server</h2>
+            <input type="text" id="host" placeholder="https://1time.io" spellcheck="false">
+            <div class="row">
+                <button id="save-host" class="btn-neutral">Save</button>
+                <span id="status"></span>
+            </div>
+            <label class="field-label" for="expiry">Link expires after</label>
+            <select id="expiry">
+                <option value="86400">1 day</option>
+                <option value="259200">3 days</option>
+                <option value="604800">7 days</option>
+                <option value="2592000">30 days</option>
+            </select>
+        </section>
+
+        <section>
+            <h2>Keyboard shortcut</h2>
+            <div class="shortcut-row">
+                <kbd id="shortcut-current">not set</kbd>
+                <button id="edit-shortcut" class="btn-neutral">Change</button>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        Text is encrypted in your browser before upload — the server never sees
+        the plaintext or the key. Links work exactly once.
+    </footer>
+
+    <script type="module" src="popup.js"></script>
+</body>
+</html>

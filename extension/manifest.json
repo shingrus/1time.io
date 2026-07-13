@@ -1,0 +1,49 @@
+{
+    "manifest_version": 3,
+    "name": "1time — One-Time Secret Links",
+    "version": "1.0.0",
+    "description": "Encrypt the selected text in your browser and copy a zero-knowledge one-time link to your clipboard. Works with 1time.io or any self-hosted instance.",
+    "minimum_chrome_version": "116",
+    "icons": {
+        "16": "icons/icon-16.png",
+        "32": "icons/icon-32.png",
+        "48": "icons/icon-48.png",
+        "128": "icons/icon-128.png"
+    },
+    "background": {
+        "service_worker": "background.js",
+        "type": "module"
+    },
+    "action": {
+        "default_title": "1time — One-Time Secret Links",
+        "default_popup": "popup.html"
+    },
+    "options_ui": {
+        "page": "popup.html",
+        "open_in_tab": true
+    },
+    "permissions": [
+        "storage",
+        "scripting",
+        "activeTab",
+        "clipboardWrite",
+        "contextMenus",
+        "offscreen"
+    ],
+    "host_permissions": [
+        "https://1time.io/*"
+    ],
+    "optional_host_permissions": [
+        "https://*/*",
+        "http://127.0.0.1/*",
+        "http://localhost/*"
+    ],
+    "commands": {
+        "share-selection": {
+            "suggested_key": {
+                "default": "Alt+Shift+S"
+            },
+            "description": "Encrypt the selected text and copy a one-time link"
+        }
+    }
+}
