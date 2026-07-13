@@ -1,0 +1,17 @@
+{
+  "name": "1time-extension",
+  "version": "1.0.0",
+  "description": "Chrome extension for sharing selected text as zero-knowledge one-time links via 1time.io",
+  "type": "module",
+  "private": true,
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "sync:protocol": "node ./scripts/sync-protocol.mjs",
+    "check:sync": "npm run sync:protocol && git diff --exit-code -- protocol.mjs",
+    "pretest": "npm run sync:protocol",
+    "test": "node --test ./scripts/protocol.test.mjs",
+    "smoke": "node ./scripts/smoke-test.mjs"
+  }
+}
