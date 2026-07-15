@@ -5,7 +5,6 @@ import hkdf_key_derivation_explainedHtml from '../content/blog/hkdf-key-derivati
 import how_to_send_passwords_over_emailHtml from '../content/blog/how-to-send-passwords-over-email.html?raw';
 import how_to_share_api_keysHtml from '../content/blog/how-to-share-api-keys.html?raw';
 import how_to_share_passwords_securelyHtml from '../content/blog/how-to-share-passwords-securely.html?raw';
-import how_to_share_wifi_passwordHtml from '../content/blog/how-to-share-wifi-password.html?raw';
 import is_slack_safe_for_passwordsHtml from '../content/blog/is-slack-safe-for-passwords.html?raw';
 import onetimesecret_alternativeHtml from '../content/blog/onetimesecret-alternative.html?raw';
 import password_for_crypto_walletHtml from '../content/blog/password-for-crypto-wallet.html?raw';
@@ -537,73 +536,6 @@ export const blogPosts: BlogPost[] = [
             }
         ],
         "html": how_to_share_passwords_securelyHtml
-    },
-    {
-        "slug": "how-to-share-wifi-password",
-        "title": "How to Share Your WiFi Password Securely — 1time.io",
-        "description": "Learn the safest ways to share your WiFi password with guests, Airbnb visitors, and coworkers without exposing your network to security risks.",
-        "ogTitle": "How to Share Your WiFi Password Securely",
-        "ogDescription": "Share WiFi credentials safely with guests and visitors. Avoid writing passwords on sticky notes.",
-        "ogImageAlt": "How to Share WiFi Password Securely",
-        "tag": "Guide",
-        "heading": "How to Share Your WiFi Password Securely",
-        "excerpt": "Whether you are hosting guests, running an Airbnb, or onboarding office visitors, sharing WiFi passwords the wrong way can compromise your entire network.",
-        "meta": "By Igor Ermakov · Feb 5, 2026 · 5 min read",
-        "schemas": [
-            {
-                "@context": "https://schema.org",
-                "@type": "Article",
-                "headline": "How to Share Your WiFi Password Securely",
-                "description": "Learn the safest ways to share your WiFi password with guests, Airbnb visitors, and coworkers without exposing your network to security risks.",
-                "datePublished": "2026-02-05",
-                "dateModified": "2026-03-20",
-                "author": {
-                    "@type": "Person",
-                    "name": "Igor Ermakov",
-                    "url": "https://1time.io/about/"
-                },
-                "publisher": {
-                    "@type": "Organization",
-                    "name": "1time.io",
-                    "url": "https://1time.io",
-                    "logo": {
-                        "@type": "ImageObject",
-                        "url": "https://1time.io/logo-512.png",
-                        "width": 512,
-                        "height": 512
-                    }
-                },
-                "mainEntityOfPage": "https://1time.io/blog/how-to-share-wifi-password/",
-                "image": [
-                    "https://1time.io/1time-og-main.png"
-                ]
-            },
-            {
-                "@context": "https://schema.org",
-                "@type": "BreadcrumbList",
-                "itemListElement": [
-                    {
-                        "@type": "ListItem",
-                        "position": 1,
-                        "name": "Home",
-                        "item": "https://1time.io/"
-                    },
-                    {
-                        "@type": "ListItem",
-                        "position": 2,
-                        "name": "Blog",
-                        "item": "https://1time.io/blog/"
-                    },
-                    {
-                        "@type": "ListItem",
-                        "position": 3,
-                        "name": "How to Share WiFi Password",
-                        "item": "https://1time.io/blog/how-to-share-wifi-password/"
-                    }
-                ]
-            }
-        ],
-        "html": how_to_share_wifi_passwordHtml
     },
     {
         "slug": "is-slack-safe-for-passwords",

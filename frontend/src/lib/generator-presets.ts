@@ -167,7 +167,11 @@ export const PRESETS: Record<string, GeneratorPreset> = {
                 },
             },
             {heading: 'How to change your WiFi password on any router', text: 'Log into your router\'s admin panel — the address depends on the brand. Netgear: routerlogin.net or 192.168.1.1. TP-Link: tplinkwifi.net or 192.168.0.1. Linksys: 192.168.1.1. ASUS: router.asus.com. Navigate to the Wireless or WiFi settings section. Look for the password, passkey, or pre-shared key field under your network name (SSID). Select WPA2-Personal or WPA3-Personal as the security mode. Paste or type your new password, save the settings, and reconnect all your devices.'},
-            {heading: 'How to share your WiFi password securely', text: 'Avoid writing your WiFi password on a sticky note or whiteboard where anyone passing by can see it. Instead, share it through an encrypted one-time link that self-destructs after being read — use the "Share as link" button above. For in-person sharing, a WiFi QR code is convenient and secure. On iPhone, you can share WiFi passwords directly to nearby Apple devices through the built-in sharing feature. On Android, use the share button in WiFi settings to generate a QR code.'},
+            {heading: 'How to share your WiFi password securely', text: 'Never send a WiFi password over SMS, email, or chat — those copies persist in message history forever — and skip the sticky note on the fridge. For remote sharing, use an encrypted one-time link that self-destructs after being read: generate the password above, then click "Share as link". For in-person sharing, a QR code is the fastest option — guests scan it instead of typing 16 random characters on a phone keyboard.'},
+            {heading: 'Share WiFi from an iPhone or Mac', text: 'Apple devices share WiFi automatically between people in each other\'s contacts: when a guest with an iPhone, iPad, or Mac tries to join your network, your device pops up a "Share Your Wi-Fi Password" prompt — one tap and they are connected, without ever seeing the password. It requires both devices to have WiFi and Bluetooth on and the other person\'s Apple ID email in your contacts. For guests on Android or Windows, that prompt never appears — copy the password and send it as a one-time link instead.'},
+            {heading: 'Share WiFi from an Android phone', text: 'On Android 10 and newer, open Settings → Network & internet → Internet, tap the gear next to your network, then tap Share — the phone shows a QR code (and the password in plain text below it). A guest scans the code with their camera and joins instantly. One caution: that QR encodes your password in plain text, so show it in person rather than screenshotting it into a chat. For remote guests, a self-destructing one-time link is the safer route.'},
+            {heading: 'Share WiFi from Windows', text: 'On current Windows 11, Settings can share WiFi directly: go to Settings → Network & internet → Wi-Fi → your network\'s properties and choose "View Wi-Fi security key" — Windows reveals the password and displays a QR code a guest can scan to join. On Windows 10 or older builds without the QR option, retrieve the saved key with netsh wlan show profile name="YourNetwork" key=clear in a terminal (read the "Key Content" line). For remote sharing from any Windows version, send the key as a one-time link rather than pasting it into email or chat.'},
+            {heading: 'Guests and rentals: use a guest network', text: 'If you host visitors regularly — or run an Airbnb — put them on a separate guest network. It isolates their devices from your computers, printers, and smart home; it can carry a simpler password than your main network; and you can rotate that password between stays without reconnecting your own devices. Send each guest the current password as a one-time link in the check-in message — the link destroys itself after being opened, and rotating the password after checkout cuts off any copies that linger.'},
         ],
         faq: [
             {q: 'Why no symbols in WiFi passwords?', a: 'Most WiFi passwords are typed on devices with limited keyboards — smart TVs, game consoles, IoT devices. Symbols like @#$% are hard to locate on these keyboards and slow down the process. A 16-character alphanumeric password still provides about 95 bits of entropy, which is more than sufficient for WiFi security.'},
@@ -194,7 +198,7 @@ export const PRESETS: Record<string, GeneratorPreset> = {
             inLanguage: 'en',
             isAccessibleForFree: true,
             datePublished: '2025-01-15',
-            dateModified: '2026-04-10',
+            dateModified: '2026-07-15',
             featureList: 'Random WPA2/WPA3 password generation, Alphanumeric only (no confusing symbols), Adjustable length (8-128 characters), Passphrase mode, Entropy strength meter, One-click copy, Encrypted one-time sharing link, QR code sharing',
             author: {'@type': 'Organization', name: '1time.io', url: 'https://1time.io'},
         },
@@ -412,7 +416,7 @@ export const RELATED_GUIDES: Record<string, CrossLink[]> = {
     ],
     '/wifi-password-generator': [
         {path: '/blog/secure-home-wifi-setup', label: 'Secure Home WiFi Setup', desc: 'Complete guide to locking down your network'},
-        {path: '/blog/how-to-share-wifi-password', label: 'How to Share Your WiFi Password', desc: 'Give guests access without compromising security'},
+        {path: '/share-passwords-with-qr-code', label: 'Share via QR Code', desc: 'Let guests scan instead of typing the password'},
         {path: '/blog/how-to-share-passwords-securely', label: 'How to Share Passwords Securely', desc: 'General best practices for credential sharing'},
     ],
     '/api-key-generator': [
