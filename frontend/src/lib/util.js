@@ -28,7 +28,8 @@ export function buildSecretLink(randomString, newId) {
 }
 
 export async function createSecretLink(secretMessage, options = {}) {
-    const {secretKey = '', durationDays = Constants.defaultDuration} = options;
+    // views: 1 (default, burn after reading), N > 1, or -1 for unlimited until expiry.
+    const {secretKey = '', durationDays = Constants.defaultDuration, views = 1} = options;
 
     if (!secretMessage) {
         throw new Error('Secret message is required');
@@ -42,6 +43,7 @@ export async function createSecretLink(secretMessage, options = {}) {
         secretMessage: encryptedMessage,
         hashedKey,
         duration: durationDays * 86400,
+        ...(views !== 1 && {views}),
     });
 
     if (data.status !== 'ok' || !data.newId) {

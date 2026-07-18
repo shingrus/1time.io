@@ -9,6 +9,7 @@ if (form) {
     const decryptedSection = form.querySelector<HTMLElement>('[data-state="decrypted"]')!;
     const decryptedBody = form.querySelector<HTMLElement>('[data-decrypted-body]')!;
     const noMessageSection = form.querySelector<HTMLElement>('[data-state="no-message"]')!;
+    const viewsLeftNote = form.querySelector<HTMLElement>('[data-views-left]')!;
     const postReadCta = form.querySelector<HTMLElement>('[data-state="post-read-cta"]')!;
     const revealBtn = form.querySelector<HTMLButtonElement>('[data-reveal]')!;
     const copyBtn = form.querySelector<HTMLButtonElement>('[data-copy]')!;
@@ -29,14 +30,17 @@ if (form) {
 
     // A/B/C/D banner copy test: variant is encoded in the reply URL (?reply=N)
     // so nginx logs measure clicks per variant with no extra tracking.
+    // Variants 1 and 4 claim the message was destroyed, so multi-view reads
+    // (the link still works) only draw from variants 2 and 3.
     const REPLY_HEADINGS = [
         'Message read and destroyed. Nothing to trace back.',
         'Your reply deserves the same protection.',
         'Sending something back? Keep it out of the chat history too.',
         "That's how secrets should travel — one view, then gone.",
     ];
-    const pickReplyVariant = () => {
-        const v = 1 + Math.floor(Math.random() * REPLY_HEADINGS.length);
+    const pickReplyVariant = (destroyed: boolean) => {
+        const pool = destroyed ? [1, 2, 3, 4] : [2, 3];
+        const v = pool[Math.floor(Math.random() * pool.length)];
         const h = form.querySelector<HTMLElement>('[data-reply-heading]');
         const b = form.querySelector<HTMLAnchorElement>('[data-reply-btn]');
         if (h) h.textContent = REPLY_HEADINGS[v - 1];
@@ -111,7 +115,15 @@ if (form) {
 
             if (data.status === 'ok' && typeof data.cryptedMessage === 'string' && data.cryptedMessage.length > 0) {
                 decryptedBody.textContent = await decryptSecretMessage(data.cryptedMessage, fullSecretKey);
-                pickReplyVariant();
+                // Older backends omit viewsLeft; treat that as the consumed one-time case.
+                const viewsLeft = typeof data.viewsLeft === 'number' ? data.viewsLeft : 0;
+                if (viewsLeft === -1) {
+                    viewsLeftNote.textContent = 'This link stays available until it expires.';
+                } else if (viewsLeft > 0) {
+                    viewsLeftNote.textContent = `This link can be opened ${viewsLeft} more ${viewsLeft === 1 ? 'time' : 'times'}.`;
+                }
+                viewsLeftNote.toggleAttribute('hidden', viewsLeft === 0);
+                pickReplyVariant(viewsLeft === 0);
                 qrAction.toggleAttribute('hidden', true);
                 postReadCta.toggleAttribute('hidden', false);
                 showOnly(decryptedSection);

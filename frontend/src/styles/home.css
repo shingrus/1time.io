@@ -50,15 +50,54 @@
 
 .share-primary-actions {
   margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
 }
 
 .share-primary-actions .btn-lg {
   padding-inline: 18px;
+  margin-left: auto;
+}
+
+.options-chips {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  flex-wrap: wrap;
+}
+
+.option-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-family: inherit;
+  padding: 4px 0;
+  border: 0;
+  background: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.option-chip:hover,
+.option-chip[aria-expanded='true'] {
+  color: var(--text);
+}
+
+.option-chip svg {
+  flex-shrink: 0;
 }
 
 @media (min-width: 480px) {
   .options-grid {
     grid-template-columns: 1fr 1fr;
+  }
+
+  .options-grid .options-grid-full {
+    grid-column: 1 / -1;
   }
 }
 

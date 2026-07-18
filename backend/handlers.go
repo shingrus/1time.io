@@ -17,6 +17,30 @@ type StoredMessage struct {
 	Encrypted bool   `json:"encrypted"`
 	Message   string `json:"message"`
 	HashedKey string `json:"hashedKey"`
+	// Views is the number of reads remaining. 0 (legacy records) or 1 means
+	// single view, N > 1 means N reads left, unlimitedViews means TTL-only.
+	Views int `json:"views,omitempty"`
+}
+
+// unlimitedViews marks a secret that is never consumed by reads; only the
+// Redis TTL removes it.
+const unlimitedViews = -1
+
+// maxViews caps the per-secret view count accepted by the API.
+const maxViews = 100
+
+// clampViews normalizes a client-requested view count to 1..maxViews or
+// unlimitedViews. Anything malformed collapses to the single-view default.
+func clampViews(views int) int {
+	switch {
+	case views == unlimitedViews:
+		return unlimitedViews
+	case views <= 1:
+		return 1
+	case views > maxViews:
+		return maxViews
+	}
+	return views
 }
 
 type StoredFile struct {
@@ -25,7 +49,7 @@ type StoredFile struct {
 	HashedKey string `json:"hashedKey"`
 }
 
-const maxFileSize = 25 * 1024 * 1024 // 25MB
+const maxFileSize = 25 * 1024 * 1024       // 25MB
 const maxMultipartMemory = 4 * 1024 * 1024 // 4MB
 
 // maxStatusIDs bounds how many ids /api/secretStatus will check per request.
@@ -65,6 +89,7 @@ func apiSaveSecret(r *http.Request) (responseCode int, response []byte) {
 		SecretMessage string `json:"secretMessage"`
 		HashedKey     string `json:"hashedKey"`
 		Duration      int    `json:"duration"`
+		Views         int    `json:"views"`
 	}
 	dec := json.NewDecoder(r.Body)
 
@@ -77,6 +102,10 @@ func apiSaveSecret(r *http.Request) (responseCode int, response []byte) {
 					Encrypted: true,
 					Message:   payload.SecretMessage,
 					HashedKey: payload.HashedKey,
+				}
+				// Single view stays 0 so default records match the legacy shape.
+				if views := clampViews(payload.Views); views != 1 {
+					newMessage.Views = views
 				}
 
 				if payload.Duration <= 0 || payload.Duration > maxDuration {
@@ -119,6 +148,7 @@ func apiGetMessage(r *http.Request) (responseCode int, response []byte) {
 	jResponse := struct {
 		Status         string `json:"status"`
 		CryptedMessage string `json:"cryptedMessage"`
+		ViewsLeft      int    `json:"viewsLeft"`
 	}{
 		Status: "error",
 		// NewId:strconv.FormatInt(32, 16)
@@ -138,12 +168,13 @@ func apiGetMessage(r *http.Request) (responseCode int, response []byte) {
 				if DEBUG {
 					log.Printf("payload <- storage: %v, %v\n", payload.Id, payload.HashedKey)
 				}
-				storedMessage, status, err := consumeMessageFromStorageFunc(payload.Id, payload.HashedKey)
+				storedMessage, viewsLeft, status, err := consumeMessageFromStorageFunc(payload.Id, payload.HashedKey)
 				if err == nil {
 					switch status {
 					case "ok":
 						jResponse.Status = "ok"
 						jResponse.CryptedMessage = storedMessage.Message
+						jResponse.ViewsLeft = viewsLeft
 					case "wrong key":
 						jResponse.Status = "wrong key"
 						log.Println("Hashes aren't equal")

@@ -6,6 +6,10 @@ if (form) {
     const textarea = form.querySelector<HTMLTextAreaElement>('#secretMessage')!;
     const keyInput = form.querySelector<HTMLInputElement>('#secretKey')!;
     const durationSelect = form.querySelector<HTMLSelectElement>('#duration')!;
+    const viewsSelect = form.querySelector<HTMLSelectElement>('#views')!;
+    const optionsPanel = form.querySelector<HTMLElement>('[data-options-panel]')!;
+    const chips = Array.from(form.querySelectorAll<HTMLButtonElement>('.option-chip'));
+    const chipLabel = (name: string) => form.querySelector<HTMLElement>(`[data-chip-label="${name}"]`)!;
     const submitBtn = form.querySelector<HTMLButtonElement>('button[type="submit"]')!;
     const labelEl = submitBtn.querySelector<HTMLElement>('.btn-label')!;
     const kbdHint = submitBtn.querySelector<HTMLElement>('[data-shortcut-hint]')!;
@@ -39,6 +43,32 @@ if (form) {
     });
     updateSubmitState(false);
 
+    // Summary chips: each mirrors one setting and expands the options panel.
+    const chipTargets: Record<string, HTMLElement> = {
+        duration: durationSelect,
+        views: viewsSelect,
+        passphrase: keyInput,
+    };
+    const setPanelOpen = (open: boolean) => {
+        optionsPanel.toggleAttribute('hidden', !open);
+        for (const chip of chips) chip.setAttribute('aria-expanded', String(open));
+    };
+    for (const chip of chips) {
+        chip.addEventListener('click', () => {
+            setPanelOpen(true);
+            chipTargets[chip.dataset.chip!]?.focus();
+        });
+    }
+    const updateChipLabels = () => {
+        chipLabel('duration').textContent = durationSelect.selectedOptions[0]?.textContent ?? '1 day';
+        const views = Number(viewsSelect.value);
+        chipLabel('views').textContent = views === -1 ? 'unlimited views' : `${views} view${views === 1 ? '' : 's'}`;
+        chipLabel('passphrase').textContent = keyInput.value ? 'passphrase set' : 'no passphrase';
+    };
+    durationSelect.addEventListener('change', updateChipLabels);
+    viewsSelect.addEventListener('change', updateChipLabels);
+    keyInput.addEventListener('input', updateChipLabels);
+
     form.addEventListener('keydown', (event) => {
         if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
             event.preventDefault();
@@ -56,12 +86,16 @@ if (form) {
             const {link} = await createSecretLink(textarea.value, {
                 secretKey: keyInput.value,
                 durationDays: Number(durationSelect.value),
+                views: Number(viewsSelect.value),
             });
             if (link) {
                 showLinkReady(form, link, () => {
                     textarea.value = '';
                     keyInput.value = '';
                     durationSelect.value = String(Constants.defaultDuration);
+                    viewsSelect.value = '1';
+                    updateChipLabels();
+                    setPanelOpen(false);
                     updateSubmitState(false);
                     textarea.focus();
                 });

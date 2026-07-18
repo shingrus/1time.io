@@ -17,14 +17,37 @@ import LinkReadyTemplate from './LinkReadyTemplate.astro';
     </div>
 
     <div class="form-actions share-primary-actions">
+        <div class="options-chips" data-chips>
+            <button type="button" class="option-chip" data-chip="duration" aria-expanded="false" aria-controls="share-options">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <circle cx="12" cy="12" r="10"/>
+                    <polyline points="12 6 12 12 16 14"/>
+                </svg>
+                <span data-chip-label="duration">1 day</span>
+            </button>
+            <button type="button" class="option-chip" data-chip="views" aria-expanded="false" aria-controls="share-options">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                    <circle cx="12" cy="12" r="3"/>
+                </svg>
+                <span data-chip-label="views">1 view</span>
+            </button>
+            <button type="button" class="option-chip" data-chip="passphrase" aria-expanded="false" aria-controls="share-options">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                </svg>
+                <span data-chip-label="passphrase">no passphrase</span>
+            </button>
+        </div>
         <button class="btn btn-primary btn-lg" disabled type="submit">
             <span class="btn-label">Create one-time link</span>
             <kbd class="btn-kbd" data-shortcut-hint aria-hidden="true" hidden></kbd>
         </button>
     </div>
 
-    <div class="options-grid">
-        <div class="form-field" style="margin-bottom:0">
+    <div class="options-grid" id="share-options" data-options-panel hidden>
+        <div class="form-field options-grid-full" style="margin-bottom:0">
             <label class="form-label" for="secretKey">Additional passphrase</label>
             <input
                 class="form-input"
@@ -46,6 +69,17 @@ import LinkReadyTemplate from './LinkReadyTemplate.astro';
                 <option value="30">30 days</option>
             </select>
             <p class="form-help">Link expires even if unread</p>
+        </div>
+        <div class="form-field" style="margin-bottom:0">
+            <label class="form-label" for="views">Views allowed</label>
+            <select class="form-select" id="views">
+                <option value="1" selected>1 — burn after reading</option>
+                <option value="3">3 views</option>
+                <option value="5">5 views</option>
+                <option value="10">10 views</option>
+                <option value="-1">Unlimited until expiry</option>
+            </select>
+            <p class="form-help">More than 1 view means the link is not burn-on-read</p>
         </div>
     </div>
 

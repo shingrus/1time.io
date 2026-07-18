@@ -63,6 +63,13 @@
   justify-content: center;
 }
 
+.views-left-note {
+  padding: 0 16px 12px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
 
 /* Status badge */
 .status-dot {

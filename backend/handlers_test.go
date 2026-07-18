@@ -103,6 +103,63 @@ func TestAPISaveSecretStoresEncryptedPayload(t *testing.T) {
 	}
 }
 
+func TestAPISaveSecretStoresClampedViews(t *testing.T) {
+	tests := []struct {
+		name      string
+		payload   string
+		wantViews int
+	}{
+		{name: "absent views stays legacy shape", payload: `{"secretMessage":"c","hashedKey":"h","duration":60}`, wantViews: 0},
+		{name: "explicit single view stays legacy shape", payload: `{"secretMessage":"c","hashedKey":"h","duration":60,"views":1}`, wantViews: 0},
+		{name: "multi view stored as-is", payload: `{"secretMessage":"c","hashedKey":"h","duration":60,"views":5}`, wantViews: 5},
+		{name: "unlimited sentinel stored", payload: `{"secretMessage":"c","hashedKey":"h","duration":60,"views":-1}`, wantViews: unlimitedViews},
+		{name: "oversized clamped to max", payload: `{"secretMessage":"c","hashedKey":"h","duration":60,"views":5000}`, wantViews: maxViews},
+		{name: "garbage negative collapses to single view", payload: `{"secretMessage":"c","hashedKey":"h","duration":60,"views":-7}`, wantViews: 0},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			restoreHandlerHooks(t)
+
+			var stored StoredMessage
+			saveToStorageFunc = func(value interface{}, duration time.Duration) (string, error) {
+				if err := json.Unmarshal(value.([]byte), &stored); err != nil {
+					t.Fatalf("stored payload is not StoredMessage JSON: %v", err)
+				}
+				return "msg123", nil
+			}
+
+			req := httptest.NewRequest(http.MethodPost, "/api/saveSecret", strings.NewReader(tt.payload))
+			if _, response := apiSaveSecret(req); !strings.Contains(string(response), `"status":"ok"`) {
+				t.Fatalf("response = %s, want ok", response)
+			}
+			if stored.Views != tt.wantViews {
+				t.Fatalf("stored.Views = %d, want %d", stored.Views, tt.wantViews)
+			}
+		})
+	}
+}
+
+func TestClampViews(t *testing.T) {
+	tests := []struct {
+		in   int
+		want int
+	}{
+		{in: 0, want: 1},
+		{in: 1, want: 1},
+		{in: 2, want: 2},
+		{in: maxViews, want: maxViews},
+		{in: maxViews + 1, want: maxViews},
+		{in: unlimitedViews, want: unlimitedViews},
+		{in: -2, want: 1},
+	}
+	for _, tt := range tests {
+		if got := clampViews(tt.in); got != tt.want {
+			t.Fatalf("clampViews(%d) = %d, want %d", tt.in, got, tt.want)
+		}
+	}
+}
+
 func TestAPISaveSecretRejectsMissingFields(t *testing.T) {
 	restoreHandlerHooks(t)
 
@@ -128,10 +185,13 @@ func TestAPIGetMessageStatuses(t *testing.T) {
 		name       string
 		status     string
 		message    string
+		viewsLeft  int
 		wantStatus string
 		wantBody   string
 	}{
 		{name: "ok", status: "ok", message: "ciphertext", wantStatus: `"status":"ok"`, wantBody: `"cryptedMessage":"ciphertext"`},
+		{name: "ok multi-view", status: "ok", message: "ciphertext", viewsLeft: 4, wantStatus: `"status":"ok"`, wantBody: `"viewsLeft":4`},
+		{name: "ok unlimited", status: "ok", message: "ciphertext", viewsLeft: unlimitedViews, wantStatus: `"status":"ok"`, wantBody: `"viewsLeft":-1`},
 		{name: "wrong key", status: "wrong key", wantStatus: `"status":"wrong key"`},
 		{name: "no message", status: "no message", wantStatus: `"status":"no message"`},
 	}
@@ -139,11 +199,11 @@ func TestAPIGetMessageStatuses(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			restoreHandlerHooks(t)
-			consumeMessageFromStorageFunc = func(key string, hashedKey string) (StoredMessage, string, error) {
+			consumeMessageFromStorageFunc = func(key string, hashedKey string) (StoredMessage, int, string, error) {
 				if key != "msg123" || hashedKey != "hash" {
 					t.Fatalf("consume args = %q, %q; want msg123, hash", key, hashedKey)
 				}
-				return StoredMessage{Message: tt.message, HashedKey: "hash", Encrypted: true}, tt.status, nil
+				return StoredMessage{Message: tt.message, HashedKey: "hash", Encrypted: true}, tt.viewsLeft, tt.status, nil
 			}
 
 			req := httptest.NewRequest(http.MethodPost, "/api/get", strings.NewReader(`{"id":"msg123","hashedKey":"hash"}`))
@@ -293,9 +353,9 @@ func TestIsValidStorageID(t *testing.T) {
 	for _, bad := range []string{
 		"",
 		"short",
-		valid + "x",           // too long
-		valid[:len(valid)-1],  // too short
-		"has space" + valid[9:],  // right length, illegal char (space)
+		valid + "x",                // too long
+		valid[:len(valid)-1],       // too short
+		"has space" + valid[9:],    // right length, illegal char (space)
 		valid[:len(valid)-1] + "+", // right length, illegal base64url char (+)
 	} {
 		if isValidStorageID(bad) {

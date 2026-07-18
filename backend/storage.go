@@ -22,6 +22,12 @@ const maxStorageIDAttempts = 5
 const redisTimeout = time.Second * 10
 const fileJanitorInterval = 2 * time.Hour
 
+// maxConsumeAttempts bounds WATCH transaction retries in consumeMessageFromStorage.
+// A failed transaction only means another reader touched the same key; with
+// multi-view secrets that reader may have merely decremented the counter, so a
+// retry can still succeed.
+const maxConsumeAttempts = 3
+
 var errStorageIDCollision = errors.New("failed to generate unique storage id")
 
 var redisClient *redis.Client
@@ -251,47 +257,104 @@ func cleanupExpiredFiles(now time.Time) error {
 	return nil
 }
 
-func consumeMessageFromStorage(key string, hashedKey string) (storedMessage StoredMessage, status string, err error) {
+// consumeMessageFromStorage reads a secret and applies its view accounting:
+// Views <= 1 (including legacy records without the field) deletes the record,
+// Views > 1 decrements it in place preserving the TTL, and Views ==
+// unlimitedViews leaves it untouched until the TTL reaps it. viewsLeft reports
+// the views remaining after this read (0 = consumed, unlimitedViews = unlimited).
+func consumeMessageFromStorage(key string, hashedKey string) (storedMessage StoredMessage, viewsLeft int, status string, err error) {
 	client := getRedisClient()
 	storeKey := getStoreKey(key)
-	status = "no message"
 
-	err = client.Watch(func(tx *redis.Tx) error {
-		value, err := tx.Get(storeKey).Result()
-		if err == redis.Nil {
-			status = "no message"
+	for attempt := 0; attempt < maxConsumeAttempts; attempt++ {
+		storedMessage = StoredMessage{}
+		viewsLeft = 0
+		status = "no message"
+		retry := false
+
+		err = client.Watch(func(tx *redis.Tx) error {
+			value, err := tx.Get(storeKey).Result()
+			if err == redis.Nil {
+				status = "no message"
+				return nil
+			}
+			if err != nil {
+				return err
+			}
+
+			if err := json.Unmarshal([]byte(value), &storedMessage); err != nil {
+				return err
+			}
+
+			if subtle.ConstantTimeCompare([]byte(storedMessage.HashedKey), []byte(hashedKey)) != 1 {
+				storedMessage = StoredMessage{}
+				status = "wrong key"
+				return nil
+			}
+
+			if storedMessage.Views == unlimitedViews {
+				viewsLeft = unlimitedViews
+				status = "ok"
+				return nil
+			}
+
+			if storedMessage.Views > 1 {
+				// go-redis v6 has no KEEPTTL, so carry the TTL over explicitly.
+				ttl, ttlErr := tx.PTTL(storeKey).Result()
+				if ttlErr != nil {
+					return ttlErr
+				}
+				if ttl > 0 {
+					updated := storedMessage
+					updated.Views = storedMessage.Views - 1
+					updatedValue, marshalErr := json.Marshal(updated)
+					if marshalErr != nil {
+						return marshalErr
+					}
+
+					_, err = tx.TxPipelined(func(pipe redis.Pipeliner) error {
+						pipe.Set(storeKey, updatedValue, ttl)
+						return nil
+					})
+					if err == redis.TxFailedErr {
+						retry = true
+						storedMessage = StoredMessage{}
+						status = "no message"
+						return nil
+					}
+					if err != nil {
+						return err
+					}
+
+					viewsLeft = updated.Views
+					status = "ok"
+					return nil
+				}
+				// No TTL left to preserve; fall through and consume the record.
+			}
+
+			_, err = tx.TxPipelined(func(pipe redis.Pipeliner) error {
+				pipe.Del(storeKey)
+				return nil
+			})
+			if err == redis.TxFailedErr {
+				retry = true
+				storedMessage = StoredMessage{}
+				status = "no message"
+				return nil
+			}
+			if err != nil {
+				return err
+			}
+
+			status = "ok"
 			return nil
-		}
-		if err != nil {
-			return err
-		}
+		}, storeKey)
 
-		if err := json.Unmarshal([]byte(value), &storedMessage); err != nil {
-			return err
+		if err != nil || !retry {
+			return
 		}
-
-		if subtle.ConstantTimeCompare([]byte(storedMessage.HashedKey), []byte(hashedKey)) != 1 {
-			storedMessage = StoredMessage{}
-			status = "wrong key"
-			return nil
-		}
-
-		_, err = tx.TxPipelined(func(pipe redis.Pipeliner) error {
-			pipe.Del(storeKey)
-			return nil
-		})
-		if err == redis.TxFailedErr {
-			storedMessage = StoredMessage{}
-			status = "no message"
-			return nil
-		}
-		if err != nil {
-			return err
-		}
-
-		status = "ok"
-		return nil
-	}, storeKey)
+	}
 
 	return
 }
