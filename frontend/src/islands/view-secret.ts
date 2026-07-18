@@ -27,6 +27,22 @@ if (form) {
         qrToggle.disabled = true;
     }
 
+    // A/B/C/D banner copy test: variant is encoded in the reply URL (?reply=N)
+    // so nginx logs measure clicks per variant with no extra tracking.
+    const REPLY_HEADINGS = [
+        'Message read and destroyed. Nothing to trace back.',
+        'Your reply deserves the same protection.',
+        'Sending something back? Keep it out of the chat history too.',
+        "That's how secrets should travel — one view, then gone.",
+    ];
+    const pickReplyVariant = () => {
+        const v = 1 + Math.floor(Math.random() * REPLY_HEADINGS.length);
+        const h = form.querySelector<HTMLElement>('[data-reply-heading]');
+        const b = form.querySelector<HTMLAnchorElement>('[data-reply-btn]');
+        if (h) h.textContent = REPLY_HEADINGS[v - 1];
+        if (b) b.href = `/?reply=${v}`;
+    };
+
     const showOnly = (visible: HTMLElement) => {
         for (const el of [preReadSection, passphraseSection, decryptedSection, noMessageSection]) {
             el.toggleAttribute('hidden', el !== visible);
@@ -94,8 +110,8 @@ if (form) {
             const data = await postJson('get', {id, hashedKey});
 
             if (data.status === 'ok' && typeof data.cryptedMessage === 'string' && data.cryptedMessage.length > 0) {
-                const plain = await decryptSecretMessage(data.cryptedMessage, fullSecretKey);
-                decryptedBody.textContent = plain;
+                decryptedBody.textContent = await decryptSecretMessage(data.cryptedMessage, fullSecretKey);
+                pickReplyVariant();
                 qrAction.toggleAttribute('hidden', true);
                 postReadCta.toggleAttribute('hidden', false);
                 showOnly(decryptedSection);

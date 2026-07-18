@@ -67,20 +67,36 @@ const description = 'Open an encrypted one-time file link shared through 1time.i
             </div>
 
             <div data-state="downloaded" hidden>
+                <div class="confirm-gate">
+                    <div class="confirm-gate-icon confirm-gate-icon-muted" aria-hidden="true">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                            <polyline points="7 10 12 15 17 10"/>
+                            <line x1="12" y1="15" x2="12" y2="3"/>
+                        </svg>
+                    </div>
+                    <h2 class="confirm-gate-title">File downloaded</h2>
+                    <p class="confirm-gate-desc">Now deleted from our servers.</p>
+                </div>
                 <div class="view-cta">
-                    <p class="view-cta-destroyed">File downloaded and permanently destroyed from our servers.</p>
                     <div class="view-cta-box">
-                        <p class="view-cta-heading">Need to share a file securely?</p>
-                        <p class="view-cta-desc">Create an encrypted, self-destructing link in seconds. Free, no signup required.</p>
-                        <a class="btn btn-primary" href="/secure-file-sharing/">Share a file</a>
+                        <p class="view-cta-heading" data-reply-heading>No copies kept. Nothing to trace back.</p>
+                        <a class="btn btn-primary btn-lg" data-reply-btn href="/secure-file-sharing/?reply=1">Reply with an encrypted link →</a>
                     </div>
                 </div>
             </div>
 
             <div data-state="no-message" hidden>
-                <div class="destroyed-notice">
-                    <p>This file has already been downloaded or has expired.</p>
-                    <a class="btn btn-primary" href="/secure-file-sharing/">Share a file</a>
+                <div class="confirm-gate">
+                    <div class="confirm-gate-icon confirm-gate-icon-muted" aria-hidden="true">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                            <circle cx="12" cy="16" r="1"/>
+                        </svg>
+                    </div>
+                    <h2 class="confirm-gate-title">This file is gone</h2>
+                    <a class="btn btn-primary btn-lg" href="/secure-file-sharing/">Send your own file</a>
                 </div>
             </div>
 
