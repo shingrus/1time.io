@@ -111,8 +111,8 @@ npm pack --dry-run
 
 - `scripts/` holds operational analytics run against nginx logs / Redis — **not part of the served app**:
   - `retention.py` — sender cohort retention + conversion funnel from nginx logs.
-  - `b2b_referrers.py` — maintains a private CSV roster of B2B / work-app referrers (Atlassian, MS Teams, ClickUp, Sonae, …). `KNOWN_COMPANY_HOSTS` maps self-hosted company domains.
   - `export_redis_stats_to_gsheets.py` — exports Redis counters + nginx sender/receiver stats to a Google Sheet.
+  - `scripts/analytics/` — **gitignored on purpose**. Never force-add anything from this directory.
 - Owner/self traffic is identified by hits to `/ss` (the private stats page); analytics exclude it.
 
 ## Frontend

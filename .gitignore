@@ -6,3 +6,5 @@
 /.idea/
 /.claude/
 /data
+# Private/ops analytics scripts — never commit (may embed org names, IPs)
+scripts/analytics/

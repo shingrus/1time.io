@@ -21,6 +21,20 @@ if (form) {
     const hash = window.location.hash || '';
     const linkKey = hash.length > 1 ? hash.slice(1) : '';
 
+    // Same A/B/C/D banner test as view-secret (file-flavored copy).
+    const REPLY_HEADINGS = [
+        'No copies kept. Nothing to trace back.',
+        'Your reply deserves the same protection.',
+        'Sending something back? Keep it out of the chat history too.',
+        "That's how files should travel — one download, then gone.",
+    ];
+    const pickReplyVariant = () => {
+        const v = 1 + Math.floor(Math.random() * REPLY_HEADINGS.length);
+        const h = form.querySelector<HTMLElement>('[data-reply-heading]');
+        const b = form.querySelector<HTMLAnchorElement>('[data-reply-btn]');
+        if (h) h.textContent = REPLY_HEADINGS[v - 1];
+        if (b) b.href = `/secure-file-sharing/?reply=${v}`;
+    };
     // Terminal states are mutually exclusive; the passphrase field overlays pre-read.
     const showOnly = (visible: HTMLElement) => {
         for (const el of [preReadSection, passphraseSection, downloadedSection, noMessageSection, errorSection]) {
@@ -129,6 +143,7 @@ if (form) {
                 setPhase('decrypting');
                 const {meta, fileBytes} = await decryptFile(result.data, fullSecretKey);
                 downloadFile(meta, fileBytes);
+                pickReplyVariant();
                 setPhase('idle');
                 showOnly(downloadedSection);
             } catch {

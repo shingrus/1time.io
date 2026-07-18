@@ -16,12 +16,14 @@
 
 /* Message panel */
 .message-panel {
-  border: 1.5px solid var(--border);
+  /* Stronger definition against the cream page bg: darker hairline + a
+     slightly deeper shadow (still neutral — no color). */
+  border: 1.5px solid #CFCAC5;
   overflow: hidden;
-  box-shadow: var(--shadow);
+  box-shadow: 0 2px 6px rgba(28, 25, 23, 0.10), 0 1px 2px rgba(28, 25, 23, 0.06);
   display: flex;
   flex-direction: column;
-  min-height: 252px;
+  min-height: 120px;
 }
 
 .message-panel-header {
@@ -35,6 +37,7 @@
   letter-spacing: 0.06em;
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 6px;
 }
 
@@ -44,7 +47,7 @@
 }
 
 .message-panel-body pre {
-  font-family: var(--font-body);
+  font-family: 'SF Mono', 'Fira Code', 'Fira Mono', monospace;
   font-size: 16px;
   line-height: 1.7;
   white-space: pre-wrap;
@@ -60,6 +63,7 @@
   justify-content: center;
 }
 
+
 /* Status badge */
 .status-dot {
   width: 6px;
@@ -67,12 +71,6 @@
   border-radius: 50%;
   background: var(--success);
   display: inline-block;
-  animation: pulse 2s infinite;
-}
-
-@keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.4; }
 }
 
 /* Pre-read state */
@@ -102,6 +100,15 @@
   margin-bottom: 16px;
 }
 
+.confirm-gate-icon-muted {
+  color: var(--text-muted);
+}
+
+/* Gone-state: breathing room between the title and the CTA */
+.confirm-gate .confirm-gate-title + .btn {
+  margin-top: 16px;
+}
+
 .confirm-gate-title {
   font-family: var(--font-display);
   font-size: 22px;
@@ -116,6 +123,10 @@
   font-size: 15px;
   line-height: 1.7;
   color: var(--text-secondary);
+}
+
+.confirm-gate-desc:last-child {
+  margin-bottom: 0;
 }
 
 /* Destroyed state */
@@ -165,16 +176,21 @@
   padding: 24px 0 0;
 }
 
-.view-cta-destroyed {
-  font-size: 13px;
-  color: var(--text-muted);
-  margin-bottom: 20px;
-}
-
 .view-cta-box {
+  /* Quiet container: the accent button is the only loud element, so the
+     banner never outshouts the Copy action above it. */
   border: 1px solid var(--border);
+  background: transparent;
   padding: 24px;
   margin-top: 8px;
+}
+
+.view-cta-box .btn {
+  width: 100%;
+  /* Global .btn is nowrap; at 320px the label can't fit one line — allow
+     wrapping here (and give wrapped lines breathing room vs line-height:1). */
+  white-space: normal;
+  line-height: 1.3;
 }
 
 .view-cta-heading {
@@ -182,14 +198,7 @@
   font-size: 17px;
   font-weight: 700;
   color: var(--text);
-  margin-bottom: 6px;
-}
-
-.view-cta-desc {
-  font-size: 14px;
-  color: var(--text-secondary);
-  margin: 14px 0 0;
-  line-height: 1.5;
+  margin-bottom: 14px;
 }
 
 /* Powered-by footer */
