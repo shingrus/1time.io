@@ -398,26 +398,26 @@ export const PRODUCT_LINKS: CrossLink[] = [
 ];
 
 const DEFAULT_GUIDES: CrossLink[] = [
-    {path: '/blog/how-to-share-passwords-securely', label: 'How to Share Passwords Securely', desc: 'Best practices for sending credentials safely'},
+    {path: '/share-password-securely', label: 'How to Share Passwords Securely', desc: 'Best practices for sending credentials safely'},
     {path: '/blog/strong-email-password', label: 'Creating a Strong Email Password', desc: 'Protect your most important account'},
     {path: '/blog/team-password-sharing', label: 'Team Password Sharing', desc: 'How teams can share credentials safely'},
 ];
 
 export const RELATED_GUIDES: Record<string, CrossLink[]> = {
     '/password-generator': [
-        {path: '/blog/how-to-share-passwords-securely', label: 'How to Share Passwords Securely', desc: 'Best practices for sending credentials safely'},
+        {path: '/share-password-securely', label: 'How to Share Passwords Securely', desc: 'Best practices for sending credentials safely'},
         {path: '/blog/strong-email-password', label: 'Creating a Strong Email Password', desc: 'Protect your most important account'},
         {path: '/blog/password-for-crypto-wallet', label: 'Passwords for Crypto Wallets', desc: 'High-stakes security for digital assets'},
     ],
     '/passphrase-generator': [
         {path: '/blog/password-for-crypto-wallet', label: 'Passwords for Crypto Wallets', desc: 'Why passphrases are ideal for wallets'},
         {path: '/blog/strong-email-password', label: 'Creating a Strong Email Password', desc: 'When to use a passphrase over a password'},
-        {path: '/blog/how-to-share-passwords-securely', label: 'How to Share Passwords Securely', desc: 'Share your passphrase without exposing it'},
+        {path: '/share-password-securely', label: 'How to Share Passwords Securely', desc: 'Share your passphrase without exposing it'},
     ],
     '/wifi-password-generator': [
         {path: '/blog/secure-home-wifi-setup', label: 'Secure Home WiFi Setup', desc: 'Complete guide to locking down your network'},
         {path: '/share-passwords-with-qr-code', label: 'Share via QR Code', desc: 'Let guests scan instead of typing the password'},
-        {path: '/blog/how-to-share-passwords-securely', label: 'How to Share Passwords Securely', desc: 'General best practices for credential sharing'},
+        {path: '/share-password-securely', label: 'How to Share Passwords Securely', desc: 'General best practices for credential sharing'},
     ],
     '/api-key-generator': [
         {path: '/blog/how-to-share-api-keys', label: 'How to Share API Keys Safely', desc: 'Avoid leaking keys in chat and email'},

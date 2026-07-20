@@ -4,7 +4,6 @@ import firefox_send_alternativeHtml from '../content/blog/firefox-send-alternati
 import hkdf_key_derivation_explainedHtml from '../content/blog/hkdf-key-derivation-explained.html?raw';
 import how_to_send_passwords_over_emailHtml from '../content/blog/how-to-send-passwords-over-email.html?raw';
 import how_to_share_api_keysHtml from '../content/blog/how-to-share-api-keys.html?raw';
-import how_to_share_passwords_securelyHtml from '../content/blog/how-to-share-passwords-securely.html?raw';
 import is_slack_safe_for_passwordsHtml from '../content/blog/is-slack-safe-for-passwords.html?raw';
 import onetimesecret_alternativeHtml from '../content/blog/onetimesecret-alternative.html?raw';
 import password_for_crypto_walletHtml from '../content/blog/password-for-crypto-wallet.html?raw';
@@ -469,73 +468,6 @@ export const blogPosts: BlogPost[] = [
             }
         ],
         "html": how_to_share_api_keysHtml
-    },
-    {
-        "slug": "how-to-share-passwords-securely",
-        "title": "How to Share Passwords Securely with Your Team — 1time.io",
-        "description": "Learn why sharing passwords via Slack, email, or spreadsheets is dangerous and discover secure alternatives like encrypted one-time links, password managers, and more.",
-        "ogTitle": "How to Share Passwords Securely with Your Team",
-        "ogDescription": "Stop sharing passwords over Slack and email. Learn the safe alternatives for teams.",
-        "ogImageAlt": "How to Share Passwords Securely",
-        "tag": "Guide",
-        "heading": "How to Share Passwords Securely with Your Team",
-        "excerpt": "Slack DMs, emails, and spreadsheets are the most common ways teams share passwords. They are also the least secure. Here is what to do instead.",
-        "meta": "By Igor Ermakov · Dec 1, 2025 · 7 min read",
-        "schemas": [
-            {
-                "@context": "https://schema.org",
-                "@type": "Article",
-                "headline": "How to Share Passwords Securely with Your Team",
-                "description": "Learn why sharing passwords via Slack, email, or spreadsheets is dangerous and discover secure alternatives like encrypted one-time links, password managers, and more.",
-                "datePublished": "2025-12-01",
-                "dateModified": "2026-03-18",
-                "author": {
-                    "@type": "Person",
-                    "name": "Igor Ermakov",
-                    "url": "https://1time.io/about/"
-                },
-                "publisher": {
-                    "@type": "Organization",
-                    "name": "1time.io",
-                    "url": "https://1time.io",
-                    "logo": {
-                        "@type": "ImageObject",
-                        "url": "https://1time.io/logo-512.png",
-                        "width": 512,
-                        "height": 512
-                    }
-                },
-                "mainEntityOfPage": "https://1time.io/blog/how-to-share-passwords-securely/",
-                "image": [
-                    "https://1time.io/1time-og-main.png"
-                ]
-            },
-            {
-                "@context": "https://schema.org",
-                "@type": "BreadcrumbList",
-                "itemListElement": [
-                    {
-                        "@type": "ListItem",
-                        "position": 1,
-                        "name": "Home",
-                        "item": "https://1time.io/"
-                    },
-                    {
-                        "@type": "ListItem",
-                        "position": 2,
-                        "name": "Blog",
-                        "item": "https://1time.io/blog/"
-                    },
-                    {
-                        "@type": "ListItem",
-                        "position": 3,
-                        "name": "How to Share Passwords Securely",
-                        "item": "https://1time.io/blog/how-to-share-passwords-securely/"
-                    }
-                ]
-            }
-        ],
-        "html": how_to_share_passwords_securelyHtml
     },
     {
         "slug": "is-slack-safe-for-passwords",
