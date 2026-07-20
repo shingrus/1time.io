@@ -204,9 +204,9 @@ export const blogPosts: BlogPost[] = [
     {
         "slug": "firefox-send-alternative",
         "title": "Firefox Send Alternative (2026) — Open Source, No Signup",
-        "description": "Firefox Send alternative for encrypted one-time file sharing. Encrypted in your browser, one-time download links, up to 10 MB, no signup, open source.",
+        "description": "Firefox Send alternative for encrypted one-time file sharing. Encrypted in your browser, one-time download links, up to 25 MB, no signup, open source.",
         "ogTitle": "Firefox Send Alternative (2026) — Open Source, No Signup",
-        "ogDescription": "Firefox Send alternative for encrypted one-time file sharing. Encrypted in your browser, one-time download links, up to 10 MB, no signup, open source.",
+        "ogDescription": "Firefox Send alternative for encrypted one-time file sharing. Encrypted in your browser, one-time download links, up to 25 MB, no signup, open source.",
         "ogImageAlt": "Firefox Send Alternative — 1time.io",
         "tag": "Comparison",
         "heading": "Best Firefox Send Alternative — Free & Self-Hostable",

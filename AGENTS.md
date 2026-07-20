@@ -26,7 +26,7 @@ The server never sees plaintext or the decryption key. All crypto is client-side
 - Redis access: `backend/storage.go`
 - File upload/download API endpoints live in `backend/handlers.go` as `/api/saveFile` and `/api/getFile`.
 - `/api/secretStatus` (`apiSecretStatus` in `backend/handlers.go`) is a **non-consuming** batch existence check used by the Outbox / "My Secrets" page — it reads whether ids still exist and never deletes.
-- Backend file size limit is `10 MB` via `maxFileSize` in `backend/handlers.go`.
+- Backend file size limit is `25 MB` via `maxFileSize` in `backend/handlers.go`.
 - Uploaded encrypted files are written to `FILE_STORAGE_DIR/<id>.enc` and the Redis record stores the path plus hashed key.
 - `backend/storage.go` runs a file janitor every 2 hours and deletes expired `*.enc` files based on file mtime.
 - Stored file counters use Redis keys `stats:stored:file:total` and `stats:stored:file:day:YYYYMMDD`.
@@ -157,7 +157,7 @@ npm run build
 - File download UI lives on `/f/` and uses `frontend/src/islands/view-file.ts`.
 - The secure file sharing island encrypts the file in the browser, uploads with `XMLHttpRequest`, and shows upload progress.
 - The file download island reads the link key from the URL hash first; generated file links are hash-based.
-- Frontend file size limit is `Constants.maxFileSizeBytes = 10 * 1024 * 1024` in `frontend/src/lib/util.js`; keep it aligned with the backend limit.
+- Frontend file size limit is `Constants.maxFileSizeBytes = 25 * 1024 * 1024` in `frontend/src/lib/util.js`; keep it aligned with the backend limit.
 - File metadata (`name`, `type`, `size`) is packed into the encrypted payload before upload; the web app server does not store that metadata separately.
 - Pages with `robots: 'noindex, nofollow'` in metadata: `/v/`, `/f/`.
 - Outbox / "My Secrets": the `/my-secrets/` page + `frontend/src/islands/mySecrets.ts` keep a `localStorage` list of the secrets **this browser** created and batch-check their read status via `POST /api/secretStatus` (non-consuming). Linked from the success screen (`components/LinkReadyTemplate.astro`) and the footer. localStorage is per-browser — no cross-device, no account.
@@ -200,7 +200,7 @@ npm run build
 - Backend production binary from `make build`: `bin/1time-api`
 - Example nginx config: `configs/nginx/1time.conf`
 - nginx serves frontend statics and proxies `/api` to the Go app on `127.0.0.1:8080`.
-- nginx upload ceiling is `11m` in both `configs/nginx/1time.conf` and `docker/nginx/default.conf.template` to stay above the backend's `10 MB` multipart limit.
+- nginx upload ceiling is `26m` in both `configs/nginx/1time.conf` and `docker/nginx/default.conf.template` to stay above the backend's `25 MB` multipart limit.
 - Host nginx has an exact `/f/` location with the same sensitive-header treatment as `/v/`.
 - The nginx `try_files` directive includes `$uri/index.html` for static trailing-slash routes.
 
