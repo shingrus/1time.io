@@ -10,6 +10,10 @@ const description = 'Share a password securely and send it through an encrypted 
 const faqItems = [
     {question: 'How do I share a password securely?', answer: 'Paste the password above, click "Create secret link", and send the link to the recipient. The password is encrypted in your browser before being stored. The recipient opens the link, sees the password once, and the data is permanently deleted from the server.'},
     {question: 'What is the safest way to send a password to someone?', answer: 'The safest way to send a password is an encrypted one-time link instead of typing it into email, chat, or SMS. Create a secret link here, share the link, and it works exactly once — the password is encrypted in your browser, never stored in plaintext, and deleted after the recipient reads it, so it never lingers in any inbox or message history.'},
+    {question: 'Is it safe to send a password by text message (SMS)?', answer: 'No. SMS is not end-to-end encrypted, messages are stored by carriers and backed up to cloud services, and passwords appear in plain text on lock-screen notifications. If SMS is the only channel you share, send a one-time encrypted link by text instead of the password itself — the link works once and the password never appears in the message history.'},
+    {question: 'How do I send a password through email safely?', answer: 'Never put the password itself in an email — messages persist in both inboxes, on mail servers, and in backups for years. Instead, create an encrypted one-time link and email that. The email then contains no password: just a link that works once and dies. For extra protection, add a passphrase and share it through a different channel, such as a phone call.'},
+    {question: 'What is the best way to share passwords with your team?', answer: 'For ongoing shared access, a team password manager (1Password, Bitwarden) is the right tool. For one-off handoffs — onboarding someone before they have a manager seat, sending credentials to a contractor or client, or sharing with a team that uses a different tool — an encrypted one-time link is faster and leaves no copy behind in chat history.'},
+    {question: 'Can I share a password without a password manager?', answer: 'Yes. A one-time encrypted link requires no accounts on either side: paste the password, send the link, and the recipient opens it once in any browser. It is the simplest secure option when one or both people do not use a password manager.'},
     {question: 'What is a secret link?', answer: 'A secret link (or one-time secret link) is a URL that reveals a password or secret exactly once. After the recipient opens it, the encrypted data is permanently deleted and the link stops working. It is the simplest way to share a password securely without leaving a copy behind on any server.'},
     {question: 'Is it safe to send passwords over email or Slack?', answer: 'No. Emails are stored indefinitely on mail servers, and Slack messages persist in searchable history that admins can export. Both channels leave your password exposed long after it was shared. One-time encrypted links solve this: the password is encrypted end-to-end and destroyed after a single view.'},
     {question: 'Can the server see my password?', answer: 'No. Your password is encrypted in the browser using AES-256-GCM before it reaches the server. The decryption key stays in the URL fragment, which is never sent to the server. This is called zero-knowledge architecture — we cannot read your secrets even if we wanted to.'},
@@ -29,6 +33,7 @@ const jsonLd = [
         operatingSystem: 'Any',
         offers: {'@type': 'Offer', price: '0', priceCurrency: 'USD'},
         featureList: 'End-to-end encryption, One-time access, Optional passphrase, Auto-expiry, Zero-knowledge architecture',
+        dateModified: '2026-07-19',
     },
     {
         '@context': 'https://schema.org',
@@ -60,6 +65,7 @@ const jsonLd = [
     <InlineCss slot="head" name="home" />
     <InlineCss slot="head" name="link" />
     <InlineCss slot="head" name="qr-panel" />
+    <InlineCss slot="head" name="article" />
     <script slot="head" type="application/ld+json" set:html={JSON.stringify(jsonLd)} is:inline></script>
 
     <div class="share-flow-page">
@@ -111,14 +117,43 @@ const jsonLd = [
                 </div>
             </div>
 
-            <h2>Why you should never send passwords in plain text</h2>
+            <h2>The worst ways to share a password (and why)</h2>
             <p>
-                When you paste a password into a Slack DM, it is stored in Slack's servers indefinitely.
-                Workspace admins can export and read all messages, including DMs. The same applies to email:
-                messages persist on mail servers, in backups, and in the recipient's inbox forever.
-                Even if you delete the message, copies remain in server logs and compliance archives.
-                A one-time encrypted link solves this by ensuring the password exists only for a single
-                viewing, and no copy persists on any server after it is read.
+                Security auditors flag the same channels over and over. Every one of them keeps a copy of
+                your password long after the moment it was needed:
+            </p>
+            <ul class="seo-list">
+                <li><strong>Slack or Teams DMs</strong> — retained by the workspace, indexed and searchable. Admins and compliance tools can read direct messages, and exports keep them forever.</li>
+                <li><strong>Email</strong> — stored indefinitely in both inboxes, on mail servers, and in backup archives that persist for years, even after you delete the message.</li>
+                <li><strong>Shared spreadsheets</strong> — the classic <em>passwords.xlsx</em>: no access control, no audit trail, shared with people who should never have seen it.</li>
+                <li><strong>SMS and iMessage</strong> — no cross-platform encryption guarantee, backed up to cloud services, and visible in plain text on lock-screen notifications.</li>
+                <li><strong>Sticky notes and whiteboards</strong> — a plaintext password anyone walking past can read or photograph.</li>
+            </ul>
+            <p>
+                This is not theoretical: breaches have started from an attacker compromising a single chat
+                account and finding credentials shared months earlier in a message nobody remembered to delete.
+                The pattern is always the same — the password outlived the handoff. The fix is a channel where
+                it cannot: a link that works once, then destroys itself.
+            </p>
+
+            <h2>Every way to share a password, compared</h2>
+            <table class="comparison-table">
+                <thead>
+                    <tr><th>Method</th><th>Setup</th><th>Works with anyone</th><th>Cost</th><th>Deletes itself</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td><strong>One-time encrypted link</strong></td><td>None</td><td><span class="check">✓</span></td><td>Free</td><td><span class="check">✓</span></td></tr>
+                    <tr><td><strong>Password manager shared vault</strong></td><td>Hours</td><td><span class="partial">~</span> both need accounts</td><td>$3–8/user/mo</td><td><span class="cross">✗</span></td></tr>
+                    <tr><td><strong>Secrets manager (Vault, etc.)</strong></td><td>Days</td><td><span class="cross">✗</span> internal only</td><td>Varies</td><td><span class="cross">✗</span></td></tr>
+                    <tr><td><strong>Encrypted email (PGP)</strong></td><td>Hours</td><td><span class="cross">✗</span> both need keys</td><td>Free</td><td><span class="cross">✗</span></td></tr>
+                    <tr><td><strong>Plain email / chat / SMS</strong></td><td>None</td><td><span class="check">✓</span></td><td>Free</td><td><span class="cross">✗</span> persists forever</td></tr>
+                </tbody>
+            </table>
+            <p>
+                In practice, teams end up with a combination: a password manager for day-to-day internal
+                credentials, a secrets manager for infrastructure, and <strong>one-time links for everything
+                else</strong> — especially handoffs to people outside the organization, where shared vaults
+                and PGP keys are impractical.
             </p>
 
             <h2>How secure password sharing works</h2>
@@ -131,6 +166,58 @@ const jsonLd = [
                 locally, and the server permanently deletes its copy. The password is never visible to
                 anyone except the sender and recipient.
             </p>
+
+            <h2>How to share a password with…</h2>
+            <h3>…a client or external contractor</h3>
+            <p>
+                Paste the credentials above and set a short expiry (1 day is usually enough). Add a
+                passphrase, send the link by email, and tell them the passphrase on a call or in chat —
+                two channels, so neither one alone is enough. When they have logged in, the link is
+                already dead.
+            </p>
+            <h3>…a new hire</h3>
+            <p>
+                Before their password manager seat exists, first-day credentials still have to travel.
+                Send each one as a one-time link in your welcome email or chat. Everything they receive
+                works once and disappears — nothing to clean out of the onboarding thread later. When
+                the manager seat is live, move ongoing credentials there.
+            </p>
+            <h3>…a family member</h3>
+            <p>
+                WiFi keys, streaming logins, the router password for the person fixing your internet:
+                paste, create, text them the link. No accounts, no app to install — it opens in any
+                browser, shows the password once, and is gone. For WiFi specifically, our{' '}
+                <a href="/wifi-password-generator/">WiFi password generator</a> creates a strong key
+                and shares it in the same flow.
+            </p>
+            <h3>…your team, right now</h3>
+            <p>
+                When something urgent has to move and the "proper" channel is a form and two approvals:
+                one-time link in the team channel, passphrase in the standup. The chat log ends up
+                holding a dead URL instead of a live credential. For recurring team access, graduate
+                to a shared vault — see the comparison above.
+            </p>
+
+            <h2>Is it safe to share a password over email, Slack, or SMS?</h2>
+            <p>
+                Not directly — every one of those channels stores messages long-term. But here is the
+                twist: <strong>they are all fine for sending a one-time link.</strong> Because the
+                password is encrypted before it leaves your browser and the link dies after one view,
+                the channel only ever carries a URL that stops working the moment it is used. Send the
+                link over email, Slack, Teams, SMS, WhatsApp — even a post-it note. If interception
+                worries you, add a passphrase and send it through a different channel than the link;
+                then neither channel alone is enough to reveal anything.
+            </p>
+
+            <h2>Password sharing best practices</h2>
+            <ul class="seo-list">
+                <li><strong>Never send the password itself through a persistent channel.</strong> Send a one-time link; let the channel keep a dead URL, not a live credential.</li>
+                <li><strong>Use the shortest expiry that works.</strong> If the recipient will read it in five minutes, the link does not need to live for a week.</li>
+                <li><strong>Split the link and the passphrase across channels.</strong> Link by email, passphrase by phone — neither alone is useful.</li>
+                <li><strong>Never reuse passwords.</strong> <a href="/password-generator/">Generate a unique, strong password</a> for every account before you share it.</li>
+                <li><strong>Rotate after the handoff ends.</strong> When a contractor finishes or someone leaves the team, change what they had.</li>
+                <li><strong>Turn on two-factor authentication</strong> everywhere it exists — a leaked password is useless without the second factor.</li>
+            </ul>
 
             <h2>When to use one-time links vs a password manager</h2>
             <p>
@@ -146,16 +233,6 @@ const jsonLd = [
                 <li><strong>Handing off API keys</strong> to a developer on another team.</li>
                 <li><strong>Any one-time handoff</strong> where the recipient does not need permanent access.</li>
             </ul>
-
-            <h2>Share passwords safely across any channel</h2>
-            <p>
-                Because the password is encrypted before it leaves your browser, you can safely send
-                the one-time link over any channel — email, Slack, Teams, SMS, WhatsApp, or even a
-                post-it note. The link itself does not contain the password in readable form. Even if
-                someone intercepts the link after it has been used, they get nothing — the data is
-                already destroyed. For additional security, send the optional passphrase through a
-                different channel than the link.
-            </p>
 
             <h2>Key terms, briefly defined</h2>
             <dl class="glossary">
@@ -182,10 +259,10 @@ const jsonLd = [
                 <a href="/">Create a one-time link</a>
                 <a href="/secure-file-sharing/">One-time file sharing</a>
                 <a href="/share-passwords-with-qr-code/">Share via QR code</a>
+                <a href="/share-passwords-microsoft-teams/">Share passwords in Microsoft Teams</a>
                 <a href="/password-generator/">Generate a strong password</a>
                 <a href="/wifi-password-generator/">WiFi password generator</a>
                 <a href="/api-key-generator/">API key generator</a>
-                <a href="/blog/how-to-share-passwords-securely/">Guide: How to share passwords securely</a>
                 <a href="/blog/team-password-sharing/">Guide: Team password sharing</a>
                 <a href="/blog/is-slack-safe-for-passwords/">Is Slack safe for passwords?</a>
                 <a href="/blog/how-to-send-passwords-over-email/">How to send passwords over email</a>
@@ -193,3 +270,13 @@ const jsonLd = [
         </section>
     </div>
 </BaseLayout>
+
+<style>
+    /* The 5-column table exceeds narrow phone widths (376px content at a
+       320px viewport) — let the table scroll inside itself instead of
+       forcing the whole page to pan sideways. */
+    .comparison-table {
+        display: block;
+        overflow-x: auto;
+    }
+</style>

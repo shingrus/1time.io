@@ -19,7 +19,7 @@ const coreRoutes: RouteEntry[] = [
     {path: '/password-generator-16-characters/', priority: 0.7, changefreq: 'monthly', lastmod: '2026-03-21'},
     {path: '/wifi-password-generator/', priority: 0.8, changefreq: 'weekly', lastmod: '2026-07-15'},
     {path: '/api-key-generator/', priority: 0.8, changefreq: 'weekly', lastmod: '2026-03-23'},
-    {path: '/share-password-securely/', priority: 0.9, changefreq: 'weekly', lastmod: '2026-06-14'},
+    {path: '/share-password-securely/', priority: 0.9, changefreq: 'weekly', lastmod: '2026-07-19'},
     {path: '/share-passwords-with-qr-code/', priority: 0.7, changefreq: 'weekly', lastmod: '2026-03-31'},
     {path: '/share-passwords-microsoft-teams/', priority: 0.8, changefreq: 'weekly', lastmod: '2026-06-12'},
     {path: '/about/', priority: 0.5, changefreq: 'monthly', lastmod: '2026-05-23'},
@@ -45,7 +45,6 @@ const blogRoutes: RouteEntry[] = [
     {path: '/blog/how-to-send-passwords-over-email/', priority: 0.6, changefreq: 'monthly', lastmod: '2026-03-19'},
     {path: '/blog/onetimesecret-alternative/', priority: 0.6, changefreq: 'monthly', lastmod: '2026-04-17'},
     {path: '/blog/self-destructing-messages-explained/', priority: 0.6, changefreq: 'monthly', lastmod: '2026-04-14'},
-    {path: '/blog/how-to-share-passwords-securely/', priority: 0.6, changefreq: 'monthly', lastmod: '2026-04-14'},
     {path: '/blog/stop-sending-passwords-over-slack/', priority: 0.6, changefreq: 'monthly', lastmod: '2026-03-31'},
 ];
 

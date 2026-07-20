@@ -47,7 +47,6 @@ Key facts:
 
 ## Notable Blog Posts
 
-- [How to Share Passwords Securely](https://1time.io/blog/how-to-share-passwords-securely/)
 - [Is Slack Safe for Passwords?](https://1time.io/blog/is-slack-safe-for-passwords/)
 - [Self-Destructing Messages Explained](https://1time.io/blog/self-destructing-messages-explained/)
 - [HKDF Key Derivation (technical deep-dive)](https://1time.io/blog/hkdf-key-derivation-explained/)
