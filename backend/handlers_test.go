@@ -112,7 +112,7 @@ func TestAPISaveSecretStoresClampedViews(t *testing.T) {
 		{name: "absent views stays legacy shape", payload: `{"secretMessage":"c","hashedKey":"h","duration":60}`, wantViews: 0},
 		{name: "explicit single view stays legacy shape", payload: `{"secretMessage":"c","hashedKey":"h","duration":60,"views":1}`, wantViews: 0},
 		{name: "multi view stored as-is", payload: `{"secretMessage":"c","hashedKey":"h","duration":60,"views":5}`, wantViews: 5},
-		{name: "unlimited sentinel stored", payload: `{"secretMessage":"c","hashedKey":"h","duration":60,"views":-1}`, wantViews: unlimitedViews},
+		{name: "former unlimited sentinel collapses to single view", payload: `{"secretMessage":"c","hashedKey":"h","duration":60,"views":-1}`, wantViews: 0},
 		{name: "oversized clamped to max", payload: `{"secretMessage":"c","hashedKey":"h","duration":60,"views":5000}`, wantViews: maxViews},
 		{name: "garbage negative collapses to single view", payload: `{"secretMessage":"c","hashedKey":"h","duration":60,"views":-7}`, wantViews: 0},
 	}
@@ -150,7 +150,7 @@ func TestClampViews(t *testing.T) {
 		{in: 2, want: 2},
 		{in: maxViews, want: maxViews},
 		{in: maxViews + 1, want: maxViews},
-		{in: unlimitedViews, want: unlimitedViews},
+		{in: -1, want: 1},
 		{in: -2, want: 1},
 	}
 	for _, tt := range tests {
@@ -192,7 +192,6 @@ func TestAPIGetMessageStatuses(t *testing.T) {
 	}{
 		{name: "ok", status: "ok", message: "ciphertext", wantStatus: `"status":"ok"`, wantBody: `"cryptedMessage":"ciphertext"`},
 		{name: "ok multi-view", status: "ok", message: "ciphertext", viewsLeft: 4, expiresIn: 259200, wantStatus: `"status":"ok"`, wantBody: `"expiresIn":259200`},
-		{name: "ok unlimited", status: "ok", message: "ciphertext", viewsLeft: unlimitedViews, expiresIn: 3600, wantStatus: `"status":"ok"`, wantBody: `"viewsLeft":-1`},
 		{name: "wrong key", status: "wrong key", wantStatus: `"status":"wrong key"`},
 		{name: "no message", status: "no message", wantStatus: `"status":"no message"`},
 	}

@@ -33,7 +33,7 @@ export function buildSecretLink(randomString, newId) {
 }
 
 export async function createSecretLink(secretMessage, options = {}) {
-    // views: 1 (default, burn after reading), N > 1, or -1 for unlimited until expiry.
+    // views: 1 (default, burn after reading) or N > 1 (up to the backend's maxViews).
     const {secretKey = '', durationSeconds = Constants.defaultDurationSeconds, views = 1} = options;
 
     if (!secretMessage) {

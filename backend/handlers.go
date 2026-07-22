@@ -18,23 +18,20 @@ type StoredMessage struct {
 	Message   string `json:"message"`
 	HashedKey string `json:"hashedKey"`
 	// Views is the number of reads remaining. 0 (legacy records) or 1 means
-	// single view, N > 1 means N reads left, unlimitedViews means TTL-only.
+	// single view, N > 1 means N reads left.
 	Views int `json:"views,omitempty"`
 }
 
-// unlimitedViews marks a secret that is never consumed by reads; only the
-// Redis TTL removes it.
-const unlimitedViews = -1
-
-// maxViews caps the per-secret view count accepted by the API.
+// maxViews caps the per-secret view count accepted by the API. It also bounds
+// how many times a single stored ciphertext can be retrieved, so there is no
+// unbounded-download ("unlimited views") amplification vector.
 const maxViews = 100
 
-// clampViews normalizes a client-requested view count to 1..maxViews or
-// unlimitedViews. Anything malformed collapses to the single-view default.
+// clampViews normalizes a client-requested view count to 1..maxViews.
+// Anything malformed (including negative sentinels) collapses to the
+// single-view default.
 func clampViews(views int) int {
 	switch {
-	case views == unlimitedViews:
-		return unlimitedViews
 	case views <= 1:
 		return 1
 	case views > maxViews:

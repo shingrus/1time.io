@@ -5,8 +5,10 @@ import {parseSecretLink} from '../lib/protocol.mjs';
  * Replace `formEl` with the populated #link-ready-template clone.
  * Wires up Copy / QR / Reset behavior on the clone.
  * `onReset` is called when the user clicks "Create another".
+ * `views` (default 1) makes the "works only once" notice honest for
+ * multi-view (N > 1) links; files/passwords omit it.
  */
-export function showLinkReady(formEl: HTMLElement, link: string, onReset: () => void): void {
+export function showLinkReady(formEl: HTMLElement, link: string, onReset: () => void, views = 1): void {
     const tpl = document.getElementById('link-ready-template') as HTMLTemplateElement | null;
     if (!tpl) return;
 
@@ -14,6 +16,17 @@ export function showLinkReady(formEl: HTMLElement, link: string, onReset: () => 
 
     const input = clone.querySelector<HTMLInputElement>('[data-link-input]')!;
     input.value = link;
+
+    if (views !== 1) {
+        const notice = clone.querySelector<HTMLElement>('.link-notice');
+        if (notice) {
+            notice.textContent =
+                `This link works ${views} times. After it is opened ${views} times, the secret is permanently destroyed.` +
+                ' Even we cannot read it because encryption happens in your browser.';
+        }
+        const kind = clone.querySelector<HTMLElement>('[data-link-kind]');
+        if (kind) kind.textContent = 'Your secret link';
+    }
 
     const fingerprintNameEl = clone.querySelector<HTMLElement>('[data-fingerprint-name]');
     if (fingerprintNameEl) {

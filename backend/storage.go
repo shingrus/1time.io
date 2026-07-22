@@ -259,11 +259,10 @@ func cleanupExpiredFiles(now time.Time) error {
 
 // consumeMessageFromStorage reads a secret and applies its view accounting:
 // Views <= 1 (including legacy records without the field) deletes the record,
-// Views > 1 decrements it in place preserving the TTL, and Views ==
-// unlimitedViews leaves it untouched until the TTL reaps it. viewsLeft reports
-// the views remaining after this read (0 = consumed, unlimitedViews = unlimited).
-// expiresInSeconds reports the record's remaining TTL for the paths that keep it
-// alive (multi-view and unlimited); it is 0 when the record was just consumed.
+// and Views > 1 decrements it in place preserving the TTL. viewsLeft reports
+// the views remaining after this read (0 = consumed). expiresInSeconds reports
+// the record's remaining TTL on the multi-view path that keeps it alive; it is
+// 0 when the record was just consumed.
 func consumeMessageFromStorage(key string, hashedKey string) (storedMessage StoredMessage, viewsLeft int, expiresInSeconds int, status string, err error) {
 	client := getRedisClient()
 	storeKey := getStoreKey(key)
@@ -292,15 +291,6 @@ func consumeMessageFromStorage(key string, hashedKey string) (storedMessage Stor
 			if subtle.ConstantTimeCompare([]byte(storedMessage.HashedKey), []byte(hashedKey)) != 1 {
 				storedMessage = StoredMessage{}
 				status = "wrong key"
-				return nil
-			}
-
-			if storedMessage.Views == unlimitedViews {
-				viewsLeft = unlimitedViews
-				if ttl, ttlErr := tx.PTTL(storeKey).Result(); ttlErr == nil && ttl > 0 {
-					expiresInSeconds = int(ttl / time.Second)
-				}
-				status = "ok"
 				return nil
 			}
 

@@ -131,11 +131,7 @@ if (form) {
                 const viewsLeft = typeof data.viewsLeft === 'number' ? data.viewsLeft : 0;
                 const expiresIn = typeof data.expiresIn === 'number' ? data.expiresIn : 0;
                 const expiryClause = expiresIn > 0 ? ` It expires in ${formatRemaining(expiresIn)}.` : '';
-                if (viewsLeft === -1) {
-                    viewsLeftNote.textContent = expiresIn > 0
-                        ? `This link stays available for another ${formatRemaining(expiresIn)}.`
-                        : 'This link stays available until it expires.';
-                } else if (viewsLeft > 0) {
+                if (viewsLeft > 0) {
                     viewsLeftNote.textContent =
                         `This link can be opened ${viewsLeft} more ${viewsLeft === 1 ? 'time' : 'times'}.${expiryClause}`;
                 }

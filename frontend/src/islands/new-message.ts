@@ -62,7 +62,7 @@ if (form) {
     const updateChipLabels = () => {
         chipLabel('duration').textContent = durationSelect.selectedOptions[0]?.textContent ?? '1 day';
         const views = Number(viewsSelect.value);
-        chipLabel('views').textContent = views === -1 ? 'unlimited views' : `${views} view${views === 1 ? '' : 's'}`;
+        chipLabel('views').textContent = `${views} view${views === 1 ? '' : 's'}`;
         chipLabel('passphrase').textContent = keyInput.value ? 'passphrase set' : 'no passphrase';
     };
     durationSelect.addEventListener('change', updateChipLabels);
@@ -98,7 +98,7 @@ if (form) {
                     setPanelOpen(false);
                     updateSubmitState(false);
                     textarea.focus();
-                });
+                }, Number(viewsSelect.value));
                 return;
             }
         } catch {
