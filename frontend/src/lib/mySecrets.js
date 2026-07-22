@@ -61,9 +61,9 @@ export function removeSecret(id) {
 /**
  * Record a freshly created secret. Best-effort and never throws.
  *
- * @param {{id: string, kind?: 'message'|'file', durationDays?: number}} params
+ * @param {{id: string, kind?: 'message'|'file', durationSeconds?: number}} params
  */
-export function recordSecret({id, kind = 'message', durationDays = 1}) {
+export function recordSecret({id, kind = 'message', durationSeconds = 86400}) {
     if (!id || typeof localStorage === 'undefined') return;
 
     const createdAt = Date.now();
@@ -71,7 +71,7 @@ export function recordSecret({id, kind = 'message', durationDays = 1}) {
         id,
         kind,
         createdAt,
-        expiresAt: createdAt + durationDays * 86400 * 1000,
+        expiresAt: createdAt + durationSeconds * 1000,
     };
 
     const list = loadSecrets().filter((e) => e && e.id !== id);

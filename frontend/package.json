@@ -10,7 +10,7 @@
         "check": "astro check"
     },
     "dependencies": {
-        "astro": "^7.0.3",
+        "astro": "^7.1.0",
         "qrcode-generator": "^2.0.4"
     },
     "devDependencies": {
