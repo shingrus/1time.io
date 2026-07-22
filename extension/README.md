@@ -28,7 +28,7 @@ Default target server is `https://1time.io`. To use a self-hosted instance,
 enter its origin in the popup (e.g. `https://secrets.example.com` or
 `http://127.0.0.1:8080` for local development) — settings apply as you change
 them, and Chrome asks for host access to that origin once. Links expire on
-first read, or after the chosen lifetime (1 to 30 days; default one day).
+first read, or after the chosen lifetime (1 hour to 30 days; default one day).
 
 ## Development
 

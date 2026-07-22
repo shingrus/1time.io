@@ -7,18 +7,23 @@ import {
     hashSecretKey,
 } from './protocol.mjs';
 
+const SECONDS_PER_DAY = 86400;
+
 export var Constants = {
     ...ProtocolConstants,
     isDebug: import.meta.env.DEV,
     apiBaseUrl: import.meta.env.PUBLIC_API_URL || '/api/',
     maxFileSizeBytes: 25 * 1024 * 1024,
+    // Reset-to-default select value; ProtocolConstants.defaultDuration is in days.
+    defaultDurationSeconds: ProtocolConstants.defaultDuration * SECONDS_PER_DAY,
 };
 
 export const SHARE_DURATION_OPTIONS = [
-    {value: 1, label: '1 day'},
-    {value: 3, label: '3 days'},
-    {value: 7, label: '7 days'},
-    {value: 30, label: '30 days'},
+    {value: 3600, label: '1 hour'},
+    {value: 86400, label: '1 day'},
+    {value: 259200, label: '3 days'},
+    {value: 604800, label: '7 days'},
+    {value: 2592000, label: '30 days'},
 ];
 
 export {decryptSecretMessage, encryptSecretMessage, getRandomString, hashSecretKey};
@@ -28,7 +33,7 @@ export function buildSecretLink(randomString, newId) {
 }
 
 export async function createSecretLink(secretMessage, options = {}) {
-    const {secretKey = '', durationDays = Constants.defaultDuration} = options;
+    const {secretKey = '', durationSeconds = Constants.defaultDurationSeconds} = options;
 
     if (!secretMessage) {
         throw new Error('Secret message is required');
@@ -41,7 +46,7 @@ export async function createSecretLink(secretMessage, options = {}) {
     const data = await postJson('saveSecret', {
         secretMessage: encryptedMessage,
         hashedKey,
-        duration: durationDays * 86400,
+        duration: durationSeconds,
     });
 
     if (data.status !== 'ok' || !data.newId) {
@@ -52,7 +57,7 @@ export async function createSecretLink(secretMessage, options = {}) {
     // util chunk (which every page loads). Fire-and-forget: best-effort, must not
     // delay showing the link or run on pages that don't create secrets.
     void import('./mySecrets.js')
-        .then(({recordSecret}) => recordSecret({id: data.newId, kind: 'message', durationDays}))
+        .then(({recordSecret}) => recordSecret({id: data.newId, kind: 'message', durationSeconds}))
         .catch(() => {});
 
     return {

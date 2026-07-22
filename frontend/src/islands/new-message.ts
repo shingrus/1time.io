@@ -55,13 +55,13 @@ if (form) {
         try {
             const {link} = await createSecretLink(textarea.value, {
                 secretKey: keyInput.value,
-                durationDays: Number(durationSelect.value),
+                durationSeconds: Number(durationSelect.value),
             });
             if (link) {
                 showLinkReady(form, link, () => {
                     textarea.value = '';
                     keyInput.value = '';
-                    durationSelect.value = String(Constants.defaultDuration);
+                    durationSelect.value = String(Constants.defaultDurationSeconds);
                     updateSubmitState(false);
                     textarea.focus();
                 });

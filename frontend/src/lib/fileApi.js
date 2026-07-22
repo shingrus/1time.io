@@ -15,12 +15,12 @@ const UPLOAD_STALL_MS = 150000; // abort+retry only if the upload makes NO progr
 const UPLOAD_RETRY_STATUS = new Set([408, 500, 502, 503, 504]);
 const UPLOAD_BACKOFF_MS = [1000, 2000];
 
-function attemptUpload(encryptedBlob, hashedKey, durationDays, onProgress) {
+function attemptUpload(encryptedBlob, hashedKey, durationSeconds, onProgress) {
     // Fresh FormData per attempt (avoids consumed-stream issues on retry).
     const formData = new FormData();
     formData.append('file', encryptedBlob, 'encrypted.bin');
     formData.append('hashedKey', hashedKey);
-    formData.append('duration', String(durationDays * 86400));
+    formData.append('duration', String(durationSeconds));
 
     return new Promise((resolve, reject) => {
         const xhr = new XMLHttpRequest();
@@ -98,11 +98,11 @@ const delay = (ms) => new Promise((r) => setTimeout(r, ms));
  * Upload encrypted file blob to server, with transparent retries on transient
  * failures (network drop / timeout / 5xx / 408). Returns { status, newId }.
  */
-export async function saveFile(encryptedBlob, hashedKey, durationDays, onProgress) {
+export async function saveFile(encryptedBlob, hashedKey, durationSeconds, onProgress) {
     let lastError;
     for (let attempt = 0; attempt < UPLOAD_MAX_ATTEMPTS; attempt += 1) {
         try {
-            return await attemptUpload(encryptedBlob, hashedKey, durationDays, onProgress);
+            return await attemptUpload(encryptedBlob, hashedKey, durationSeconds, onProgress);
         } catch (error) {
             lastError = error;
             const hasMoreTries = attempt < UPLOAD_MAX_ATTEMPTS - 1;

@@ -633,7 +633,7 @@ export const blogPosts: BlogPost[] = [
                         "name": "Is 1time.io free compared to OneTimeSecret?",
                         "acceptedAnswer": {
                             "@type": "Answer",
-                            "text": "1time.io is completely free with no paid tiers, no feature limits, and no character restrictions. OneTimeSecret is also free for basic use, though longer expiry windows (up to 30 days) require a paid plan — the free tier caps at 14 days. 1time.io supports expiry from 1 to 30 days on a single free tier with no account required."
+                            "text": "1time.io is completely free with no paid tiers, no feature limits, and no character restrictions. OneTimeSecret is also free for basic use, though longer expiry windows (up to 30 days) require a paid plan — the free tier caps at 14 days. 1time.io supports expiry from 1 hour to 30 days on a single free tier with no account required."
                         }
                     },
                     {
@@ -1135,7 +1135,7 @@ export const blogPosts: BlogPost[] = [
                         "name": "How long does a self-destructing link last?",
                         "acceptedAnswer": {
                             "@type": "Answer",
-                            "text": "A self-destructing link expires the instant it is read — that is the \"self-destruct\" trigger. As a safety net, unread links also auto-expire after a configurable window (1 to 30 days on 1time.io) so nothing sits on the server forever if the recipient never opens it."
+                            "text": "A self-destructing link expires the instant it is read — that is the \"self-destruct\" trigger. As a safety net, unread links also auto-expire after a configurable window (1 hour to 30 days on 1time.io) so nothing sits on the server forever if the recipient never opens it."
                         }
                     },
                     {
@@ -1519,7 +1519,7 @@ export const blogPosts: BlogPost[] = [
                         "name": "What happens if a one-time link is never opened?",
                         "acceptedAnswer": {
                             "@type": "Answer",
-                            "text": "Unread links auto-expire after a configurable window. On 1time.io the default is 1 day, with options from 1 to 30 days. If the recipient never opens the link, the encrypted data is automatically deleted from the server when the expiry is reached — nothing persists indefinitely."
+                            "text": "Unread links auto-expire after a configurable window. On 1time.io the default is 1 day, with options from 1 hour to 30 days. If the recipient never opens the link, the encrypted data is automatically deleted from the server when the expiry is reached — nothing persists indefinitely."
                         }
                     }
                 ]

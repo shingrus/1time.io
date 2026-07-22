@@ -6,7 +6,7 @@ import (
 	"os"
 )
 
-const defaultDuration = 86400 * 7 // keep for 1 week
+const defaultDuration = 86400 // keep for 1 day (matches the client + protocol default)
 const maxDuration = 86400 * 30    // keep for 1 month
 //const randKeyLen = 12
 

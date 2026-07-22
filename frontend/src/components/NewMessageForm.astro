@@ -1,5 +1,6 @@
 ---
 import LinkReadyTemplate from './LinkReadyTemplate.astro';
+import {Constants, SHARE_DURATION_OPTIONS} from '../lib/util.js';
 ---
 <form id="new-message-form" autocomplete="off">
     <div class="form-field">
@@ -40,10 +41,9 @@ import LinkReadyTemplate from './LinkReadyTemplate.astro';
         <div class="form-field" style="margin-bottom:0">
             <label class="form-label" for="duration">Expire after</label>
             <select class="form-select" id="duration">
-                <option value="1" selected>1 day</option>
-                <option value="3">3 days</option>
-                <option value="7">7 days</option>
-                <option value="30">30 days</option>
+                {SHARE_DURATION_OPTIONS.map(({value, label}) => (
+                    <option value={value} selected={value === Constants.defaultDurationSeconds}>{label}</option>
+                ))}
             </select>
             <p class="form-help">Link expires even if unread</p>
         </div>

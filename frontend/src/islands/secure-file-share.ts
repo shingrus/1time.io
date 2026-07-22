@@ -1,4 +1,4 @@
-import {Constants, SHARE_DURATION_OPTIONS} from '../lib/util.js';
+import {Constants} from '../lib/util.js';
 import {encryptFile} from '../lib/fileProtocol.js';
 import {saveFile} from '../lib/fileApi.js';
 import {showLinkReady} from './show-link-ready.js';
@@ -149,9 +149,9 @@ if (form) {
             );
             if (data.status === 'ok' && data.newId) {
                 // Lazy so the my-secrets store stays off the file page's initial load.
-                const days = Number(durationSelect.value);
+                const durationSeconds = Number(durationSelect.value);
                 void import('../lib/mySecrets.js')
-                    .then(({recordSecret}) => recordSecret({id: data.newId, kind: 'file', durationDays: days}))
+                    .then(({recordSecret}) => recordSecret({id: data.newId, kind: 'file', durationSeconds}))
                     .catch(() => {});
                 const link = `${window.location.origin}/f/#${randomKey}${data.newId}`;
                 isEncrypting = false;
@@ -161,7 +161,7 @@ if (form) {
                 showLinkReady(form, link, () => {
                     clearSelection();
                     keyInput.value = '';
-                    durationSelect.value = String(Constants.defaultDuration);
+                    durationSelect.value = String(Constants.defaultDurationSeconds);
                     updateSubmit();
                 });
                 return;
@@ -176,6 +176,4 @@ if (form) {
         renderProgress();
         updateSubmit();
     });
-
-    void SHARE_DURATION_OPTIONS;
 }
