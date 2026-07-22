@@ -186,12 +186,13 @@ func TestAPIGetMessageStatuses(t *testing.T) {
 		status     string
 		message    string
 		viewsLeft  int
+		expiresIn  int
 		wantStatus string
 		wantBody   string
 	}{
 		{name: "ok", status: "ok", message: "ciphertext", wantStatus: `"status":"ok"`, wantBody: `"cryptedMessage":"ciphertext"`},
-		{name: "ok multi-view", status: "ok", message: "ciphertext", viewsLeft: 4, wantStatus: `"status":"ok"`, wantBody: `"viewsLeft":4`},
-		{name: "ok unlimited", status: "ok", message: "ciphertext", viewsLeft: unlimitedViews, wantStatus: `"status":"ok"`, wantBody: `"viewsLeft":-1`},
+		{name: "ok multi-view", status: "ok", message: "ciphertext", viewsLeft: 4, expiresIn: 259200, wantStatus: `"status":"ok"`, wantBody: `"expiresIn":259200`},
+		{name: "ok unlimited", status: "ok", message: "ciphertext", viewsLeft: unlimitedViews, expiresIn: 3600, wantStatus: `"status":"ok"`, wantBody: `"viewsLeft":-1`},
 		{name: "wrong key", status: "wrong key", wantStatus: `"status":"wrong key"`},
 		{name: "no message", status: "no message", wantStatus: `"status":"no message"`},
 	}
@@ -199,11 +200,11 @@ func TestAPIGetMessageStatuses(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			restoreHandlerHooks(t)
-			consumeMessageFromStorageFunc = func(key string, hashedKey string) (StoredMessage, int, string, error) {
+			consumeMessageFromStorageFunc = func(key string, hashedKey string) (StoredMessage, int, int, string, error) {
 				if key != "msg123" || hashedKey != "hash" {
 					t.Fatalf("consume args = %q, %q; want msg123, hash", key, hashedKey)
 				}
-				return StoredMessage{Message: tt.message, HashedKey: "hash", Encrypted: true}, tt.viewsLeft, tt.status, nil
+				return StoredMessage{Message: tt.message, HashedKey: "hash", Encrypted: true}, tt.viewsLeft, tt.expiresIn, tt.status, nil
 			}
 
 			req := httptest.NewRequest(http.MethodPost, "/api/get", strings.NewReader(`{"id":"msg123","hashedKey":"hash"}`))

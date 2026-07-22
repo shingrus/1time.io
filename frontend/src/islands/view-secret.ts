@@ -1,5 +1,17 @@
 import {Constants, decryptSecretMessage, hashSecretKey, postJson, copyTextToClipboard} from '../lib/util.js';
 
+// Turn a remaining-TTL in seconds into a coarse, human-friendly span
+// ("30 days", "1 hour", "5 minutes").
+function formatRemaining(seconds: number): string {
+    const unit = (n: number, label: string) => `${n} ${label}${n === 1 ? '' : 's'}`;
+    const minutes = Math.round(seconds / 60);
+    if (minutes < 1) return 'less than a minute';
+    if (minutes < 60) return unit(minutes, 'minute');
+    const hours = Math.round(minutes / 60);
+    if (hours < 24) return unit(hours, 'hour');
+    return unit(Math.round(hours / 24), 'day');
+}
+
 const form = document.querySelector<HTMLFormElement>('#view-secret-form');
 if (form) {
     const passphraseSection = form.querySelector<HTMLElement>('[data-state="passphrase"]')!;
@@ -117,10 +129,15 @@ if (form) {
                 decryptedBody.textContent = await decryptSecretMessage(data.cryptedMessage, fullSecretKey);
                 // Older backends omit viewsLeft; treat that as the consumed one-time case.
                 const viewsLeft = typeof data.viewsLeft === 'number' ? data.viewsLeft : 0;
+                const expiresIn = typeof data.expiresIn === 'number' ? data.expiresIn : 0;
+                const expiryClause = expiresIn > 0 ? ` It expires in ${formatRemaining(expiresIn)}.` : '';
                 if (viewsLeft === -1) {
-                    viewsLeftNote.textContent = 'This link stays available until it expires.';
+                    viewsLeftNote.textContent = expiresIn > 0
+                        ? `This link stays available for another ${formatRemaining(expiresIn)}.`
+                        : 'This link stays available until it expires.';
                 } else if (viewsLeft > 0) {
-                    viewsLeftNote.textContent = `This link can be opened ${viewsLeft} more ${viewsLeft === 1 ? 'time' : 'times'}.`;
+                    viewsLeftNote.textContent =
+                        `This link can be opened ${viewsLeft} more ${viewsLeft === 1 ? 'time' : 'times'}.${expiryClause}`;
                 }
                 viewsLeftNote.toggleAttribute('hidden', viewsLeft === 0);
                 pickReplyVariant(viewsLeft === 0);

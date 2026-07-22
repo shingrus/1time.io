@@ -149,6 +149,7 @@ func apiGetMessage(r *http.Request) (responseCode int, response []byte) {
 		Status         string `json:"status"`
 		CryptedMessage string `json:"cryptedMessage"`
 		ViewsLeft      int    `json:"viewsLeft"`
+		ExpiresIn      int    `json:"expiresIn"`
 	}{
 		Status: "error",
 		// NewId:strconv.FormatInt(32, 16)
@@ -168,13 +169,14 @@ func apiGetMessage(r *http.Request) (responseCode int, response []byte) {
 				if DEBUG {
 					log.Printf("payload <- storage: %v, %v\n", payload.Id, payload.HashedKey)
 				}
-				storedMessage, viewsLeft, status, err := consumeMessageFromStorageFunc(payload.Id, payload.HashedKey)
+				storedMessage, viewsLeft, expiresIn, status, err := consumeMessageFromStorageFunc(payload.Id, payload.HashedKey)
 				if err == nil {
 					switch status {
 					case "ok":
 						jResponse.Status = "ok"
 						jResponse.CryptedMessage = storedMessage.Message
 						jResponse.ViewsLeft = viewsLeft
+						jResponse.ExpiresIn = expiresIn
 					case "wrong key":
 						jResponse.Status = "wrong key"
 						log.Println("Hashes aren't equal")

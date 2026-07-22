@@ -262,13 +262,16 @@ func cleanupExpiredFiles(now time.Time) error {
 // Views > 1 decrements it in place preserving the TTL, and Views ==
 // unlimitedViews leaves it untouched until the TTL reaps it. viewsLeft reports
 // the views remaining after this read (0 = consumed, unlimitedViews = unlimited).
-func consumeMessageFromStorage(key string, hashedKey string) (storedMessage StoredMessage, viewsLeft int, status string, err error) {
+// expiresInSeconds reports the record's remaining TTL for the paths that keep it
+// alive (multi-view and unlimited); it is 0 when the record was just consumed.
+func consumeMessageFromStorage(key string, hashedKey string) (storedMessage StoredMessage, viewsLeft int, expiresInSeconds int, status string, err error) {
 	client := getRedisClient()
 	storeKey := getStoreKey(key)
 
 	for attempt := 0; attempt < maxConsumeAttempts; attempt++ {
 		storedMessage = StoredMessage{}
 		viewsLeft = 0
+		expiresInSeconds = 0
 		status = "no message"
 		retry := false
 
@@ -294,6 +297,9 @@ func consumeMessageFromStorage(key string, hashedKey string) (storedMessage Stor
 
 			if storedMessage.Views == unlimitedViews {
 				viewsLeft = unlimitedViews
+				if ttl, ttlErr := tx.PTTL(storeKey).Result(); ttlErr == nil && ttl > 0 {
+					expiresInSeconds = int(ttl / time.Second)
+				}
 				status = "ok"
 				return nil
 			}
@@ -327,6 +333,7 @@ func consumeMessageFromStorage(key string, hashedKey string) (storedMessage Stor
 					}
 
 					viewsLeft = updated.Views
+					expiresInSeconds = int(ttl / time.Second)
 					status = "ok"
 					return nil
 				}
