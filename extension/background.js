@@ -94,7 +94,7 @@ async function createOneTimeLink(origin, secret, expiresInSeconds) {
     const randomKey = getRandomString(ProtocolConstants.randomKeyLen);
     const {encryptedMessage, hashedKey} = await encryptSecretMessage(secret, randomKey);
 
-    const response = await fetch(buildApiUrl(origin, 'saveSecret'), {
+    const response = await fetch(buildApiUrl(origin, 'saveSecret?src=ext'), {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({
