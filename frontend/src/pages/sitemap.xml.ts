@@ -11,6 +11,7 @@ interface RouteEntry {
 const coreRoutes: RouteEntry[] = [
     {path: '/', priority: 1.0, changefreq: 'weekly', lastmod: '2026-04-14'},
     {path: '/secure-file-sharing/', priority: 0.9, changefreq: 'weekly', lastmod: '2026-06-12'},
+    {path: '/chrome-extension/', priority: 0.8, changefreq: 'weekly', lastmod: '2026-07-23'},
     {path: '/password-generator/', priority: 0.9, changefreq: 'weekly', lastmod: '2026-03-23'},
     {path: '/passphrase-generator/', priority: 0.8, changefreq: 'weekly', lastmod: '2026-03-23'},
     {path: '/password-generator-12-characters/', priority: 0.7, changefreq: 'monthly', lastmod: '2026-03-22'},
