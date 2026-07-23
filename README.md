@@ -13,6 +13,8 @@
   <a href="https://1time.io"><img src="https://img.shields.io/badge/Try_it_live-1time.io-E8552D?style=for-the-badge" alt="Try it live"></a>
   &nbsp;
   <a href="https://www.npmjs.com/package/@1time/cli"><img src="https://img.shields.io/badge/CLI-npm_install_@1time/cli-CB3837?style=for-the-badge&logo=npm" alt="CLI"></a>
+  &nbsp;
+  <a href="https://chromewebstore.google.com/detail/1time-%E2%80%94-one-time-secret-l/oclenaeccacnolionlpiefekmmbppgkb"><img src="https://img.shields.io/badge/Chrome-Add_to_Chrome-4285F4?style=for-the-badge&logo=googlechrome&logoColor=white" alt="Chrome extension"></a>
 </p>
 
 <p align="center">
@@ -43,6 +45,12 @@
 | **🔑** | **Built-in generators** | Password, passphrase, API key, and WiFi password generators included. |
 | **💻** | **First-party CLI** | `npm i -g @1time/cli` — pipe secrets from your terminal, perfect for DevOps workflows. |
 | **⚡** | **Lightweight stack** | Go + Redis backend, static Astro frontend. Minimal resource usage. |
+
+---
+
+## Browser Extension
+
+Share the text you just selected as an encrypted one-time link, straight from the right-click menu (or `Alt+Shift+S`) — [**Add to Chrome**](https://chromewebstore.google.com/detail/1time-%E2%80%94-one-time-secret-l/oclenaeccacnolionlpiefekmmbppgkb). Encryption happens in the browser, and the extension works against [1time.io](https://1time.io) or your own self-hosted instance (set the host in the extension options). Source lives in [`extension/`](extension/).
 
 ---
 

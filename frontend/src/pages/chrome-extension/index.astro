@@ -1,0 +1,228 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import InlineCss from '../../components/InlineCss.astro';
+import {absoluteUrl, siteHost, chromeStoreUrl} from '../../lib/siteConfig.js';
+
+const title = `1time Chrome Extension — Share a One-Time Secret Link from Your Browser`;
+const description = 'Free Chrome extension for one-time secret sharing. Select text, right-click, and get an encrypted self-destructing link. Zero-knowledge, works with 1time.io or a self-hosted server.';
+const lastUpdated = '2026-07-23';
+
+const faqItems = [
+    {
+        question: 'What does the 1time Chrome extension do?',
+        answer: 'It turns any selected text into an encrypted one-time link without leaving the page. Select a password, API key, or note, choose "Share as one-time link" from the right-click menu (or press Alt+Shift+S), and the encrypted link is copied to your clipboard. The link opens exactly once, then the secret is deleted.',
+    },
+    {
+        question: 'Is the extension free, and does it require an account?',
+        answer: 'Yes, it is free, and there is no signup. The extension shares secrets through 1time.io by default, which needs no account.',
+    },
+    {
+        question: 'Can the extension or the server read my secret?',
+        answer: 'No. The selected text is encrypted inside your browser with AES-256-GCM before anything is sent. The decryption key lives only in the link fragment, which never reaches the server. Neither the server operator nor the extension itself can read the plaintext.',
+    },
+    {
+        question: 'Does it work with a self-hosted 1time server?',
+        answer: 'Yes. Open the extension options and set your own host. The extension will encrypt and create links against your self-hosted instance instead of 1time.io — useful for teams that keep secret sharing on their own infrastructure.',
+    },
+    {
+        question: 'Which browsers are supported?',
+        answer: 'Any Chromium-based browser that supports Manifest V3 — Google Chrome, Microsoft Edge, Brave, Arc, and others — running Chrome 116 or newer.',
+    },
+];
+
+const jsonLd = [
+    {
+        '@context': 'https://schema.org',
+        '@type': 'WebPage',
+        name: '1time Chrome Extension',
+        description,
+        url: absoluteUrl('/chrome-extension/'),
+        isPartOf: absoluteUrl('/'),
+        dateModified: lastUpdated,
+    },
+    {
+        '@context': 'https://schema.org',
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+            {'@type': 'ListItem', position: 1, name: 'Home', item: absoluteUrl('/')},
+            {'@type': 'ListItem', position: 2, name: 'Chrome Extension', item: absoluteUrl('/chrome-extension/')},
+        ],
+    },
+    {
+        '@context': 'https://schema.org',
+        '@type': 'SoftwareApplication',
+        name: '1time — One-Time Secret Links',
+        url: absoluteUrl('/chrome-extension/'),
+        downloadUrl: chromeStoreUrl,
+        description: 'Chrome extension that encrypts selected text in the browser and copies a one-time, self-destructing link. Zero-knowledge, supports self-hosted servers.',
+        applicationCategory: 'SecurityApplication',
+        operatingSystem: 'Chrome, Edge, Brave, and other Chromium browsers',
+        offers: {'@type': 'Offer', price: '0', priceCurrency: 'USD'},
+        featureList: 'Right-click to share, Keyboard shortcut, Browser-side AES-256-GCM encryption, One-time self-destructing links, Self-hosted server support',
+    },
+    {
+        '@context': 'https://schema.org',
+        '@type': 'FAQPage',
+        mainEntity: faqItems.map((item) => ({
+            '@type': 'Question',
+            name: item.question,
+            acceptedAnswer: {'@type': 'Answer', text: item.answer},
+        })),
+    },
+];
+---
+<BaseLayout
+    title={title}
+    description={description}
+    canonical="/chrome-extension/"
+    ogImage="/1time-og-main.png"
+    ogImageAlt="1time Chrome extension — share selected text as an encrypted one-time link"
+>
+    <InlineCss slot="head" name="home" />
+    <InlineCss slot="head" name="about" />
+    <script slot="head" type="application/ld+json" set:html={JSON.stringify(jsonLd)} is:inline></script>
+
+    <div class="about-page">
+        <h1>1time Chrome Extension</h1>
+        <p class="subtitle">Turn any selected text into an encrypted, self-destructing one-time link — right from your browser.</p>
+
+        <p style="margin:20px 0 8px">
+            <a
+                class="btn btn-primary btn-lg"
+                href={chromeStoreUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                style="display:inline-flex;align-items:center;gap:8px;text-decoration:none"
+            >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/><line x1="21.17" y1="8" x2="12" y2="8"/><line x1="3.95" y1="6.06" x2="8.54" y2="14"/><line x1="10.88" y1="21.94" x2="15.46" y2="14"/>
+                </svg>
+                Add to Chrome — it's free
+            </a>
+        </p>
+        <p class="article-last-updated" style="font-size:0.85em;color:var(--text-secondary);margin-top:4px">Free · No signup · Works in Chrome, Edge, Brave, and Arc</p>
+
+        <p style="margin-top:24px">
+            <img
+                src="/chrome-extension/share-selected-text.png"
+                alt="Selecting text on a web page and choosing Share as one-time link from the 1time right-click menu"
+                width="1280"
+                height="800"
+                loading="lazy"
+                decoding="async"
+                style="width:100%;height:auto;border-radius:10px;border:1px solid var(--border, #2a2d34)"
+            />
+        </p>
+
+        <section class="seo-section">
+            <h2>A one-time secret link without leaving the page</h2>
+            <p>
+                The <strong>1time Chrome extension</strong> is the fastest way to share a password, API key,
+                token, or private note as a one-time link. Select the text on any page, right-click, and pick
+                <em>“Share as one-time link”</em> — or press <kbd>Alt+Shift+S</kbd>. The extension encrypts the
+                selection in your browser and copies an encrypted, self-destructing link to your clipboard. The
+                recipient opens it once; then the secret is permanently deleted. No tab switch, no copy-paste
+                into a website, no account.
+            </p>
+
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-card-header">
+                        <div class="feature-card-icon" aria-hidden="true">&#x1f5b1;&#xfe0f;</div>
+                        <h2>Right-click to share</h2>
+                    </div>
+                    <p>Highlight text anywhere, choose “Share as one-time link,” and the encrypted link lands on your clipboard.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-card-header">
+                        <div class="feature-card-icon" aria-hidden="true">&#x2328;&#xfe0f;</div>
+                        <h2>Keyboard shortcut</h2>
+                    </div>
+                    <p>Press <kbd>Alt+Shift+S</kbd> to share the current selection without touching the mouse.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-card-header">
+                        <div class="feature-card-icon" aria-hidden="true">&#x1f512;</div>
+                        <h2>Encrypted in your browser</h2>
+                    </div>
+                    <p>AES-256-GCM encryption happens locally. The key stays in the link fragment and never reaches the server.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-card-header">
+                        <div class="feature-card-icon" aria-hidden="true">&#x1f3e0;</div>
+                        <h2>Self-hosted support</h2>
+                    </div>
+                    <p>Point the extension at your own 1time server in the options — keep secret sharing on your own infrastructure.</p>
+                </div>
+            </div>
+
+            <h2>How the extension works</h2>
+            <ul class="step-list">
+                <li>Select the text you want to share on any web page.</li>
+                <li>Right-click and choose <em>“Share as one-time link,”</em> or press <kbd>Alt+Shift+S</kbd>.</li>
+                <li>Your browser encrypts the selection with AES-256-GCM and uploads only the ciphertext.</li>
+                <li>An encrypted one-time link is copied to your clipboard — paste it wherever you like.</li>
+                <li>The recipient opens the link once; the secret is decrypted in their browser and then permanently deleted.</li>
+            </ul>
+
+            <p style="margin-top:24px">
+                <img
+                    src="/chrome-extension/copy-one-time-link.png"
+                    alt="The 1time extension confirming that a one-time link was created and copied to the clipboard"
+                    width="1280"
+                    height="800"
+                    loading="lazy"
+                    decoding="async"
+                    style="width:100%;height:auto;border-radius:10px;border:1px solid var(--border, #2a2d34)"
+                />
+            </p>
+
+            <h2>Zero-knowledge by design</h2>
+            <p>
+                {siteHost} is a zero-knowledge service: the decryption key lives only in the link fragment (<code>#</code>),
+                which browsers never send to the server. The extension follows the same model. The selected text is
+                encrypted before it leaves your machine, and the extension deliberately keeps the secret link out of the
+                page — the clipboard copy happens in a private extension context so page scripts can never read it.
+                Even the server operator cannot recover your secret.
+            </p>
+
+            <h2>Good for developers and IT teams</h2>
+            <p>
+                Sharing a database URL in a code review, handing a colleague an API key, sending recovery codes, or
+                passing along an SSH snippet — the extension fits the moments where a secret is already on your screen
+                and you just need a safe, single-use way to pass it on. For terminal workflows, the same one-time links
+                are available from the <a href="/blog/share-secrets-from-terminal/">1time CLI</a>.
+            </p>
+
+            <h2>Install the extension</h2>
+            <p>
+                Add it from the Chrome Web Store, then start sharing — no configuration needed to use {siteHost}.
+            </p>
+            <p style="margin:12px 0">
+                <a
+                    class="btn btn-primary btn-lg"
+                    href={chromeStoreUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style="text-decoration:none"
+                >Add to Chrome</a>
+            </p>
+
+            <h2>Frequently asked questions</h2>
+            {faqItems.map((item) => (
+                <div class="feature-card" style="margin-bottom:12px">
+                    <div class="feature-card-header"><h3>{item.question}</h3></div>
+                    <p>{item.answer}</p>
+                </div>
+            ))}
+
+            <h2>Learn more</h2>
+            <nav class="seo-nav">
+                <a href="/share-password-securely/">Share a password via one-time link</a>
+                <a href="/secure-file-sharing/">One-time file sharing</a>
+                <a href="/blog/share-secrets-from-terminal/">Share secrets from the terminal</a>
+                <a href="/about/">About {siteHost}</a>
+            </nav>
+        </section>
+    </div>
+</BaseLayout>

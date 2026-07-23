@@ -5,6 +5,8 @@
 Use it to share passwords, API keys, tokens, private notes, and other sensitive text as self-destructing links from your terminal.
 It can also share encrypted files with one-time download links.
 
+Prefer the browser? The [1time Chrome extension](https://chromewebstore.google.com/detail/1time-%E2%80%94-one-time-secret-l/oclenaeccacnolionlpiefekmmbppgkb) turns any selected text into a one-time link from the right-click menu.
+
 ## Why Use 1time CLI
 
 - End-to-end encrypted: the secret is encrypted locally before it is sent to the server.
