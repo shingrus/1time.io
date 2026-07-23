@@ -60,6 +60,7 @@
 }
 
 .step-list li {
+  position: relative;
   padding-left: 32px;
 }
 
