@@ -1,8 +1,8 @@
 {
     "manifest_version": 3,
     "name": "1time — One-Time Secret Links",
-    "version": "1.0.2",
-    "description": "Encrypt selected text in your browser and copy a one-time link. Supports 1time.io and self-hosted servers.",
+    "version": "1.0.3",
+    "description": "Share passwords & secrets as encrypted one-time links. Select text, right-click, done — zero-knowledge, self-hosted ready.",
     "minimum_chrome_version": "116",
     "icons": {
         "16": "icons/icon-16.png",
@@ -43,7 +43,7 @@
             "suggested_key": {
                 "default": "Alt+Shift+S"
             },
-            "description": "Share passwords & secrets as encrypted one-time links. Select text, right-click, done — zero-knowledge, self-hosted ready."
+            "description": "Share selected text as a one-time secret link"
         }
     }
 }

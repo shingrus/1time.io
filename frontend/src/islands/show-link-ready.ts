@@ -1,5 +1,6 @@
 import {copyTextToClipboard} from '../lib/util.js';
 import {parseSecretLink} from '../lib/protocol.mjs';
+import {chromeStoreUrl} from '../lib/siteConfig.js';
 
 /**
  * Replace `formEl` with the populated #link-ready-template clone.
@@ -34,8 +35,23 @@ export function showLinkReady(formEl: HTMLElement, link: string, onReset: () => 
         })();
     }
 
-    const bookmarkEl = clone.querySelector<HTMLElement>('[data-bookmark-shortcut]')!;
-    bookmarkEl.textContent = /Mac|iPhone|iPad|iPod/.test(navigator.userAgent || '') ? '⌘D' : 'Ctrl+D';
+    const ua = navigator.userAgent || '';
+    const tipTextEl = clone.querySelector<HTMLElement>('[data-tip-text]')!;
+    if (/Chrome\//.test(ua) && !/Android|Mobi|iPhone|iPad|iPod/i.test(ua)) {
+        // Chromium desktop can install the extension — promote it instead of the
+        // bookmark shortcut, with an accent-colored CTA so it stands out.
+        const iconEl = clone.querySelector<HTMLElement>('.callout-icon');
+        if (iconEl) {
+            iconEl.style.color = 'var(--accent)';
+            iconEl.innerHTML =
+                '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/><line x1="21.17" y1="8" x2="12" y2="8"/><line x1="3.95" y1="6.06" x2="8.54" y2="14"/><line x1="10.88" y1="21.94" x2="15.46" y2="14"/></svg>';
+        }
+        tipTextEl.innerHTML =
+            `<a href="${chromeStoreUrl}" target="_blank" rel="noopener noreferrer" style="color:var(--accent);font-weight:700;text-decoration:underline">Add the 1time extension for Chrome →</a>`;
+    } else {
+        const bookmarkEl = clone.querySelector<HTMLElement>('[data-bookmark-shortcut]')!;
+        bookmarkEl.textContent = /Mac|iPhone|iPad|iPod/.test(ua) ? '⌘D' : 'Ctrl+D';
+    }
 
     const copyBtn = clone.querySelector<HTMLButtonElement>('[data-copy]')!;
     const copyLabel = clone.querySelector<HTMLElement>('[data-copy-label]')!;
