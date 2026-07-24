@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"io"
 	"log"
 	"net/http"
@@ -58,6 +59,14 @@ const maxStatusIDs = 128
 // bounding the payload far below nginx's generic client_max_body_size.
 const maxStatusBodyBytes = 8 * 1024
 
+// maxSaveSecretBodyBytes caps the /api/saveSecret request body. A ~64KB
+// plaintext secret becomes ~85KB after AES-GCM + base64url encoding, so 96KB
+// leaves room for the ciphertext plus hashedKey/duration/views JSON. Bounding
+// the stored ciphertext also bounds the amplification a multi-view link can
+// create: a small upload cap keeps the total downloadable bytes (size × views)
+// in check.
+const maxSaveSecretBodyBytes = 96 * 1024
+
 var fileStorageDir = os.Getenv("FILE_STORAGE_DIR")
 
 var (
@@ -81,6 +90,8 @@ func apiSaveSecret(r *http.Request) (responseCode int, response []byte) {
 		Status: "error",
 		NewId:  "0",
 	}
+
+	r.Body = http.MaxBytesReader(nil, r.Body, maxSaveSecretBodyBytes)
 
 	var payload struct {
 		SecretMessage string `json:"secretMessage"`
@@ -180,6 +191,9 @@ func apiGetMessage(r *http.Request) (responseCode int, response []byte) {
 					case "no message":
 						jResponse.Status = "no message"
 					}
+				} else if errors.Is(err, errConsumeMessageContention) {
+					responseCode = http.StatusServiceUnavailable
+					jResponse.Status = "retry"
 				} else {
 					log.Println(err)
 				}

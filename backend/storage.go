@@ -22,13 +22,13 @@ const maxStorageIDAttempts = 5
 const redisTimeout = time.Second * 10
 const fileJanitorInterval = 2 * time.Hour
 
-// maxConsumeAttempts bounds WATCH transaction retries in consumeMessageFromStorage.
-// A failed transaction only means another reader touched the same key; with
-// multi-view secrets that reader may have merely decremented the counter, so a
-// retry can still succeed.
-const maxConsumeAttempts = 3
+const hashedKeyHexLen = 64
+const consumeMessageRetryWindow = 500 * time.Millisecond
+const consumeMessageRetryBaseDelay = 5 * time.Millisecond
+const consumeMessageRetryMaxDelay = 40 * time.Millisecond
 
 var errStorageIDCollision = errors.New("failed to generate unique storage id")
+var errConsumeMessageContention = errors.New("message consume contention")
 
 var redisClient *redis.Client
 var redisOnce sync.Once
@@ -257,101 +257,127 @@ func cleanupExpiredFiles(now time.Time) error {
 	return nil
 }
 
-// consumeMessageFromStorage reads a secret and applies its view accounting:
-// Views <= 1 (including legacy records without the field) deletes the record,
-// and Views > 1 decrements it in place preserving the TTL. viewsLeft reports
-// the views remaining after this read (0 = consumed). expiresInSeconds reports
-// the record's remaining TTL on the multi-view path that keeps it alive; it is
-// 0 when the record was just consumed.
-func consumeMessageFromStorage(key string, hashedKey string) (storedMessage StoredMessage, viewsLeft int, expiresInSeconds int, status string, err error) {
-	client := getRedisClient()
-	storeKey := getStoreKey(key)
+func isValidHashedKey(hashedKey string) bool {
+	if len(hashedKey) != hashedKeyHexLen {
+		return false
+	}
+	for i := 0; i < len(hashedKey); i++ {
+		c := hashedKey[i]
+		if !((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f')) {
+			return false
+		}
+	}
+	return true
+}
 
-	for attempt := 0; attempt < maxConsumeAttempts; attempt++ {
+// consumeMessageFromStorage reads a secret and applies its view accounting
+// atomically in Redis. Views <= 1 (including legacy records without the field)
+// deletes the record, and Views > 1 decrements it while preserving the TTL.
+// viewsLeft reports the views remaining after this read (0 = consumed).
+// expiresInSeconds reports the remaining TTL when the record stays alive.
+func consumeMessageFromStorage(key string, hashedKey string) (storedMessage StoredMessage, viewsLeft int, expiresInSeconds int, status string, err error) {
+	if !isValidHashedKey(hashedKey) {
+		status = "wrong key"
+		return
+	}
+	return consumeMessageFromStorageWithClient(getRedisClient(), key, hashedKey)
+}
+
+func consumeMessageFromStorageWithClient(client *redis.Client, key string, hashedKey string) (storedMessage StoredMessage, viewsLeft int, expiresInSeconds int, status string, err error) {
+	storeKey := getStoreKey(key)
+	deadline := time.Now().Add(consumeMessageRetryWindow)
+	retryDelay := consumeMessageRetryBaseDelay
+
+	for {
 		storedMessage = StoredMessage{}
 		viewsLeft = 0
 		expiresInSeconds = 0
-		status = "no message"
-		retry := false
+		status = "error"
 
 		err = client.Watch(func(tx *redis.Tx) error {
-			value, err := tx.Get(storeKey).Result()
-			if err == redis.Nil {
+			value, getErr := tx.Get(storeKey).Result()
+			if getErr == redis.Nil {
 				status = "no message"
 				return nil
 			}
-			if err != nil {
-				return err
+			if getErr != nil {
+				return getErr
 			}
 
-			if err := json.Unmarshal([]byte(value), &storedMessage); err != nil {
-				return err
+			var current StoredMessage
+			if unmarshalErr := json.Unmarshal([]byte(value), &current); unmarshalErr != nil {
+				return unmarshalErr
 			}
 
-			if subtle.ConstantTimeCompare([]byte(storedMessage.HashedKey), []byte(hashedKey)) != 1 {
-				storedMessage = StoredMessage{}
+			if subtle.ConstantTimeCompare([]byte(current.HashedKey), []byte(hashedKey)) != 1 {
 				status = "wrong key"
 				return nil
 			}
 
-			if storedMessage.Views > 1 {
-				// go-redis v6 has no KEEPTTL, so carry the TTL over explicitly.
+			if current.Views > 1 {
+				// go-redis v6 has no KEEPTTL, so preserve the remaining TTL
+				// explicitly as part of the watched transaction.
 				ttl, ttlErr := tx.PTTL(storeKey).Result()
 				if ttlErr != nil {
 					return ttlErr
 				}
 				if ttl > 0 {
-					updated := storedMessage
-					updated.Views = storedMessage.Views - 1
+					updated := current
+					updated.Views--
 					updatedValue, marshalErr := json.Marshal(updated)
 					if marshalErr != nil {
 						return marshalErr
 					}
 
-					_, err = tx.TxPipelined(func(pipe redis.Pipeliner) error {
+					if _, txErr := tx.TxPipelined(func(pipe redis.Pipeliner) error {
 						pipe.Set(storeKey, updatedValue, ttl)
 						return nil
-					})
-					if err == redis.TxFailedErr {
-						retry = true
-						storedMessage = StoredMessage{}
-						status = "no message"
-						return nil
-					}
-					if err != nil {
-						return err
+					}); txErr != nil {
+						return txErr
 					}
 
+					storedMessage = current
 					viewsLeft = updated.Views
 					expiresInSeconds = int(ttl / time.Second)
 					status = "ok"
 					return nil
 				}
-				// No TTL left to preserve; fall through and consume the record.
+				// If the TTL disappeared or expired, consume the record rather
+				// than accidentally making a time-limited secret persistent.
 			}
 
-			_, err = tx.TxPipelined(func(pipe redis.Pipeliner) error {
+			if _, txErr := tx.TxPipelined(func(pipe redis.Pipeliner) error {
 				pipe.Del(storeKey)
 				return nil
-			})
-			if err == redis.TxFailedErr {
-				retry = true
-				storedMessage = StoredMessage{}
-				status = "no message"
-				return nil
-			}
-			if err != nil {
-				return err
+			}); txErr != nil {
+				return txErr
 			}
 
+			storedMessage = current
 			status = "ok"
 			return nil
 		}, storeKey)
 
-		if err != nil || !retry {
+		if err == nil {
 			return
 		}
-	}
+		if err != redis.TxFailedErr {
+			return StoredMessage{}, 0, 0, "error", err
+		}
 
-	return
+		remaining := time.Until(deadline)
+		if remaining <= 0 {
+			return StoredMessage{}, 0, 0, "retry", errConsumeMessageContention
+		}
+		if retryDelay > remaining {
+			retryDelay = remaining
+		}
+		time.Sleep(retryDelay)
+		if retryDelay < consumeMessageRetryMaxDelay {
+			retryDelay *= 2
+			if retryDelay > consumeMessageRetryMaxDelay {
+				retryDelay = consumeMessageRetryMaxDelay
+			}
+		}
+	}
 }

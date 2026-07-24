@@ -180,6 +180,29 @@ func TestAPISaveSecretRejectsMissingFields(t *testing.T) {
 	}
 }
 
+func TestAPISaveSecretRejectsOversizedBody(t *testing.T) {
+	restoreHandlerHooks(t)
+
+	called := false
+	saveToStorageFunc = func(value interface{}, duration time.Duration) (string, error) {
+		called = true
+		return "unexpected", nil
+	}
+
+	// A secretMessage larger than the body cap should be rejected before storage.
+	oversized := strings.Repeat("A", maxSaveSecretBodyBytes+1)
+	body := `{"secretMessage":"` + oversized + `","hashedKey":"hash","duration":60}`
+	req := httptest.NewRequest(http.MethodPost, "/api/saveSecret", strings.NewReader(body))
+	_, response := apiSaveSecret(req)
+
+	if called {
+		t.Fatal("saveToStorageFunc should not be called for an oversized body")
+	}
+	if !strings.Contains(string(response), `"status":"error"`) {
+		t.Fatalf("response = %s, want error", response)
+	}
+}
+
 func TestAPIGetMessageStatuses(t *testing.T) {
 	tests := []struct {
 		name       string
@@ -219,6 +242,23 @@ func TestAPIGetMessageStatuses(t *testing.T) {
 				t.Fatalf("response = %s, missing %s", response, tt.wantBody)
 			}
 		})
+	}
+}
+
+func TestAPIGetMessageReturnsRetryableContention(t *testing.T) {
+	restoreHandlerHooks(t)
+	consumeMessageFromStorageFunc = func(key string, hashedKey string) (StoredMessage, int, int, string, error) {
+		return StoredMessage{}, 0, 0, "retry", errConsumeMessageContention
+	}
+
+	req := httptest.NewRequest(http.MethodPost, "/api/get", strings.NewReader(`{"id":"msg123","hashedKey":"hash"}`))
+	responseCode, response := apiGetMessage(req)
+
+	if responseCode != http.StatusServiceUnavailable {
+		t.Fatalf("apiGetMessage() code = %d, want %d", responseCode, http.StatusServiceUnavailable)
+	}
+	if !strings.Contains(string(response), `"status":"retry"`) {
+		t.Fatalf("response = %s, want retry status", response)
 	}
 }
 
