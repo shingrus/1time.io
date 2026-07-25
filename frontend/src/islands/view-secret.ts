@@ -101,7 +101,7 @@ if (form) {
     });
 
     let copyTimer: number | undefined;
-    copyBtn.addEventListener('click', async () => {
+    const copyMessage = async () => {
         const ok = await copyTextToClipboard(decryptedBody.textContent ?? '');
         if (!ok) return;
         copyLabel.textContent = 'Copied!';
@@ -109,10 +109,19 @@ if (form) {
         copyIconDone.style.display = '';
         if (copyTimer) clearTimeout(copyTimer);
         copyTimer = window.setTimeout(() => {
-            copyLabel.textContent = 'Copy';
+            copyLabel.textContent = 'Copy message';
             copyIconCopy.style.display = '';
             copyIconDone.style.display = 'none';
         }, 3000);
+    };
+    copyBtn.addEventListener('click', copyMessage);
+
+    // Clicking the message itself copies it as well. The button remains the
+    // keyboard/assistive path; this only adds a pointer shortcut, and it stands
+    // down when the click was really the end of a manual text selection.
+    decryptedBody.parentElement?.addEventListener('click', () => {
+        if (window.getSelection()?.toString()) return;
+        void copyMessage();
     });
 
     form.addEventListener('submit', async (e) => {
@@ -156,11 +165,10 @@ if (form) {
                 const viewsLeft = typeof data.viewsLeft === 'number' ? data.viewsLeft : 0;
                 const expiresIn = typeof data.expiresIn === 'number' ? data.expiresIn : 0;
                 const expiryClause = expiresIn > 0 ? ` It expires in ${formatRemaining(expiresIn)}.` : '';
-                if (viewsLeft > 0) {
-                    viewsLeftNote.textContent =
-                        `This link can be opened ${viewsLeft} more ${viewsLeft === 1 ? 'time' : 'times'}.${expiryClause}`;
-                }
-                viewsLeftNote.toggleAttribute('hidden', viewsLeft === 0);
+                viewsLeftNote.textContent = viewsLeft > 0
+                    ? `This link can be opened ${viewsLeft} more ${viewsLeft === 1 ? 'time' : 'times'}.${expiryClause}`
+                    : 'This message is burned.';
+                viewsLeftNote.toggleAttribute('hidden', false);
                 pickReplyVariant(viewsLeft === 0);
                 qrAction.toggleAttribute('hidden', true);
                 postReadCta.toggleAttribute('hidden', false);

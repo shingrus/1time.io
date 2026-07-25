@@ -44,6 +44,7 @@
 .message-panel-body {
   padding: 20px;
   flex: 1;
+  cursor: pointer;
 }
 
 .message-panel-body pre {
