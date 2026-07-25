@@ -60,7 +60,7 @@ const maxStatusIDs = 128
 const maxStatusBodyBytes = 8 * 1024
 
 // maxSaveSecretBodyBytes caps the /api/saveSecret request body. base64url adds ~4/3 expansion on top of AES-GCM
-const maxSaveSecretBodyBytes = 3 * 1024 * 1024
+const maxSaveSecretBodyBytes = 25 * 1024 * 1024
 
 // maxLookupBodyBytes caps the small JSON bodies of the lookup endpoints
 // (/api/get, /api/getFile, /api/stat). Their largest legitimate payload is a
