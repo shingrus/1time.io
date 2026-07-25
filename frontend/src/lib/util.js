@@ -79,7 +79,14 @@ export async function postJson(path, payload) {
     });
 
     if (!response.ok) {
-        throw new Error(`Request failed with status ${response.status}`);
+        const error = new Error(`Request failed with status ${response.status}`);
+        error.status = response.status;
+        // Expose the parsed body so callers can distinguish a response our
+        // backend produced from one injected by a proxy/CDN. Only our backend
+        // sends {"status":"retry"}, which is the sole safe signal that a
+        // destructive request did NOT consume anything.
+        error.body = await response.json().catch(() => null);
+        throw error;
     }
 
     return response.json();

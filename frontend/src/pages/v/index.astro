@@ -4,14 +4,14 @@ import InlineCss from '../../components/InlineCss.astro';
 import {siteHost} from '../../lib/siteConfig.js';
 
 const title = `View Secret Message — ${siteHost}`;
-const description = 'Open an encrypted one-time secret link shared through 1time.io. The secret is decrypted in your browser and destroyed after reading.';
+const description = 'Open an encrypted secret link shared through 1time.io. The secret is decrypted in your browser and destroyed once its allowed views are used.';
 ---
 <BaseLayout
     title={title}
     description={description}
     canonical="/v/"
     ogImage="/1time-og-v.png"
-    ogImageAlt={`${siteHost} encrypted one-time secret link`}
+    ogImageAlt={`${siteHost} encrypted secret link`}
     robots="noindex, nofollow"
 >
     <InlineCss slot="head" name="view" />

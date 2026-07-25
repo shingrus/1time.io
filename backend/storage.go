@@ -52,12 +52,13 @@ store value with uniq key
 return key string(hexademical number)
 error in case of failure
 */
-func saveToStorage(value interface{}, duration time.Duration) (newKey string, err error) {
+// saveToStorage stores a text secret and records its counters. views is the
+// already-clamped view count, recorded alongside the stored-secret totals in one
+// round-trip. Counting happens only after the record is safely written, so a
+// stats failure can neither discard the secret nor inflate the totals with saves
+// that never landed.
+func saveToStorage(value interface{}, duration time.Duration, views int) (newKey string, err error) {
 	client := getRedisClient()
-	if err = incrementStoredSecretCounters(time.Now().UTC()); err != nil {
-		log.Println(err)
-		return "", err
-	}
 
 	for attempt := 0; attempt < maxStorageIDAttempts; attempt++ {
 		newKey, err = generateStorageID()
@@ -72,6 +73,10 @@ func saveToStorage(value interface{}, duration time.Duration) (newKey string, er
 		if ok {
 			if DEBUG {
 				log.Printf("Got new key storage: %v", newKey)
+			}
+			// Stats are best-effort: never fail a secret we already stored.
+			if statsErr := incrementStoredSecretCountersFunc(views, time.Now().UTC()); statsErr != nil {
+				log.Printf("incrementStoredSecretCounters error: %v", statsErr)
 			}
 			return newKey, nil
 		}

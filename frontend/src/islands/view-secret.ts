@@ -12,6 +12,14 @@ function formatRemaining(seconds: number): string {
     return unit(Math.round(hours / 24), 'day');
 }
 
+// A read may only be retried when our backend explicitly reports contention
+// (503 + {"status":"retry"}). Anything else — including a bare proxy 503 — may
+// have already consumed a view, so it must not be replayed.
+function isRetryableRead(err: unknown): boolean {
+    const {status, body} = (err ?? {}) as {status?: number; body?: {status?: string} | null};
+    return status === 503 && body?.status === 'retry';
+}
+
 const form = document.querySelector<HTMLFormElement>('#view-secret-form');
 if (form) {
     const passphraseSection = form.querySelector<HTMLElement>('[data-state="passphrase"]')!;
@@ -123,7 +131,24 @@ if (form) {
 
         try {
             const hashedKey = await hashSecretKey(fullSecretKey);
-            const data = await postJson('get', {id, hashedKey});
+            // Our backend answers 503 + {"status":"retry"} when a concurrent read
+            // holds the record's Redis lock; that body is the only proof the read
+            // was rejected before consuming anything. A bare 503 from a proxy/CDN
+            // gives no such guarantee — /api/get is destructive, so retrying it
+            // blindly could burn a second view. Require the explicit body.
+            let data;
+            for (let attempt = 0; ; attempt++) {
+                try {
+                    data = await postJson('get', {id, hashedKey});
+                    break;
+                } catch (err) {
+                    if (attempt === 0 && isRetryableRead(err)) {
+                        await new Promise((resolve) => setTimeout(resolve, 400));
+                        continue;
+                    }
+                    throw err;
+                }
+            }
 
             if (data.status === 'ok' && typeof data.cryptedMessage === 'string' && data.cryptedMessage.length > 0) {
                 decryptedBody.textContent = await decryptSecretMessage(data.cryptedMessage, fullSecretKey);
@@ -158,7 +183,16 @@ if (form) {
                 setLoading(false);
                 return;
             }
-        } catch {}
+        } catch (err) {
+            // The server is unavailable (503). Surfacing a retry prompt is safe
+            // either way — unlike the automatic retry above, it costs nothing and
+            // the user learns the real state on their next click.
+            if ((err as {status?: number})?.status === 503) {
+                revealBtn.disabled = false;
+                revealBtn.textContent = 'Server busy — try again';
+                return;
+            }
+        }
 
         setLoading(false);
     });

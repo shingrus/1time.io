@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"io"
 	"os"
 	"os/exec"
@@ -369,5 +370,43 @@ func TestConsumeMessageWatchConcurrentReaders(t *testing.T) {
 				t.Fatalf("record still exists after all views were consumed: %v", err)
 			}
 		})
+	}
+}
+
+// A stats failure must never discard a secret we already wrote: counting is a
+// side effect, not part of the save contract.
+func TestSaveToStorageSucceedsWhenStatsFail(t *testing.T) {
+	original := incrementStoredSecretCountersFunc
+	t.Cleanup(func() { incrementStoredSecretCountersFunc = original })
+	incrementStoredSecretCountersFunc = func(views int, now time.Time) error {
+		return errors.New("redis is down")
+	}
+
+	key, err := saveToStorage([]byte(`{"message":"c"}`), time.Minute, 3)
+	if err != nil {
+		t.Fatalf("saveToStorage() error = %v, want nil despite failing stats", err)
+	}
+	if !isValidStorageID(key) {
+		t.Fatalf("saveToStorage() key = %q, want a valid storage id", key)
+	}
+}
+
+// Counting happens only after the record is written, so the clamped view count
+// reaches the counters exactly once per stored secret.
+func TestSaveToStorageCountsStoredSecretOnce(t *testing.T) {
+	original := incrementStoredSecretCountersFunc
+	t.Cleanup(func() { incrementStoredSecretCountersFunc = original })
+
+	var gotViews []int
+	incrementStoredSecretCountersFunc = func(views int, now time.Time) error {
+		gotViews = append(gotViews, views)
+		return nil
+	}
+
+	if _, err := saveToStorage([]byte(`{"message":"c"}`), time.Minute, 5); err != nil {
+		t.Fatalf("saveToStorage() error = %v", err)
+	}
+	if len(gotViews) != 1 || gotViews[0] != 5 {
+		t.Fatalf("recorded views = %#v, want [5]", gotViews)
 	}
 }

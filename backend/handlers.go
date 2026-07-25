@@ -67,6 +67,12 @@ const maxStatusBodyBytes = 8 * 1024
 // in check.
 const maxSaveSecretBodyBytes = 96 * 1024
 
+// maxLookupBodyBytes caps the small JSON bodies of the lookup endpoints
+// (/api/get, /api/getFile, /api/stat). Their largest legitimate payload is a
+// 22-char id plus a 64-char hashedKey (~120 bytes of JSON), so 1KB is generous
+// while keeping them far below nginx's global client_max_body_size.
+const maxLookupBodyBytes = 1024
+
 var fileStorageDir = os.Getenv("FILE_STORAGE_DIR")
 
 var (
@@ -111,8 +117,9 @@ func apiSaveSecret(r *http.Request) (responseCode int, response []byte) {
 					Message:   payload.SecretMessage,
 					HashedKey: payload.HashedKey,
 				}
+				views := clampViews(payload.Views)
 				// Single view stays 0 so default records match the legacy shape.
-				if views := clampViews(payload.Views); views != 1 {
+				if views != 1 {
 					newMessage.Views = views
 				}
 
@@ -124,7 +131,7 @@ func apiSaveSecret(r *http.Request) (responseCode int, response []byte) {
 					log.Printf("payload -> storage: %v, HashedKey: %v, Duration: %v\n", payload.SecretMessage, payload.HashedKey, payload.Duration)
 				}
 				valueToStore, _ := json.Marshal(newMessage)
-				storeKey, err := saveToStorageFunc(valueToStore, time.Duration(payload.Duration)*time.Second)
+				storeKey, err := saveToStorageFunc(valueToStore, time.Duration(payload.Duration)*time.Second, views)
 				if err == nil {
 					jResponse.NewId = storeKey
 					jResponse.Status = "ok"
@@ -164,6 +171,8 @@ func apiGetMessage(r *http.Request) (responseCode int, response []byte) {
 		CryptedMessage: "0",
 	}
 
+	r.Body = http.MaxBytesReader(nil, r.Body, maxLookupBodyBytes)
+
 	var payload struct {
 		Id        string `json:"id"`
 		HashedKey string `json:"hashedKey"`
@@ -173,7 +182,15 @@ func apiGetMessage(r *http.Request) (responseCode int, response []byte) {
 	if dec.More() {
 		err := dec.Decode(&payload)
 		if err == nil {
-			if len(payload.Id) > 0 && len(payload.HashedKey) > 0 {
+			// Reject ids/keys that cannot be ours before building a Redis key.
+			// A malformed id cannot name an existing secret ("no message"); a
+			// malformed key can never match ("wrong key"). Both mirror what the
+			// storage layer would answer, so no new response shape is introduced.
+			if !isValidStorageID(payload.Id) {
+				jResponse.Status = "no message"
+			} else if !isValidHashedKey(payload.HashedKey) {
+				jResponse.Status = "wrong key"
+			} else {
 				if DEBUG {
 					log.Printf("payload <- storage: %v, %v\n", payload.Id, payload.HashedKey)
 				}
@@ -410,12 +427,15 @@ func apiGetFile(w http.ResponseWriter, r *http.Request) {
 		HashedKey string `json:"hashedKey"`
 	}
 
+	r.Body = http.MaxBytesReader(nil, r.Body, maxLookupBodyBytes)
+
 	dec := json.NewDecoder(r.Body)
 	if !dec.More() {
 		http.Error(w, `{"status":"error"}`, http.StatusBadRequest)
 		return
 	}
-	if err := dec.Decode(&payload); err != nil || payload.Id == "" || payload.HashedKey == "" {
+	// Validate the fixed id/hashedKey shapes before they reach Redis key building.
+	if err := dec.Decode(&payload); err != nil || !isValidStorageID(payload.Id) || !isValidHashedKey(payload.HashedKey) {
 		http.Error(w, `{"status":"error"}`, http.StatusBadRequest)
 		return
 	}
