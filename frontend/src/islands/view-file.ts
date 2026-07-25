@@ -1,6 +1,6 @@
-import {Constants} from '../lib/util.js';
+import {Constants, formatRemaining} from '../lib/util.js';
 import {hashSecretKey} from '../lib/protocol.mjs';
-import {getFile} from '../lib/fileApi.js';
+import {formatBytes, getFile} from '../lib/fileApi.js';
 import {decryptFile, downloadFile} from '../lib/fileProtocol.js';
 
 const form = document.querySelector<HTMLFormElement>('#view-file-form');
@@ -17,6 +17,7 @@ if (form) {
     const progress = form.querySelector<HTMLElement>('[data-progress]')!;
     const progressFill = form.querySelector<HTMLElement>('[data-progress-fill]')!;
     const progressText = form.querySelector<HTMLElement>('[data-progress-text]')!;
+    const downloadState = form.querySelector<HTMLElement>('[data-download-state]')!;
 
     const hash = window.location.hash || '';
     const linkKey = hash.length > 1 ? hash.slice(1) : '';
@@ -28,11 +29,17 @@ if (form) {
         'Sending something back? Keep it out of the chat history too.',
         "That's how files should travel — one download, then gone.",
     ];
-    const pickReplyVariant = () => {
-        const v = 1 + Math.floor(Math.random() * REPLY_HEADINGS.length);
+    const pickReplyVariant = (destroyed: boolean) => {
+        const v = Math.floor(Math.random() * REPLY_HEADINGS.length) + 1;
+        let heading = REPLY_HEADINGS[v - 1];
+        if (!destroyed && v === 1) {
+            heading = 'File delivered securely. The link remains available for its configured downloads.';
+        } else if (!destroyed && v === 4) {
+            heading = "That's how files should travel — encrypted, controlled, then gone.";
+        }
         const h = form.querySelector<HTMLElement>('[data-reply-heading]');
         const b = form.querySelector<HTMLAnchorElement>('[data-reply-btn]');
-        if (h) h.textContent = REPLY_HEADINGS[v - 1];
+        if (h) h.textContent = heading;
         if (b) b.href = `/secure-file-sharing/?reply=${v}`;
     };
     // Terminal states are mutually exclusive; the passphrase field overlays pre-read.
@@ -40,12 +47,6 @@ if (form) {
         for (const el of [preReadSection, passphraseSection, downloadedSection, noMessageSection, errorSection]) {
             el.toggleAttribute('hidden', el !== visible);
         }
-    };
-
-    const fmtBytes = (n: number) => {
-        if (n >= 1024 * 1024) return `${(n / (1024 * 1024)).toFixed(1)} MB`;
-        if (n >= 1024) return `${Math.round(n / 1024)} KB`;
-        return `${n} B`;
     };
 
     let isDownloading = false;
@@ -83,10 +84,10 @@ if (form) {
             const pct = Math.min(100, Math.round((loaded / total) * 100));
             progress.classList.remove('indeterminate');
             progressFill.style.width = `${pct}%`;
-            progressText.textContent = `Downloading… ${pct}% (${fmtBytes(loaded)} of ${fmtBytes(total)})`;
+            progressText.textContent = `Downloading… ${pct}% (${formatBytes(loaded)} of ${formatBytes(total)})`;
         } else {
             // No Content-Length — show bytes received, bar stays indeterminate.
-            progressText.textContent = `Downloading… ${fmtBytes(loaded)}`;
+            progressText.textContent = `Downloading… ${formatBytes(loaded)}`;
         }
     };
 
@@ -143,7 +144,14 @@ if (form) {
                 setPhase('decrypting');
                 const {meta, fileBytes} = await decryptFile(result.data, fullSecretKey);
                 downloadFile(meta, fileBytes);
-                pickReplyVariant();
+                // Older backends omit the header and only support one download.
+                const viewsLeft = typeof result.viewsLeft === 'number' ? result.viewsLeft : 0;
+                const expiresIn = typeof result.expiresIn === 'number' ? result.expiresIn : 0;
+                const expiryClause = expiresIn > 0 ? ` It expires in ${formatRemaining(expiresIn)}.` : '';
+                downloadState.textContent = viewsLeft > 0
+                    ? `This 1time link has ${viewsLeft} ${viewsLeft === 1 ? 'download' : 'downloads'} remaining and will self-destruct after the last.${expiryClause}`
+                    : 'One-time delivery complete. The encrypted file has been deleted from our servers.';
+                pickReplyVariant(viewsLeft === 0);
                 setPhase('idle');
                 showOnly(downloadedSection);
             } catch {

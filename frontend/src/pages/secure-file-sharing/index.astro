@@ -2,8 +2,9 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import InlineCss from '../../components/InlineCss.astro';
 import LinkReadyTemplate from '../../components/LinkReadyTemplate.astro';
+import ShareOptions from '../../components/ShareOptions.astro';
 import {absoluteUrl, siteHost} from '../../lib/siteConfig.js';
-import {Constants, SHARE_DURATION_OPTIONS} from '../../lib/util.js';
+import {Constants} from '../../lib/util.js';
 
 const title = `One-Time File Sharing — Encrypted Self-Destructing Download Links`;
 const description = 'One-time file sharing through an encrypted, self-destructing download link. Zero-knowledge browser encryption, optional passphrase — free, no signup.';
@@ -124,34 +125,9 @@ const jsonLd = [
                 <p class="form-help" data-progress-help></p>
             </div>
 
-            <div class="form-actions share-primary-actions">
-                <button class="btn btn-primary btn-lg" disabled type="submit">Create file link</button>
-            </div>
-
-            <div class="options-grid">
-                <div class="form-field" style="margin-bottom:0">
-                    <label class="form-label" for="secretKey">Additional passphrase</label>
-                    <input
-                        class="form-input"
-                        id="secretKey"
-                        autocomplete="off"
-                        autocapitalize="none"
-                        placeholder="Optional extra security"
-                        spellcheck="false"
-                        type="text"
-                    />
-                    <p class="form-help">Recipient will need this to decrypt</p>
-                </div>
-                <div class="form-field" style="margin-bottom:0">
-                    <label class="form-label" for="duration">Expire after</label>
-                    <select class="form-select" id="duration">
-                        {SHARE_DURATION_OPTIONS.map(({value, label}) => (
-                            <option value={value} selected={value === Constants.defaultDurationSeconds}>{label}</option>
-                        ))}
-                    </select>
-                    <p class="form-help">Link expires even if unread</p>
-                </div>
-            </div>
+            <ShareOptions kind="file" panelId="file-share-options">
+                <button slot="submit" class="btn btn-primary btn-lg" disabled type="submit">Create file link</button>
+            </ShareOptions>
         </form>
 
         <LinkReadyTemplate />
@@ -165,6 +141,10 @@ const jsonLd = [
                 the server. There is no second download, no copy left behind in chat history, no
                 long-lived URL sitting in someone's inbox. It is the file-sharing equivalent of a
                 self-destructing message: a one-time URL that disappears after the file lands.
+            </p>
+            <p>
+                One download remains the default. If the sender deliberately raises the download limit,
+                the encrypted copy remains available only until the final permitted download or expiry.
             </p>
             <h2>Why use one-time encrypted file sharing?</h2>
             <p>

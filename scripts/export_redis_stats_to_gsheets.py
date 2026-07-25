@@ -11,6 +11,8 @@ Expected Redis key layout from the Go app:
   - stats:page:hits:day:YYYYMMDD             -> hash: page -> daily hits
   - stats:views:total:VIEWS                  -> lifetime secrets created with VIEWS views
   - stats:views:day:YYYYMMDD:VIEWS           -> per-day secrets created with VIEWS views
+  - stats:views:file:total:VIEWS             -> lifetime files created with VIEWS downloads
+  - stats:views:file:day:YYYYMMDD:VIEWS      -> per-day files created with VIEWS downloads
 
 Nginx sender/receiver analytics:
   - Reads /var/log/nginx/1time.access.log and /var/log/nginx/1time.access.log.1
@@ -79,6 +81,8 @@ PAGE_HIT_TOTAL_KEY = "stats:page:hits:total"
 PAGE_HIT_DAY_KEY_PREFIX = "stats:page:hits:day:"
 VIEWS_TOTAL_KEY_PREFIX = "stats:views:total:"
 VIEWS_DAY_KEY_PREFIX = "stats:views:day:"
+FILE_VIEWS_TOTAL_KEY_PREFIX = "stats:views:file:total:"
+FILE_VIEWS_DAY_KEY_PREFIX = "stats:views:file:day:"
 
 SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
 TAB_NAMES = (
@@ -88,6 +92,8 @@ TAB_NAMES = (
     "page_hits_daily",
     "views_total",
     "views_daily",
+    "file_views_total",
+    "file_views_daily",
     "senders_receivers",
 )
 DEFAULT_NGINX_LOG_PATHS = (
@@ -445,6 +451,33 @@ def collect_stats(
 
     views_daily_rows = build_views_daily_rows(views_daily, known_buckets=views_total)
 
+    file_views_total = {
+        key.removeprefix(FILE_VIEWS_TOTAL_KEY_PREFIX): safe_int(client.get(key))
+        for key in scan_keys(client, f"{FILE_VIEWS_TOTAL_KEY_PREFIX}*")
+    }
+    file_views_daily: Dict[str, Dict[str, int]] = {}
+    for key in scan_keys(client, f"{FILE_VIEWS_DAY_KEY_PREFIX}*"):
+        day, _, bucket = key.removeprefix(FILE_VIEWS_DAY_KEY_PREFIX).partition(":")
+        if not bucket:
+            continue
+        file_views_daily.setdefault(day, {})[bucket] = safe_int(client.get(key))
+
+    file_views_total_sum = sum(file_views_total.values())
+    file_views_total_rows: List[List[object]] = [["downloads", "files", "share_percent"]]
+    for bucket in sort_view_buckets(file_views_total):
+        count = file_views_total[bucket]
+        share = (
+            round(count * 100 / file_views_total_sum, 2)
+            if file_views_total_sum
+            else 0
+        )
+        file_views_total_rows.append([bucket, count, share])
+
+    file_views_daily_rows = build_views_daily_rows(
+        file_views_daily,
+        known_buckets=file_views_total,
+    )
+
     page_hits_daily_rows = build_page_hits_daily_rows(
         page_hits_daily,
         known_pages=(page for page, _ in page_hits_total),
@@ -463,6 +496,8 @@ def collect_stats(
         ["page_hits_daily_days", page_hits_daily_day_count],
         ["views_counted_secrets", views_total_sum],
         ["views_multi_view_secrets", views_total_sum - views_total.get("1", 0)],
+        ["views_counted_files", file_views_total_sum],
+        ["views_multi_download_files", file_views_total_sum - file_views_total.get("1", 0)],
     ]
 
     page_hits_total_rows: List[List[object]] = [["page", "hits"]]
@@ -476,6 +511,8 @@ def collect_stats(
         "page_hits_daily": page_hits_daily_rows,
         "views_total": views_total_rows,
         "views_daily": views_daily_rows,
+        "file_views_total": file_views_total_rows,
+        "file_views_daily": file_views_daily_rows,
         "senders_receivers": collect_nginx_daily_uniques(nginx_log_paths),
     }
 

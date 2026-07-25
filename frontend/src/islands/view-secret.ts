@@ -1,16 +1,11 @@
-import {Constants, decryptSecretMessage, hashSecretKey, postJson, copyTextToClipboard} from '../lib/util.js';
-
-// Turn a remaining-TTL in seconds into a coarse, human-friendly span
-// ("30 days", "1 hour", "5 minutes").
-function formatRemaining(seconds: number): string {
-    const unit = (n: number, label: string) => `${n} ${label}${n === 1 ? '' : 's'}`;
-    const minutes = Math.round(seconds / 60);
-    if (minutes < 1) return 'less than a minute';
-    if (minutes < 60) return unit(minutes, 'minute');
-    const hours = Math.round(minutes / 60);
-    if (hours < 24) return unit(hours, 'hour');
-    return unit(Math.round(hours / 24), 'day');
-}
+import {
+    Constants,
+    copyTextToClipboard,
+    decryptSecretMessage,
+    formatRemaining,
+    hashSecretKey,
+    postJson,
+} from '../lib/util.js';
 
 // A read may only be retried when our backend explicitly reports contention
 // (503 + {"status":"retry"}). Anything else — including a bare proxy 503 — may
@@ -49,9 +44,8 @@ if (form) {
     }
 
     // A/B/C/D banner copy test: variant is encoded in the reply URL (?reply=N)
-    // so nginx logs measure clicks per variant with no extra tracking.
-    // Variants 1 and 4 claim the message was destroyed, so multi-view reads
-    // (the link still works) only draw from variants 2 and 3.
+    // so nginx logs measure clicks per variant with no extra tracking. Assignment
+    // stays uniform for every link type; state-specific copy keeps claims honest.
     const REPLY_HEADINGS = [
         'Message read and destroyed. Nothing to trace back.',
         'Your reply deserves the same protection.',
@@ -59,11 +53,16 @@ if (form) {
         "That's how secrets should travel — one view, then gone.",
     ];
     const pickReplyVariant = (destroyed: boolean) => {
-        const pool = destroyed ? [1, 2, 3, 4] : [2, 3];
-        const v = pool[Math.floor(Math.random() * pool.length)];
+        const v = Math.floor(Math.random() * REPLY_HEADINGS.length) + 1;
+        let heading = REPLY_HEADINGS[v - 1];
+        if (!destroyed && v === 1) {
+            heading = 'Message read securely. The link remains available for its configured views.';
+        } else if (!destroyed && v === 4) {
+            heading = "That's how secrets should travel — encrypted, controlled, then gone.";
+        }
         const h = form.querySelector<HTMLElement>('[data-reply-heading]');
         const b = form.querySelector<HTMLAnchorElement>('[data-reply-btn]');
-        if (h) h.textContent = REPLY_HEADINGS[v - 1];
+        if (h) h.textContent = heading;
         if (b) b.href = `/?reply=${v}`;
     };
 
