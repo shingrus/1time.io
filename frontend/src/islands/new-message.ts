@@ -9,7 +9,6 @@ if (form) {
     const viewsSelect = form.querySelector<HTMLSelectElement>('#views')!;
     const optionsPanel = form.querySelector<HTMLElement>('[data-options-panel]')!;
     const chips = Array.from(form.querySelectorAll<HTMLButtonElement>('.option-chip'));
-    const chipLabel = (name: string) => form.querySelector<HTMLElement>(`[data-chip-label="${name}"]`)!;
     const submitBtn = form.querySelector<HTMLButtonElement>('button[type="submit"]')!;
     const labelEl = submitBtn.querySelector<HTMLElement>('.btn-label')!;
     const kbdHint = submitBtn.querySelector<HTMLElement>('[data-shortcut-hint]')!;
@@ -44,30 +43,29 @@ if (form) {
     updateSubmitState(false);
 
     // Summary chips: each mirrors one setting and expands the options panel.
-    const chipTargets: Record<string, HTMLElement> = {
-        duration: durationSelect,
-        views: viewsSelect,
-        passphrase: keyInput,
-    };
+    // data-chip holds the id of the control it summarises, so the click target
+    // and the label both derive from the markup with no extra lookup table.
     const setPanelOpen = (open: boolean) => {
         optionsPanel.toggleAttribute('hidden', !open);
         for (const chip of chips) chip.setAttribute('aria-expanded', String(open));
     };
+    const chipText = (id: string) => {
+        if (id === 'duration') return durationSelect.selectedOptions[0]?.textContent ?? '1 day';
+        if (id === 'views') return `${viewsSelect.value} view${viewsSelect.value === '1' ? '' : 's'}`;
+        return keyInput.value ? 'passphrase added' : 'set passphrase';
+    };
+    const updateChipLabels = () => {
+        for (const chip of chips) chip.lastElementChild!.textContent = chipText(chip.dataset.chip!);
+    };
     for (const chip of chips) {
         chip.addEventListener('click', () => {
             setPanelOpen(true);
-            chipTargets[chip.dataset.chip!]?.focus();
+            form.querySelector<HTMLElement>('#' + chip.dataset.chip)?.focus();
         });
     }
-    const updateChipLabels = () => {
-        chipLabel('duration').textContent = durationSelect.selectedOptions[0]?.textContent ?? '1 day';
-        const views = Number(viewsSelect.value);
-        chipLabel('views').textContent = `${views} view${views === 1 ? '' : 's'}`;
-        chipLabel('passphrase').textContent = keyInput.value ? 'passphrase set' : 'no passphrase';
-    };
-    durationSelect.addEventListener('change', updateChipLabels);
-    viewsSelect.addEventListener('change', updateChipLabels);
-    keyInput.addEventListener('input', updateChipLabels);
+    for (const el of [durationSelect, viewsSelect, keyInput]) {
+        el.addEventListener(el === keyInput ? 'input' : 'change', updateChipLabels);
+    }
 
     form.addEventListener('keydown', (event) => {
         if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {

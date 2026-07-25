@@ -59,13 +59,8 @@ const maxStatusIDs = 128
 // bounding the payload far below nginx's generic client_max_body_size.
 const maxStatusBodyBytes = 8 * 1024
 
-// maxSaveSecretBodyBytes caps the /api/saveSecret request body. A ~64KB
-// plaintext secret becomes ~85KB after AES-GCM + base64url encoding, so 96KB
-// leaves room for the ciphertext plus hashedKey/duration/views JSON. Bounding
-// the stored ciphertext also bounds the amplification a multi-view link can
-// create: a small upload cap keeps the total downloadable bytes (size × views)
-// in check.
-const maxSaveSecretBodyBytes = 96 * 1024
+// maxSaveSecretBodyBytes caps the /api/saveSecret request body. base64url adds ~4/3 expansion on top of AES-GCM
+const maxSaveSecretBodyBytes = 3 * 1024 * 1024
 
 // maxLookupBodyBytes caps the small JSON bodies of the lookup endpoints
 // (/api/get, /api/getFile, /api/stat). Their largest legitimate payload is a

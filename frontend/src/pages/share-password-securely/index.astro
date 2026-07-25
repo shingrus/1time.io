@@ -8,16 +8,16 @@ const title = `Share Passwords Securely — Send a Password via Secret Link | ${
 const description = 'Share a password securely and send it through an encrypted secret link that self-destructs after reading. Safe password sharing, end-to-end encrypted, free, no signup.';
 
 const faqItems = [
-    {question: 'How do I share a password securely?', answer: 'Paste the password above, click "Create secret link", and send the link to the recipient. The password is encrypted in your browser before being stored. The recipient opens the link, sees the password once, and the data is permanently deleted from the server.'},
-    {question: 'What is the safest way to send a password to someone?', answer: 'The safest way to send a password is an encrypted one-time link instead of typing it into email, chat, or SMS. Create a secret link here, share the link, and it works exactly once — the password is encrypted in your browser, never stored in plaintext, and deleted after the recipient reads it, so it never lingers in any inbox or message history.'},
-    {question: 'Is it safe to send a password by text message (SMS)?', answer: 'No. SMS is not end-to-end encrypted, messages are stored by carriers and backed up to cloud services, and passwords appear in plain text on lock-screen notifications. If SMS is the only channel you share, send a one-time encrypted link by text instead of the password itself — the link works once and the password never appears in the message history.'},
-    {question: 'How do I send a password through email safely?', answer: 'Never put the password itself in an email — messages persist in both inboxes, on mail servers, and in backups for years. Instead, create an encrypted one-time link and email that. The email then contains no password: just a link that works once and dies. For extra protection, add a passphrase and share it through a different channel, such as a phone call.'},
+    {question: 'How do I share a password securely?', answer: 'Paste the password above, click "Create secret link", and send the link to the recipient. The password is encrypted in your browser before being stored. The recipient opens the link, sees the password once, and the data is permanently deleted from the server. That burn-after-reading behaviour is the default; for text you can also allow 3, 5, or 10 views.'},
+    {question: 'What is the safest way to send a password to someone?', answer: 'The safest way to send a password is an encrypted one-time link instead of typing it into email, chat, or SMS. Create a secret link here, share the link, and it works once by default — the password is encrypted in your browser, never stored in plaintext, and deleted after the recipient reads it, so it never lingers in any inbox or message history.'},
+    {question: 'Is it safe to send a password by text message (SMS)?', answer: 'No. SMS is not end-to-end encrypted, messages are stored by carriers and backed up to cloud services, and passwords appear in plain text on lock-screen notifications. If SMS is the only channel you share, send a one-time encrypted link by text instead of the password itself — the link works once by default and the password never appears in the message history.'},
+    {question: 'How do I send a password through email safely?', answer: 'Never put the password itself in an email — messages persist in both inboxes, on mail servers, and in backups for years. Instead, create an encrypted one-time link and email that. The email then contains no password: just a link that works once by default and then dies. For extra protection, add a passphrase and share it through a different channel, such as a phone call.'},
     {question: 'What is the best way to share passwords with your team?', answer: 'For ongoing shared access, a team password manager (1Password, Bitwarden) is the right tool. For one-off handoffs — onboarding someone before they have a manager seat, sending credentials to a contractor or client, or sharing with a team that uses a different tool — an encrypted one-time link is faster and leaves no copy behind in chat history.'},
     {question: 'Can I share a password without a password manager?', answer: 'Yes. A one-time encrypted link requires no accounts on either side: paste the password, send the link, and the recipient opens it once in any browser. It is the simplest secure option when one or both people do not use a password manager.'},
-    {question: 'What is a secret link?', answer: 'A secret link (or one-time secret link) is a URL that reveals a password or secret exactly once. After the recipient opens it, the encrypted data is permanently deleted and the link stops working. It is the simplest way to share a password securely without leaving a copy behind on any server.'},
-    {question: 'Is it safe to send passwords over email or Slack?', answer: 'No. Emails are stored indefinitely on mail servers, and Slack messages persist in searchable history that admins can export. Both channels leave your password exposed long after it was shared. One-time encrypted links solve this: the password is encrypted end-to-end and destroyed after a single view.'},
+    {question: 'What is a secret link?', answer: 'A secret link (or one-time secret link) is a URL that reveals a password or secret once by default. After the recipient opens it, the encrypted data is permanently deleted and the link stops working. Text links can optionally allow a few views; file links are always single-download. It is the simplest way to share a password securely without leaving a copy behind on any server.'},
+    {question: 'Is it safe to send passwords over email or Slack?', answer: 'No. Emails are stored indefinitely on mail servers, and Slack messages persist in searchable history that admins can export. Both channels leave your password exposed long after it was shared. One-time encrypted links solve this: the password is encrypted end-to-end and destroyed after a single view by default.'},
     {question: 'Can the server see my password?', answer: 'No. Your password is encrypted in the browser using AES-256-GCM before it reaches the server. The decryption key stays in the URL fragment, which is never sent to the server. This is called zero-knowledge architecture — we cannot read your secrets even if we wanted to.'},
-    {question: 'What happens after the recipient reads the password?', answer: 'The encrypted data is permanently deleted from the server. The link stops working immediately. Nobody — including the sender — can retrieve the password again. If the link is not opened, it expires automatically after the set time period (1 hour to 30 days).'},
+    {question: 'What happens after the recipient reads the password?', answer: 'On a default one-time link the encrypted data is permanently deleted from the server and the link stops working immediately, so nobody — including the sender — can retrieve the password again. If you allowed several views, the link keeps working until the last one is used and then is deleted the same way; the reader is always told how many views remain. File links are always strictly one-time. If the link is never opened, it expires automatically after the set time period (1 hour to 30 days).'},
     {question: 'Can I add extra protection to the shared password?', answer: 'Yes. You can set an additional passphrase when creating the link. The recipient will need both the link and the passphrase to decrypt the password. This adds a second factor in case the link is intercepted.'},
     {question: 'Is this better than using a password manager for sharing?', answer: 'They serve different purposes. Password managers are best for ongoing shared access within a team. One-time links are better for one-off handoffs: onboarding a new team member, sending credentials to a client, sharing a WiFi password with a guest, or any situation where the recipient does not need permanent access.'},
 ];
@@ -33,7 +33,7 @@ const jsonLd = [
         operatingSystem: 'Any',
         offers: {'@type': 'Offer', price: '0', priceCurrency: 'USD'},
         featureList: 'End-to-end encryption, One-time access, Optional passphrase, Auto-expiry, Zero-knowledge architecture',
-        dateModified: '2026-07-19',
+        dateModified: '2026-07-25',
     },
     {
         '@context': 'https://schema.org',
@@ -59,7 +59,7 @@ const jsonLd = [
     description={description}
     canonical="/share-password-securely/"
     ogTitle={`Share Passwords Securely — One-Time Encrypted Links | ${siteHost}`}
-    ogDescription="Send passwords through encrypted one-time links. Zero-knowledge encryption — we never see your password. Link self-destructs after reading."
+    ogDescription="Send passwords through encrypted one-time links. Zero-knowledge encryption — we never see your password. Links self-destruct after reading by default."
     ogImageAlt="Share passwords securely with encrypted one-time links"
 >
     <InlineCss slot="head" name="home" />
@@ -237,7 +237,7 @@ const jsonLd = [
             <h2>Key terms, briefly defined</h2>
             <dl class="glossary">
                 <dt>Secret link</dt>
-                <dd>A one-time URL that reveals a password or secret exactly once, then permanently deletes it. Also called a one-time secret link.</dd>
+                <dd>A one-time URL that reveals a password or secret once by default, then permanently deletes it. Also called a one-time secret link.</dd>
                 <dt>Password sharing</dt>
                 <dd>Sending a credential to another person. Done securely, the password is encrypted before it leaves your device and is never stored in plaintext anywhere.</dd>
                 <dt>Secure share</dt>

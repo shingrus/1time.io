@@ -70,9 +70,9 @@ export const blogPosts: BlogPost[] = [
     {
         "slug": "bitwarden-send-alternative",
         "title": "Bitwarden Send Alternative — Open Source, No Signup",
-        "description": "Free, open-source alternative to Bitwarden Send. Browser-side encryption, one-time links, password or file sharing, self-destruct after one read.",
+        "description": "Free, open-source alternative to Bitwarden Send. Browser-side encryption, one-time links that burn after reading by default, password or file sharing.",
         "ogTitle": "Bitwarden Send Alternative — Open Source, No Signup",
-        "ogDescription": "Free, open-source alternative to Bitwarden Send. Browser-side encryption, one-time links, password or file sharing, self-destruct after one read.",
+        "ogDescription": "Free, open-source alternative to Bitwarden Send. Browser-side encryption, one-time links that burn after reading by default, password or file sharing.",
         "ogImageAlt": "1time.io vs Bitwarden Send",
         "tag": "Comparison",
         "heading": "Bitwarden Send Alternative — Free, No Account Required",
@@ -85,7 +85,7 @@ export const blogPosts: BlogPost[] = [
                 "headline": "Bitwarden Send Alternative — Free, No Account Required",
                 "description": "Need to share a secret without a Bitwarden account? Use zero-knowledge one-time links for encrypted password and file sharing.",
                 "datePublished": "2026-03-06",
-                "dateModified": "2026-05-23",
+                "dateModified": "2026-07-25",
                 "author": {
                     "@type": "Person",
                     "name": "Igor Ermakov",
@@ -727,9 +727,9 @@ export const blogPosts: BlogPost[] = [
     {
         "slug": "password-pusher-alternative",
         "title": "Password Pusher Alternative — Open Source, No Signup",
-        "description": "Free, open-source alternative to Password Pusher. Browser-side AES-256 encryption, one-time links that self-destruct after a single read. No signup.",
+        "description": "Free, open-source alternative to Password Pusher. Browser-side AES-256 encryption, one-time links that self-destruct after reading by default. No signup.",
         "ogTitle": "Password Pusher Alternative — Open Source, No Signup",
-        "ogDescription": "Free, open-source alternative to Password Pusher. Browser-side AES-256 encryption, one-time links that self-destruct after a single read. No signup.",
+        "ogDescription": "Free, open-source alternative to Password Pusher. Browser-side AES-256 encryption, one-time links that self-destruct after reading by default. No signup.",
         "ogImageAlt": "1time.io vs Password Pusher",
         "tag": "Comparison",
         "heading": "Password Pusher Alternative — Zero-Knowledge & Free",
@@ -742,7 +742,7 @@ export const blogPosts: BlogPost[] = [
                 "headline": "Password Pusher Alternative — Zero-Knowledge & Free",
                 "description": "Compare Password Pusher with 1time.io. Share passwords using browser-side encryption, one-time links, no signup, and open-source code.",
                 "datePublished": "2026-01-29",
-                "dateModified": "2026-05-23",
+                "dateModified": "2026-07-25",
                 "author": {
                     "@type": "Person",
                     "name": "Igor Ermakov",
