@@ -22,24 +22,18 @@ if (form) {
     const hash = window.location.hash || '';
     const linkKey = hash.length > 1 ? hash.slice(1) : '';
 
-    // Same A/B/C/D banner test as view-secret (file-flavored copy).
+    // Same A/B/C/D banner test as view-secret.
     const REPLY_HEADINGS = [
-        'No copies kept. Nothing to trace back.',
+        'Keep the conversation private.',
         'Your reply deserves the same protection.',
         'Sending something back? Keep it out of the chat history too.',
-        "That's how files should travel — one download, then gone.",
+        'Reply securely with a one-time link.',
     ];
-    const pickReplyVariant = (destroyed: boolean) => {
+    const pickReplyVariant = () => {
         const v = Math.floor(Math.random() * REPLY_HEADINGS.length) + 1;
-        let heading = REPLY_HEADINGS[v - 1];
-        if (!destroyed && v === 1) {
-            heading = 'File delivered securely. The link remains available for its configured downloads.';
-        } else if (!destroyed && v === 4) {
-            heading = "That's how files should travel — encrypted, controlled, then gone.";
-        }
         const h = form.querySelector<HTMLElement>('[data-reply-heading]');
         const b = form.querySelector<HTMLAnchorElement>('[data-reply-btn]');
-        if (h) h.textContent = heading;
+        if (h) h.textContent = REPLY_HEADINGS[v - 1];
         if (b) b.href = `/secure-file-sharing/?reply=${v}`;
     };
     // Terminal states are mutually exclusive; the passphrase field overlays pre-read.
@@ -151,7 +145,7 @@ if (form) {
                 downloadState.textContent = viewsLeft > 0
                     ? `This 1time link has ${viewsLeft} ${viewsLeft === 1 ? 'download' : 'downloads'} remaining and will self-destruct after the last.${expiryClause}`
                     : 'One-time delivery complete. The encrypted file has been deleted from our servers.';
-                pickReplyVariant(viewsLeft === 0);
+                pickReplyVariant();
                 setPhase('idle');
                 showOnly(downloadedSection);
             } catch {

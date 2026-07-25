@@ -44,25 +44,18 @@ if (form) {
     }
 
     // A/B/C/D banner copy test: variant is encoded in the reply URL (?reply=N)
-    // so nginx logs measure clicks per variant with no extra tracking. Assignment
-    // stays uniform for every link type; state-specific copy keeps claims honest.
+    // so nginx logs measure clicks per variant with no extra tracking.
     const REPLY_HEADINGS = [
-        'Message read and destroyed. Nothing to trace back.',
+        'Keep the conversation private.',
         'Your reply deserves the same protection.',
         'Sending something back? Keep it out of the chat history too.',
-        "That's how secrets should travel — one view, then gone.",
+        'Reply securely with a one-time link.',
     ];
-    const pickReplyVariant = (destroyed: boolean) => {
+    const pickReplyVariant = () => {
         const v = Math.floor(Math.random() * REPLY_HEADINGS.length) + 1;
-        let heading = REPLY_HEADINGS[v - 1];
-        if (!destroyed && v === 1) {
-            heading = 'Message read securely. The link remains available for its configured views.';
-        } else if (!destroyed && v === 4) {
-            heading = "That's how secrets should travel — encrypted, controlled, then gone.";
-        }
         const h = form.querySelector<HTMLElement>('[data-reply-heading]');
         const b = form.querySelector<HTMLAnchorElement>('[data-reply-btn]');
-        if (h) h.textContent = heading;
+        if (h) h.textContent = REPLY_HEADINGS[v - 1];
         if (b) b.href = `/?reply=${v}`;
     };
 
@@ -168,7 +161,7 @@ if (form) {
                     ? `This link can be opened ${viewsLeft} more ${viewsLeft === 1 ? 'time' : 'times'}.${expiryClause}`
                     : 'This message is burned.';
                 viewsLeftNote.toggleAttribute('hidden', false);
-                pickReplyVariant(viewsLeft === 0);
+                pickReplyVariant();
                 qrAction.toggleAttribute('hidden', true);
                 postReadCta.toggleAttribute('hidden', false);
                 showOnly(decryptedSection);
