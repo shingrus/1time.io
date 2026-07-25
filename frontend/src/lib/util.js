@@ -33,7 +33,8 @@ export function buildSecretLink(randomString, newId) {
 }
 
 export async function createSecretLink(secretMessage, options = {}) {
-    const {secretKey = '', durationSeconds = Constants.defaultDurationSeconds} = options;
+    // views: 1 (default, burn after reading) or N > 1 (up to the backend's maxViews).
+    const {secretKey = '', durationSeconds = Constants.defaultDurationSeconds, views = 1} = options;
 
     if (!secretMessage) {
         throw new Error('Secret message is required');
@@ -47,6 +48,7 @@ export async function createSecretLink(secretMessage, options = {}) {
         secretMessage: encryptedMessage,
         hashedKey,
         duration: durationSeconds,
+        ...(views !== 1 && {views}),
     });
 
     if (data.status !== 'ok' || !data.newId) {
@@ -77,7 +79,14 @@ export async function postJson(path, payload) {
     });
 
     if (!response.ok) {
-        throw new Error(`Request failed with status ${response.status}`);
+        const error = new Error(`Request failed with status ${response.status}`);
+        error.status = response.status;
+        // Expose the parsed body so callers can distinguish a response our
+        // backend produced from one injected by a proxy/CDN. Only our backend
+        // sends {"status":"retry"}, which is the sole safe signal that a
+        // destructive request did NOT consume anything.
+        error.body = await response.json().catch(() => null);
+        throw error;
     }
 
     return response.json();

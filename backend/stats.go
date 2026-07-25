@@ -5,6 +5,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"strconv"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -19,9 +20,15 @@ const (
 	storedTextDayKeyPrefix = "stats:stored:text:day:"
 	storedFileTotalKey     = "stats:stored:file:total"
 	storedFileDayKeyPrefix = "stats:stored:file:day:"
-	statsHistoryTTL        = time.Hour * 24 * 60
-	statsFlushInterval     = time.Second * 10
-	statPageCount          = 3
+	// View-counter distribution. Keys are suffixed with the clamped view count
+	// (1, 3, 5, 10, ...), so a changed option set just adds new suffixes:
+	//   stats:views:total:<views>
+	//   stats:views:day:YYYYMMDD:<views>
+	viewsTotalKeyPrefix = "stats:views:total:"
+	viewsDayKeyPrefix   = "stats:views:day:"
+	statsHistoryTTL     = time.Hour * 24 * 60
+	statsFlushInterval  = time.Second * 10
+	statPageCount       = 3
 )
 
 type statPageIndex int
@@ -67,6 +74,7 @@ var (
 	flushPageHitCountersFunc             = flushPageHitCounters
 	getOverallStoredCounterFromRedisFunc = getOverallStoredCounterFromRedis
 	incrementStoredCounterFunc           = incrementStoredCounter
+	incrementStoredSecretCountersFunc    = incrementStoredSecretCounters
 )
 
 func NewStatsManager() *StatsManager {
@@ -241,8 +249,44 @@ func getPageHitDayKey(now time.Time) string {
 	return pageHitDayKeyPrefix + getStatsDay(now)
 }
 
-func incrementStoredSecretCounters(now time.Time) error {
-	return incrementStoredCounterFunc(storedCounterText, now)
+func getViewsTotalKey(views int) string {
+	return viewsTotalKeyPrefix + strconv.Itoa(views)
+}
+
+func getViewsDayKey(views int, now time.Time) string {
+	return viewsDayKeyPrefix + getStatsDay(now) + ":" + strconv.Itoa(views)
+}
+
+func incrementStoredSecretCounters(views int, now time.Time) error {
+	return incrementStoredSecretCountersWithClient(getRedisClient(), views, now)
+}
+
+// incrementStoredSecretCountersWithClient records, in a SINGLE round-trip, both
+// that a text secret was stored and which view count it chose. The two facts
+// describe the same event, so writing them together keeps the stored-text total
+// (the distribution's denominator) exactly consistent with the per-bucket view
+// counts, and halves the stats round-trips on the save path.
+//
+// Single-view secrets are counted too (bucket "1"), so the burn-after-reading
+// share is part of the same series.
+func incrementStoredSecretCountersWithClient(client *redis.Client, views int, now time.Time) error {
+	storedDayKey := getStoredCounterDayKey(storedCounterText, now)
+	viewsDayKey := getViewsDayKey(views, now)
+
+	if _, err := client.TxPipelined(func(pipe redis.Pipeliner) error {
+		pipe.Incr(getStoredCounterTotalKey(storedCounterText))
+		pipe.Incr(storedDayKey)
+		pipe.Expire(storedDayKey, statsHistoryTTL)
+		pipe.Incr(getViewsTotalKey(views))
+		pipe.Incr(viewsDayKey)
+		pipe.Expire(viewsDayKey, statsHistoryTTL)
+		return nil
+	}); err != nil {
+		return err
+	}
+
+	appStats.AddStoredSecrets(1)
+	return nil
 }
 
 func incrementStoredFileCounters(now time.Time) error {
@@ -306,6 +350,8 @@ func getOverallStoredCounterFromRedis(kind storedCounterKind) (int64, error) {
 
 func apiStat(r *http.Request) (responseCode int, response []byte) {
 	responseCode = http.StatusNoContent
+
+	r.Body = http.MaxBytesReader(nil, r.Body, maxLookupBodyBytes)
 
 	var payload struct {
 		Page string `json:"page"`

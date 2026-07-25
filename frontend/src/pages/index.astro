@@ -45,8 +45,9 @@ const jsonLd = {
             <p>
                 {siteHost} is a free, open-source tool for sharing a one-time secret — a password, API key,
                 or file sent through an encrypted, self-destructing link. Messages are encrypted in your
-                browser using AES-256-GCM, so the server never sees your data. Each link works once, then the
-                secret is permanently deleted. No signup required.
+                browser using AES-256-GCM, so the server never sees your data. Each link works once by default,
+                then the secret is permanently deleted — for text you can allow a few views instead, while
+                file links always stay strictly one-time. No signup required.
             </p>
             <p>
                 Use it to <a href="/share-password-securely/">share passwords securely</a>, send
@@ -68,7 +69,7 @@ const jsonLd = {
                         <div class="feature-card-icon" aria-hidden="true">&#x1f4a5;</div>
                         <h2>One-time access</h2>
                     </div>
-                    <p>Each link works exactly once. After reading, the data is permanently deleted.</p>
+                    <p>Links burn after reading by default. Once the last allowed view is used, the data is permanently deleted.</p>
                 </div>
                 <div class="feature-card">
                     <div class="feature-card-header">
@@ -123,19 +124,20 @@ const jsonLd = {
                 Type or paste your secret above. {siteHost} encrypts it with a unique key directly in your
                 browser. You get a one-time link containing the decryption key in the URL fragment, which is
                 never sent to the server. Share it with your recipient. Once they open it, the secret is
-                decrypted locally and permanently deleted from our servers.
+                decrypted locally and — on a default one-time link — permanently deleted from our servers.
             </p>
 
             <h2>How self-destructing links work</h2>
             <p>
                 A <strong>self-destructing link</strong> — also called a one-time link, single-use link,
-                or disappearing link — is a URL that reveals its content exactly once. The recipient
-                clicks, reads the secret, and the server permanently deletes the data; the same
-                one-time URL becomes a dead 404 forever after. {siteHost} generates these one-time
-                links for free, with end-to-end encryption handled in your browser, so even we never
+                or disappearing link — is a URL that reveals its content a limited number of times, normally
+                just once. The recipient clicks, reads the secret, and the server permanently deletes the
+                data; the same one-time URL becomes a dead 404 forever after. {siteHost} generates these
+                one-time links for free — text secrets can optionally allow 3, 5, or 10 views, and file
+                links are always single-download — with end-to-end encryption handled in your browser, so even we never
                 see what you share. Whether you call it a self-destruct link, a one-time secret link,
                 or a disappearing message, the mechanism is the same: encrypt locally, share once,
-                destroy on read. Learn more in our guide to{' '}
+                destroy when the last allowed view is used. Learn more in our guide to{' '}
                 <a href="/blog/self-destructing-messages-explained/">how self-destructing links work</a>.
             </p>
 

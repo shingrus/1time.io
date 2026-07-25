@@ -60,6 +60,15 @@ func TestStatsKeyHelpers(t *testing.T) {
 	if got := getStoredCounterTotalKey(storedCounterKind(99)); got != storedTextTotalKey {
 		t.Fatalf("default total key = %q", got)
 	}
+	if got := getViewsTotalKey(1); got != "stats:views:total:1" {
+		t.Fatalf("views total key = %q", got)
+	}
+	if got := getViewsTotalKey(10); got != "stats:views:total:10" {
+		t.Fatalf("views total key = %q", got)
+	}
+	if got := getViewsDayKey(3, now); got != "stats:views:day:20260505:3" {
+		t.Fatalf("views day key = %q", got)
+	}
 	if got := getPageHitDayKey(now); got != "stats:page:hits:day:20260505" {
 		t.Fatalf("page hit day key = %q", got)
 	}
@@ -197,6 +206,9 @@ func TestStatsManagerLoadOverallStoredCountersReturnsError(t *testing.T) {
 	}
 }
 
+// Text secrets no longer go through incrementStoredCounterFunc — their totals
+// are written together with the view distribution (see
+// TestIncrementStoredSecretCountersWritesBothFamilies). Files still delegate.
 func TestIncrementStoredCounterWrappers(t *testing.T) {
 	originalIncrement := incrementStoredCounterFunc
 	t.Cleanup(func() {
@@ -209,15 +221,66 @@ func TestIncrementStoredCounterWrappers(t *testing.T) {
 		return nil
 	}
 
-	now := time.Now().UTC()
-	if err := incrementStoredSecretCounters(now); err != nil {
-		t.Fatalf("incrementStoredSecretCounters() error = %v", err)
-	}
-	if err := incrementStoredFileCounters(now); err != nil {
+	if err := incrementStoredFileCounters(time.Now().UTC()); err != nil {
 		t.Fatalf("incrementStoredFileCounters() error = %v", err)
 	}
-	if len(kinds) != 2 || kinds[0] != storedCounterText || kinds[1] != storedCounterFile {
-		t.Fatalf("increment kinds = %#v, want text then file", kinds)
+	if len(kinds) != 1 || kinds[0] != storedCounterFile {
+		t.Fatalf("increment kinds = %#v, want file only", kinds)
+	}
+}
+
+// The merged write is the whole point of doing both counter families together:
+// the stored-text total is the denominator for the view distribution, so they
+// must always move in lockstep.
+func TestIncrementStoredSecretCountersWritesBothFamilies(t *testing.T) {
+	client := startTestRedis(t)
+	originalStats := appStats
+	appStats = NewStatsManager()
+	t.Cleanup(func() { appStats = originalStats })
+
+	now := time.Date(2026, time.July, 25, 12, 0, 0, 0, time.UTC)
+	for _, views := range []int{1, 1, 3} {
+		if err := incrementStoredSecretCountersWithClient(client, views, now); err != nil {
+			t.Fatalf("incrementStoredSecretCountersWithClient(%d) error = %v", views, err)
+		}
+	}
+
+	for key, want := range map[string]string{
+		storedTextTotalKey: "3",
+		getStoredCounterDayKey(storedCounterText, now): "3",
+		getViewsTotalKey(1):                            "2",
+		getViewsDayKey(1, now):                         "2",
+		getViewsTotalKey(3):                            "1",
+		getViewsDayKey(3, now):                         "1",
+	} {
+		got, err := client.Get(key).Result()
+		if err != nil {
+			t.Fatalf("get %s: %v", key, err)
+		}
+		if got != want {
+			t.Fatalf("%s = %s, want %s", key, got, want)
+		}
+	}
+
+	// Day keys expire; lifetime totals must not.
+	for _, key := range []string{getStoredCounterDayKey(storedCounterText, now), getViewsDayKey(1, now)} {
+		ttl, err := client.TTL(key).Result()
+		if err != nil {
+			t.Fatalf("ttl %s: %v", key, err)
+		}
+		if ttl != statsHistoryTTL {
+			t.Fatalf("%s ttl = %s, want %s", key, ttl, statsHistoryTTL)
+		}
+	}
+	for _, key := range []string{storedTextTotalKey, getViewsTotalKey(1)} {
+		if ttl, err := client.TTL(key).Result(); err != nil || ttl >= 0 {
+			t.Fatalf("%s ttl = %s (err %v), want no expiry", key, ttl, err)
+		}
+	}
+
+	// The in-memory overall counter tracks the same events.
+	if got := appStats.GetOverallStoredSecrets(); got != 3 {
+		t.Fatalf("overall stored secrets = %d, want 3", got)
 	}
 }
 

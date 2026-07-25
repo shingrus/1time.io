@@ -13,6 +13,15 @@ import (
 	"time"
 )
 
+// Lookup fixtures in the shapes the handlers now enforce: ids are 22-char
+// base64url (see generateStorageID) and hashed keys are 64-char lowercase hex.
+const (
+	testStorageID = "msg123AAAAAAAAAAAAAAAA"
+	testHashedKey = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+	testFileID    = "file123BBBBBBBBBBBBBBB"
+	testFileHash  = "fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210"
+)
+
 func restoreHandlerHooks(t *testing.T) {
 	t.Helper()
 
@@ -22,6 +31,10 @@ func restoreHandlerHooks(t *testing.T) {
 	originalSetFileRecord := setFileRecordFunc
 	originalIncrementStoredFileCounters := incrementStoredFileCountersFunc
 	originalSecretsExist := secretsExistFunc
+	originalIncrementStoredSecretCounters := incrementStoredSecretCountersFunc
+
+	// Stats are a side effect of saving; stub them out so tests do not need Redis.
+	incrementStoredSecretCountersFunc = func(views int, now time.Time) error { return nil }
 
 	t.Cleanup(func() {
 		saveToStorageFunc = originalSaveToStorage
@@ -30,6 +43,7 @@ func restoreHandlerHooks(t *testing.T) {
 		setFileRecordFunc = originalSetFileRecord
 		incrementStoredFileCountersFunc = originalIncrementStoredFileCounters
 		secretsExistFunc = originalSecretsExist
+		incrementStoredSecretCountersFunc = originalIncrementStoredSecretCounters
 	})
 }
 
@@ -74,7 +88,7 @@ func TestAPISaveSecretStoresEncryptedPayload(t *testing.T) {
 
 	var stored StoredMessage
 	var ttl time.Duration
-	saveToStorageFunc = func(value interface{}, duration time.Duration) (string, error) {
+	saveToStorageFunc = func(value interface{}, duration time.Duration, views int) (string, error) {
 		ttl = duration
 		raw, ok := value.([]byte)
 		if !ok {
@@ -103,11 +117,108 @@ func TestAPISaveSecretStoresEncryptedPayload(t *testing.T) {
 	}
 }
 
+func TestAPISaveSecretStoresClampedViews(t *testing.T) {
+	tests := []struct {
+		name      string
+		payload   string
+		wantViews int
+	}{
+		{name: "absent views stays legacy shape", payload: `{"secretMessage":"c","hashedKey":"h","duration":60}`, wantViews: 0},
+		{name: "explicit single view stays legacy shape", payload: `{"secretMessage":"c","hashedKey":"h","duration":60,"views":1}`, wantViews: 0},
+		{name: "multi view stored as-is", payload: `{"secretMessage":"c","hashedKey":"h","duration":60,"views":5}`, wantViews: 5},
+		{name: "former unlimited sentinel collapses to single view", payload: `{"secretMessage":"c","hashedKey":"h","duration":60,"views":-1}`, wantViews: 0},
+		{name: "oversized clamped to max", payload: `{"secretMessage":"c","hashedKey":"h","duration":60,"views":5000}`, wantViews: maxViews},
+		{name: "garbage negative collapses to single view", payload: `{"secretMessage":"c","hashedKey":"h","duration":60,"views":-7}`, wantViews: 0},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			restoreHandlerHooks(t)
+
+			var stored StoredMessage
+			saveToStorageFunc = func(value interface{}, duration time.Duration, views int) (string, error) {
+				if err := json.Unmarshal(value.([]byte), &stored); err != nil {
+					t.Fatalf("stored payload is not StoredMessage JSON: %v", err)
+				}
+				return "msg123", nil
+			}
+
+			req := httptest.NewRequest(http.MethodPost, "/api/saveSecret", strings.NewReader(tt.payload))
+			if _, response := apiSaveSecret(req); !strings.Contains(string(response), `"status":"ok"`) {
+				t.Fatalf("response = %s, want ok", response)
+			}
+			if stored.Views != tt.wantViews {
+				t.Fatalf("stored.Views = %d, want %d", stored.Views, tt.wantViews)
+			}
+		})
+	}
+}
+
+// The handler's stats responsibility is to hand the clamped view count to the
+// storage layer, which records it together with the stored-secret counters.
+func TestAPISaveSecretPassesClampedViewsToStorage(t *testing.T) {
+	tests := []struct {
+		name      string
+		payload   string
+		wantViews int
+	}{
+		{name: "absent views passes single view", payload: `{"secretMessage":"c","hashedKey":"h","duration":60}`, wantViews: 1},
+		{name: "multi view passed as-is", payload: `{"secretMessage":"c","hashedKey":"h","duration":60,"views":5}`, wantViews: 5},
+		{name: "passed after clamping", payload: `{"secretMessage":"c","hashedKey":"h","duration":60,"views":5000}`, wantViews: maxViews},
+		{name: "negative collapses to single view", payload: `{"secretMessage":"c","hashedKey":"h","duration":60,"views":-1}`, wantViews: 1},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			restoreHandlerHooks(t)
+
+			gotViews := 0
+			calls := 0
+			saveToStorageFunc = func(value interface{}, duration time.Duration, views int) (string, error) {
+				calls++
+				gotViews = views
+				return "msg123", nil
+			}
+
+			req := httptest.NewRequest(http.MethodPost, "/api/saveSecret", strings.NewReader(tt.payload))
+			if _, response := apiSaveSecret(req); !strings.Contains(string(response), `"status":"ok"`) {
+				t.Fatalf("response = %s, want ok", response)
+			}
+			if calls != 1 {
+				t.Fatalf("saveToStorage calls = %d, want 1", calls)
+			}
+			if gotViews != tt.wantViews {
+				t.Fatalf("views passed to storage = %d, want %d", gotViews, tt.wantViews)
+			}
+		})
+	}
+}
+
+func TestClampViews(t *testing.T) {
+	tests := []struct {
+		in   int
+		want int
+	}{
+		{in: 0, want: 1},
+		{in: 1, want: 1},
+		{in: 2, want: 2},
+		{in: maxViews, want: maxViews},
+		{in: maxViews + 1, want: maxViews},
+		{in: -1, want: 1},
+		{in: -2, want: 1},
+	}
+	for _, tt := range tests {
+		if got := clampViews(tt.in); got != tt.want {
+			t.Fatalf("clampViews(%d) = %d, want %d", tt.in, got, tt.want)
+		}
+	}
+}
+
 func TestAPISaveSecretRejectsMissingFields(t *testing.T) {
 	restoreHandlerHooks(t)
 
 	called := false
-	saveToStorageFunc = func(value interface{}, duration time.Duration) (string, error) {
+	saveToStorageFunc = func(value interface{}, duration time.Duration, views int) (string, error) {
 		called = true
 		return "unexpected", nil
 	}
@@ -123,15 +234,41 @@ func TestAPISaveSecretRejectsMissingFields(t *testing.T) {
 	}
 }
 
+func TestAPISaveSecretRejectsOversizedBody(t *testing.T) {
+	restoreHandlerHooks(t)
+
+	called := false
+	saveToStorageFunc = func(value interface{}, duration time.Duration, views int) (string, error) {
+		called = true
+		return "unexpected", nil
+	}
+
+	// A secretMessage larger than the body cap should be rejected before storage.
+	oversized := strings.Repeat("A", maxSaveSecretBodyBytes+1)
+	body := `{"secretMessage":"` + oversized + `","hashedKey":"hash","duration":60}`
+	req := httptest.NewRequest(http.MethodPost, "/api/saveSecret", strings.NewReader(body))
+	_, response := apiSaveSecret(req)
+
+	if called {
+		t.Fatal("saveToStorageFunc should not be called for an oversized body")
+	}
+	if !strings.Contains(string(response), `"status":"error"`) {
+		t.Fatalf("response = %s, want error", response)
+	}
+}
+
 func TestAPIGetMessageStatuses(t *testing.T) {
 	tests := []struct {
 		name       string
 		status     string
 		message    string
+		viewsLeft  int
+		expiresIn  int
 		wantStatus string
 		wantBody   string
 	}{
 		{name: "ok", status: "ok", message: "ciphertext", wantStatus: `"status":"ok"`, wantBody: `"cryptedMessage":"ciphertext"`},
+		{name: "ok multi-view", status: "ok", message: "ciphertext", viewsLeft: 4, expiresIn: 259200, wantStatus: `"status":"ok"`, wantBody: `"expiresIn":259200`},
 		{name: "wrong key", status: "wrong key", wantStatus: `"status":"wrong key"`},
 		{name: "no message", status: "no message", wantStatus: `"status":"no message"`},
 	}
@@ -139,14 +276,14 @@ func TestAPIGetMessageStatuses(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			restoreHandlerHooks(t)
-			consumeMessageFromStorageFunc = func(key string, hashedKey string) (StoredMessage, string, error) {
-				if key != "msg123" || hashedKey != "hash" {
-					t.Fatalf("consume args = %q, %q; want msg123, hash", key, hashedKey)
+			consumeMessageFromStorageFunc = func(key string, hashedKey string) (StoredMessage, int, int, string, error) {
+				if key != testStorageID || hashedKey != testHashedKey {
+					t.Fatalf("consume args = %q, %q; want %q, %q", key, hashedKey, testStorageID, testHashedKey)
 				}
-				return StoredMessage{Message: tt.message, HashedKey: "hash", Encrypted: true}, tt.status, nil
+				return StoredMessage{Message: tt.message, HashedKey: testHashedKey, Encrypted: true}, tt.viewsLeft, tt.expiresIn, tt.status, nil
 			}
 
-			req := httptest.NewRequest(http.MethodPost, "/api/get", strings.NewReader(`{"id":"msg123","hashedKey":"hash"}`))
+			req := httptest.NewRequest(http.MethodPost, "/api/get", strings.NewReader(`{"id":"`+testStorageID+`","hashedKey":"`+testHashedKey+`"}`))
 			responseCode, response := apiGetMessage(req)
 
 			if responseCode != http.StatusOK {
@@ -159,6 +296,93 @@ func TestAPIGetMessageStatuses(t *testing.T) {
 				t.Fatalf("response = %s, missing %s", response, tt.wantBody)
 			}
 		})
+	}
+}
+
+func TestAPIGetMessageRejectsMalformedLookups(t *testing.T) {
+	tests := []struct {
+		name       string
+		body       string
+		wantStatus string
+	}{
+		{name: "empty id", body: `{"id":"","hashedKey":"` + testHashedKey + `"}`, wantStatus: `"status":"no message"`},
+		{name: "short id", body: `{"id":"abc","hashedKey":"` + testHashedKey + `"}`, wantStatus: `"status":"no message"`},
+		{name: "id with redis wildcard", body: `{"id":"msg123AAAAAAAAAAAAAA*","hashedKey":"` + testHashedKey + `"}`, wantStatus: `"status":"no message"`},
+		{name: "empty hashed key", body: `{"id":"` + testStorageID + `","hashedKey":""}`, wantStatus: `"status":"wrong key"`},
+		{name: "non hex hashed key", body: `{"id":"` + testStorageID + `","hashedKey":"` + strings.Repeat("z", 64) + `"}`, wantStatus: `"status":"wrong key"`},
+		{name: "oversized body", body: `{"id":"` + strings.Repeat("A", maxLookupBodyBytes+1) + `","hashedKey":"h"}`, wantStatus: `"status":"error"`},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			restoreHandlerHooks(t)
+			called := false
+			consumeMessageFromStorageFunc = func(key string, hashedKey string) (StoredMessage, int, int, string, error) {
+				called = true
+				return StoredMessage{}, 0, 0, "ok", nil
+			}
+
+			req := httptest.NewRequest(http.MethodPost, "/api/get", strings.NewReader(tt.body))
+			responseCode, response := apiGetMessage(req)
+
+			if called {
+				t.Fatal("malformed lookup reached storage")
+			}
+			if responseCode != http.StatusOK {
+				t.Fatalf("code = %d, want %d", responseCode, http.StatusOK)
+			}
+			if !strings.Contains(string(response), tt.wantStatus) {
+				t.Fatalf("response = %s, want %s", response, tt.wantStatus)
+			}
+		})
+	}
+}
+
+func TestAPIGetFileRejectsMalformedLookups(t *testing.T) {
+	for _, tt := range []struct {
+		name string
+		body string
+	}{
+		{name: "short id", body: `{"id":"abc","hashedKey":"` + testFileHash + `"}`},
+		{name: "non hex hashed key", body: `{"id":"` + testFileID + `","hashedKey":"nope"}`},
+		{name: "oversized body", body: `{"id":"` + strings.Repeat("A", maxLookupBodyBytes+1) + `","hashedKey":"h"}`},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			restoreHandlerHooks(t)
+			called := false
+			consumeFileMessageFromStorageFunc = func(key string, hashedKey string) (StoredFile, string, error) {
+				called = true
+				return StoredFile{}, "ok", nil
+			}
+
+			req := httptest.NewRequest(http.MethodPost, "/api/getFile", strings.NewReader(tt.body))
+			rec := httptest.NewRecorder()
+			apiGetFile(rec, req)
+
+			if called {
+				t.Fatal("malformed lookup reached storage")
+			}
+			if rec.Code != http.StatusBadRequest {
+				t.Fatalf("code = %d, want %d", rec.Code, http.StatusBadRequest)
+			}
+		})
+	}
+}
+
+func TestAPIGetMessageReturnsRetryableContention(t *testing.T) {
+	restoreHandlerHooks(t)
+	consumeMessageFromStorageFunc = func(key string, hashedKey string) (StoredMessage, int, int, string, error) {
+		return StoredMessage{}, 0, 0, "retry", errConsumeMessageContention
+	}
+
+	req := httptest.NewRequest(http.MethodPost, "/api/get", strings.NewReader(`{"id":"`+testStorageID+`","hashedKey":"`+testHashedKey+`"}`))
+	responseCode, response := apiGetMessage(req)
+
+	if responseCode != http.StatusServiceUnavailable {
+		t.Fatalf("apiGetMessage() code = %d, want %d", responseCode, http.StatusServiceUnavailable)
+	}
+	if !strings.Contains(string(response), `"status":"retry"`) {
+		t.Fatalf("response = %s, want retry status", response)
 	}
 }
 
@@ -293,9 +517,9 @@ func TestIsValidStorageID(t *testing.T) {
 	for _, bad := range []string{
 		"",
 		"short",
-		valid + "x",           // too long
-		valid[:len(valid)-1],  // too short
-		"has space" + valid[9:],  // right length, illegal char (space)
+		valid + "x",                // too long
+		valid[:len(valid)-1],       // too short
+		"has space" + valid[9:],    // right length, illegal char (space)
 		valid[:len(valid)-1] + "+", // right length, illegal base64url char (+)
 	} {
 		if isValidStorageID(bad) {
@@ -493,13 +717,13 @@ func TestAPIGetFileStreamsAndDeletesFile(t *testing.T) {
 		t.Fatalf("WriteFile error: %v", err)
 	}
 	consumeFileMessageFromStorageFunc = func(key string, hashedKey string) (StoredFile, string, error) {
-		if key != "file123" || hashedKey != "filehash" {
-			t.Fatalf("consume args = %q, %q; want file123, filehash", key, hashedKey)
+		if key != testFileID || hashedKey != testFileHash {
+			t.Fatalf("consume args = %q, %q; want %q, %q", key, hashedKey, testFileID, testFileHash)
 		}
-		return StoredFile{Encrypted: true, FileUri: filePath, HashedKey: "filehash"}, "ok", nil
+		return StoredFile{Encrypted: true, FileUri: filePath, HashedKey: testFileHash}, "ok", nil
 	}
 
-	req := httptest.NewRequest(http.MethodPost, "/api/getFile", strings.NewReader(`{"id":"file123","hashedKey":"filehash"}`))
+	req := httptest.NewRequest(http.MethodPost, "/api/getFile", strings.NewReader(`{"id":"`+testFileID+`","hashedKey":"`+testFileHash+`"}`))
 	rec := httptest.NewRecorder()
 	apiGetFile(rec, req)
 
@@ -526,7 +750,7 @@ func TestAPIGetFileReturnsJSONStatuses(t *testing.T) {
 				return StoredFile{}, status, nil
 			}
 
-			req := httptest.NewRequest(http.MethodPost, "/api/getFile", strings.NewReader(`{"id":"file123","hashedKey":"filehash"}`))
+			req := httptest.NewRequest(http.MethodPost, "/api/getFile", strings.NewReader(`{"id":"`+testFileID+`","hashedKey":"`+testFileHash+`"}`))
 			rec := httptest.NewRecorder()
 			apiGetFile(rec, req)
 
@@ -549,7 +773,7 @@ func TestAPIGetFileRejectsBadPayload(t *testing.T) {
 		return StoredFile{}, "ok", nil
 	}
 
-	req := httptest.NewRequest(http.MethodPost, "/api/getFile", strings.NewReader(`{"id":"","hashedKey":"filehash"}`))
+	req := httptest.NewRequest(http.MethodPost, "/api/getFile", strings.NewReader(`{"id":"","hashedKey":"`+testFileHash+`"}`))
 	rec := httptest.NewRecorder()
 	apiGetFile(rec, req)
 

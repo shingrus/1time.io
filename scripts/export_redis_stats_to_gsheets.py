@@ -9,6 +9,8 @@ Expected Redis key layout from the Go app:
   - stats:stored:file:day:YYYYMMDD           -> per-day stored files
   - stats:page:hits:total                    -> hash: page -> total hits
   - stats:page:hits:day:YYYYMMDD             -> hash: page -> daily hits
+  - stats:views:total:VIEWS                  -> lifetime secrets created with VIEWS views
+  - stats:views:day:YYYYMMDD:VIEWS           -> per-day secrets created with VIEWS views
 
 Nginx sender/receiver analytics:
   - Reads /var/log/nginx/1time.access.log and /var/log/nginx/1time.access.log.1
@@ -75,6 +77,8 @@ STORED_TEXT_DAY_KEY_PREFIX = "stats:stored:text:day:"
 STORED_FILE_DAY_KEY_PREFIX = "stats:stored:file:day:"
 PAGE_HIT_TOTAL_KEY = "stats:page:hits:total"
 PAGE_HIT_DAY_KEY_PREFIX = "stats:page:hits:day:"
+VIEWS_TOTAL_KEY_PREFIX = "stats:views:total:"
+VIEWS_DAY_KEY_PREFIX = "stats:views:day:"
 
 SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
 TAB_NAMES = (
@@ -82,6 +86,8 @@ TAB_NAMES = (
     "stored_daily",
     "page_hits_total",
     "page_hits_daily",
+    "views_total",
+    "views_daily",
     "senders_receivers",
 )
 DEFAULT_NGINX_LOG_PATHS = (
@@ -97,7 +103,14 @@ NGINX_COMBINED_LOG_RE = re.compile(
     r'"(?P<user_agent>(?:[^"\\]|\\.)*)"(?: .*)?$'
 )
 
-TEXT_READ_FAILURE_BODY_SIZES = {39, 43, 44}
+# /api/get failure response sizes. Two generations are listed because a log
+# window can straddle the deploy that added viewsLeft/expiresIn to the response:
+#   39/43/44 -> pre-view-counter {status, cryptedMessage}
+#   67/71/72 -> current {status, cryptedMessage, viewsLeft, expiresIn}
+#              (error=67, wrong key=71, no message=72)
+# The shortest possible SUCCESS body is ~104 bytes (a 41-char minimum protocol
+# ciphertext), so none of these can collide with a real read.
+TEXT_READ_FAILURE_BODY_SIZES = {39, 43, 44, 67, 71, 72}
 FILE_READ_FAILURE_BODY_SIZES = {22, 23}
 SAVE_FAILURE_BODY_SIZES = {30}
 
@@ -209,6 +222,27 @@ def safe_int(value: str | None) -> int:
     if value in (None, ""):
         return 0
     return int(value)
+
+
+def sort_view_buckets(buckets: Iterable[str]) -> List[str]:
+    """Order view-count buckets numerically so 10 follows 5, not 1."""
+    return sorted(set(buckets), key=lambda bucket: (safe_int(bucket), bucket))
+
+
+def build_views_daily_rows(
+    views_daily: Dict[str, Dict[str, int]],
+    known_buckets: Iterable[str] = (),
+) -> List[List[object]]:
+    buckets = sort_view_buckets(
+        list(known_buckets)
+        + [bucket for counts in views_daily.values() for bucket in counts]
+    )
+
+    rows: List[List[object]] = [["date", *[f"views_{bucket}" for bucket in buckets]]]
+    for day in sorted(views_daily):
+        rows.append([day, *[views_daily.get(day, {}).get(bucket, 0) for bucket in buckets]])
+
+    return rows
 
 
 def build_page_hits_daily_rows(
@@ -390,6 +424,27 @@ def collect_stats(
             for page, hits in sorted(fields.items(), key=lambda item: item[0])
         }
 
+    # View-counter distribution: how many secrets were created per view bucket.
+    views_total = {
+        key.removeprefix(VIEWS_TOTAL_KEY_PREFIX): safe_int(client.get(key))
+        for key in scan_keys(client, f"{VIEWS_TOTAL_KEY_PREFIX}*")
+    }
+    views_daily: Dict[str, Dict[str, int]] = {}
+    for key in scan_keys(client, f"{VIEWS_DAY_KEY_PREFIX}*"):
+        day, _, bucket = key.removeprefix(VIEWS_DAY_KEY_PREFIX).partition(":")
+        if not bucket:
+            continue
+        views_daily.setdefault(day, {})[bucket] = safe_int(client.get(key))
+
+    views_total_sum = sum(views_total.values())
+    views_total_rows: List[List[object]] = [["views", "secrets", "share_percent"]]
+    for bucket in sort_view_buckets(views_total):
+        count = views_total[bucket]
+        share = round(count * 100 / views_total_sum, 2) if views_total_sum else 0
+        views_total_rows.append([bucket, count, share])
+
+    views_daily_rows = build_views_daily_rows(views_daily, known_buckets=views_total)
+
     page_hits_daily_rows = build_page_hits_daily_rows(
         page_hits_daily,
         known_pages=(page for page, _ in page_hits_total),
@@ -406,6 +461,8 @@ def collect_stats(
         ["page_hits_total_rows", len(page_hits_total)],
         ["page_hits_daily_pages", page_hits_daily_page_count],
         ["page_hits_daily_days", page_hits_daily_day_count],
+        ["views_counted_secrets", views_total_sum],
+        ["views_multi_view_secrets", views_total_sum - views_total.get("1", 0)],
     ]
 
     page_hits_total_rows: List[List[object]] = [["page", "hits"]]
@@ -417,6 +474,8 @@ def collect_stats(
         "stored_daily": stored_daily_rows,
         "page_hits_total": page_hits_total_rows,
         "page_hits_daily": page_hits_daily_rows,
+        "views_total": views_total_rows,
+        "views_daily": views_daily_rows,
         "senders_receivers": collect_nginx_daily_uniques(nginx_log_paths),
     }
 

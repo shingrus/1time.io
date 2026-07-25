@@ -44,6 +44,7 @@
 .message-panel-body {
   padding: 20px;
   flex: 1;
+  cursor: pointer;
 }
 
 .message-panel-body pre {
@@ -61,6 +62,13 @@
   border-top: 1px solid var(--border);
   display: flex;
   justify-content: center;
+}
+
+.views-left-note {
+  padding: 0 16px 12px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--text-secondary);
 }
 
 

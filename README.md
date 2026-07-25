@@ -38,7 +38,7 @@
 | | Feature | Details |
 |---|---|---|
 | **🔐** | **Zero-knowledge encryption** | Secrets are encrypted in your browser with AES-GCM. The server never sees plaintext. |
-| **🔥** | **Self-destructing links** | Each link works exactly once, then the data is permanently deleted. |
+| **🔥** | **Self-destructing links** | Links burn after reading by default; text secrets can optionally allow a few views. Either way the data is permanently deleted once the last view is used. |
 | **📁** | **Encrypted file sharing** | Send files with one-time download links. File contents and metadata stay inside the encrypted payload. |
 | **🏠** | **Self-hosted** | Run your own instance with Docker Compose in under 2 minutes. |
 | **👤** | **No signup required** | Paste a secret, get a link, share it. No accounts, no tracking. |

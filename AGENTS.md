@@ -16,7 +16,9 @@ The server never sees plaintext or the decryption key. All crypto is client-side
 - **Create:** the client generates a 20-char `randomKey` (`getRandomString`). With an optional passphrase, `fullSecretKey = passphrase + randomKey`. HKDF-SHA256 (salt `onetimelink:v2`) derives (a) an AES-256-GCM key (`info=encrypt`) and (b) `hashedKey` (`info=auth`, hex) — the **only** key material ever sent to the server.
 - The client AES-256-GCM-encrypts the secret/file (12-byte IV prepended) and POSTs `{ciphertext, hashedKey, duration}`. The server stores `{ciphertext, hashedKey}` under a server-generated id — never the key or plaintext.
 - **Link:** `/v/#<randomKey><id>` (text) or `/f/#<randomKey><id>` (file). `randomKey` lives **only** in the URL fragment and is never sent to the server.
-- **Read (one-time):** the recipient's browser re-derives `hashedKey` from the fragment and POSTs `{id, hashedKey}`; the server constant-time-verifies it, returns the ciphertext, and **deletes** the record. The browser decrypts locally. File downloads delete the record *before* streaming (delete-before-stream), so a failed download cannot be retried.
+- **Read (one-time by default):** the recipient's browser re-derives `hashedKey` from the fragment and POSTs `{id, hashedKey}`; the server constant-time-verifies it, returns the ciphertext, and **deletes** the record (unless the text secret still has views left — see below). The browser decrypts locally. File downloads delete the record *before* streaming (delete-before-stream), so a failed download cannot be retried.
+- **View counter (text secrets only):** `saveSecret` accepts an optional `views` field — `1` (default, burn after reading) or `2..100`; the create form deliberately exposes only `1 / 3 / 5 / 10`, so the API range is wider than the UI. `maxViews` (100) caps it, which also bounds how many times one stored ciphertext can be retrieved (no unbounded-download amplification). Multi-view reads decrement `StoredMessage.Views` inside a Redis `WATCH` transaction, preserving the TTL via `PTTL`; transaction conflicts retry with bounded exponential backoff, and persistent contention returns a retryable HTTP 503 rather than falsely reporting a live secret as gone. The last view deletes the record as before. `/api/get` returns `viewsLeft` (`0` = consumed) so the reader page renders honest post-read copy, and the create-page "link ready" copy reflects the chosen view count. Legacy records without the field behave as single-view. Files remain strictly one-time.
+- **Retrying a read is dangerous — `/api/get` is destructive.** On persistent `WATCH` contention the server answers HTTP `503` with body `{"status":"retry"}`, which is the *only* proof a read was rejected **before** consuming a view. A client may replay the request solely on that explicit body (`isRetryableRead` in `frontend/src/islands/view-secret.ts`); a bare `503` from a proxy/CDN gives no such guarantee and replaying it can burn a second view. `postJson` attaches both `status` and the parsed `body` to the thrown error so callers can tell the two apart.
 - **Status ("My Secrets"):** `POST /api/secretStatus` reports, for a batch of ids, whether each secret still exists — **without consuming it**. "Gone" means read or expired.
 
 ## Backend
@@ -27,9 +29,14 @@ The server never sees plaintext or the decryption key. All crypto is client-side
 - File upload/download API endpoints live in `backend/handlers.go` as `/api/saveFile` and `/api/getFile`.
 - `/api/secretStatus` (`apiSecretStatus` in `backend/handlers.go`) is a **non-consuming** batch existence check used by the Outbox / "My Secrets" page — it reads whether ids still exist and never deletes.
 - Backend file size limit is `25 MB` via `maxFileSize` in `backend/handlers.go`.
+- Every JSON endpoint caps its request body with `http.MaxBytesReader`: `maxSaveSecretBodyBytes` (25 MB, matching `maxFileSize` — base64url adds ~4/3 over AES-GCM, so roughly 18 MB of plaintext), `maxStatusBodyBytes` (8 KB), and `maxLookupBodyBytes` (1 KB for `/api/get`, `/api/getFile`, `/api/stat`). Keep `maxSaveSecretBodyBytes` under nginx's `client_max_body_size` (`26m`). There is **no client-side length guard**, so oversized text fails with a generic error.
+- `/api/get` and `/api/getFile` validate the id and hashed-key **shapes** (`isValidStorageID`, `isValidHashedKey`) before any Redis key is built. Malformed input is answered with the same statuses the storage layer would return (`no message` / `wrong key`), deliberately introducing no new response shape — see the exporter coupling under "Analytics & Ops Scripts".
+- Stored **text** counters and the view distribution are written together — see "View-counter stats" below.
 - Uploaded encrypted files are written to `FILE_STORAGE_DIR/<id>.enc` and the Redis record stores the path plus hashed key.
 - `backend/storage.go` runs a file janitor every 2 hours and deletes expired `*.enc` files based on file mtime.
 - Stored file counters use Redis keys `stats:stored:file:total` and `stats:stored:file:day:YYYYMMDD`.
+- **View-counter stats:** `stats:views:total:<views>` (lifetime, no expiry) and `stats:views:day:YYYYMMDD:<views>` (`statsHistoryTTL`, 60 days), where `<views>` is the clamped count — bucket `1` is recorded too, so the burn-after-reading share sits in the same series. `incrementStoredSecretCountersWithClient` writes these **in the same `TxPipelined` as the stored-text counters**: both describe one event, so a single round-trip keeps the stored-text total (the distribution's denominator) exactly in step with the buckets. Do not split them into two pipelines. Text-secret counting therefore does **not** go through `incrementStoredCounterFunc` (files still do).
+- Stats are recorded by `saveToStorage` **after** a confirmed `SetNX`, and are **best-effort**: a counter failure is logged and must never fail a stored secret or inflate totals with saves that never landed.
 - The backend listens on `127.0.0.1:8080`.
 - Required env:
   - `FILE_STORAGE_DIR=/absolute/path/to/encrypted-files`
@@ -111,7 +118,7 @@ npm pack --dry-run
 
 - `scripts/` holds operational analytics run against nginx logs / Redis — **not part of the served app**:
   - `retention.py` — sender cohort retention + conversion funnel from nginx logs.
-  - `export_redis_stats_to_gsheets.py` — exports Redis counters + nginx sender/receiver stats to a Google Sheet.
+  - `export_redis_stats_to_gsheets.py` — exports Redis counters + nginx sender/receiver stats to a Google Sheet. Adds `views_total` (bucket, count, share %) and `views_daily` (date × bucket) tabs; buckets are sorted **numerically**, so `10` follows `5` rather than `1`.
   - `scripts/analytics/` — **gitignored on purpose**. Never force-add anything from this directory.
 - Owner/self traffic is identified by hits to `/ss` (the private stats page); analytics exclude it.
 

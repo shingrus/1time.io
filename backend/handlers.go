@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"io"
 	"log"
 	"net/http"
@@ -17,6 +18,27 @@ type StoredMessage struct {
 	Encrypted bool   `json:"encrypted"`
 	Message   string `json:"message"`
 	HashedKey string `json:"hashedKey"`
+	// Views is the number of reads remaining. 0 (legacy records) or 1 means
+	// single view, N > 1 means N reads left.
+	Views int `json:"views,omitempty"`
+}
+
+// maxViews caps the per-secret view count accepted by the API. It also bounds
+// how many times a single stored ciphertext can be retrieved, so there is no
+// unbounded-download ("unlimited views") amplification vector.
+const maxViews = 100
+
+// clampViews normalizes a client-requested view count to 1..maxViews.
+// Anything malformed (including negative sentinels) collapses to the
+// single-view default.
+func clampViews(views int) int {
+	switch {
+	case views <= 1:
+		return 1
+	case views > maxViews:
+		return maxViews
+	}
+	return views
 }
 
 type StoredFile struct {
@@ -25,7 +47,7 @@ type StoredFile struct {
 	HashedKey string `json:"hashedKey"`
 }
 
-const maxFileSize = 25 * 1024 * 1024 // 25MB
+const maxFileSize = 25 * 1024 * 1024       // 25MB
 const maxMultipartMemory = 4 * 1024 * 1024 // 4MB
 
 // maxStatusIDs bounds how many ids /api/secretStatus will check per request.
@@ -36,6 +58,15 @@ const maxStatusIDs = 128
 // base64url chars is ~3.2KB of JSON; 8KB leaves slack for whitespace while
 // bounding the payload far below nginx's generic client_max_body_size.
 const maxStatusBodyBytes = 8 * 1024
+
+// maxSaveSecretBodyBytes caps the /api/saveSecret request body. base64url adds ~4/3 expansion on top of AES-GCM
+const maxSaveSecretBodyBytes = 25 * 1024 * 1024
+
+// maxLookupBodyBytes caps the small JSON bodies of the lookup endpoints
+// (/api/get, /api/getFile, /api/stat). Their largest legitimate payload is a
+// 22-char id plus a 64-char hashedKey (~120 bytes of JSON), so 1KB is generous
+// while keeping them far below nginx's global client_max_body_size.
+const maxLookupBodyBytes = 1024
 
 var fileStorageDir = os.Getenv("FILE_STORAGE_DIR")
 
@@ -61,10 +92,13 @@ func apiSaveSecret(r *http.Request) (responseCode int, response []byte) {
 		NewId:  "0",
 	}
 
+	r.Body = http.MaxBytesReader(nil, r.Body, maxSaveSecretBodyBytes)
+
 	var payload struct {
 		SecretMessage string `json:"secretMessage"`
 		HashedKey     string `json:"hashedKey"`
 		Duration      int    `json:"duration"`
+		Views         int    `json:"views"`
 	}
 	dec := json.NewDecoder(r.Body)
 
@@ -78,6 +112,11 @@ func apiSaveSecret(r *http.Request) (responseCode int, response []byte) {
 					Message:   payload.SecretMessage,
 					HashedKey: payload.HashedKey,
 				}
+				views := clampViews(payload.Views)
+				// Single view stays 0 so default records match the legacy shape.
+				if views != 1 {
+					newMessage.Views = views
+				}
 
 				if payload.Duration <= 0 || payload.Duration > maxDuration {
 					payload.Duration = defaultDuration
@@ -87,7 +126,7 @@ func apiSaveSecret(r *http.Request) (responseCode int, response []byte) {
 					log.Printf("payload -> storage: %v, HashedKey: %v, Duration: %v\n", payload.SecretMessage, payload.HashedKey, payload.Duration)
 				}
 				valueToStore, _ := json.Marshal(newMessage)
-				storeKey, err := saveToStorageFunc(valueToStore, time.Duration(payload.Duration)*time.Second)
+				storeKey, err := saveToStorageFunc(valueToStore, time.Duration(payload.Duration)*time.Second, views)
 				if err == nil {
 					jResponse.NewId = storeKey
 					jResponse.Status = "ok"
@@ -119,11 +158,15 @@ func apiGetMessage(r *http.Request) (responseCode int, response []byte) {
 	jResponse := struct {
 		Status         string `json:"status"`
 		CryptedMessage string `json:"cryptedMessage"`
+		ViewsLeft      int    `json:"viewsLeft"`
+		ExpiresIn      int    `json:"expiresIn"`
 	}{
 		Status: "error",
 		// NewId:strconv.FormatInt(32, 16)
 		CryptedMessage: "0",
 	}
+
+	r.Body = http.MaxBytesReader(nil, r.Body, maxLookupBodyBytes)
 
 	var payload struct {
 		Id        string `json:"id"`
@@ -134,22 +177,35 @@ func apiGetMessage(r *http.Request) (responseCode int, response []byte) {
 	if dec.More() {
 		err := dec.Decode(&payload)
 		if err == nil {
-			if len(payload.Id) > 0 && len(payload.HashedKey) > 0 {
+			// Reject ids/keys that cannot be ours before building a Redis key.
+			// A malformed id cannot name an existing secret ("no message"); a
+			// malformed key can never match ("wrong key"). Both mirror what the
+			// storage layer would answer, so no new response shape is introduced.
+			if !isValidStorageID(payload.Id) {
+				jResponse.Status = "no message"
+			} else if !isValidHashedKey(payload.HashedKey) {
+				jResponse.Status = "wrong key"
+			} else {
 				if DEBUG {
 					log.Printf("payload <- storage: %v, %v\n", payload.Id, payload.HashedKey)
 				}
-				storedMessage, status, err := consumeMessageFromStorageFunc(payload.Id, payload.HashedKey)
+				storedMessage, viewsLeft, expiresIn, status, err := consumeMessageFromStorageFunc(payload.Id, payload.HashedKey)
 				if err == nil {
 					switch status {
 					case "ok":
 						jResponse.Status = "ok"
 						jResponse.CryptedMessage = storedMessage.Message
+						jResponse.ViewsLeft = viewsLeft
+						jResponse.ExpiresIn = expiresIn
 					case "wrong key":
 						jResponse.Status = "wrong key"
 						log.Println("Hashes aren't equal")
 					case "no message":
 						jResponse.Status = "no message"
 					}
+				} else if errors.Is(err, errConsumeMessageContention) {
+					responseCode = http.StatusServiceUnavailable
+					jResponse.Status = "retry"
 				} else {
 					log.Println(err)
 				}
@@ -366,12 +422,15 @@ func apiGetFile(w http.ResponseWriter, r *http.Request) {
 		HashedKey string `json:"hashedKey"`
 	}
 
+	r.Body = http.MaxBytesReader(nil, r.Body, maxLookupBodyBytes)
+
 	dec := json.NewDecoder(r.Body)
 	if !dec.More() {
 		http.Error(w, `{"status":"error"}`, http.StatusBadRequest)
 		return
 	}
-	if err := dec.Decode(&payload); err != nil || payload.Id == "" || payload.HashedKey == "" {
+	// Validate the fixed id/hashedKey shapes before they reach Redis key building.
+	if err := dec.Decode(&payload); err != nil || !isValidStorageID(payload.Id) || !isValidHashedKey(payload.HashedKey) {
 		http.Error(w, `{"status":"error"}`, http.StatusBadRequest)
 		return
 	}

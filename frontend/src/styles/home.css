@@ -50,15 +50,52 @@
 
 .share-primary-actions {
   margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
 }
 
 .share-primary-actions .btn-lg {
   padding-inline: 18px;
+  margin-left: auto;
+}
+
+.options-chips,
+.option-chip {
+  display: flex;
+  align-items: center;
+}
+
+.options-chips {
+  flex-wrap: wrap;
+  gap: 18px;
+}
+
+.option-chip {
+  gap: 6px;
+  font-family: inherit;
+  font-size: 14px;
+  padding: 4px 0;
+  border: 0;
+  background: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.option-chip:hover,
+.option-chip[aria-expanded='true'] {
+  color: var(--text);
 }
 
 @media (min-width: 480px) {
   .options-grid {
     grid-template-columns: 1fr 1fr;
+  }
+
+  .options-grid .options-grid-full {
+    grid-column: 1 / -1;
   }
 }
 

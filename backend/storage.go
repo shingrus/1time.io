@@ -22,7 +22,13 @@ const maxStorageIDAttempts = 5
 const redisTimeout = time.Second * 10
 const fileJanitorInterval = 2 * time.Hour
 
+const hashedKeyHexLen = 64
+const consumeMessageRetryWindow = 500 * time.Millisecond
+const consumeMessageRetryBaseDelay = 5 * time.Millisecond
+const consumeMessageRetryMaxDelay = 40 * time.Millisecond
+
 var errStorageIDCollision = errors.New("failed to generate unique storage id")
+var errConsumeMessageContention = errors.New("message consume contention")
 
 var redisClient *redis.Client
 var redisOnce sync.Once
@@ -46,12 +52,13 @@ store value with uniq key
 return key string(hexademical number)
 error in case of failure
 */
-func saveToStorage(value interface{}, duration time.Duration) (newKey string, err error) {
+// saveToStorage stores a text secret and records its counters. views is the
+// already-clamped view count, recorded alongside the stored-secret totals in one
+// round-trip. Counting happens only after the record is safely written, so a
+// stats failure can neither discard the secret nor inflate the totals with saves
+// that never landed.
+func saveToStorage(value interface{}, duration time.Duration, views int) (newKey string, err error) {
 	client := getRedisClient()
-	if err = incrementStoredSecretCounters(time.Now().UTC()); err != nil {
-		log.Println(err)
-		return "", err
-	}
 
 	for attempt := 0; attempt < maxStorageIDAttempts; attempt++ {
 		newKey, err = generateStorageID()
@@ -66,6 +73,10 @@ func saveToStorage(value interface{}, duration time.Duration) (newKey string, er
 		if ok {
 			if DEBUG {
 				log.Printf("Got new key storage: %v", newKey)
+			}
+			// Stats are best-effort: never fail a secret we already stored.
+			if statsErr := incrementStoredSecretCountersFunc(views, time.Now().UTC()); statsErr != nil {
+				log.Printf("incrementStoredSecretCounters error: %v", statsErr)
 			}
 			return newKey, nil
 		}
@@ -251,47 +262,127 @@ func cleanupExpiredFiles(now time.Time) error {
 	return nil
 }
 
-func consumeMessageFromStorage(key string, hashedKey string) (storedMessage StoredMessage, status string, err error) {
-	client := getRedisClient()
+func isValidHashedKey(hashedKey string) bool {
+	if len(hashedKey) != hashedKeyHexLen {
+		return false
+	}
+	for i := 0; i < len(hashedKey); i++ {
+		c := hashedKey[i]
+		if !((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f')) {
+			return false
+		}
+	}
+	return true
+}
+
+// consumeMessageFromStorage reads a secret and applies its view accounting
+// atomically in Redis. Views <= 1 (including legacy records without the field)
+// deletes the record, and Views > 1 decrements it while preserving the TTL.
+// viewsLeft reports the views remaining after this read (0 = consumed).
+// expiresInSeconds reports the remaining TTL when the record stays alive.
+func consumeMessageFromStorage(key string, hashedKey string) (storedMessage StoredMessage, viewsLeft int, expiresInSeconds int, status string, err error) {
+	if !isValidHashedKey(hashedKey) {
+		status = "wrong key"
+		return
+	}
+	return consumeMessageFromStorageWithClient(getRedisClient(), key, hashedKey)
+}
+
+func consumeMessageFromStorageWithClient(client *redis.Client, key string, hashedKey string) (storedMessage StoredMessage, viewsLeft int, expiresInSeconds int, status string, err error) {
 	storeKey := getStoreKey(key)
-	status = "no message"
+	deadline := time.Now().Add(consumeMessageRetryWindow)
+	retryDelay := consumeMessageRetryBaseDelay
 
-	err = client.Watch(func(tx *redis.Tx) error {
-		value, err := tx.Get(storeKey).Result()
-		if err == redis.Nil {
-			status = "no message"
+	for {
+		storedMessage = StoredMessage{}
+		viewsLeft = 0
+		expiresInSeconds = 0
+		status = "error"
+
+		err = client.Watch(func(tx *redis.Tx) error {
+			value, getErr := tx.Get(storeKey).Result()
+			if getErr == redis.Nil {
+				status = "no message"
+				return nil
+			}
+			if getErr != nil {
+				return getErr
+			}
+
+			var current StoredMessage
+			if unmarshalErr := json.Unmarshal([]byte(value), &current); unmarshalErr != nil {
+				return unmarshalErr
+			}
+
+			if subtle.ConstantTimeCompare([]byte(current.HashedKey), []byte(hashedKey)) != 1 {
+				status = "wrong key"
+				return nil
+			}
+
+			if current.Views > 1 {
+				// go-redis v6 has no KEEPTTL, so preserve the remaining TTL
+				// explicitly as part of the watched transaction.
+				ttl, ttlErr := tx.PTTL(storeKey).Result()
+				if ttlErr != nil {
+					return ttlErr
+				}
+				if ttl > 0 {
+					updated := current
+					updated.Views--
+					updatedValue, marshalErr := json.Marshal(updated)
+					if marshalErr != nil {
+						return marshalErr
+					}
+
+					if _, txErr := tx.TxPipelined(func(pipe redis.Pipeliner) error {
+						pipe.Set(storeKey, updatedValue, ttl)
+						return nil
+					}); txErr != nil {
+						return txErr
+					}
+
+					storedMessage = current
+					viewsLeft = updated.Views
+					expiresInSeconds = int(ttl / time.Second)
+					status = "ok"
+					return nil
+				}
+				// If the TTL disappeared or expired, consume the record rather
+				// than accidentally making a time-limited secret persistent.
+			}
+
+			if _, txErr := tx.TxPipelined(func(pipe redis.Pipeliner) error {
+				pipe.Del(storeKey)
+				return nil
+			}); txErr != nil {
+				return txErr
+			}
+
+			storedMessage = current
+			status = "ok"
 			return nil
+		}, storeKey)
+
+		if err == nil {
+			return
 		}
-		if err != nil {
-			return err
+		if err != redis.TxFailedErr {
+			return StoredMessage{}, 0, 0, "error", err
 		}
 
-		if err := json.Unmarshal([]byte(value), &storedMessage); err != nil {
-			return err
+		remaining := time.Until(deadline)
+		if remaining <= 0 {
+			return StoredMessage{}, 0, 0, "retry", errConsumeMessageContention
 		}
-
-		if subtle.ConstantTimeCompare([]byte(storedMessage.HashedKey), []byte(hashedKey)) != 1 {
-			storedMessage = StoredMessage{}
-			status = "wrong key"
-			return nil
+		if retryDelay > remaining {
+			retryDelay = remaining
 		}
-
-		_, err = tx.TxPipelined(func(pipe redis.Pipeliner) error {
-			pipe.Del(storeKey)
-			return nil
-		})
-		if err == redis.TxFailedErr {
-			storedMessage = StoredMessage{}
-			status = "no message"
-			return nil
+		time.Sleep(retryDelay)
+		if retryDelay < consumeMessageRetryMaxDelay {
+			retryDelay *= 2
+			if retryDelay > consumeMessageRetryMaxDelay {
+				retryDelay = consumeMessageRetryMaxDelay
+			}
 		}
-		if err != nil {
-			return err
-		}
-
-		status = "ok"
-		return nil
-	}, storeKey)
-
-	return
+	}
 }

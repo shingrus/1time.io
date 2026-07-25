@@ -1,5 +1,25 @@
 import {Constants, decryptSecretMessage, hashSecretKey, postJson, copyTextToClipboard} from '../lib/util.js';
 
+// Turn a remaining-TTL in seconds into a coarse, human-friendly span
+// ("30 days", "1 hour", "5 minutes").
+function formatRemaining(seconds: number): string {
+    const unit = (n: number, label: string) => `${n} ${label}${n === 1 ? '' : 's'}`;
+    const minutes = Math.round(seconds / 60);
+    if (minutes < 1) return 'less than a minute';
+    if (minutes < 60) return unit(minutes, 'minute');
+    const hours = Math.round(minutes / 60);
+    if (hours < 24) return unit(hours, 'hour');
+    return unit(Math.round(hours / 24), 'day');
+}
+
+// A read may only be retried when our backend explicitly reports contention
+// (503 + {"status":"retry"}). Anything else — including a bare proxy 503 — may
+// have already consumed a view, so it must not be replayed.
+function isRetryableRead(err: unknown): boolean {
+    const {status, body} = (err ?? {}) as {status?: number; body?: {status?: string} | null};
+    return status === 503 && body?.status === 'retry';
+}
+
 const form = document.querySelector<HTMLFormElement>('#view-secret-form');
 if (form) {
     const passphraseSection = form.querySelector<HTMLElement>('[data-state="passphrase"]')!;
@@ -9,6 +29,7 @@ if (form) {
     const decryptedSection = form.querySelector<HTMLElement>('[data-state="decrypted"]')!;
     const decryptedBody = form.querySelector<HTMLElement>('[data-decrypted-body]')!;
     const noMessageSection = form.querySelector<HTMLElement>('[data-state="no-message"]')!;
+    const viewsLeftNote = form.querySelector<HTMLElement>('[data-views-left]')!;
     const postReadCta = form.querySelector<HTMLElement>('[data-state="post-read-cta"]')!;
     const revealBtn = form.querySelector<HTMLButtonElement>('[data-reveal]')!;
     const copyBtn = form.querySelector<HTMLButtonElement>('[data-copy]')!;
@@ -29,14 +50,17 @@ if (form) {
 
     // A/B/C/D banner copy test: variant is encoded in the reply URL (?reply=N)
     // so nginx logs measure clicks per variant with no extra tracking.
+    // Variants 1 and 4 claim the message was destroyed, so multi-view reads
+    // (the link still works) only draw from variants 2 and 3.
     const REPLY_HEADINGS = [
         'Message read and destroyed. Nothing to trace back.',
         'Your reply deserves the same protection.',
         'Sending something back? Keep it out of the chat history too.',
         "That's how secrets should travel — one view, then gone.",
     ];
-    const pickReplyVariant = () => {
-        const v = 1 + Math.floor(Math.random() * REPLY_HEADINGS.length);
+    const pickReplyVariant = (destroyed: boolean) => {
+        const pool = destroyed ? [1, 2, 3, 4] : [2, 3];
+        const v = pool[Math.floor(Math.random() * pool.length)];
         const h = form.querySelector<HTMLElement>('[data-reply-heading]');
         const b = form.querySelector<HTMLAnchorElement>('[data-reply-btn]');
         if (h) h.textContent = REPLY_HEADINGS[v - 1];
@@ -77,7 +101,7 @@ if (form) {
     });
 
     let copyTimer: number | undefined;
-    copyBtn.addEventListener('click', async () => {
+    const copyMessage = async () => {
         const ok = await copyTextToClipboard(decryptedBody.textContent ?? '');
         if (!ok) return;
         copyLabel.textContent = 'Copied!';
@@ -85,10 +109,19 @@ if (form) {
         copyIconDone.style.display = '';
         if (copyTimer) clearTimeout(copyTimer);
         copyTimer = window.setTimeout(() => {
-            copyLabel.textContent = 'Copy';
+            copyLabel.textContent = 'Copy message';
             copyIconCopy.style.display = '';
             copyIconDone.style.display = 'none';
         }, 3000);
+    };
+    copyBtn.addEventListener('click', copyMessage);
+
+    // Clicking the message itself copies it as well. The button remains the
+    // keyboard/assistive path; this only adds a pointer shortcut, and it stands
+    // down when the click was really the end of a manual text selection.
+    decryptedBody.parentElement?.addEventListener('click', () => {
+        if (window.getSelection()?.toString()) return;
+        void copyMessage();
     });
 
     form.addEventListener('submit', async (e) => {
@@ -107,11 +140,36 @@ if (form) {
 
         try {
             const hashedKey = await hashSecretKey(fullSecretKey);
-            const data = await postJson('get', {id, hashedKey});
+            // Our backend answers 503 + {"status":"retry"} when a concurrent read
+            // holds the record's Redis lock; that body is the only proof the read
+            // was rejected before consuming anything. A bare 503 from a proxy/CDN
+            // gives no such guarantee — /api/get is destructive, so retrying it
+            // blindly could burn a second view. Require the explicit body.
+            let data;
+            for (let attempt = 0; ; attempt++) {
+                try {
+                    data = await postJson('get', {id, hashedKey});
+                    break;
+                } catch (err) {
+                    if (attempt === 0 && isRetryableRead(err)) {
+                        await new Promise((resolve) => setTimeout(resolve, 400));
+                        continue;
+                    }
+                    throw err;
+                }
+            }
 
             if (data.status === 'ok' && typeof data.cryptedMessage === 'string' && data.cryptedMessage.length > 0) {
                 decryptedBody.textContent = await decryptSecretMessage(data.cryptedMessage, fullSecretKey);
-                pickReplyVariant();
+                // Older backends omit viewsLeft; treat that as the consumed one-time case.
+                const viewsLeft = typeof data.viewsLeft === 'number' ? data.viewsLeft : 0;
+                const expiresIn = typeof data.expiresIn === 'number' ? data.expiresIn : 0;
+                const expiryClause = expiresIn > 0 ? ` It expires in ${formatRemaining(expiresIn)}.` : '';
+                viewsLeftNote.textContent = viewsLeft > 0
+                    ? `This link can be opened ${viewsLeft} more ${viewsLeft === 1 ? 'time' : 'times'}.${expiryClause}`
+                    : 'This message is burned.';
+                viewsLeftNote.toggleAttribute('hidden', false);
+                pickReplyVariant(viewsLeft === 0);
                 qrAction.toggleAttribute('hidden', true);
                 postReadCta.toggleAttribute('hidden', false);
                 showOnly(decryptedSection);
@@ -133,7 +191,16 @@ if (form) {
                 setLoading(false);
                 return;
             }
-        } catch {}
+        } catch (err) {
+            // The server is unavailable (503). Surfacing a retry prompt is safe
+            // either way — unlike the automatic retry above, it costs nothing and
+            // the user learns the real state on their next click.
+            if ((err as {status?: number})?.status === 503) {
+                revealBtn.disabled = false;
+                revealBtn.textContent = 'Server busy — try again';
+                return;
+            }
+        }
 
         setLoading(false);
     });
