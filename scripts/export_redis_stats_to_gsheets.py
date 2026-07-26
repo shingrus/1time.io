@@ -11,6 +11,8 @@ Expected Redis key layout from the Go app:
   - stats:page:hits:day:YYYYMMDD             -> hash: page -> daily hits
   - stats:views:total:VIEWS                  -> lifetime secrets created with VIEWS views
   - stats:views:day:YYYYMMDD:VIEWS           -> per-day secrets created with VIEWS views
+  - stats:views:file:total:VIEWS             -> lifetime files created with VIEWS downloads
+  - stats:views:file:day:YYYYMMDD:VIEWS      -> per-day files created with VIEWS downloads
 
 Nginx sender/receiver analytics:
   - Reads /var/log/nginx/1time.access.log and /var/log/nginx/1time.access.log.1
@@ -79,6 +81,8 @@ PAGE_HIT_TOTAL_KEY = "stats:page:hits:total"
 PAGE_HIT_DAY_KEY_PREFIX = "stats:page:hits:day:"
 VIEWS_TOTAL_KEY_PREFIX = "stats:views:total:"
 VIEWS_DAY_KEY_PREFIX = "stats:views:day:"
+FILE_VIEWS_TOTAL_KEY_PREFIX = "stats:views:file:total:"
+FILE_VIEWS_DAY_KEY_PREFIX = "stats:views:file:day:"
 
 SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
 TAB_NAMES = (
@@ -88,8 +92,10 @@ TAB_NAMES = (
     "page_hits_daily",
     "views_total",
     "views_daily",
+    "file_views_daily",
     "senders_receivers",
 )
+LEGACY_TAB_NAMES = ("file_views_total",)
 DEFAULT_NGINX_LOG_PATHS = (
     "/var/log/nginx/1time.access.log",
     "/var/log/nginx/1time.access.log.1",
@@ -241,6 +247,46 @@ def build_views_daily_rows(
     rows: List[List[object]] = [["date", *[f"views_{bucket}" for bucket in buckets]]]
     for day in sorted(views_daily):
         rows.append([day, *[views_daily.get(day, {}).get(bucket, 0) for bucket in buckets]])
+
+    return rows
+
+
+def build_views_total_rows(
+    views_total: Dict[str, int],
+    file_views_total: Dict[str, int],
+) -> List[List[object]]:
+    """Combine text-view and file-download distributions by allowance bucket."""
+    views_total_sum = sum(views_total.values())
+    file_views_total_sum = sum(file_views_total.values())
+    buckets = sort_view_buckets([*views_total, *file_views_total])
+
+    rows: List[List[object]] = [[
+        "views",
+        "secrets",
+        "secrets_share_percent",
+        "files",
+        "files_share_percent",
+    ]]
+    for bucket in buckets:
+        secret_count = views_total.get(bucket, 0)
+        file_count = file_views_total.get(bucket, 0)
+        secret_share = (
+            round(secret_count * 100 / views_total_sum, 2)
+            if views_total_sum
+            else 0
+        )
+        file_share = (
+            round(file_count * 100 / file_views_total_sum, 2)
+            if file_views_total_sum
+            else 0
+        )
+        rows.append([
+            bucket,
+            secret_count,
+            secret_share,
+            file_count,
+            file_share,
+        ])
 
     return rows
 
@@ -436,14 +482,26 @@ def collect_stats(
             continue
         views_daily.setdefault(day, {})[bucket] = safe_int(client.get(key))
 
-    views_total_sum = sum(views_total.values())
-    views_total_rows: List[List[object]] = [["views", "secrets", "share_percent"]]
-    for bucket in sort_view_buckets(views_total):
-        count = views_total[bucket]
-        share = round(count * 100 / views_total_sum, 2) if views_total_sum else 0
-        views_total_rows.append([bucket, count, share])
-
     views_daily_rows = build_views_daily_rows(views_daily, known_buckets=views_total)
+
+    file_views_total = {
+        key.removeprefix(FILE_VIEWS_TOTAL_KEY_PREFIX): safe_int(client.get(key))
+        for key in scan_keys(client, f"{FILE_VIEWS_TOTAL_KEY_PREFIX}*")
+    }
+    file_views_daily: Dict[str, Dict[str, int]] = {}
+    for key in scan_keys(client, f"{FILE_VIEWS_DAY_KEY_PREFIX}*"):
+        day, _, bucket = key.removeprefix(FILE_VIEWS_DAY_KEY_PREFIX).partition(":")
+        if not bucket:
+            continue
+        file_views_daily.setdefault(day, {})[bucket] = safe_int(client.get(key))
+
+    file_views_daily_rows = build_views_daily_rows(
+        file_views_daily,
+        known_buckets=file_views_total,
+    )
+    views_total_rows = build_views_total_rows(views_total, file_views_total)
+    views_total_sum = sum(views_total.values())
+    file_views_total_sum = sum(file_views_total.values())
 
     page_hits_daily_rows = build_page_hits_daily_rows(
         page_hits_daily,
@@ -463,6 +521,8 @@ def collect_stats(
         ["page_hits_daily_days", page_hits_daily_day_count],
         ["views_counted_secrets", views_total_sum],
         ["views_multi_view_secrets", views_total_sum - views_total.get("1", 0)],
+        ["views_counted_files", file_views_total_sum],
+        ["views_multi_download_files", file_views_total_sum - file_views_total.get("1", 0)],
     ]
 
     page_hits_total_rows: List[List[object]] = [["page", "hits"]]
@@ -476,6 +536,7 @@ def collect_stats(
         "page_hits_daily": page_hits_daily_rows,
         "views_total": views_total_rows,
         "views_daily": views_daily_rows,
+        "file_views_daily": file_views_daily_rows,
         "senders_receivers": collect_nginx_daily_uniques(nginx_log_paths),
     }
 
@@ -522,6 +583,28 @@ def ensure_sheets(service, spreadsheet_id: str, titles: Sequence[str]) -> Dict[s
         existing = get_existing_sheets(service, spreadsheet_id)
 
     return existing
+
+
+def delete_sheets(
+    service,
+    spreadsheet_id: str,
+    sheet_map: Dict[str, int],
+    titles: Sequence[str],
+) -> List[str]:
+    deleted = [title for title in titles if title in sheet_map]
+    if not deleted:
+        return []
+
+    service.spreadsheets().batchUpdate(
+        spreadsheetId=spreadsheet_id,
+        body={
+            "requests": [
+                {"deleteSheet": {"sheetId": sheet_map[title]}}
+                for title in deleted
+            ]
+        },
+    ).execute()
+    return deleted
 
 
 def write_tab(
@@ -725,6 +808,9 @@ def main() -> int:
     full_tab_names = {
         base_name: f"{args.sheet_prefix}{base_name}" for base_name in TAB_NAMES
     }
+    legacy_tab_names = [
+        f"{args.sheet_prefix}{base_name}" for base_name in LEGACY_TAB_NAMES
+    ]
     sheet_map = ensure_sheets(service, args.spreadsheet_id, full_tab_names.values())
 
     for base_name, rows in stats.items():
@@ -747,6 +833,15 @@ def main() -> int:
                 rows=rows,
             )
             print(f"Wrote {len(rows) - 1 if rows else 0} data rows to tab {title}")
+
+    deleted_tabs = delete_sheets(
+        service,
+        args.spreadsheet_id,
+        sheet_map,
+        legacy_tab_names,
+    )
+    for title in deleted_tabs:
+        print(f"Deleted obsolete tab {title}")
 
     print("Export completed successfully.")
     return 0

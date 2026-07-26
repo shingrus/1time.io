@@ -118,7 +118,7 @@ npm pack --dry-run
 
 - `scripts/` holds operational analytics run against nginx logs / Redis — **not part of the served app**:
   - `retention.py` — sender cohort retention + conversion funnel from nginx logs.
-  - `export_redis_stats_to_gsheets.py` — exports Redis counters + nginx sender/receiver stats to a Google Sheet. Adds `views_total` (bucket, count, share %) and `views_daily` (date × bucket) tabs; buckets are sorted **numerically**, so `10` follows `5` rather than `1`.
+  - `export_redis_stats_to_gsheets.py` — exports Redis counters + nginx sender/receiver stats to a Google Sheet. The combined `views_total` tab shows text-secret and file counts/share percentages side by side by bucket; `views_daily` and `file_views_daily` remain separate. Buckets are sorted **numerically**, so `10` follows `5` rather than `1`.
   - `scripts/analytics/` — **gitignored on purpose**. Never force-add anything from this directory.
 - Owner/self traffic is identified by hits to `/ss` (the private stats page); analytics exclude it.
 
