@@ -26,6 +26,16 @@ export const SHARE_DURATION_OPTIONS = [
     {value: 2592000, label: '30 days'},
 ];
 
+export function formatRemaining(seconds) {
+    const unit = (count, label) => `${count} ${label}${count === 1 ? '' : 's'}`;
+    const minutes = Math.round(seconds / 60);
+    if (minutes < 1) return 'less than a minute';
+    if (minutes < 60) return unit(minutes, 'minute');
+    const hours = Math.round(minutes / 60);
+    if (hours < 24) return unit(hours, 'hour');
+    return unit(Math.round(hours / 24), 'day');
+}
+
 export {decryptSecretMessage, encryptSecretMessage, getRandomString, hashSecretKey};
 
 export function buildSecretLink(randomString, newId) {

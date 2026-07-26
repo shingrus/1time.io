@@ -5,6 +5,12 @@
 
 import {Constants} from './util';
 
+export function formatBytes(bytes) {
+    if (bytes >= 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+    if (bytes >= 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${bytes} B`;
+}
+
 // Upload tuning. Mobile connections occasionally drop mid-upload (nginx logs
 // these as 499/408); a couple of transparent retries recover most of them.
 // Retrying re-POSTs the same encrypted blob — in the rare case the server
@@ -15,12 +21,15 @@ const UPLOAD_STALL_MS = 150000; // abort+retry only if the upload makes NO progr
 const UPLOAD_RETRY_STATUS = new Set([408, 500, 502, 503, 504]);
 const UPLOAD_BACKOFF_MS = [1000, 2000];
 
-function attemptUpload(encryptedBlob, hashedKey, durationSeconds, onProgress) {
+function attemptUpload(encryptedBlob, hashedKey, durationSeconds, views, onProgress) {
     // Fresh FormData per attempt (avoids consumed-stream issues on retry).
     const formData = new FormData();
     formData.append('file', encryptedBlob, 'encrypted.bin');
     formData.append('hashedKey', hashedKey);
     formData.append('duration', String(durationSeconds));
+    if (views !== 1) {
+        formData.append('views', String(views));
+    }
 
     return new Promise((resolve, reject) => {
         const xhr = new XMLHttpRequest();
@@ -98,11 +107,11 @@ const delay = (ms) => new Promise((r) => setTimeout(r, ms));
  * Upload encrypted file blob to server, with transparent retries on transient
  * failures (network drop / timeout / 5xx / 408). Returns { status, newId }.
  */
-export async function saveFile(encryptedBlob, hashedKey, durationSeconds, onProgress) {
+export async function saveFile(encryptedBlob, hashedKey, durationSeconds, views, onProgress) {
     let lastError;
     for (let attempt = 0; attempt < UPLOAD_MAX_ATTEMPTS; attempt += 1) {
         try {
-            return await attemptUpload(encryptedBlob, hashedKey, durationSeconds, onProgress);
+            return await attemptUpload(encryptedBlob, hashedKey, durationSeconds, views, onProgress);
         } catch (error) {
             lastError = error;
             const hasMoreTries = attempt < UPLOAD_MAX_ATTEMPTS - 1;
@@ -116,22 +125,21 @@ export async function saveFile(encryptedBlob, hashedKey, durationSeconds, onProg
 }
 
 /**
- * Download encrypted file blob from server (one-time, deletes on read).
+ * Reserve and download one permitted copy of an encrypted file.
  *
  * Reports byte progress via onProgress(loaded, total); total is 0 when the
  * server sends no Content-Length (chunked) so the caller shows an indeterminate
  * state. Uses XHR (not fetch) because fetch + arrayBuffer() gives no progress —
  * on a slow link the download would otherwise be a silent, frozen wait.
  *
- * IMPORTANT: never retry a failed download. The backend consumes (deletes) the
- * record the instant the request lands — before streaming a byte — so a retry
- * just returns {status:"no message"}. The caller surfaces a transport failure
- * honestly instead of masking a drop as "already read".
+ * Only an explicit 503 + {"status":"retry"} from our backend is replayed once:
+ * that response proves contention prevented reservation. Network/proxy failures
+ * are never replayed because an allowed download may already be consumed.
  *
  * Returns { status: 'ok', data: Uint8Array } on success, or { status } for a
  * JSON error response ('no message' | 'wrong key').
  */
-export function getFile(id, hashedKey, onProgress) {
+function attemptDownload(id, hashedKey, onProgress) {
     return new Promise((resolve, reject) => {
         const xhr = new XMLHttpRequest();
         xhr.open('POST', `${Constants.apiBaseUrl}getFile`);
@@ -146,7 +154,13 @@ export function getFile(id, hashedKey, onProgress) {
         xhr.onerror = () => reject(new Error('Download failed (network error)'));
         xhr.onload = () => {
             if (xhr.status < 200 || xhr.status >= 300) {
-                reject(new Error(`Download failed with status ${xhr.status}`));
+                let body = null;
+                try {
+                    body = JSON.parse(new TextDecoder().decode(xhr.response));
+                } catch {}
+                const error = new Error(`Download failed with status ${xhr.status}`);
+                error.safeToRetry = xhr.status === 503 && body?.status === 'retry';
+                reject(error);
                 return;
             }
             const contentType = xhr.getResponseHeader('Content-Type') || '';
@@ -159,8 +173,28 @@ export function getFile(id, hashedKey, onProgress) {
                 }
                 return;
             }
-            resolve({status: 'ok', data: new Uint8Array(xhr.response)});
+            const parseIntHeader = (name) => {
+                const raw = xhr.getResponseHeader(name);
+                if (raw === null || !/^\d+$/.test(raw)) return null;
+                return Number(raw);
+            };
+            resolve({
+                status: 'ok',
+                data: new Uint8Array(xhr.response),
+                viewsLeft: parseIntHeader('X-1Time-Views-Left'),
+                expiresIn: parseIntHeader('X-1Time-Expires-In'),
+            });
         };
         xhr.send(JSON.stringify({id, hashedKey}));
     });
+}
+
+export async function getFile(id, hashedKey, onProgress) {
+    try {
+        return await attemptDownload(id, hashedKey, onProgress);
+    } catch (error) {
+        if (!error?.safeToRetry) throw error;
+        await delay(400);
+        return attemptDownload(id, hashedKey, onProgress);
+    }
 }

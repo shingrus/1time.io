@@ -9,8 +9,8 @@ interface RouteEntry {
 }
 
 const coreRoutes: RouteEntry[] = [
-    {path: '/', priority: 1.0, changefreq: 'weekly', lastmod: '2026-04-14'},
-    {path: '/secure-file-sharing/', priority: 0.9, changefreq: 'weekly', lastmod: '2026-06-12'},
+    {path: '/', priority: 1.0, changefreq: 'weekly', lastmod: '2026-07-26'},
+    {path: '/secure-file-sharing/', priority: 0.9, changefreq: 'weekly', lastmod: '2026-07-26'},
     {path: '/chrome-extension/', priority: 0.8, changefreq: 'weekly', lastmod: '2026-07-23'},
     {path: '/password-generator/', priority: 0.9, changefreq: 'weekly', lastmod: '2026-03-23'},
     {path: '/passphrase-generator/', priority: 0.8, changefreq: 'weekly', lastmod: '2026-03-23'},
@@ -20,7 +20,7 @@ const coreRoutes: RouteEntry[] = [
     {path: '/password-generator-16-characters/', priority: 0.7, changefreq: 'monthly', lastmod: '2026-03-21'},
     {path: '/wifi-password-generator/', priority: 0.8, changefreq: 'weekly', lastmod: '2026-07-15'},
     {path: '/api-key-generator/', priority: 0.8, changefreq: 'weekly', lastmod: '2026-03-23'},
-    {path: '/share-password-securely/', priority: 0.9, changefreq: 'weekly', lastmod: '2026-07-19'},
+    {path: '/share-password-securely/', priority: 0.9, changefreq: 'weekly', lastmod: '2026-07-26'},
     {path: '/share-passwords-with-qr-code/', priority: 0.7, changefreq: 'weekly', lastmod: '2026-03-31'},
     {path: '/share-passwords-microsoft-teams/', priority: 0.8, changefreq: 'weekly', lastmod: '2026-06-12'},
     {path: '/about/', priority: 0.5, changefreq: 'monthly', lastmod: '2026-05-23'},
@@ -29,7 +29,7 @@ const coreRoutes: RouteEntry[] = [
 
 const blogRoutes: RouteEntry[] = [
     {path: '/blog/', priority: 0.7, changefreq: 'daily', lastmod: '2026-05-23'},
-    {path: '/blog/firefox-send-alternative/', priority: 0.6, changefreq: 'monthly', lastmod: '2026-05-23'},
+    {path: '/blog/firefox-send-alternative/', priority: 0.6, changefreq: 'monthly', lastmod: '2026-07-26'},
     {path: '/blog/quantum-safe-password-sharing/', priority: 0.6, changefreq: 'monthly', lastmod: '2026-04-01'},
     {path: '/blog/share-secrets-from-terminal/', priority: 0.6, changefreq: 'monthly', lastmod: '2026-03-22'},
     {path: '/blog/hkdf-key-derivation-explained/', priority: 0.6, changefreq: 'monthly', lastmod: '2026-05-23'},
@@ -38,7 +38,7 @@ const blogRoutes: RouteEntry[] = [
     {path: '/blog/database-password-security/', priority: 0.6, changefreq: 'monthly', lastmod: '2026-03-21'},
     {path: '/blog/secure-home-wifi-setup/', priority: 0.6, changefreq: 'monthly', lastmod: '2026-03-21'},
     {path: '/blog/strong-email-password/', priority: 0.6, changefreq: 'monthly', lastmod: '2026-03-20'},
-    {path: '/blog/password-pusher-alternative/', priority: 0.6, changefreq: 'monthly', lastmod: '2026-05-23'},
+    {path: '/blog/password-pusher-alternative/', priority: 0.6, changefreq: 'monthly', lastmod: '2026-07-26'},
     {path: '/blog/team-password-sharing/', priority: 0.6, changefreq: 'monthly', lastmod: '2026-04-17'},
     {path: '/blog/how-to-share-api-keys/', priority: 0.6, changefreq: 'monthly', lastmod: '2026-03-20'},
     {path: '/blog/privnote-alternative/', priority: 0.6, changefreq: 'monthly', lastmod: '2026-04-17'},

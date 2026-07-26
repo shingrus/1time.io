@@ -8,3 +8,8 @@
 /data
 # Private/ops analytics scripts — never commit (may embed org names, IPs)
 scripts/analytics/
+
+# Local/generated artifacts
+.DS_Store
+backend/backend
+__pycache__/

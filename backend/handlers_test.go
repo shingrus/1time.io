@@ -27,7 +27,7 @@ func restoreHandlerHooks(t *testing.T) {
 
 	originalSaveToStorage := saveToStorageFunc
 	originalConsumeMessage := consumeMessageFromStorageFunc
-	originalConsumeFileMessage := consumeFileMessageFromStorageFunc
+	originalReserveFileDownload := reserveFileDownloadFunc
 	originalSetFileRecord := setFileRecordFunc
 	originalIncrementStoredFileCounters := incrementStoredFileCountersFunc
 	originalSecretsExist := secretsExistFunc
@@ -39,7 +39,7 @@ func restoreHandlerHooks(t *testing.T) {
 	t.Cleanup(func() {
 		saveToStorageFunc = originalSaveToStorage
 		consumeMessageFromStorageFunc = originalConsumeMessage
-		consumeFileMessageFromStorageFunc = originalConsumeFileMessage
+		reserveFileDownloadFunc = originalReserveFileDownload
 		setFileRecordFunc = originalSetFileRecord
 		incrementStoredFileCountersFunc = originalIncrementStoredFileCounters
 		secretsExistFunc = originalSecretsExist
@@ -194,26 +194,6 @@ func TestAPISaveSecretPassesClampedViewsToStorage(t *testing.T) {
 	}
 }
 
-func TestClampViews(t *testing.T) {
-	tests := []struct {
-		in   int
-		want int
-	}{
-		{in: 0, want: 1},
-		{in: 1, want: 1},
-		{in: 2, want: 2},
-		{in: maxViews, want: maxViews},
-		{in: maxViews + 1, want: maxViews},
-		{in: -1, want: 1},
-		{in: -2, want: 1},
-	}
-	for _, tt := range tests {
-		if got := clampViews(tt.in); got != tt.want {
-			t.Fatalf("clampViews(%d) = %d, want %d", tt.in, got, tt.want)
-		}
-	}
-}
-
 func TestAPISaveSecretRejectsMissingFields(t *testing.T) {
 	restoreHandlerHooks(t)
 
@@ -350,9 +330,9 @@ func TestAPIGetFileRejectsMalformedLookups(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			restoreHandlerHooks(t)
 			called := false
-			consumeFileMessageFromStorageFunc = func(key string, hashedKey string) (StoredFile, string, error) {
+			reserveFileDownloadFunc = func(key string, hashedKey string) (FileDownloadReservation, string, error) {
 				called = true
-				return StoredFile{}, "ok", nil
+				return FileDownloadReservation{}, "ok", nil
 			}
 
 			req := httptest.NewRequest(http.MethodPost, "/api/getFile", strings.NewReader(tt.body))
@@ -619,6 +599,9 @@ func TestAPISaveSecretFileStoresBlobAndRecord(t *testing.T) {
 	if err := writer.WriteField("duration", "120"); err != nil {
 		t.Fatalf("WriteField duration error: %v", err)
 	}
+	if err := writer.WriteField("views", "5"); err != nil {
+		t.Fatalf("WriteField views error: %v", err)
+	}
 	if err := writer.Close(); err != nil {
 		t.Fatalf("Close writer error: %v", err)
 	}
@@ -639,7 +622,9 @@ func TestAPISaveSecretFileStoresBlobAndRecord(t *testing.T) {
 		}
 		return true, nil
 	}
-	incrementStoredFileCountersFunc = func(now time.Time) error {
+	countedViews := 0
+	incrementStoredFileCountersFunc = func(views int, now time.Time) error {
+		countedViews = views
 		return nil
 	}
 
@@ -655,6 +640,9 @@ func TestAPISaveSecretFileStoresBlobAndRecord(t *testing.T) {
 	}
 	if !record.Encrypted || record.HashedKey != "filehash" {
 		t.Fatalf("record = %#v, want encrypted filehash", record)
+	}
+	if record.Views != 5 || countedViews != 5 {
+		t.Fatalf("stored views = %d, counted views = %d, want 5", record.Views, countedViews)
 	}
 	if ttl != 120*time.Second {
 		t.Fatalf("ttl = %s, want 120s", ttl)
@@ -716,11 +704,18 @@ func TestAPIGetFileStreamsAndDeletesFile(t *testing.T) {
 	if err := os.WriteFile(filePath, []byte("encrypted file bytes"), 0o600); err != nil {
 		t.Fatalf("WriteFile error: %v", err)
 	}
-	consumeFileMessageFromStorageFunc = func(key string, hashedKey string) (StoredFile, string, error) {
+	reserveFileDownloadFunc = func(key string, hashedKey string) (FileDownloadReservation, string, error) {
 		if key != testFileID || hashedKey != testFileHash {
 			t.Fatalf("consume args = %q, %q; want %q, %q", key, hashedKey, testFileID, testFileHash)
 		}
-		return StoredFile{Encrypted: true, FileUri: filePath, HashedKey: testFileHash}, "ok", nil
+		file, err := os.Open(filePath)
+		if err != nil {
+			t.Fatalf("Open reservation file: %v", err)
+		}
+		return FileDownloadReservation{
+			StoredFile: StoredFile{Encrypted: true, FileUri: filePath, HashedKey: testFileHash},
+			File:       file,
+		}, "ok", nil
 	}
 
 	req := httptest.NewRequest(http.MethodPost, "/api/getFile", strings.NewReader(`{"id":"`+testFileID+`","hashedKey":"`+testFileHash+`"}`))
@@ -733,6 +728,12 @@ func TestAPIGetFileStreamsAndDeletesFile(t *testing.T) {
 	if rec.Header().Get("Content-Type") != "application/octet-stream" {
 		t.Fatalf("Content-Type = %q, want application/octet-stream", rec.Header().Get("Content-Type"))
 	}
+	if rec.Header().Get("X-1Time-Views-Left") != "0" {
+		t.Fatalf("views-left header = %q, want 0", rec.Header().Get("X-1Time-Views-Left"))
+	}
+	if rec.Header().Get("Cache-Control") != "no-store" {
+		t.Fatalf("Cache-Control = %q, want no-store", rec.Header().Get("Cache-Control"))
+	}
 	if rec.Body.String() != "encrypted file bytes" {
 		t.Fatalf("body = %q, want encrypted file bytes", rec.Body.String())
 	}
@@ -741,13 +742,69 @@ func TestAPIGetFileStreamsAndDeletesFile(t *testing.T) {
 	}
 }
 
+func TestAPIGetFileKeepsBlobWhileDownloadsRemain(t *testing.T) {
+	restoreHandlerHooks(t)
+
+	filePath := filepath.Join(t.TempDir(), "file.enc")
+	if err := os.WriteFile(filePath, []byte("encrypted file bytes"), 0o600); err != nil {
+		t.Fatalf("WriteFile error: %v", err)
+	}
+	reserveFileDownloadFunc = func(key string, hashedKey string) (FileDownloadReservation, string, error) {
+		file, err := os.Open(filePath)
+		if err != nil {
+			t.Fatalf("Open reservation file: %v", err)
+		}
+		return FileDownloadReservation{
+			StoredFile:       StoredFile{Encrypted: true, FileUri: filePath, HashedKey: testFileHash, Views: 3},
+			File:             file,
+			ViewsLeft:        2,
+			ExpiresInSeconds: 3600,
+		}, "ok", nil
+	}
+
+	req := httptest.NewRequest(http.MethodPost, "/api/getFile", strings.NewReader(`{"id":"`+testFileID+`","hashedKey":"`+testFileHash+`"}`))
+	rec := httptest.NewRecorder()
+	apiGetFile(rec, req)
+
+	if rec.Code != http.StatusOK || rec.Body.String() != "encrypted file bytes" {
+		t.Fatalf("response = (%d, %q), want successful file", rec.Code, rec.Body.String())
+	}
+	if rec.Header().Get("X-1Time-Views-Left") != "2" {
+		t.Fatalf("views-left header = %q, want 2", rec.Header().Get("X-1Time-Views-Left"))
+	}
+	if rec.Header().Get("X-1Time-Expires-In") != "3600" {
+		t.Fatalf("expires-in header = %q, want 3600", rec.Header().Get("X-1Time-Expires-In"))
+	}
+	if _, err := os.Stat(filePath); err != nil {
+		t.Fatalf("file should remain while downloads remain: %v", err)
+	}
+}
+
+func TestAPIGetFileReturnsRetryableContention(t *testing.T) {
+	restoreHandlerHooks(t)
+	reserveFileDownloadFunc = func(key string, hashedKey string) (FileDownloadReservation, string, error) {
+		return FileDownloadReservation{}, "retry", errConsumeMessageContention
+	}
+
+	req := httptest.NewRequest(http.MethodPost, "/api/getFile", strings.NewReader(`{"id":"`+testFileID+`","hashedKey":"`+testFileHash+`"}`))
+	rec := httptest.NewRecorder()
+	apiGetFile(rec, req)
+
+	if rec.Code != http.StatusServiceUnavailable {
+		t.Fatalf("code = %d, want %d", rec.Code, http.StatusServiceUnavailable)
+	}
+	if !strings.Contains(rec.Body.String(), `"status":"retry"`) {
+		t.Fatalf("body = %s, want retry status", rec.Body.String())
+	}
+}
+
 func TestAPIGetFileReturnsJSONStatuses(t *testing.T) {
 	tests := []string{"wrong key", "no message"}
 	for _, status := range tests {
 		t.Run(status, func(t *testing.T) {
 			restoreHandlerHooks(t)
-			consumeFileMessageFromStorageFunc = func(key string, hashedKey string) (StoredFile, string, error) {
-				return StoredFile{}, status, nil
+			reserveFileDownloadFunc = func(key string, hashedKey string) (FileDownloadReservation, string, error) {
+				return FileDownloadReservation{}, status, nil
 			}
 
 			req := httptest.NewRequest(http.MethodPost, "/api/getFile", strings.NewReader(`{"id":"`+testFileID+`","hashedKey":"`+testFileHash+`"}`))
@@ -768,9 +825,9 @@ func TestAPIGetFileRejectsBadPayload(t *testing.T) {
 	restoreHandlerHooks(t)
 
 	called := false
-	consumeFileMessageFromStorageFunc = func(key string, hashedKey string) (StoredFile, string, error) {
+	reserveFileDownloadFunc = func(key string, hashedKey string) (FileDownloadReservation, string, error) {
 		called = true
-		return StoredFile{}, "ok", nil
+		return FileDownloadReservation{}, "ok", nil
 	}
 
 	req := httptest.NewRequest(http.MethodPost, "/api/getFile", strings.NewReader(`{"id":"","hashedKey":"`+testFileHash+`"}`))
@@ -781,6 +838,6 @@ func TestAPIGetFileRejectsBadPayload(t *testing.T) {
 		t.Fatalf("apiGetFile() code = %d, want %d", rec.Code, http.StatusBadRequest)
 	}
 	if called {
-		t.Fatal("consumeFileMessageFromStorageFunc should not be called for bad payload")
+		t.Fatal("reserveFileDownloadFunc should not be called for bad payload")
 	}
 }
