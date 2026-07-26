@@ -16,8 +16,8 @@ The server never sees plaintext or the decryption key. All crypto is client-side
 - **Create:** the client generates a 20-char `randomKey` (`getRandomString`). With an optional passphrase, `fullSecretKey = passphrase + randomKey`. HKDF-SHA256 (salt `onetimelink:v2`) derives (a) an AES-256-GCM key (`info=encrypt`) and (b) `hashedKey` (`info=auth`, hex) — the **only** key material ever sent to the server.
 - The client AES-256-GCM-encrypts the secret/file (12-byte IV prepended) and POSTs `{ciphertext, hashedKey, duration}`. The server stores `{ciphertext, hashedKey}` under a server-generated id — never the key or plaintext.
 - **Link:** `/v/#<randomKey><id>` (text) or `/f/#<randomKey><id>` (file). `randomKey` lives **only** in the URL fragment and is never sent to the server.
-- **Read (one-time by default):** the recipient's browser re-derives `hashedKey` from the fragment and POSTs `{id, hashedKey}`; the server constant-time-verifies it, returns the ciphertext, and **deletes** the record (unless the text secret still has views left — see below). The browser decrypts locally. File downloads delete the record *before* streaming (delete-before-stream), so a failed download cannot be retried.
-- **View counter (text secrets only):** `saveSecret` accepts an optional `views` field — `1` (default, burn after reading) or `2..100`; the create form deliberately exposes only `1 / 3 / 5 / 10`, so the API range is wider than the UI. `maxViews` (100) caps it, which also bounds how many times one stored ciphertext can be retrieved (no unbounded-download amplification). Multi-view reads decrement `StoredMessage.Views` inside a Redis `WATCH` transaction, preserving the TTL via `PTTL`; transaction conflicts retry with bounded exponential backoff, and persistent contention returns a retryable HTTP 503 rather than falsely reporting a live secret as gone. The last view deletes the record as before. `/api/get` returns `viewsLeft` (`0` = consumed) so the reader page renders honest post-read copy, and the create-page "link ready" copy reflects the chosen view count. Legacy records without the field behave as single-view. Files remain strictly one-time.
+- **Read (one-time by default):** the recipient's browser re-derives `hashedKey` from the fragment and POSTs `{id, hashedKey}`; the server constant-time-verifies it and reserves one allowed read/download. The browser decrypts locally. Text ciphertext remains in Redis while views remain. File metadata remains in Redis and the encrypted disk blob remains on disk while downloads remain.
+- **View/download counters:** `saveSecret` accepts an optional `views` field — `1` (default, burn after reading) or `2..100`; the text form exposes a smaller preset set. File uploads accept multipart `views` — `1` (default) or `2..10`. Both paths use Redis `WATCH` transactions with bounded exponential-backoff retries and preserve TTL via `PTTL`. Text reads return `viewsLeft` and `expiresIn` in JSON. File downloads return them in `X-1Time-Views-Left` and `X-1Time-Expires-In` headers alongside the binary body. A file reservation opens the encrypted blob before committing its counter mutation, so the final concurrent downloader cannot unlink the path before earlier authorized downloaders hold descriptors. The final reservation deletes Redis metadata before streaming and removes the disk blob after the stream attempt. Legacy records without counters remain single-use.
 - **Retrying a read is dangerous — `/api/get` is destructive.** On persistent `WATCH` contention the server answers HTTP `503` with body `{"status":"retry"}`, which is the *only* proof a read was rejected **before** consuming a view. A client may replay the request solely on that explicit body (`isRetryableRead` in `frontend/src/islands/view-secret.ts`); a bare `503` from a proxy/CDN gives no such guarantee and replaying it can burn a second view. `postJson` attaches both `status` and the parsed `body` to the thrown error so callers can tell the two apart.
 - **Status ("My Secrets"):** `POST /api/secretStatus` reports, for a batch of ids, whether each secret still exists — **without consuming it**. "Gone" means read or expired.
 
@@ -31,11 +31,11 @@ The server never sees plaintext or the decryption key. All crypto is client-side
 - Backend file size limit is `25 MB` via `maxFileSize` in `backend/handlers.go`.
 - Every JSON endpoint caps its request body with `http.MaxBytesReader`: `maxSaveSecretBodyBytes` (25 MB, matching `maxFileSize` — base64url adds ~4/3 over AES-GCM, so roughly 18 MB of plaintext), `maxStatusBodyBytes` (8 KB), and `maxLookupBodyBytes` (1 KB for `/api/get`, `/api/getFile`, `/api/stat`). Keep `maxSaveSecretBodyBytes` under nginx's `client_max_body_size` (`26m`). There is **no client-side length guard**, so oversized text fails with a generic error.
 - `/api/get` and `/api/getFile` validate the id and hashed-key **shapes** (`isValidStorageID`, `isValidHashedKey`) before any Redis key is built. Malformed input is answered with the same statuses the storage layer would return (`no message` / `wrong key`), deliberately introducing no new response shape — see the exporter coupling under "Analytics & Ops Scripts".
-- Stored **text** counters and the view distribution are written together — see "View-counter stats" below.
+- Stored text/file counters and their respective view/download distributions are each written together — see "View-counter stats" below.
 - Uploaded encrypted files are written to `FILE_STORAGE_DIR/<id>.enc` and the Redis record stores the path plus hashed key.
 - `backend/storage.go` runs a file janitor every 2 hours and deletes expired `*.enc` files based on file mtime.
 - Stored file counters use Redis keys `stats:stored:file:total` and `stats:stored:file:day:YYYYMMDD`.
-- **View-counter stats:** `stats:views:total:<views>` (lifetime, no expiry) and `stats:views:day:YYYYMMDD:<views>` (`statsHistoryTTL`, 60 days), where `<views>` is the clamped count — bucket `1` is recorded too, so the burn-after-reading share sits in the same series. `incrementStoredSecretCountersWithClient` writes these **in the same `TxPipelined` as the stored-text counters**: both describe one event, so a single round-trip keeps the stored-text total (the distribution's denominator) exactly in step with the buckets. Do not split them into two pipelines. Text-secret counting therefore does **not** go through `incrementStoredCounterFunc` (files still do).
+- **View-counter stats:** text uses `stats:views:total:<views>` and `stats:views:day:YYYYMMDD:<views>`; files use `stats:views:file:total:<downloads>` and `stats:views:file:day:YYYYMMDD:<downloads>`. Lifetime keys do not expire; daily keys use `statsHistoryTTL` (60 days). Bucket `1` is recorded for both. Each distribution is written in the same `TxPipelined` as its stored-item counters so the denominator stays exactly aligned with the buckets.
 - Stats are recorded by `saveToStorage` **after** a confirmed `SetNX`, and are **best-effort**: a counter failure is logged and must never fail a stored secret or inflate totals with saves that never landed.
 - The backend listens on `127.0.0.1:8080`.
 - Required env:
@@ -162,8 +162,8 @@ npm run build
 - The `/v/` route reads the secret key from the URL hash (`#key`), which is client-side only.
 - File sharing UI lives on `/secure-file-sharing/` and uses `frontend/src/islands/secure-file-share.ts`.
 - File download UI lives on `/f/` and uses `frontend/src/islands/view-file.ts`.
-- The secure file sharing island encrypts the file in the browser, uploads with `XMLHttpRequest`, and shows upload progress.
-- The file download island reads the link key from the URL hash first; generated file links are hash-based.
+- The secure file sharing island encrypts the file in the browser, uploads with `XMLHttpRequest`, shows upload progress, and allows `1 / 2 / 3 / 5 / 10` downloads (one by default).
+- The file download island reads the link key from the URL hash first; generated file links are hash-based. Successful binary responses expose remaining downloads and TTL in response headers. Missing headers mean a legacy one-download backend.
 - Frontend file size limit is `Constants.maxFileSizeBytes = 25 * 1024 * 1024` in `frontend/src/lib/util.js`; keep it aligned with the backend limit.
 - File metadata (`name`, `type`, `size`) is packed into the encrypted payload before upload; the web app server does not store that metadata separately.
 - Pages with `robots: 'noindex, nofollow'` in metadata: `/v/`, `/f/`.
@@ -200,6 +200,9 @@ npm run build
 ## Domain And Branding
 
 - Public domain is `https://1time.io`.
+- **“One-time” is core product branding and high-value SEO language.** Do not remove or replace it in titles, metadata, headings, CTAs, link-ready states, or other prominent copy merely because optional multi-view/download limits exist. Keep the one-time promise as the default and qualify multi-use behavior only where the configured count is actually known.
+- `/f/` cannot know a link's download count before making the destructive download request. Its pre-download gate and metadata must therefore retain one-time wording; after download, `view-file.ts` uses the response headers to state the exact remaining-download status.
+- Treat established SEO wording as product behavior. Do not rewrite or weaken it without explicit approval, even when nearby implementation details change.
 
 ## Deployment
 
@@ -217,4 +220,4 @@ npm run build
 - Each route generates its own `index.html` with full pre-rendered content and unique meta tags for SEO.
 - The deprecated server-rendered `/view/...` flow is separate from the SPA `/v/` flow.
 - File links are one-time and currently use the SPA `/f/` flow.
-- File downloads are consumed on the first authorized fetch attempt: the Redis file record is deleted before transfer completion is known, and the disk blob is removed after the stream attempt.
+- File downloads are consumed when an authorized fetch reserves one allowed download. The Redis record is decremented while downloads remain and deleted before the final transfer; the disk blob is removed after the final stream attempt.

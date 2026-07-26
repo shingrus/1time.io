@@ -39,7 +39,7 @@
 |---|---|---|
 | **🔐** | **Zero-knowledge encryption** | Secrets are encrypted in your browser with AES-GCM. The server never sees plaintext. |
 | **🔥** | **Self-destructing links** | Links burn after reading by default; text secrets can optionally allow a few views. Either way the data is permanently deleted once the last view is used. |
-| **📁** | **Encrypted file sharing** | Send files with one-time download links. File contents and metadata stay inside the encrypted payload. |
+| **📁** | **Encrypted file sharing** | Send files with one-time download links by default, or choose a small fixed download limit. File contents and metadata stay inside the encrypted payload. |
 | **🏠** | **Self-hosted** | Run your own instance with Docker Compose in under 2 minutes. |
 | **👤** | **No signup required** | Paste a secret, get a link, share it. No accounts, no tracking. |
 | **🔑** | **Built-in generators** | Password, passphrase, API key, and WiFi password generators included. |
@@ -78,7 +78,7 @@ You                          Server                        Recipient
 
 The encryption key stays in the URL fragment (`#`), which is **never sent to the server**. Even with full database access, secrets cannot be read.
 
-The same zero-knowledge model also powers encrypted file sharing: the browser encrypts the file and its metadata before upload, and the server stores only encrypted bytes until the recipient downloads them once.
+The same zero-knowledge model also powers encrypted file sharing: the browser encrypts the file and its metadata before upload, and the server stores only encrypted bytes until the one default download—or the last explicitly allowed download—is reserved.
 
 **Cryptographic details:** Keys are derived using HKDF-SHA256 with a fixed salt. Two separate keys are produced — one for AES-256-GCM encryption and one for authentication (hash-based proof-of-knowledge). The server verifies the auth hash with constant-time comparison before releasing the encrypted blob, then permanently deletes it.
 
@@ -90,7 +90,7 @@ The same zero-knowledge model also powers encrypted file sharing: the browser en
 
 **[1time.io](https://1time.io)** — free, no signup, ready to use.
 
-Use the web app to share both text secrets and encrypted files with one-time links.
+Use the web app to share both text secrets and encrypted files with one-time links. File links allow one download by default and can optionally permit up to 10.
 
 ### CLI
 
@@ -170,7 +170,7 @@ Put your own reverse proxy (Caddy, Traefik, nginx) in front for HTTPS/TLS termin
 
 ## Free Tools
 
-- [Secure File Sharing](https://1time.io/secure-file-sharing) — send encrypted files with one-time download links
+- [Secure File Sharing](https://1time.io/secure-file-sharing) — send encrypted files with one-time links and controlled download limits
 - [Password Generator](https://1time.io/password-generator) — strong random passwords
 - [Passphrase Generator](https://1time.io/passphrase-generator) — memorable multi-word passphrases
 - [API Key Generator](https://1time.io/api-key-generator) — random tokens for developers

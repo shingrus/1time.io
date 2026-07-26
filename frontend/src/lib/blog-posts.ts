@@ -219,7 +219,7 @@ export const blogPosts: BlogPost[] = [
                 "headline": "Best Firefox Send Alternative — Free & Self-Hostable",
                 "description": "Firefox Send is gone. Share encrypted files with zero-knowledge one-time links. Free, open source, no signup, and self-hostable.",
                 "datePublished": "2026-04-04",
-                "dateModified": "2026-05-23",
+                "dateModified": "2026-07-26",
                 "author": {
                     "@type": "Person",
                     "name": "Igor Ermakov",
@@ -742,7 +742,7 @@ export const blogPosts: BlogPost[] = [
                 "headline": "Password Pusher Alternative — Zero-Knowledge & Free",
                 "description": "Compare Password Pusher with 1time.io. Share passwords using browser-side encryption, one-time links, no signup, and open-source code.",
                 "datePublished": "2026-01-29",
-                "dateModified": "2026-07-25",
+                "dateModified": "2026-07-26",
                 "author": {
                     "@type": "Person",
                     "name": "Igor Ermakov",

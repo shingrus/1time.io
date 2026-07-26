@@ -180,6 +180,213 @@ func storeTestMessage(t *testing.T, client *redis.Client, id string, message Sto
 	}
 }
 
+func storeTestFile(t *testing.T, client *redis.Client, id string, file StoredFile, ttl time.Duration) {
+	t.Helper()
+
+	value, err := json.Marshal(file)
+	if err != nil {
+		t.Fatalf("marshal StoredFile: %v", err)
+	}
+	if err := client.Set(getFileStoreKey(id), value, ttl).Err(); err != nil {
+		t.Fatalf("store test file: %v", err)
+	}
+}
+
+func TestReserveFileDownloadLegacyRecordIsSingleUse(t *testing.T) {
+	client := startTestRedis(t)
+	filePath := filepath.Join(t.TempDir(), "legacy.enc")
+	if err := os.WriteFile(filePath, []byte("ciphertext"), 0o600); err != nil {
+		t.Fatalf("write test file: %v", err)
+	}
+	hashedKey := strings.Repeat("e", hashedKeyHexLen)
+	storeTestFile(t, client, "legacy-file", StoredFile{
+		Encrypted: true,
+		FileUri:   filePath,
+		HashedKey: hashedKey,
+	}, time.Minute)
+
+	reservation, status, err := reserveFileDownloadWithClient(client, "legacy-file", hashedKey)
+	if err != nil {
+		t.Fatalf("reserveFileDownloadWithClient() error = %v", err)
+	}
+	if status != "ok" || reservation.File == nil || reservation.ViewsLeft != 0 {
+		t.Fatalf("reservation = (%+v, %q), want final authorized download", reservation, status)
+	}
+	defer reservation.File.Close()
+	if err := client.Get(getFileStoreKey("legacy-file")).Err(); err != redis.Nil {
+		t.Fatalf("legacy record still exists: %v", err)
+	}
+}
+
+func TestReserveFileDownloadWrongKeyDoesNotDecrement(t *testing.T) {
+	client := startTestRedis(t)
+	filePath := filepath.Join(t.TempDir(), "wrong-key.enc")
+	if err := os.WriteFile(filePath, []byte("ciphertext"), 0o600); err != nil {
+		t.Fatalf("write test file: %v", err)
+	}
+	hashedKey := strings.Repeat("a", hashedKeyHexLen)
+	storeTestFile(t, client, "wrong-file-key", StoredFile{
+		Encrypted: true,
+		FileUri:   filePath,
+		HashedKey: hashedKey,
+		Views:     3,
+	}, time.Minute)
+
+	reservation, status, err := reserveFileDownloadWithClient(client, "wrong-file-key", strings.Repeat("b", hashedKeyHexLen))
+	if err != nil {
+		t.Fatalf("reserveFileDownloadWithClient() error = %v", err)
+	}
+	if status != "wrong key" || reservation.File != nil {
+		t.Fatalf("reservation = (%+v, %q), want wrong key", reservation, status)
+	}
+
+	raw, err := client.Get(getFileStoreKey("wrong-file-key")).Bytes()
+	if err != nil {
+		t.Fatalf("get record after wrong key: %v", err)
+	}
+	var remaining StoredFile
+	if err := json.Unmarshal(raw, &remaining); err != nil {
+		t.Fatalf("unmarshal record: %v", err)
+	}
+	if remaining.Views != 3 {
+		t.Fatalf("views after wrong key = %d, want 3", remaining.Views)
+	}
+}
+
+func TestReserveFileDownloadPreservesTTL(t *testing.T) {
+	client := startTestRedis(t)
+	filePath := filepath.Join(t.TempDir(), "ttl.enc")
+	if err := os.WriteFile(filePath, []byte("ciphertext"), 0o600); err != nil {
+		t.Fatalf("write test file: %v", err)
+	}
+	hashedKey := strings.Repeat("c", hashedKeyHexLen)
+	storeTestFile(t, client, "file-ttl", StoredFile{
+		Encrypted: true,
+		FileUri:   filePath,
+		HashedKey: hashedKey,
+		Views:     3,
+	}, 2*time.Minute)
+	before, err := client.PTTL(getFileStoreKey("file-ttl")).Result()
+	if err != nil {
+		t.Fatalf("PTTL before reserve: %v", err)
+	}
+
+	reservation, status, err := reserveFileDownloadWithClient(client, "file-ttl", hashedKey)
+	if err != nil {
+		t.Fatalf("reserveFileDownloadWithClient() error = %v", err)
+	}
+	if status != "ok" || reservation.ViewsLeft != 2 || reservation.ExpiresInSeconds <= 0 {
+		t.Fatalf("reservation = (%+v, %q), want two downloads left", reservation, status)
+	}
+	defer reservation.File.Close()
+	after, err := client.PTTL(getFileStoreKey("file-ttl")).Result()
+	if err != nil {
+		t.Fatalf("PTTL after reserve: %v", err)
+	}
+	if after <= 0 || after > before+100*time.Millisecond || after < before-time.Second {
+		t.Fatalf("TTL changed unexpectedly: before=%v after=%v", before, after)
+	}
+}
+
+func TestReserveFileDownloadConcurrentReadersKeepReadableDescriptors(t *testing.T) {
+	client := startTestRedis(t)
+	filePath := filepath.Join(t.TempDir(), "concurrent.enc")
+	const ciphertext = "shared encrypted file bytes"
+	if err := os.WriteFile(filePath, []byte(ciphertext), 0o600); err != nil {
+		t.Fatalf("write test file: %v", err)
+	}
+	hashedKey := strings.Repeat("d", hashedKeyHexLen)
+	const views = 5
+	const readers = 12
+	storeTestFile(t, client, "concurrent-file", StoredFile{
+		Encrypted: true,
+		FileUri:   filePath,
+		HashedKey: hashedKey,
+		Views:     views,
+	}, time.Minute)
+
+	type result struct {
+		reservation FileDownloadReservation
+		status      string
+		err         error
+	}
+	results := make(chan result, readers)
+	for i := 0; i < readers; i++ {
+		go func() {
+			reservation, status, err := reserveFileDownloadWithClient(client, "concurrent-file", hashedKey)
+			results <- result{reservation: reservation, status: status, err: err}
+		}()
+	}
+
+	var successful []FileDownloadReservation
+	missing := 0
+	seenViewsLeft := make(map[int]int)
+	for i := 0; i < readers; i++ {
+		got := <-results
+		if got.err != nil {
+			t.Fatalf("concurrent reservation error: %v", got.err)
+		}
+		switch got.status {
+		case "ok":
+			successful = append(successful, got.reservation)
+			seenViewsLeft[got.reservation.ViewsLeft]++
+		case "no message":
+			missing++
+		default:
+			t.Fatalf("unexpected status %q", got.status)
+		}
+	}
+	if len(successful) != views || missing != readers-views {
+		t.Fatalf("successful=%d missing=%d, want %d and %d", len(successful), missing, views, readers-views)
+	}
+	for left := 0; left < views; left++ {
+		if seenViewsLeft[left] != 1 {
+			t.Fatalf("viewsLeft=%d returned %d times, want once", left, seenViewsLeft[left])
+		}
+	}
+	if err := client.Get(getFileStoreKey("concurrent-file")).Err(); err != redis.Nil {
+		t.Fatalf("record still exists after final reservation: %v", err)
+	}
+
+	// Simulate the final handler unlinking the pathname. Every successful
+	// reservation must still be able to finish from its already-open descriptor.
+	if err := os.Remove(filePath); err != nil {
+		t.Fatalf("remove final blob: %v", err)
+	}
+	for _, reservation := range successful {
+		data, err := io.ReadAll(reservation.File)
+		_ = reservation.File.Close()
+		if err != nil {
+			t.Fatalf("read reserved descriptor: %v", err)
+		}
+		if string(data) != ciphertext {
+			t.Fatalf("reserved data = %q, want %q", data, ciphertext)
+		}
+	}
+}
+
+func TestReserveFileDownloadMissingBlobRemovesStaleRecord(t *testing.T) {
+	client := startTestRedis(t)
+	hashedKey := strings.Repeat("f", hashedKeyHexLen)
+	storeTestFile(t, client, "missing-blob", StoredFile{
+		Encrypted: true,
+		FileUri:   filepath.Join(t.TempDir(), "missing.enc"),
+		HashedKey: hashedKey,
+		Views:     3,
+	}, time.Minute)
+
+	reservation, status, err := reserveFileDownloadWithClient(client, "missing-blob", hashedKey)
+	if err != nil {
+		t.Fatalf("reserveFileDownloadWithClient() error = %v", err)
+	}
+	if status != "no message" || reservation.File != nil {
+		t.Fatalf("reservation = (%+v, %q), want no message", reservation, status)
+	}
+	if err := client.Get(getFileStoreKey("missing-blob")).Err(); err != redis.Nil {
+		t.Fatalf("stale record still exists: %v", err)
+	}
+}
+
 func TestIsValidHashedKey(t *testing.T) {
 	valid := strings.Repeat("a1", hashedKeyHexLen/2)
 	if !isValidHashedKey(valid) {

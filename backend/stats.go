@@ -26,9 +26,13 @@ const (
 	//   stats:views:day:YYYYMMDD:<views>
 	viewsTotalKeyPrefix = "stats:views:total:"
 	viewsDayKeyPrefix   = "stats:views:day:"
-	statsHistoryTTL     = time.Hour * 24 * 60
-	statsFlushInterval  = time.Second * 10
-	statPageCount       = 3
+	// File download-limit distribution stays separate from text views because
+	// its bandwidth cost and product behaviour are materially different.
+	fileViewsTotalKeyPrefix = "stats:views:file:total:"
+	fileViewsDayKeyPrefix   = "stats:views:file:day:"
+	statsHistoryTTL         = time.Hour * 24 * 60
+	statsFlushInterval      = time.Second * 10
+	statPageCount           = 3
 )
 
 type statPageIndex int
@@ -73,7 +77,6 @@ var appStats = NewStatsManager()
 var (
 	flushPageHitCountersFunc             = flushPageHitCounters
 	getOverallStoredCounterFromRedisFunc = getOverallStoredCounterFromRedis
-	incrementStoredCounterFunc           = incrementStoredCounter
 	incrementStoredSecretCountersFunc    = incrementStoredSecretCounters
 )
 
@@ -257,6 +260,14 @@ func getViewsDayKey(views int, now time.Time) string {
 	return viewsDayKeyPrefix + getStatsDay(now) + ":" + strconv.Itoa(views)
 }
 
+func getFileViewsTotalKey(views int) string {
+	return fileViewsTotalKeyPrefix + strconv.Itoa(views)
+}
+
+func getFileViewsDayKey(views int, now time.Time) string {
+	return fileViewsDayKeyPrefix + getStatsDay(now) + ":" + strconv.Itoa(views)
+}
+
 func incrementStoredSecretCounters(views int, now time.Time) error {
 	return incrementStoredSecretCountersWithClient(getRedisClient(), views, now)
 }
@@ -270,18 +281,7 @@ func incrementStoredSecretCounters(views int, now time.Time) error {
 // Single-view secrets are counted too (bucket "1"), so the burn-after-reading
 // share is part of the same series.
 func incrementStoredSecretCountersWithClient(client *redis.Client, views int, now time.Time) error {
-	storedDayKey := getStoredCounterDayKey(storedCounterText, now)
-	viewsDayKey := getViewsDayKey(views, now)
-
-	if _, err := client.TxPipelined(func(pipe redis.Pipeliner) error {
-		pipe.Incr(getStoredCounterTotalKey(storedCounterText))
-		pipe.Incr(storedDayKey)
-		pipe.Expire(storedDayKey, statsHistoryTTL)
-		pipe.Incr(getViewsTotalKey(views))
-		pipe.Incr(viewsDayKey)
-		pipe.Expire(viewsDayKey, statsHistoryTTL)
-		return nil
-	}); err != nil {
+	if err := incrementStoredCountersWithClient(client, storedCounterText, views, now); err != nil {
 		return err
 	}
 
@@ -289,32 +289,43 @@ func incrementStoredSecretCountersWithClient(client *redis.Client, views int, no
 	return nil
 }
 
-func incrementStoredFileCounters(now time.Time) error {
-	return incrementStoredCounterFunc(storedCounterFile, now)
+func incrementStoredFileCounters(views int, now time.Time) error {
+	return incrementStoredFileCountersWithClient(getRedisClient(), views, now)
 }
 
-func incrementStoredCounter(kind storedCounterKind, now time.Time) error {
-	client := getRedisClient()
-	totalKey := getStoredCounterTotalKey(kind)
-	dayKey := getStoredCounterDayKey(kind, now)
-
-	_, err := client.TxPipelined(func(pipe redis.Pipeliner) error {
-		pipe.Incr(totalKey)
-		pipe.Incr(dayKey)
-		pipe.Expire(dayKey, statsHistoryTTL)
-		return nil
-	})
-	if err != nil {
+func incrementStoredFileCountersWithClient(client *redis.Client, views int, now time.Time) error {
+	if err := incrementStoredCountersWithClient(client, storedCounterFile, views, now); err != nil {
 		return err
 	}
 
-	switch kind {
-	case storedCounterFile:
-		appStats.AddStoredFiles(1)
-	default:
-		appStats.AddStoredSecrets(1)
-	}
+	appStats.AddStoredFiles(1)
 	return nil
+}
+
+func incrementStoredCountersWithClient(
+	client *redis.Client,
+	kind storedCounterKind,
+	views int,
+	now time.Time,
+) error {
+	viewsTotalKey := getViewsTotalKey(views)
+	viewsDayKey := getViewsDayKey(views, now)
+	if kind == storedCounterFile {
+		viewsTotalKey = getFileViewsTotalKey(views)
+		viewsDayKey = getFileViewsDayKey(views, now)
+	}
+
+	storedDayKey := getStoredCounterDayKey(kind, now)
+	_, err := client.TxPipelined(func(pipe redis.Pipeliner) error {
+		pipe.Incr(getStoredCounterTotalKey(kind))
+		pipe.Incr(storedDayKey)
+		pipe.Expire(storedDayKey, statsHistoryTTL)
+		pipe.Incr(viewsTotalKey)
+		pipe.Incr(viewsDayKey)
+		pipe.Expire(viewsDayKey, statsHistoryTTL)
+		return nil
+	})
+	return err
 }
 
 func flushPageHitCounters(pageHits pageHitSnapshot, now time.Time) error {

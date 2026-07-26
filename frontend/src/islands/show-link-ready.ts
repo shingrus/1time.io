@@ -6,10 +6,15 @@ import {chromeStoreUrl} from '../lib/siteConfig.js';
  * Replace `formEl` with the populated #link-ready-template clone.
  * Wires up Copy / QR / Reset behavior on the clone.
  * `onReset` is called when the user clicks "Create another".
- * `views` (default 1) makes the "works only once" notice honest for
- * multi-view (N > 1) links; files/passwords omit it.
+ * `uses` and `kind` keep one-time branding while making an explicitly selected
+ * multi-use link honest about its actual destruction point.
  */
-export function showLinkReady(formEl: HTMLElement, link: string, onReset: () => void, views = 1): void {
+export function showLinkReady(
+    formEl: HTMLElement,
+    link: string,
+    onReset: () => void,
+    {uses = 1, kind = 'secret'}: {uses?: number; kind?: 'secret' | 'file'} = {},
+): void {
     const tpl = document.getElementById('link-ready-template') as HTMLTemplateElement | null;
     if (!tpl) return;
 
@@ -18,15 +23,24 @@ export function showLinkReady(formEl: HTMLElement, link: string, onReset: () => 
     const input = clone.querySelector<HTMLInputElement>('[data-link-input]')!;
     input.value = link;
 
-    if (views !== 1) {
+    const isFile = kind === 'file';
+    const kindEl = clone.querySelector<HTMLElement>('[data-link-kind]');
+    if (isFile) input.setAttribute('aria-label', 'File one-time link');
+
+    if (uses === 1) {
+        if (isFile && kindEl) kindEl.textContent = 'Your one-time file link';
+    } else {
+        const action = isFile ? 'download' : 'view';
+        const item = isFile ? 'file' : 'secret';
         const notice = clone.querySelector<HTMLElement>('.link-notice');
+        const qrNote = clone.querySelector<HTMLElement>('[data-qr-note]');
+        if (kindEl) kindEl.textContent = `Your 1time ${item} link`;
         if (notice) {
             notice.textContent =
-                `This link works ${views} times. After it is opened ${views} times, the secret is permanently destroyed.` +
+                `One-time is the default. You selected ${uses} ${action}s, and the encrypted ${item} will be permanently destroyed after the ${uses}${uses === 2 ? 'nd' : uses === 3 ? 'rd' : 'th'}.` +
                 ' Even we cannot read it because encryption happens in your browser.';
         }
-        const kind = clone.querySelector<HTMLElement>('[data-link-kind]');
-        if (kind) kind.textContent = 'Your secret link';
+        if (qrNote) qrNote.textContent = `This QR encodes the same limited-${action} 1time link shown above.`;
     }
 
     const fingerprintNameEl = clone.querySelector<HTMLElement>('[data-fingerprint-name]');

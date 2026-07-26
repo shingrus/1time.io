@@ -1,6 +1,6 @@
 import {Constants} from '../lib/util.js';
 import {encryptFile} from '../lib/fileProtocol.js';
-import {saveFile} from '../lib/fileApi.js';
+import {formatBytes, saveFile} from '../lib/fileApi.js';
 import {showLinkReady} from './show-link-ready.js';
 
 const form = document.querySelector<HTMLFormElement>('#secure-file-form');
@@ -22,17 +22,37 @@ if (form) {
     const submitBtn = form.querySelector<HTMLButtonElement>('button[type="submit"]')!;
     const keyInput = form.querySelector<HTMLInputElement>('#secretKey')!;
     const durationSelect = form.querySelector<HTMLSelectElement>('#duration')!;
+    const viewsSelect = form.querySelector<HTMLSelectElement>('#views')!;
+    const optionsPanel = form.querySelector<HTMLElement>('[data-options-panel]')!;
+    const optionChips = form.querySelectorAll<HTMLButtonElement>('.option-chip');
 
     let selectedFile: File | null = null;
     let isEncrypting = false;
     let isUploading = false;
     let uploadProgress = 0;
 
-    const formatSize = (bytes: number) => {
-        if (bytes < 1024) return `${bytes} B`;
-        if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-        return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+    const setOptionsOpen = (open: boolean) => {
+        optionsPanel.toggleAttribute('hidden', !open);
+        optionChips.forEach((chip) => chip.setAttribute('aria-expanded', String(open)));
     };
+    const updateOptionChips = () => {
+        optionChips.forEach((chip) => {
+            const id = chip.dataset.chip;
+            const text = id === 'duration'
+                ? durationSelect.selectedOptions[0]?.textContent ?? '1 day'
+                : id === 'views'
+                    ? `${viewsSelect.value} download${viewsSelect.value === '1' ? '' : 's'}`
+                    : keyInput.value ? 'passphrase added' : 'set passphrase';
+            chip.querySelector<HTMLElement>('[data-chip-label]')!.textContent = text;
+        });
+    };
+    optionChips.forEach((chip) => chip.addEventListener('click', () => {
+        setOptionsOpen(true);
+        form.querySelector<HTMLElement>('#' + chip.dataset.chip)?.focus();
+    }));
+    durationSelect.addEventListener('change', updateOptionChips);
+    viewsSelect.addEventListener('change', updateOptionChips);
+    keyInput.addEventListener('input', updateOptionChips);
 
     const setError = (msg: string) => {
         errorEl.textContent = msg;
@@ -44,7 +64,7 @@ if (form) {
             promptEl.toggleAttribute('hidden', true);
             selectedEl.toggleAttribute('hidden', false);
             selectedName.textContent = selectedFile.name;
-            selectedSize.textContent = formatSize(selectedFile.size);
+            selectedSize.textContent = formatBytes(selectedFile.size);
             dropZone.classList.add('file-drop-zone-has-file');
         } else {
             promptEl.toggleAttribute('hidden', false);
@@ -125,6 +145,9 @@ if (form) {
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
         if (!selectedFile) return;
+        const durationSeconds = Number(durationSelect.value);
+        const selectedViews = Number(viewsSelect.value);
+        const passphrase = keyInput.value;
         setError('');
         isEncrypting = true;
         isUploading = false;
@@ -132,7 +155,7 @@ if (form) {
         renderProgress();
         updateSubmit();
         try {
-            const {encryptedBlob, hashedKey, randomKey} = await encryptFile(selectedFile, keyInput.value);
+            const {encryptedBlob, hashedKey, randomKey} = await encryptFile(selectedFile, passphrase);
             isEncrypting = false;
             isUploading = true;
             renderProgress();
@@ -140,7 +163,8 @@ if (form) {
             const data = await saveFile(
                 encryptedBlob,
                 hashedKey,
-                Number(durationSelect.value),
+                durationSeconds,
+                selectedViews,
                 (p: number) => {
                     uploadProgress = Math.min(100, Math.max(0, Math.round(p * 100)));
                     renderProgress();
@@ -149,7 +173,6 @@ if (form) {
             );
             if (data.status === 'ok' && data.newId) {
                 // Lazy so the my-secrets store stays off the file page's initial load.
-                const durationSeconds = Number(durationSelect.value);
                 void import('../lib/mySecrets.js')
                     .then(({recordSecret}) => recordSecret({id: data.newId, kind: 'file', durationSeconds}))
                     .catch(() => {});
@@ -162,8 +185,11 @@ if (form) {
                     clearSelection();
                     keyInput.value = '';
                     durationSelect.value = String(Constants.defaultDurationSeconds);
+                    viewsSelect.value = '1';
+                    updateOptionChips();
+                    setOptionsOpen(false);
                     updateSubmit();
-                });
+                }, {uses: selectedViews, kind: 'file'});
                 return;
             }
             setError('Could not create the file link. Please try again.');

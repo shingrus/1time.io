@@ -2,8 +2,9 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import InlineCss from '../../components/InlineCss.astro';
 import LinkReadyTemplate from '../../components/LinkReadyTemplate.astro';
+import ShareOptions from '../../components/ShareOptions.astro';
 import {absoluteUrl, siteHost} from '../../lib/siteConfig.js';
-import {Constants, SHARE_DURATION_OPTIONS} from '../../lib/util.js';
+import {Constants} from '../../lib/util.js';
 
 const title = `One-Time File Sharing — Encrypted Self-Destructing Download Links`;
 const description = 'One-time file sharing through an encrypted, self-destructing download link. Zero-knowledge browser encryption, optional passphrase — free, no signup.';
@@ -12,7 +13,7 @@ const maxMb = Constants.maxFileSizeBytes / (1024 * 1024);
 const faqItems = [
     {
         question: 'How does secure file sharing work on 1time.io?',
-        answer: 'Your file is packed and encrypted in the browser before upload. The server stores only encrypted bytes. The download link works once, and the file is deleted after it is downloaded or when the expiry time is reached.',
+        answer: 'Your file is packed and encrypted in the browser before upload. The server stores only encrypted bytes. The download link works once by default. When you need to send the file to a few people, you can allow up to 10 downloads. The encrypted file is deleted after the final allowed download or when the expiry time is reached.',
     },
     {
         question: 'Can the server see my file name or contents?',
@@ -36,7 +37,7 @@ const jsonLd = [
         description: 'Send a one-time file through an encrypted self-destructing download link. Browser-side zero-knowledge encryption, optional passphrase, and no signup.',
         url: absoluteUrl('/secure-file-sharing/'),
         isPartOf: absoluteUrl('/'),
-        dateModified: '2026-06-12',
+        dateModified: '2026-07-26',
     },
     {
         '@context': 'https://schema.org',
@@ -124,34 +125,9 @@ const jsonLd = [
                 <p class="form-help" data-progress-help></p>
             </div>
 
-            <div class="form-actions share-primary-actions">
-                <button class="btn btn-primary btn-lg" disabled type="submit">Create file link</button>
-            </div>
-
-            <div class="options-grid">
-                <div class="form-field" style="margin-bottom:0">
-                    <label class="form-label" for="secretKey">Additional passphrase</label>
-                    <input
-                        class="form-input"
-                        id="secretKey"
-                        autocomplete="off"
-                        autocapitalize="none"
-                        placeholder="Optional extra security"
-                        spellcheck="false"
-                        type="text"
-                    />
-                    <p class="form-help">Recipient will need this to decrypt</p>
-                </div>
-                <div class="form-field" style="margin-bottom:0">
-                    <label class="form-label" for="duration">Expire after</label>
-                    <select class="form-select" id="duration">
-                        {SHARE_DURATION_OPTIONS.map(({value, label}) => (
-                            <option value={value} selected={value === Constants.defaultDurationSeconds}>{label}</option>
-                        ))}
-                    </select>
-                    <p class="form-help">Link expires even if unread</p>
-                </div>
-            </div>
+            <ShareOptions kind="file" panelId="file-share-options">
+                <button slot="submit" class="btn btn-primary btn-lg" disabled type="submit">Create file link</button>
+            </ShareOptions>
         </form>
 
         <LinkReadyTemplate />
@@ -160,11 +136,13 @@ const jsonLd = [
             <h1>Send a One-Time File — Encrypted, Self-Destructing Download Link</h1>
             <h2>What is a one-time file?</h2>
             <p>
-                A <strong>one-time file</strong> is a file you send through a single-use download link.
-                The recipient downloads it once, then the encrypted copy is permanently deleted from
-                the server. There is no second download, no copy left behind in chat history, no
-                long-lived URL sitting in someone's inbox. It is the file-sharing equivalent of a
-                self-destructing message: a one-time URL that disappears after the file lands.
+                A <strong>one-time file</strong> is a file you send through a one-time download link.
+                It allows one download by default, then the encrypted copy is permanently deleted from the server.
+                It is the file-sharing equivalent of a self-destructing message: a one-time URL that disappears after the file lands.
+            </p>
+            <p>
+                One download remains the default. If you choose a higher limit, the encrypted copy remains
+                available only until the last of up to 10 downloads or expiry.
             </p>
             <h2>Why use one-time encrypted file sharing?</h2>
             <p>
@@ -218,7 +196,7 @@ const jsonLd = [
                 Choose a file, optionally add a passphrase, and create the link. The browser packs the file
                 together with its metadata, encrypts the whole payload locally, and uploads only the encrypted blob.
                 The recipient gets a one-time download link. On open, the browser decrypts the file locally and
-                the server-side copy is destroyed.
+                the server deletes the encrypted copy after the final allowed download.
             </p>
 
             <h2>A Firefox Send and WeTransfer alternative for one-time files</h2>
@@ -228,21 +206,21 @@ const jsonLd = [
                 file transfer need with stronger guarantees. Firefox Send was discontinued in 2020;
                 {siteHost} is an actively maintained, open-source replacement. Unlike WeTransfer — which
                 stores files in a form the company can read — every file here is encrypted in your browser
-                before upload, delivered through a single-use download link, and destroyed on first
-                download. It works for one-time file sharing, one-time file transfer, and one-time
+                before upload, delivered through a one-time download link, and destroyed after the final
+                allowed download or expiry. It works for one-time file sharing, one-time file transfer, and one-time
                 download links without any account.
             </p>
 
             <h2>Key terms, briefly defined</h2>
             <dl class="glossary">
                 <dt>One-time download link</dt>
-                <dd>A URL that delivers a file exactly once. The first successful download triggers permanent deletion of the encrypted file on the server.</dd>
+                <dd>A URL that delivers a file once by default. If the sender allows more downloads, the encrypted file is permanently deleted after the final allowed download or when it expires.</dd>
                 <dt>Browser-side file encryption</dt>
                 <dd>Encryption performed entirely in the sender's browser using AES-256-GCM via the Web Crypto API. The file never leaves your device in plaintext form.</dd>
                 <dt>Encrypted file metadata</dt>
                 <dd>Filename, MIME type, and size are bundled inside the encrypted payload — not stored separately on the server. The server cannot tell what was sent or how large the original file was.</dd>
                 <dt>Self-destructing file</dt>
-                <dd>A file that is automatically deleted after a single download or when the expiry timer fires, whichever comes first — leaving no copy on any server.</dd>
+                <dd>A file that is automatically deleted after its final allowed download or when the expiry timer fires, whichever comes first — leaving no copy on any server.</dd>
             </dl>
 
             <h2>Frequently asked questions</h2>

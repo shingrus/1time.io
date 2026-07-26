@@ -28,27 +28,18 @@ type StoredMessage struct {
 // unbounded-download ("unlimited views") amplification vector.
 const maxViews = 100
 
-// clampViews normalizes a client-requested view count to 1..maxViews.
-// Anything malformed (including negative sentinels) collapses to the
-// single-view default.
-func clampViews(views int) int {
-	switch {
-	case views <= 1:
-		return 1
-	case views > maxViews:
-		return maxViews
-	}
-	return views
-}
-
 type StoredFile struct {
 	Encrypted bool   `json:"encrypted"`
 	FileUri   string `json:"fileUri"`
 	HashedKey string `json:"hashedKey"`
+	// Views is the number of downloads remaining. Missing/0 and 1 both mean
+	// the legacy single-download behaviour.
+	Views int `json:"views,omitempty"`
 }
 
 const maxFileSize = 25 * 1024 * 1024       // 25MB
 const maxMultipartMemory = 4 * 1024 * 1024 // 4MB
+const maxFileViews = 10
 
 // maxStatusIDs bounds how many ids /api/secretStatus will check per request.
 // Matches the client-side secrets cap so the my-secrets page fits in a single request.
@@ -71,10 +62,10 @@ const maxLookupBodyBytes = 1024
 var fileStorageDir = os.Getenv("FILE_STORAGE_DIR")
 
 var (
-	saveToStorageFunc                 = saveToStorage
-	consumeMessageFromStorageFunc     = consumeMessageFromStorage
-	consumeFileMessageFromStorageFunc = consumeFileMessageFromStorage
-	setFileRecordFunc                 = func(storeKey string, value interface{}, ttl time.Duration) (bool, error) {
+	saveToStorageFunc             = saveToStorage
+	consumeMessageFromStorageFunc = consumeMessageFromStorage
+	reserveFileDownloadFunc       = reserveFileDownload
+	setFileRecordFunc             = func(storeKey string, value interface{}, ttl time.Duration) (bool, error) {
 		return getRedisClient().SetNX(getFileStoreKey(storeKey), value, ttl).Result()
 	}
 	incrementStoredFileCountersFunc = incrementStoredFileCounters
@@ -112,7 +103,7 @@ func apiSaveSecret(r *http.Request) (responseCode int, response []byte) {
 					Message:   payload.SecretMessage,
 					HashedKey: payload.HashedKey,
 				}
-				views := clampViews(payload.Views)
+				views := min(max(payload.Views, 1), maxViews)
 				// Single view stays 0 so default records match the legacy shape.
 				if views != 1 {
 					newMessage.Views = views
@@ -298,6 +289,7 @@ func apiSaveSecretFile(r *http.Request) (responseCode int, response []byte) {
 
 	hashedKey := r.FormValue("hashedKey")
 	durationStr := r.FormValue("duration")
+	viewsStr := r.FormValue("views")
 
 	file, fileHeader, err := r.FormFile("file")
 	if err != nil {
@@ -318,6 +310,10 @@ func apiSaveSecretFile(r *http.Request) (responseCode int, response []byte) {
 		if d, err := strconv.Atoi(durationStr); err == nil && d > 0 && d <= maxDuration {
 			duration = d
 		}
+	}
+	views := 1
+	if parsedViews, err := strconv.Atoi(viewsStr); err == nil {
+		views = min(max(parsedViews, 1), maxFileViews)
 	}
 
 	if DEBUG {
@@ -387,6 +383,9 @@ func apiSaveSecretFile(r *http.Request) (responseCode int, response []byte) {
 			FileUri:   filePath,
 			HashedKey: hashedKey,
 		}
+		if views != 1 {
+			record.Views = views
+		}
 		valueToStore, _ := json.Marshal(record)
 		ok, err := setFileRecordFunc(storeKey, valueToStore, ttl)
 		if err != nil {
@@ -400,7 +399,7 @@ func apiSaveSecretFile(r *http.Request) (responseCode int, response []byte) {
 			continue
 		}
 
-		if err := incrementStoredFileCountersFunc(now); err != nil {
+		if err := incrementStoredFileCountersFunc(views, now); err != nil {
 			log.Printf("incrementStoredFileCounters error: %v", err)
 		}
 
@@ -417,6 +416,9 @@ func apiSaveSecretFile(r *http.Request) (responseCode int, response []byte) {
 
 // apiGetFile writes directly to ResponseWriter (binary stream)
 func apiGetFile(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Cache-Control", "no-store")
+	w.Header().Set("Access-Control-Expose-Headers", "X-1Time-Views-Left, X-1Time-Expires-In")
+
 	var payload struct {
 		Id        string `json:"id"`
 		HashedKey string `json:"hashedKey"`
@@ -439,9 +441,15 @@ func apiGetFile(w http.ResponseWriter, r *http.Request) {
 		log.Printf("payload <- file storage: %v, %v\n", payload.Id, payload.HashedKey)
 	}
 
-	storedFile, status, err := consumeFileMessageFromStorageFunc(payload.Id, payload.HashedKey)
+	reservation, status, err := reserveFileDownloadFunc(payload.Id, payload.HashedKey)
 	if err != nil {
-		log.Printf("consumeFileMessageFromStorage error: %v", err)
+		if errors.Is(err, errConsumeMessageContention) {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusServiceUnavailable)
+			_, _ = w.Write([]byte(`{"status":"retry"}`))
+			return
+		}
+		log.Printf("reserveFileDownload error: %v", err)
 		http.Error(w, `{"status":"error"}`, http.StatusInternalServerError)
 		return
 	}
@@ -459,30 +467,30 @@ func apiGetFile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Stream file to client
-	f, err := os.Open(storedFile.FileUri)
-	if err != nil {
-		log.Printf("Open file error: %v", err)
-		http.Error(w, `{"status":"no message"}`, http.StatusInternalServerError)
-		return
-	}
-	defer f.Close()
+	defer reservation.File.Close()
 
 	w.Header().Set("Content-Type", "application/octet-stream")
-	if info, statErr := f.Stat(); statErr == nil {
+	w.Header().Set("X-1Time-Views-Left", strconv.Itoa(reservation.ViewsLeft))
+	if reservation.ExpiresInSeconds > 0 {
+		w.Header().Set("X-1Time-Expires-In", strconv.Itoa(reservation.ExpiresInSeconds))
+	}
+	if info, statErr := reservation.File.Stat(); statErr == nil {
 		w.Header().Set("Content-Length", strconv.FormatInt(info.Size(), 10))
 	} else {
 		log.Printf("Stat file error: %v", statErr)
 	}
 	w.WriteHeader(http.StatusOK)
-	_, err = io.Copy(w, f)
+	_, err = io.Copy(w, reservation.File)
 	if err != nil {
 		log.Printf("Couldn't stream the whole file: %v", err)
 	}
-
-	// Delete file from disk after streaming
-	if err := os.Remove(storedFile.FileUri); err != nil {
-		log.Printf("Remove file error: %v", err)
+	if reservation.ViewsLeft == 0 {
+		// Other successful reservations already hold open descriptors, so
+		// unlinking the path after the final stream attempt does not interrupt
+		// their reads on POSIX.
+		if err := os.Remove(reservation.StoredFile.FileUri); err != nil && !os.IsNotExist(err) {
+			log.Printf("Remove file error: %v", err)
+		}
 	}
 }
 

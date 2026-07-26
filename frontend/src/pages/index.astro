@@ -46,8 +46,8 @@ const jsonLd = {
                 {siteHost} is a free, open-source tool for sharing a one-time secret — a password, API key,
                 or file sent through an encrypted, self-destructing link. Messages are encrypted in your
                 browser using AES-256-GCM, so the server never sees your data. Each link works once by default,
-                then the secret is permanently deleted — for text you can allow a few views instead, while
-                file links always stay strictly one-time. No signup required.
+                then the secret is permanently deleted. For a text secret that a few people need, choose
+                3, 5, or 10 views. No signup required.
             </p>
             <p>
                 Use it to <a href="/share-password-securely/">share passwords securely</a>, send
@@ -133,9 +133,9 @@ const jsonLd = {
                 or disappearing link — is a URL that reveals its content a limited number of times, normally
                 just once. The recipient clicks, reads the secret, and the server permanently deletes the
                 data; the same one-time URL becomes a dead 404 forever after. {siteHost} generates these
-                one-time links for free — text secrets can optionally allow 3, 5, or 10 views, and file
-                links are always single-download — with end-to-end encryption handled in your browser, so even we never
-                see what you share. Whether you call it a self-destruct link, a one-time secret link,
+                one-time links for free. Both text and file links work once by default, with small optional
+                limits when a few people need access. End-to-end encryption happens in your browser,
+                so even we never see what you share. Whether you call it a self-destruct link, a one-time secret link,
                 or a disappearing message, the mechanism is the same: encrypt locally, share once,
                 destroy when the last allowed view is used. Learn more in our guide to{' '}
                 <a href="/blog/self-destructing-messages-explained/">how self-destructing links work</a>.

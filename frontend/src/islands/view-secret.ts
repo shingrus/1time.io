@@ -1,16 +1,11 @@
-import {Constants, decryptSecretMessage, hashSecretKey, postJson, copyTextToClipboard} from '../lib/util.js';
-
-// Turn a remaining-TTL in seconds into a coarse, human-friendly span
-// ("30 days", "1 hour", "5 minutes").
-function formatRemaining(seconds: number): string {
-    const unit = (n: number, label: string) => `${n} ${label}${n === 1 ? '' : 's'}`;
-    const minutes = Math.round(seconds / 60);
-    if (minutes < 1) return 'less than a minute';
-    if (minutes < 60) return unit(minutes, 'minute');
-    const hours = Math.round(minutes / 60);
-    if (hours < 24) return unit(hours, 'hour');
-    return unit(Math.round(hours / 24), 'day');
-}
+import {
+    Constants,
+    copyTextToClipboard,
+    decryptSecretMessage,
+    formatRemaining,
+    hashSecretKey,
+    postJson,
+} from '../lib/util.js';
 
 // A read may only be retried when our backend explicitly reports contention
 // (503 + {"status":"retry"}). Anything else — including a bare proxy 503 — may
@@ -50,17 +45,14 @@ if (form) {
 
     // A/B/C/D banner copy test: variant is encoded in the reply URL (?reply=N)
     // so nginx logs measure clicks per variant with no extra tracking.
-    // Variants 1 and 4 claim the message was destroyed, so multi-view reads
-    // (the link still works) only draw from variants 2 and 3.
     const REPLY_HEADINGS = [
-        'Message read and destroyed. Nothing to trace back.',
+        'Keep the conversation private.',
         'Your reply deserves the same protection.',
         'Sending something back? Keep it out of the chat history too.',
-        "That's how secrets should travel — one view, then gone.",
+        'Reply securely with a one-time link.',
     ];
-    const pickReplyVariant = (destroyed: boolean) => {
-        const pool = destroyed ? [1, 2, 3, 4] : [2, 3];
-        const v = pool[Math.floor(Math.random() * pool.length)];
+    const pickReplyVariant = () => {
+        const v = Math.floor(Math.random() * REPLY_HEADINGS.length) + 1;
         const h = form.querySelector<HTMLElement>('[data-reply-heading]');
         const b = form.querySelector<HTMLAnchorElement>('[data-reply-btn]');
         if (h) h.textContent = REPLY_HEADINGS[v - 1];
@@ -169,7 +161,7 @@ if (form) {
                     ? `This link can be opened ${viewsLeft} more ${viewsLeft === 1 ? 'time' : 'times'}.${expiryClause}`
                     : 'This message is burned.';
                 viewsLeftNote.toggleAttribute('hidden', false);
-                pickReplyVariant(viewsLeft === 0);
+                pickReplyVariant();
                 qrAction.toggleAttribute('hidden', true);
                 postReadCta.toggleAttribute('hidden', false);
                 showOnly(decryptedSection);

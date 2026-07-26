@@ -167,49 +167,146 @@ func secretsExist(ids []string) (map[string]bool, error) {
 	return result, nil
 }
 
-func consumeFileMessageFromStorage(key string, hashedKey string) (storedFile StoredFile, status string, err error) {
-	client := getRedisClient()
+type FileDownloadReservation struct {
+	StoredFile       StoredFile
+	File             *os.File
+	ViewsLeft        int
+	ExpiresInSeconds int
+}
+
+// reserveFileDownload atomically reserves one authorized download and opens
+// the encrypted blob before committing the Redis mutation. Opening first is
+// essential for concurrent final downloads: once every successful reservation
+// holds a descriptor, the final request can safely unlink the pathname without
+// preventing earlier requests from completing on POSIX hosts.
+func reserveFileDownload(key string, hashedKey string) (FileDownloadReservation, string, error) {
+	if !isValidHashedKey(hashedKey) {
+		return FileDownloadReservation{}, "wrong key", nil
+	}
+	return reserveFileDownloadWithClient(getRedisClient(), key, hashedKey)
+}
+
+func reserveFileDownloadWithClient(client *redis.Client, key string, hashedKey string) (reservation FileDownloadReservation, status string, err error) {
 	storeKey := getFileStoreKey(key)
-	status = "no message"
+	deadline := time.Now().Add(consumeMessageRetryWindow)
+	retryDelay := consumeMessageRetryBaseDelay
 
-	err = client.Watch(func(tx *redis.Tx) error {
-		value, err := tx.Get(storeKey).Result()
-		if err == redis.Nil {
-			status = "no message"
+	for {
+		reservation = FileDownloadReservation{}
+		status = "error"
+		var openedFile *os.File
+
+		err = client.Watch(func(tx *redis.Tx) error {
+			value, getErr := tx.Get(storeKey).Result()
+			if getErr == redis.Nil {
+				status = "no message"
+				return nil
+			}
+			if getErr != nil {
+				return getErr
+			}
+
+			var current StoredFile
+			if unmarshalErr := json.Unmarshal([]byte(value), &current); unmarshalErr != nil {
+				return unmarshalErr
+			}
+			if subtle.ConstantTimeCompare([]byte(current.HashedKey), []byte(hashedKey)) != 1 {
+				status = "wrong key"
+				return nil
+			}
+
+			var openErr error
+			openedFile, openErr = os.Open(current.FileUri)
+			if openErr != nil {
+				if os.IsNotExist(openErr) {
+					// Do not leave stale metadata reporting a missing blob as live.
+					if _, txErr := tx.TxPipelined(func(pipe redis.Pipeliner) error {
+						pipe.Del(storeKey)
+						return nil
+					}); txErr != nil {
+						return txErr
+					}
+					status = "no message"
+					return nil
+				}
+				return openErr
+			}
+
+			viewsLeft := 0
+			expiresInSeconds := 0
+			if current.Views > 1 {
+				ttl, ttlErr := tx.PTTL(storeKey).Result()
+				if ttlErr != nil {
+					return ttlErr
+				}
+				if ttl > 0 {
+					updated := current
+					updated.Views--
+					updatedValue, marshalErr := json.Marshal(updated)
+					if marshalErr != nil {
+						return marshalErr
+					}
+					if _, txErr := tx.TxPipelined(func(pipe redis.Pipeliner) error {
+						pipe.Set(storeKey, updatedValue, ttl)
+						return nil
+					}); txErr != nil {
+						return txErr
+					}
+					viewsLeft = updated.Views
+					expiresInSeconds = int(ttl / time.Second)
+					reservation = FileDownloadReservation{
+						StoredFile:       current,
+						File:             openedFile,
+						ViewsLeft:        viewsLeft,
+						ExpiresInSeconds: expiresInSeconds,
+					}
+					status = "ok"
+					return nil
+				}
+			}
+
+			if _, txErr := tx.TxPipelined(func(pipe redis.Pipeliner) error {
+				pipe.Del(storeKey)
+				return nil
+			}); txErr != nil {
+				return txErr
+			}
+			reservation = FileDownloadReservation{
+				StoredFile: current,
+				File:       openedFile,
+			}
+			status = "ok"
 			return nil
+		}, storeKey)
+
+		if err == nil {
+			if status != "ok" && openedFile != nil {
+				_ = openedFile.Close()
+			}
+			return reservation, status, nil
 		}
-		if err != nil {
-			return err
+		if openedFile != nil {
+			_ = openedFile.Close()
+		}
+		if err != redis.TxFailedErr {
+			return FileDownloadReservation{}, "error", err
 		}
 
-		if err := json.Unmarshal([]byte(value), &storedFile); err != nil {
-			return err
+		remaining := time.Until(deadline)
+		if remaining <= 0 {
+			return FileDownloadReservation{}, "retry", errConsumeMessageContention
 		}
-
-		if subtle.ConstantTimeCompare([]byte(storedFile.HashedKey), []byte(hashedKey)) != 1 {
-			storedFile = StoredFile{}
-			status = "wrong key"
-			return nil
+		if retryDelay > remaining {
+			retryDelay = remaining
 		}
-
-		_, err = tx.TxPipelined(func(pipe redis.Pipeliner) error {
-			pipe.Del(storeKey)
-			return nil
-		})
-		if err == redis.TxFailedErr {
-			storedFile = StoredFile{}
-			status = "no message"
-			return nil
+		time.Sleep(retryDelay)
+		if retryDelay < consumeMessageRetryMaxDelay {
+			retryDelay *= 2
+			if retryDelay > consumeMessageRetryMaxDelay {
+				retryDelay = consumeMessageRetryMaxDelay
+			}
 		}
-		if err != nil {
-			return err
-		}
-
-		status = "ok"
-		return nil
-	}, storeKey)
-
-	return
+	}
 }
 
 func startFileJanitor() {
