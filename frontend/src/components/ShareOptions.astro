@@ -80,7 +80,7 @@ const usageOptions = isFile ? [1, 2, 3, 5, 10] : [1, 2, 3, 5, 10, 100];
             {usageOptions.map((count) => (
                 <option value={count} selected={count === 1}>
                     {count === 1
-                        ? (isFile ? '1 — one-time file download' : '1 — burn after reading')
+                        ? (isFile ? '1 — one-time download link' : '1 — burn after reading')
                         : `${count} ${usageNoun}s`}
                 </option>
             ))}
