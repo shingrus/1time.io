@@ -13,7 +13,7 @@ const maxMb = Constants.maxFileSizeBytes / (1024 * 1024);
 const faqItems = [
     {
         question: 'How does secure file sharing work on 1time.io?',
-        answer: 'Your file is packed and encrypted in the browser before upload. The server stores only encrypted bytes. The download link works once, and the file is deleted after it is downloaded or when the expiry time is reached.',
+        answer: 'Your file is packed and encrypted in the browser before upload. The server stores only encrypted bytes. The download link works once by default. When you need to send the file to a few people, you can allow up to 10 downloads. The encrypted file is deleted after the final allowed download or when the expiry time is reached.',
     },
     {
         question: 'Can the server see my file name or contents?',
@@ -143,8 +143,8 @@ const jsonLd = [
                 self-destructing message: a one-time URL that disappears after the file lands.
             </p>
             <p>
-                One download remains the default. If the sender deliberately raises the download limit,
-                the encrypted copy remains available only until the final permitted download or expiry.
+                One download remains the default. If you choose a higher limit, the encrypted copy remains
+                available only until the last of up to 10 downloads or expiry.
             </p>
             <h2>Why use one-time encrypted file sharing?</h2>
             <p>
