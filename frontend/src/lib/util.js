@@ -13,7 +13,7 @@ export var Constants = {
     ...ProtocolConstants,
     isDebug: import.meta.env.DEV,
     apiBaseUrl: import.meta.env.PUBLIC_API_URL || '/api/',
-    maxFileSizeBytes: 25 * 1024 * 1024,
+    maxFileSizeBytes: 40 * 1024 * 1024,
     // Reset-to-default select value; ProtocolConstants.defaultDuration is in days.
     defaultDurationSeconds: ProtocolConstants.defaultDuration * SECONDS_PER_DAY,
 };

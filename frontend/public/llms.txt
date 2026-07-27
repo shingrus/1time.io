@@ -10,17 +10,18 @@ Key facts:
 - Zero-knowledge: the server stores only encrypted ciphertext or encrypted file blobs, never the key
 - Client-side encryption: Web Crypto API, AES-GCM-256, HKDF key derivation
 - One-time access: secrets are deleted on first view, and file links are consumed on the first authorized fetch attempt
-- Encrypted file sharing: send files up to 10 MB with one-time download links
+- Encrypted file sharing: send files up to 40 MB with one-time download links
 - File metadata protection: filename, MIME type, and size stay inside the encrypted payload
 - Optional passphrase support for file links
 - No account required
-- CLI available: `npm install -g @1time/cli` (commands: `send`, `read`, `send-file`, `read-file`)
+- CLI available, no install required: `echo "$SECRET" | npx @1time/cli send --expires-in 1d` prints a one-time link. Commands: `send`, `read`, `send-file`, `read-file`. Requires Node 20+. Encryption happens locally in the CLI, so the plaintext never leaves the machine.
+- CLI secret input, in order of precedence: piped stdin, then the `1TIME_SECRET` environment variable, then a positional argument. Prefer stdin or `1TIME_SECRET`; a positional secret is exposed in shell history and to `ps`, and the CLI warns when one is used.
 
 ## Key Pages
 
 - [Homepage / Secret sharing tool](https://1time.io/): Encrypt and share a one-time secret in the browser
 - [Share Passwords Securely](https://1time.io/share-password-securely/): Send passwords through self-destructing links
-- [One-Time File Sharing](https://1time.io/secure-file-sharing/): Encrypted, one-time download links for files up to 10 MB
+- [One-Time File Sharing](https://1time.io/secure-file-sharing/): Encrypted, one-time download links for files up to 40 MB
 - [Share Passwords Safely in Microsoft Teams](https://1time.io/share-passwords-microsoft-teams/): Avoid Teams retention and eDiscovery exposure
 - [Password Generator](https://1time.io/password-generator/): Generate strong random passwords
 - [Passphrase Generator](https://1time.io/passphrase-generator/): Generate memorable passphrases

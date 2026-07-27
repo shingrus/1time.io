@@ -37,7 +37,7 @@ type StoredFile struct {
 	Views int `json:"views,omitempty"`
 }
 
-const maxFileSize = 25 * 1024 * 1024       // 25MB
+const maxFileSize = 40 * 1024 * 1024       // 40MB
 const maxMultipartMemory = 4 * 1024 * 1024 // 4MB
 const maxFileViews = 10
 

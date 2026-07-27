@@ -28,8 +28,8 @@ The server never sees plaintext or the decryption key. All crypto is client-side
 - Redis access: `backend/storage.go`
 - File upload/download API endpoints live in `backend/handlers.go` as `/api/saveFile` and `/api/getFile`.
 - `/api/secretStatus` (`apiSecretStatus` in `backend/handlers.go`) is a **non-consuming** batch existence check used by the Outbox / "My Secrets" page — it reads whether ids still exist and never deletes.
-- Backend file size limit is `25 MB` via `maxFileSize` in `backend/handlers.go`.
-- Every JSON endpoint caps its request body with `http.MaxBytesReader`: `maxSaveSecretBodyBytes` (25 MB, matching `maxFileSize` — base64url adds ~4/3 over AES-GCM, so roughly 18 MB of plaintext), `maxStatusBodyBytes` (8 KB), and `maxLookupBodyBytes` (1 KB for `/api/get`, `/api/getFile`, `/api/stat`). Keep `maxSaveSecretBodyBytes` under nginx's `client_max_body_size` (`26m`). There is **no client-side length guard**, so oversized text fails with a generic error.
+- Backend file size limit is `40 MB` via `maxFileSize` in `backend/handlers.go`.
+- Every JSON endpoint caps its request body with `http.MaxBytesReader`: `maxSaveSecretBodyBytes` (25 MB — base64url adds ~4/3 over AES-GCM, so roughly 18 MB of plaintext), `maxStatusBodyBytes` (8 KB), and `maxLookupBodyBytes` (1 KB for `/api/get`, `/api/getFile`, `/api/stat`). `maxSaveSecretBodyBytes` is deliberately **decoupled** from `maxFileSize`: text secrets gain nothing from a larger cap, so it stays at 25 MB while the file limit is 40 MB. Keep `maxSaveSecretBodyBytes` under nginx's `client_max_body_size` (`41m`). There is **no client-side length guard**, so oversized text fails with a generic error.
 - `/api/get` and `/api/getFile` validate the id and hashed-key **shapes** (`isValidStorageID`, `isValidHashedKey`) before any Redis key is built. Malformed input is answered with the same statuses the storage layer would return (`no message` / `wrong key`), deliberately introducing no new response shape — see the exporter coupling under "Analytics & Ops Scripts".
 - Stored text/file counters and their respective view/download distributions are each written together — see "View-counter stats" below.
 - Uploaded encrypted files are written to `FILE_STORAGE_DIR/<id>.enc` and the Redis record stores the path plus hashed key.
@@ -210,7 +210,7 @@ npm run build
 - Backend production binary from `make build`: `bin/1time-api`
 - Example nginx config: `configs/nginx/1time.conf`
 - nginx serves frontend statics and proxies `/api` to the Go app on `127.0.0.1:8080`.
-- nginx upload ceiling is `26m` in both `configs/nginx/1time.conf` and `docker/nginx/default.conf.template` to stay above the backend's `25 MB` multipart limit.
+- nginx upload ceiling is `41m` in both `configs/nginx/1time.conf` and `docker/nginx/default.conf.template` to stay above the backend's `40 MB` multipart limit.
 - Host nginx has an exact `/f/` location with the same sensitive-header treatment as `/v/`.
 - The nginx `try_files` directive includes `$uri/index.html` for static trailing-slash routes.
 
