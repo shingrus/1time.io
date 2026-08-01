@@ -126,6 +126,7 @@ func TestAPISaveSecretStoresClampedViews(t *testing.T) {
 		{name: "absent views stays legacy shape", payload: `{"secretMessage":"c","hashedKey":"h","duration":60}`, wantViews: 0},
 		{name: "explicit single view stays legacy shape", payload: `{"secretMessage":"c","hashedKey":"h","duration":60,"views":1}`, wantViews: 0},
 		{name: "multi view stored as-is", payload: `{"secretMessage":"c","hashedKey":"h","duration":60,"views":5}`, wantViews: 5},
+		{name: "maximum views stored as-is", payload: `{"secretMessage":"c","hashedKey":"h","duration":60,"views":10}`, wantViews: maxViews},
 		{name: "former unlimited sentinel collapses to single view", payload: `{"secretMessage":"c","hashedKey":"h","duration":60,"views":-1}`, wantViews: 0},
 		{name: "oversized clamped to max", payload: `{"secretMessage":"c","hashedKey":"h","duration":60,"views":5000}`, wantViews: maxViews},
 		{name: "garbage negative collapses to single view", payload: `{"secretMessage":"c","hashedKey":"h","duration":60,"views":-7}`, wantViews: 0},
@@ -164,6 +165,8 @@ func TestAPISaveSecretPassesClampedViewsToStorage(t *testing.T) {
 	}{
 		{name: "absent views passes single view", payload: `{"secretMessage":"c","hashedKey":"h","duration":60}`, wantViews: 1},
 		{name: "multi view passed as-is", payload: `{"secretMessage":"c","hashedKey":"h","duration":60,"views":5}`, wantViews: 5},
+		{name: "maximum views passed as-is", payload: `{"secretMessage":"c","hashedKey":"h","duration":60,"views":10}`, wantViews: maxViews},
+		{name: "previous maximum clamped", payload: `{"secretMessage":"c","hashedKey":"h","duration":60,"views":100}`, wantViews: maxViews},
 		{name: "passed after clamping", payload: `{"secretMessage":"c","hashedKey":"h","duration":60,"views":5000}`, wantViews: maxViews},
 		{name: "negative collapses to single view", payload: `{"secretMessage":"c","hashedKey":"h","duration":60,"views":-1}`, wantViews: 1},
 	}
