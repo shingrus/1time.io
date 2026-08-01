@@ -357,6 +357,13 @@ h1, h2, h3 {
   color: #fff;
 }
 
+.btn-primary:disabled,
+.btn-success:disabled {
+  opacity: 1;
+  background: var(--border);
+  color: var(--text-secondary);
+}
+
 .btn-primary:hover:not(:disabled) {
   background: var(--accent-hover);
   transform: translateY(-1px);

@@ -5,14 +5,18 @@ import {showLinkReady} from './show-link-ready.js';
 
 const form = document.querySelector<HTMLFormElement>('#secure-file-form');
 if (form) {
+    const dropTarget = form.querySelector<HTMLElement>('[data-drop-target]')!;
     const dropZone = form.querySelector<HTMLElement>('[data-drop-zone]')!;
     const fileInput = form.querySelector<HTMLInputElement>('[data-file-input]')!;
-    const promptEl = form.querySelector<HTMLElement>('[data-file-prompt]')!;
     const selectedEl = form.querySelector<HTMLElement>('[data-file-selected]')!;
     const selectedName = form.querySelector<HTMLElement>('[data-file-name]')!;
     const selectedSize = form.querySelector<HTMLElement>('[data-file-size]')!;
     const removeBtn = form.querySelector<HTMLButtonElement>('[data-file-remove]')!;
-    const errorEl = form.querySelector<HTMLElement>('[data-file-error]')!;
+    const errorCard = form.querySelector<HTMLElement>('[data-file-error-card]')!;
+    const errorTitle = form.querySelector<HTMLElement>('[data-file-error]')!;
+    const errorSub = form.querySelector<HTMLElement>('[data-file-error-sub]')!;
+    const chooseAnotherBtn = form.querySelector<HTMLButtonElement>('[data-file-choose-another]')!;
+    const noteEl = form.querySelector<HTMLElement>('[data-file-note]')!;
     const progressEl = form.querySelector<HTMLElement>('[data-file-progress]')!;
     const progressLabel = form.querySelector<HTMLElement>('[data-progress-label]')!;
     const progressValue = form.querySelector<HTMLElement>('[data-progress-value]')!;
@@ -31,9 +35,12 @@ if (form) {
     let isUploading = false;
     let uploadProgress = 0;
 
+    // Which chip opened the panel, so clicking it again closes it.
+    let openChip: string | null = null;
     const setOptionsOpen = (open: boolean) => {
         optionsPanel.toggleAttribute('hidden', !open);
         optionChips.forEach((chip) => chip.setAttribute('aria-expanded', String(open)));
+        if (!open) openChip = null;
     };
     const updateOptionChips = () => {
         optionChips.forEach((chip) => {
@@ -47,30 +54,38 @@ if (form) {
         });
     };
     optionChips.forEach((chip) => chip.addEventListener('click', () => {
+        const id = chip.dataset.chip ?? null;
+        if (openChip === id) {
+            setOptionsOpen(false);
+            return;
+        }
         setOptionsOpen(true);
-        form.querySelector<HTMLElement>('#' + chip.dataset.chip)?.focus();
+        openChip = id;
+        form.querySelector<HTMLElement>('#' + id)?.focus();
     }));
     durationSelect.addEventListener('change', updateOptionChips);
     viewsSelect.addEventListener('change', updateOptionChips);
     keyInput.addEventListener('input', updateOptionChips);
 
-    const setError = (msg: string) => {
-        errorEl.textContent = msg;
-        errorEl.toggleAttribute('hidden', !msg);
+    const maxMb = Constants.maxFileSizeBytes / (1024 * 1024);
+    // formatBytes always keeps one decimal; whole numbers read better without it.
+    const sizeLabel = (bytes: number) => formatBytes(bytes).replace('.0 ', ' ');
+
+    const setNote = (msg: string) => {
+        noteEl.textContent = msg;
+        noteEl.toggleAttribute('hidden', !msg);
     };
 
     const renderSelection = () => {
+        const hasFile = !!selectedFile;
+        const hasSizeError = !errorCard.hidden;
+        dropZone.toggleAttribute('hidden', hasFile || hasSizeError);
+        selectedEl.toggleAttribute('hidden', !hasFile);
         if (selectedFile) {
-            promptEl.toggleAttribute('hidden', true);
-            selectedEl.toggleAttribute('hidden', false);
             selectedName.textContent = selectedFile.name;
-            selectedSize.textContent = formatBytes(selectedFile.size);
-            dropZone.classList.add('file-drop-zone-has-file');
-        } else {
-            promptEl.toggleAttribute('hidden', false);
-            selectedEl.toggleAttribute('hidden', true);
-            dropZone.classList.remove('file-drop-zone-has-file');
+            selectedSize.textContent = `${sizeLabel(selectedFile.size)} · ready to encrypt`;
         }
+        setNote('');
         updateSubmit();
     };
 
@@ -81,7 +96,7 @@ if (form) {
             ? 'Encrypting...'
             : isUploading
                 ? `Uploading ${uploadProgress}%...`
-                : 'Create file link';
+                : 'Create link';
     };
 
     const renderProgress = () => {
@@ -102,19 +117,24 @@ if (form) {
     const clearSelection = () => {
         selectedFile = null;
         fileInput.value = '';
+        errorCard.toggleAttribute('hidden', true);
         renderSelection();
     };
 
     const selectFile = (file: File | undefined | null) => {
         if (!file) return;
         if (file.size > Constants.maxFileSizeBytes) {
-            clearSelection();
-            setError(`File is too large. Maximum size is ${Constants.maxFileSizeBytes / (1024 * 1024)} MB.`);
+            selectedFile = null;
+            fileInput.value = '';
+            errorTitle.textContent = `That file is too large — ${sizeLabel(file.size)}`;
+            errorSub.textContent = `${file.name} · the limit is ${maxMb} MB`;
+            errorCard.toggleAttribute('hidden', false);
+            renderSelection();
             const mb = Math.round(file.size / (1024 * 1024));
             fetch(`/stat-reject-limit-${mb}mb`, {method: 'HEAD', keepalive: true}).catch(() => {});
             return;
         }
-        setError('');
+        errorCard.toggleAttribute('hidden', true);
         selectedFile = file;
         renderSelection();
     };
@@ -124,16 +144,21 @@ if (form) {
     removeBtn.addEventListener('click', (e) => {
         e.stopPropagation();
         clearSelection();
-        setError('');
     });
-    dropZone.addEventListener('dragover', (e) => {
+    chooseAnotherBtn.addEventListener('click', () => {
+        clearSelection();
+        fileInput.click();
+    });
+    // Drag events live on the whole card so a file can still be dropped while the
+    // chosen-file or too-large row has replaced the drop zone.
+    dropTarget.addEventListener('dragover', (e) => {
         e.preventDefault();
         dropZone.classList.add('file-drop-zone-active');
     });
-    dropZone.addEventListener('dragleave', () => {
+    dropTarget.addEventListener('dragleave', () => {
         dropZone.classList.remove('file-drop-zone-active');
     });
-    dropZone.addEventListener('drop', (e) => {
+    dropTarget.addEventListener('drop', (e) => {
         e.preventDefault();
         dropZone.classList.remove('file-drop-zone-active');
         selectFile(e.dataTransfer?.files?.[0]);
@@ -148,7 +173,7 @@ if (form) {
         const durationSeconds = Number(durationSelect.value);
         const selectedViews = Number(viewsSelect.value);
         const passphrase = keyInput.value;
-        setError('');
+        setNote('');
         isEncrypting = true;
         isUploading = false;
         uploadProgress = 0;
@@ -192,9 +217,9 @@ if (form) {
                 }, {uses: selectedViews, kind: 'file'});
                 return;
             }
-            setError('Could not create the file link. Please try again.');
+            setNote('Could not create the file link. Please try again.');
         } catch {
-            setError('Could not encrypt or upload the file. Please try again.');
+            setNote('Could not encrypt or upload the file. Please try again.');
         }
         isEncrypting = false;
         isUploading = false;

@@ -89,51 +89,76 @@ const jsonLd = [
         </nav>
 
         <form id="secure-file-form" autocomplete="off">
-            <div class="form-field">
-                <label class="form-label">Your file, end-to-end encrypted.</label>
+            <div class="ff-card" data-drop-target>
+                <h1 class="ff-title">Send a one-time file</h1>
+
+                <input type="file" data-file-input style="display:none" />
+
                 <div class="file-drop-zone" data-drop-zone>
-                    <input type="file" data-file-input style="display:none" />
-                    <div class="file-drop-prompt" data-file-prompt>
-                        <span class="file-drop-btn">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                <path d="M3 7.5A2.5 2.5 0 0 1 5.5 5H10l2 2h6.5A2.5 2.5 0 0 1 21 9.5v7A2.5 2.5 0 0 1 18.5 19h-13A2.5 2.5 0 0 1 3 16.5z" />
-                                <path d="M3 10h18" />
-                            </svg>
-                            Choose a file
-                        </span>
-                        <p>or drop it here</p>
-                        <p class="file-drop-limit">Max {maxMb} MB</p>
-                    </div>
-                    <div class="file-selected" data-file-selected hidden>
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-                        <span class="file-selected-name" data-file-name></span>
-                        <span class="file-selected-size" data-file-size></span>
-                        <button type="button" class="file-selected-remove" data-file-remove aria-label="Remove file">&times;</button>
-                    </div>
+                    <span class="ff-tile">
+                        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                            <polyline points="17 8 12 3 7 8"/>
+                            <line x1="12" y1="3" x2="12" y2="15"/>
+                        </svg>
+                    </span>
+                    <p class="ff-drop-title">Drop a file here, or <span class="ff-browse">browse</span></p>
+                    <p class="ff-drop-hint">Any file type, up to {maxMb} MB</p>
                 </div>
-                <p class="form-help form-help-error" data-file-error role="alert" hidden></p>
-            </div>
 
-            <div class="file-progress" data-file-progress hidden aria-live="polite">
-                <div class="file-progress-head">
-                    <span class="file-progress-label" data-progress-label></span>
-                    <span class="file-progress-value" data-progress-value></span>
+                <div class="ff-row" data-file-selected hidden>
+                    <span class="ff-tile ff-tile-sm ff-tile-neutral">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                    </span>
+                    <span class="ff-row-text">
+                        <span class="ff-row-title" data-file-name></span>
+                        <span class="ff-row-sub" data-file-size></span>
+                    </span>
+                    <button type="button" class="ff-remove" data-file-remove aria-label="Remove file">&times;</button>
                 </div>
-                <div class="file-progress-track" data-progress-track>
-                    <div class="file-progress-fill" data-progress-fill style="width:0%"></div>
-                </div>
-                <p class="form-help" data-progress-help></p>
-            </div>
 
-            <ShareOptions kind="file" panelId="file-share-options">
-                <button slot="submit" class="btn btn-primary btn-lg" disabled type="submit">Create file link</button>
-            </ShareOptions>
+                <div class="ff-row ff-row-error" data-file-error-card hidden role="alert">
+                    <span class="ff-tile ff-tile-sm ff-tile-error">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                    </span>
+                    <span class="ff-row-text">
+                        <span class="ff-row-title" data-file-error></span>
+                        <span class="ff-row-sub" data-file-error-sub></span>
+                    </span>
+                    <button type="button" class="ff-alt-btn" data-file-choose-another>Choose another</button>
+                </div>
+
+                <div class="file-progress" data-file-progress hidden aria-live="polite">
+                    <div class="file-progress-head">
+                        <span class="file-progress-label" data-progress-label></span>
+                        <span class="file-progress-value" data-progress-value></span>
+                    </div>
+                    <div class="file-progress-track" data-progress-track>
+                        <div class="file-progress-fill" data-progress-fill style="width:0%"></div>
+                    </div>
+                    <p class="form-help" data-progress-help></p>
+                </div>
+
+                <ShareOptions kind="file" panelId="file-share-options">
+                    <button slot="submit" class="btn btn-success btn-lg" disabled type="submit">Create link</button>
+                </ShareOptions>
+
+                <p class="ff-note ff-note-error" data-file-note role="alert" hidden></p>
+
+                <p class="ff-sub">
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                        <polyline points="9 12 11 14 15 10"/>
+                    </svg>
+                    Encrypted in your browser. The key never reaches our servers.
+                </p>
+            </div>
         </form>
 
         <LinkReadyTemplate />
 
         <section class="seo-section">
-            <h1>Send a One-Time File — Encrypted, Self-Destructing Download Link</h1>
+            <h2>Send a One-Time File — Encrypted, Self-Destructing Download Link</h2>
             <h2>What is a one-time file?</h2>
             <p>
                 A <strong>one-time file</strong> is a file you send through a one-time download link.

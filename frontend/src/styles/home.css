@@ -26,6 +26,18 @@
   color: var(--text);
 }
 
+/* Narrow phones: keep "One-Time File Sharing" on one line instead of two. */
+@media (max-width: 400px) {
+  .share-mode-nav {
+    margin-bottom: 14px;
+  }
+
+  .share-mode-link {
+    padding: 8px 10px;
+    font-size: 13px;
+  }
+}
+
 .share-mode-link-active {
   background: var(--surface);
   color: var(--text);
@@ -39,7 +51,8 @@
 
 .form-help-error {
   color: var(--danger);
-  font-size: 14px;
+  font-size: 16px;
+  font-weight: 500;
 }
 
 .options-grid {
@@ -70,23 +83,37 @@
 
 .options-chips {
   flex-wrap: wrap;
-  gap: 18px;
+  gap: 0 20px;
 }
 
 .option-chip {
-  gap: 6px;
+  gap: 7px;
   font-family: inherit;
-  font-size: 14px;
-  padding: 4px 0;
+  font-size: 17px;
+  font-weight: 600;
+  padding: 10px 0;
   border: 0;
   background: none;
-  color: var(--text-secondary);
+  color: var(--text);
   cursor: pointer;
 }
 
-.option-chip:hover,
-.option-chip[aria-expanded='true'] {
-  color: var(--text);
+/* Hover only — the open panel is its own indicator, and colouring the chips
+   while it is open left them stuck accent-coloured for the whole session. */
+.option-chip:hover {
+  color: var(--accent);
+}
+
+/* Dotted underline = "this value is adjustable", without a pill or border. */
+.option-chip [data-chip-label] {
+  text-decoration: underline dotted;
+  text-decoration-color: var(--text-muted);
+  text-underline-offset: 4px;
+}
+
+.option-chip:hover [data-chip-label] {
+  text-decoration-style: solid;
+  text-decoration-color: currentColor;
 }
 
 @media (min-width: 480px) {

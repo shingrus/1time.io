@@ -15,9 +15,12 @@ if (form) {
     const errorEl = form.querySelector<HTMLElement>('[data-message-error]')!;
     const defaultLabel = labelEl.textContent ?? 'Create one-time link';
 
+    // Which chip opened the panel, so clicking it again closes it.
+    let openChip: string | null = null;
     const setOptionsOpen = (open: boolean) => {
         optionsPanel.toggleAttribute('hidden', !open);
         optionChips.forEach((chip) => chip.setAttribute('aria-expanded', String(open)));
+        if (!open) openChip = null;
     };
     const updateOptionChips = () => {
         optionChips.forEach((chip) => {
@@ -31,8 +34,14 @@ if (form) {
         });
     };
     optionChips.forEach((chip) => chip.addEventListener('click', () => {
+        const id = chip.dataset.chip ?? null;
+        if (openChip === id) {
+            setOptionsOpen(false);
+            return;
+        }
         setOptionsOpen(true);
-        form.querySelector<HTMLElement>('#' + chip.dataset.chip)?.focus();
+        openChip = id;
+        form.querySelector<HTMLElement>('#' + id)?.focus();
     }));
     durationSelect.addEventListener('change', updateOptionChips);
     viewsSelect.addEventListener('change', updateOptionChips);
