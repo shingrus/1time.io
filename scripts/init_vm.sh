@@ -18,6 +18,9 @@ BIN_SOURCE="${REPO_ROOT}/bin/1time-api"
 FRONTEND_SOURCE="${REPO_ROOT}/frontend/build"
 UNIT_SOURCE="${REPO_ROOT}/configs/systemd/1time.service"
 UNIT_TARGET="/etc/systemd/system/${SERVICE_NAME}.service"
+NGINX_SOURCE="${REPO_ROOT}/configs/nginx"
+NGINX_SITE_TARGET="/etc/nginx/sites-available/1time.conf"
+NGINX_SITE_LINK="/etc/nginx/sites-enabled/1time.conf"
 
 if [[ "${EUID}" -ne 0 ]]; then
     echo "Run this script as root or via sudo." >&2
@@ -38,6 +41,19 @@ if [[ ! -f "${UNIT_SOURCE}" ]]; then
     echo "Missing ${UNIT_SOURCE}." >&2
     exit 1
 fi
+
+# 1time.conf includes every file in configs/nginx/snippets/, so a missing
+# snippet makes nginx refuse to start rather than degrade. Fail early instead.
+if [[ ! -f "${NGINX_SOURCE}/1time.conf" ]]; then
+    echo "Missing ${NGINX_SOURCE}/1time.conf." >&2
+    exit 1
+fi
+for snippet in 1time-security-headers.conf 1time-security-headers-sensitive.conf cloudflare-real-ip.conf; do
+    if [[ ! -f "${NGINX_SOURCE}/snippets/${snippet}" ]]; then
+        echo "Missing ${NGINX_SOURCE}/snippets/${snippet}." >&2
+        exit 1
+    fi
+done
 
 export DEBIAN_FRONTEND=noninteractive
 apt-get update
@@ -62,6 +78,22 @@ fi
 
 #certbot certonly --manual --preferred-challenges dns -d 1time.io -d '*.1time.io'
 
+# --- nginx configuration -------------------------------------------------
+# Snippets keep the same names here as in the repo, so configs/nginx/snippets/
+# maps 1:1 onto /etc/nginx/snippets/ and the include paths need no rewriting.
+install -d -m 755 /etc/nginx/snippets
+install -m 0644 "${NGINX_SOURCE}/snippets/1time-security-headers.conf"           /etc/nginx/snippets/
+install -m 0644 "${NGINX_SOURCE}/snippets/1time-security-headers-sensitive.conf" /etc/nginx/snippets/
+install -m 0644 "${NGINX_SOURCE}/snippets/cloudflare-real-ip.conf"               /etc/nginx/snippets/
+install -m 0644 "${NGINX_SOURCE}/1time.conf" "${NGINX_SITE_TARGET}"
+ln -sfn "${NGINX_SITE_TARGET}" "${NGINX_SITE_LINK}"
+
+# Drop a stale unsuffixed link from older installs, which would otherwise
+# load the same server_name twice.
+if [[ -L /etc/nginx/sites-enabled/1time ]]; then
+    rm -f /etc/nginx/sites-enabled/1time
+fi
+
 tmp_unit="$(mktemp)"
 sed \
     -e "s#^User=.*#User=${APP_USER}#" \
@@ -79,5 +111,11 @@ rm -f "${tmp_unit}"
 systemctl daemon-reload
 systemctl enable --now redis-server
 systemctl enable --now "${SERVICE_NAME}"
+
+# Validate before reloading: a missing include or bad directive fails hard,
+# and it is better to leave the running config in place than to break it.
+nginx -t
+systemctl enable --now nginx
+systemctl reload nginx
 
 systemctl --no-pager --full status "${SERVICE_NAME}" || true

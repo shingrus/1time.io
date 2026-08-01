@@ -26,7 +26,7 @@ type StoredMessage struct {
 // maxViews caps the per-secret view count accepted by the API. It also bounds
 // how many times a single stored ciphertext can be retrieved, so there is no
 // unbounded-download ("unlimited views") amplification vector.
-const maxViews = 100
+const maxViews = 10
 
 type StoredFile struct {
 	Encrypted bool   `json:"encrypted"`

@@ -9,7 +9,7 @@ interface Props {
 const {kind = 'secret', panelId} = Astro.props;
 const isFile = kind === 'file';
 const usageNoun = isFile ? 'download' : 'view';
-const usageOptions = isFile ? [1, 2, 3, 5, 10] : [1, 2, 3, 5, 10, 100];
+const usageOptions = [1, 2, 3, 5, 10];
 ---
 <div class="form-actions share-primary-actions">
     <div class="options-chips" data-chips>
