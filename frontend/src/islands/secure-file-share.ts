@@ -5,7 +5,6 @@ import {showLinkReady} from './show-link-ready.js';
 
 const form = document.querySelector<HTMLFormElement>('#secure-file-form');
 if (form) {
-    const dropTarget = form.querySelector<HTMLElement>('[data-drop-target]')!;
     const dropZone = form.querySelector<HTMLElement>('[data-drop-zone]')!;
     const fileInput = form.querySelector<HTMLInputElement>('[data-file-input]')!;
     const selectedEl = form.querySelector<HTMLElement>('[data-file-selected]')!;
@@ -27,45 +26,35 @@ if (form) {
     const keyInput = form.querySelector<HTMLInputElement>('#secretKey')!;
     const durationSelect = form.querySelector<HTMLSelectElement>('#duration')!;
     const viewsSelect = form.querySelector<HTMLSelectElement>('#views')!;
-    const optionsPanel = form.querySelector<HTMLElement>('[data-options-panel]')!;
-    const optionChips = form.querySelectorAll<HTMLButtonElement>('.option-chip');
+    const optionsRow = form.querySelector<HTMLElement>('[data-options-row]')!;
+    const passphraseEditor = form.querySelector<HTMLElement>('[data-passphrase-editor]')!;
+    const passphraseToggle = form.querySelector<HTMLButtonElement>('[data-passphrase-toggle]')!;
+    const passphraseDone = form.querySelector<HTMLButtonElement>('[data-passphrase-done]')!;
+    const passphraseLabel = form.querySelector<HTMLElement>('[data-passphrase-label]')!;
 
     let selectedFile: File | null = null;
     let isEncrypting = false;
     let isUploading = false;
     let uploadProgress = 0;
 
-    // Which chip opened the panel, so clicking it again closes it.
-    let openChip: string | null = null;
-    const setOptionsOpen = (open: boolean) => {
-        optionsPanel.toggleAttribute('hidden', !open);
-        optionChips.forEach((chip) => chip.setAttribute('aria-expanded', String(open)));
-        if (!open) openChip = null;
+    const setPassphraseOpen = (open: boolean, restoreFocus = true) => {
+        optionsRow.toggleAttribute('hidden', open);
+        passphraseEditor.toggleAttribute('hidden', !open);
+        passphraseToggle.setAttribute('aria-expanded', String(open));
+        if (open) keyInput.focus();
+        else if (restoreFocus) passphraseToggle.focus();
     };
-    const updateOptionChips = () => {
-        optionChips.forEach((chip) => {
-            const id = chip.dataset.chip;
-            const text = id === 'duration'
-                ? durationSelect.selectedOptions[0]?.textContent ?? '1 day'
-                : id === 'views'
-                    ? `${viewsSelect.value} download${viewsSelect.value === '1' ? '' : 's'}`
-                    : keyInput.value ? 'passphrase added' : 'set passphrase';
-            chip.querySelector<HTMLElement>('[data-chip-label]')!.textContent = text;
-        });
+    const updatePassphraseLabel = () => {
+        passphraseLabel.textContent = keyInput.value ? 'Passphrase ✓' : 'Passphrase';
     };
-    optionChips.forEach((chip) => chip.addEventListener('click', () => {
-        const id = chip.dataset.chip ?? null;
-        if (openChip === id) {
-            setOptionsOpen(false);
-            return;
-        }
-        setOptionsOpen(true);
-        openChip = id;
-        form.querySelector<HTMLElement>('#' + id)?.focus();
-    }));
-    durationSelect.addEventListener('change', updateOptionChips);
-    viewsSelect.addEventListener('change', updateOptionChips);
-    keyInput.addEventListener('input', updateOptionChips);
+    passphraseToggle.addEventListener('click', () => setPassphraseOpen(true));
+    passphraseDone.addEventListener('click', () => setPassphraseOpen(false));
+    keyInput.addEventListener('input', updatePassphraseLabel);
+    keyInput.addEventListener('keydown', (event) => {
+        if (event.key !== 'Enter' && event.key !== 'Escape') return;
+        event.preventDefault();
+        setPassphraseOpen(false);
+    });
 
     const maxMb = Constants.maxFileSizeBytes / (1024 * 1024);
     // formatBytes always keeps one decimal; whole numbers read better without it.
@@ -83,7 +72,7 @@ if (form) {
         selectedEl.toggleAttribute('hidden', !hasFile);
         if (selectedFile) {
             selectedName.textContent = selectedFile.name;
-            selectedSize.textContent = `${sizeLabel(selectedFile.size)} · ready to encrypt`;
+            selectedSize.textContent = sizeLabel(selectedFile.size);
         }
         setNote('');
         updateSubmit();
@@ -126,8 +115,8 @@ if (form) {
         if (file.size > Constants.maxFileSizeBytes) {
             selectedFile = null;
             fileInput.value = '';
-            errorTitle.textContent = `That file is too large — ${sizeLabel(file.size)}`;
-            errorSub.textContent = `${file.name} · the limit is ${maxMb} MB`;
+            errorTitle.textContent = `File exceeds the ${maxMb} MB limit`;
+            errorSub.textContent = `${file.name} · ${sizeLabel(file.size)}`;
             errorCard.toggleAttribute('hidden', false);
             renderSelection();
             const mb = Math.round(file.size / (1024 * 1024));
@@ -149,16 +138,14 @@ if (form) {
         clearSelection();
         fileInput.click();
     });
-    // Drag events live on the whole card so a file can still be dropped while the
-    // chosen-file or too-large row has replaced the drop zone.
-    dropTarget.addEventListener('dragover', (e) => {
+    dropZone.addEventListener('dragover', (e) => {
         e.preventDefault();
         dropZone.classList.add('file-drop-zone-active');
     });
-    dropTarget.addEventListener('dragleave', () => {
+    dropZone.addEventListener('dragleave', () => {
         dropZone.classList.remove('file-drop-zone-active');
     });
-    dropTarget.addEventListener('drop', (e) => {
+    dropZone.addEventListener('drop', (e) => {
         e.preventDefault();
         dropZone.classList.remove('file-drop-zone-active');
         selectFile(e.dataTransfer?.files?.[0]);
@@ -211,8 +198,8 @@ if (form) {
                     keyInput.value = '';
                     durationSelect.value = String(Constants.defaultDurationSeconds);
                     viewsSelect.value = '1';
-                    updateOptionChips();
-                    setOptionsOpen(false);
+                    updatePassphraseLabel();
+                    setPassphraseOpen(false, false);
                     updateSubmit();
                 }, {uses: selectedViews, kind: 'file'});
                 return;

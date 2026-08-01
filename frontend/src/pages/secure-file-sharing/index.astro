@@ -89,49 +89,49 @@ const jsonLd = [
         </nav>
 
         <form id="secure-file-form" autocomplete="off">
-            <div class="ff-card" data-drop-target>
-                <h1 class="ff-title">Send a one-time file</h1>
+            <div class="file-card">
+                <h1 class="file-title">Send a one-time file</h1>
 
                 <input type="file" data-file-input style="display:none" />
 
-                <div class="file-drop-zone" data-drop-zone>
-                    <span class="ff-tile">
+                <button type="button" class="file-drop-zone" data-drop-zone>
+                    <span class="file-icon">
                         <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
                             <polyline points="17 8 12 3 7 8"/>
                             <line x1="12" y1="3" x2="12" y2="15"/>
                         </svg>
                     </span>
-                    <p class="ff-drop-title">Drop a file here, or <span class="ff-browse">browse</span></p>
-                    <p class="ff-drop-hint">Any file type, up to {maxMb} MB</p>
-                </div>
+                    <span class="file-drop-title">Drop a file here, or <span class="file-browse">browse</span></span>
+                    <span class="file-drop-hint">Any file type, up to {maxMb} MB</span>
+                </button>
 
-                <div class="ff-row" data-file-selected hidden>
-                    <span class="ff-tile ff-tile-sm ff-tile-neutral">
+                <div class="file-state" data-file-selected hidden>
+                    <span class="file-icon">
                         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
                     </span>
-                    <span class="ff-row-text">
-                        <span class="ff-row-title" data-file-name></span>
-                        <span class="ff-row-sub" data-file-size></span>
+                    <span class="file-state-copy">
+                        <span class="file-state-title" data-file-name></span>
+                        <span class="form-help file-state-meta" data-file-size></span>
                     </span>
-                    <button type="button" class="ff-remove" data-file-remove aria-label="Remove file">&times;</button>
+                    <button type="button" class="btn btn-ghost file-remove" data-file-remove aria-label="Remove file">&times;</button>
                 </div>
 
-                <div class="ff-row ff-row-error" data-file-error-card hidden role="alert">
-                    <span class="ff-tile ff-tile-sm ff-tile-error">
+                <div class="file-state file-state-error" data-file-error-card hidden role="alert">
+                    <span class="file-icon">
                         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
                     </span>
-                    <span class="ff-row-text">
-                        <span class="ff-row-title" data-file-error></span>
-                        <span class="ff-row-sub" data-file-error-sub></span>
+                    <span class="file-state-copy">
+                        <span class="file-state-title" data-file-error></span>
+                        <span class="form-help file-state-meta" data-file-error-sub></span>
                     </span>
-                    <button type="button" class="ff-alt-btn" data-file-choose-another>Choose another</button>
+                    <button type="button" class="btn btn-secondary file-choose-another" data-file-choose-another>Choose another</button>
                 </div>
 
                 <div class="file-progress" data-file-progress hidden aria-live="polite">
                     <div class="file-progress-head">
-                        <span class="file-progress-label" data-progress-label></span>
-                        <span class="file-progress-value" data-progress-value></span>
+                        <span class="form-label file-progress-label" data-progress-label></span>
+                        <span class="form-help file-progress-value" data-progress-value></span>
                     </div>
                     <div class="file-progress-track" data-progress-track>
                         <div class="file-progress-fill" data-progress-fill style="width:0%"></div>
@@ -143,9 +143,9 @@ const jsonLd = [
                     <button slot="submit" class="btn btn-success btn-lg" disabled type="submit">Create link</button>
                 </ShareOptions>
 
-                <p class="ff-note ff-note-error" data-file-note role="alert" hidden></p>
+                <p class="form-help form-help-error file-form-error" data-file-note role="alert" hidden></p>
 
-                <p class="ff-sub">
+                <p class="form-help file-note">
                     <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                         <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
                         <polyline points="9 12 11 14 15 10"/>
@@ -158,16 +158,11 @@ const jsonLd = [
         <LinkReadyTemplate />
 
         <section class="seo-section">
-            <h2>Send a One-Time File — Encrypted, Self-Destructing Download Link</h2>
             <h2>What is a one-time file?</h2>
             <p>
                 A <strong>one-time file</strong> is a file you send through a one-time download link.
-                It allows one download by default, then the encrypted copy is permanently deleted from the server.
-                It is the file-sharing equivalent of a self-destructing message: a one-time URL that disappears after the file lands.
-            </p>
-            <p>
-                One download remains the default. If you choose a higher limit, the encrypted copy remains
-                available only until the last of up to 10 downloads or expiry.
+                The recipient can download it once by default, then the encrypted copy is permanently deleted.
+                If you allow up to 10 downloads, it remains available only until the final download or expiry.
             </p>
             <h2>Why use one-time encrypted file sharing?</h2>
             <p>

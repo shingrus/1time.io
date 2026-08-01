@@ -1,103 +1,74 @@
-/* Form card */
-.ff-card {
+.file-card {
+  padding: 28px;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  padding: 28px;
 }
 
-.ff-title {
+.file-title {
   margin: 0;
-  /* Explicit: the global h2 rule would otherwise pull in the display face. */
   font-family: var(--font-body);
   font-size: 30px;
-  font-weight: 700;
-  line-height: 1.2;
-  color: var(--text);
 }
 
-.ff-sub {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin: 22px 0 0;
-  font-size: 15px;
-  color: var(--text-secondary);
+.file-drop-zone {
+  width: 100%;
+  margin-top: 24px;
+  padding: 40px 20px;
+  color: inherit;
+  font: inherit;
+  text-align: center;
+  cursor: pointer;
+  background: var(--bg);
+  border: 2px dashed #D6D3D1;
+  border-radius: var(--radius);
+  transition: border-color var(--transition), background var(--transition);
 }
 
-.ff-sub svg {
-  flex-shrink: 0;
-  color: var(--success);
+.file-drop-zone:hover,
+.file-drop-zone:focus-visible,
+.file-drop-zone-active {
+  background: #F0FDF4;
+  border-color: var(--success);
 }
 
-/* Icon tiles */
-.ff-tile {
+.file-icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
   width: 58px;
   height: 58px;
-  border-radius: 16px;
-  background: #F0FDF4;
   color: var(--success);
-}
-
-.ff-tile-sm {
-  width: 48px;
-  height: 48px;
-  border-radius: 13px;
-}
-
-.ff-tile-neutral {
-  background: #F5F5F4;
-  color: var(--text-secondary);
-}
-
-.ff-tile-error {
-  background: #F7D9CC;
-  color: var(--accent-hover);
-}
-
-/* Empty state */
-.file-drop-zone {
-  margin-top: 24px;
-  border: 2px dashed #D6D3D1;
-  border-radius: var(--radius);
-  padding: 40px 20px;
-  text-align: center;
-  cursor: pointer;
-  background: var(--bg);
-  transition: border-color var(--transition), background var(--transition);
-}
-
-.file-drop-zone:hover,
-.file-drop-zone-active {
-  border-color: var(--success);
   background: #F0FDF4;
+  border-radius: 16px;
 }
 
-.ff-drop-title {
-  margin: 18px 0 0;
+.file-drop-title,
+.file-drop-hint {
+  display: block;
+}
+
+.file-drop-title {
+  margin-top: 18px;
+  color: var(--text);
   font-size: 18px;
   font-weight: 700;
-  color: var(--text);
 }
 
-.ff-browse {
+.file-browse {
   color: var(--success);
   text-decoration: underline;
   text-underline-offset: 3px;
 }
 
-.ff-drop-hint {
-  margin: 6px 0 0;
-  font-size: 15px;
+.file-drop-hint {
+  margin-top: 6px;
   color: var(--text-muted);
+  font-size: 15px;
 }
 
-/* Chosen / too-large rows */
-.ff-row {
+.file-state {
   display: flex;
   align-items: center;
   gap: 16px;
@@ -107,153 +78,94 @@
   border-radius: var(--radius);
 }
 
-.ff-row-error {
-  border-color: #E0A088;
-  background: #FDF1EC;
+.file-state .file-icon {
+  width: 48px;
+  height: 48px;
+  color: var(--text-secondary);
+  background: var(--bg);
+  border-radius: 13px;
 }
 
-.ff-row-text {
-  display: flex;
+.file-state-copy {
   flex: 1;
-  flex-direction: column;
-  gap: 3px;
   min-width: 0;
 }
 
-.ff-row-title {
-  font-size: 18px;
-  font-weight: 700;
-  color: var(--text);
+.file-state-title {
+  display: block;
   overflow: hidden;
+  font-weight: 600;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.ff-row-sub {
-  font-size: 15px;
-  line-height: 1.4;
-  color: var(--text-muted);
+.file-state-meta {
+  display: block;
   overflow-wrap: anywhere;
 }
 
-.ff-row-error .ff-row-title {
-  color: var(--accent-hover);
-  /* The size matters here, so let it wrap rather than truncate on narrow screens. */
+.file-state-error {
+  background: var(--accent-light);
+  border-color: var(--accent);
+}
+
+.file-state-error .file-icon {
+  color: var(--accent);
+  background: var(--surface);
+}
+
+.file-state-error .file-state-title {
   overflow: visible;
+  color: var(--accent-hover);
   white-space: normal;
 }
 
-.ff-row-error .ff-row-sub {
+.file-state-error .file-state-meta {
   color: var(--accent);
 }
 
-.ff-remove {
-  margin-left: auto;
+.file-remove {
   flex-shrink: 0;
-  background: none;
-  border: none;
+  margin-left: auto;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0;
   font-size: 22px;
-  color: var(--text-muted);
-  cursor: pointer;
-  padding: 0 6px;
-  line-height: 1;
 }
 
-.ff-remove:hover {
-  color: var(--text);
-}
-
-.ff-alt-btn {
-  margin-left: auto;
+.file-choose-another {
   flex-shrink: 0;
-  padding: 12px 18px;
-  border-radius: var(--radius-sm);
-  border: 1px solid #E0A088;
-  background: var(--surface);
-  color: var(--accent-hover);
-  font-family: var(--font-body);
-  font-size: 16px;
-  font-weight: 600;
-  cursor: pointer;
+  margin-left: auto;
 }
 
-.ff-alt-btn:hover {
-  border-color: var(--accent);
-  background: #FFF7ED;
-}
-
-/* Options share the footer row with the submit button, in the shared plain-link style. */
 #secure-file-form .share-primary-actions {
   margin-top: 26px;
   margin-bottom: 0;
 }
 
-#secure-file-form .options-grid {
+.file-form-error {
   margin-top: 16px;
-  margin-bottom: 0;
 }
 
-.ff-note {
-  margin: 16px 0 0;
-  font-size: 15px;
-  line-height: 1.5;
-  font-weight: 500;
-  color: var(--danger);
+.file-note {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 22px 0 0;
+  font-size: 14px;
 }
 
-@media (max-width: 560px) {
-  .ff-card {
-    padding: 20px;
-  }
-
-  .ff-title {
-    font-size: 25px;
-  }
-
-  /* Vertical budget on phones: every block here is trimmed so the submit
-     button clears the browser toolbar without scrolling. */
-  .ff-sub {
-    margin-top: 18px;
-  }
-
-  .file-drop-zone {
-    margin-top: 18px;
-    padding: 26px 16px;
-  }
-
-  .ff-tile {
-    width: 48px;
-    height: 48px;
-    border-radius: 13px;
-  }
-
-  .ff-drop-title {
-    margin-top: 14px;
-    font-size: 17px;
-  }
-
-  #secure-file-form .share-primary-actions {
-    margin-top: 18px;
-  }
-
-  .ff-row {
-    margin-top: 18px;
-    flex-wrap: wrap;
-  }
-
-  .ff-alt-btn {
-    margin-left: 0;
-    width: 100%;
-  }
+.file-note svg {
+  flex-shrink: 0;
+  color: var(--success);
 }
 
 .file-progress {
   margin-top: 24px;
   padding: 16px;
-  border: 1px solid rgba(21, 128, 61, 0.18);
+  background: #F0FDF4;
+  border: 1px solid var(--border);
   border-radius: var(--radius);
-  background:
-    linear-gradient(180deg, rgba(240, 253, 244, 0.96), rgba(236, 253, 245, 0.98));
 }
 
 .file-progress-head {
@@ -264,30 +176,25 @@
 }
 
 .file-progress-label {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--text);
+  margin: 0;
 }
 
 .file-progress-value {
-  font-size: 13px;
-  color: var(--text-muted);
+  margin: 0;
   white-space: nowrap;
 }
 
 .file-progress-track {
-  position: relative;
-  overflow: hidden;
   height: 10px;
   margin-top: 10px;
+  overflow: hidden;
+  background: var(--border);
   border-radius: var(--radius-sm);
-  background: rgba(148, 163, 184, 0.18);
 }
 
 .file-progress-fill {
   height: 100%;
-  border-radius: var(--radius-sm);
-  background: linear-gradient(90deg, #15803D, #22C55E);
+  background: var(--success);
   transition: width 160ms linear;
 }
 
@@ -302,5 +209,39 @@
   }
   100% {
     transform: translateX(220%);
+  }
+}
+
+@media (max-width: 480px) {
+  .file-card {
+    padding: 20px;
+  }
+
+  .file-title {
+    font-size: 25px;
+  }
+
+  .file-drop-zone {
+    margin-top: 18px;
+    padding: 26px 16px;
+  }
+
+  .file-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 13px;
+  }
+
+  #secure-file-form .share-primary-actions {
+    margin-top: 18px;
+  }
+
+  .file-state-error {
+    flex-wrap: wrap;
+  }
+
+  .file-choose-another {
+    width: 100%;
+    margin-left: 0;
   }
 }

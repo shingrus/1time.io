@@ -14,8 +14,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 8px 16px;
-  font-size: 14px;
+  padding: 8px 10px;
+  font-size: clamp(13px, 3.5vw, 14px);
   font-weight: 500;
   color: var(--text-muted);
   text-decoration: none;
@@ -24,18 +24,6 @@
 
 .share-mode-link:hover {
   color: var(--text);
-}
-
-/* Narrow phones: keep "One-Time File Sharing" on one line instead of two. */
-@media (max-width: 400px) {
-  .share-mode-nav {
-    margin-bottom: 14px;
-  }
-
-  .share-mode-link {
-    padding: 8px 10px;
-    font-size: 13px;
-  }
 }
 
 .share-mode-link-active {
@@ -51,78 +39,67 @@
 
 .form-help-error {
   color: var(--danger);
-  font-size: 16px;
-  font-weight: 500;
-}
-
-.options-grid {
-  display: grid;
-  gap: 12px;
-  margin-bottom: 16px;
+  font-size: 14px;
 }
 
 .share-primary-actions {
   margin-bottom: 16px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
   gap: 12px;
-  flex-wrap: wrap;
 }
 
 .share-primary-actions .btn-lg {
   padding-inline: 18px;
-  margin-left: auto;
 }
 
-.options-chips,
-.option-chip {
-  display: flex;
-  align-items: center;
+.share-options {
+  min-width: 0;
 }
 
-.options-chips {
-  flex-wrap: wrap;
-  gap: 0 20px;
+.options-inline {
+  display: grid;
+  grid-template-columns: 0.85fr 1.3fr 1fr;
+  gap: 8px;
 }
 
-.option-chip {
-  gap: 7px;
-  font-family: inherit;
-  font-size: 17px;
-  font-weight: 600;
-  padding: 10px 0;
-  border: 0;
-  background: none;
-  color: var(--text);
-  cursor: pointer;
+.option-select {
+  width: 100%;
+  min-width: 0;
+  padding: 8px 24px 8px 10px;
+  background-position: right 8px center;
+  font-size: 14px;
+  line-height: 1.2;
 }
 
-/* Hover only — the open panel is its own indicator, and colouring the chips
-   while it is open left them stuck accent-coloured for the whole session. */
-.option-chip:hover {
-  color: var(--accent);
+.option-passphrase {
+  width: 100%;
+  min-width: 0;
+  min-height: 39px;
+  padding-inline: 10px;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-/* Dotted underline = "this value is adjustable", without a pill or border. */
-.option-chip [data-chip-label] {
-  text-decoration: underline dotted;
-  text-decoration-color: var(--text-muted);
-  text-underline-offset: 4px;
+.passphrase-editor {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
 }
 
-.option-chip:hover [data-chip-label] {
-  text-decoration-style: solid;
-  text-decoration-color: currentColor;
+.passphrase-editor .btn {
+  width: auto;
 }
 
-@media (min-width: 480px) {
-  .options-grid {
-    grid-template-columns: 1fr 1fr;
+@media (max-width: 480px) {
+  .share-primary-actions {
+    grid-template-columns: 1fr;
   }
 
-  .options-grid .options-grid-full {
-    grid-column: 1 / -1;
+  .option-select,
+  .option-passphrase {
+    font-size: 13px;
   }
 }
 

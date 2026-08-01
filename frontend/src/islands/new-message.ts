@@ -7,45 +7,35 @@ if (form) {
     const keyInput = form.querySelector<HTMLInputElement>('#secretKey')!;
     const durationSelect = form.querySelector<HTMLSelectElement>('#duration')!;
     const viewsSelect = form.querySelector<HTMLSelectElement>('#views')!;
-    const optionsPanel = form.querySelector<HTMLElement>('[data-options-panel]')!;
-    const optionChips = form.querySelectorAll<HTMLButtonElement>('.option-chip');
+    const optionsRow = form.querySelector<HTMLElement>('[data-options-row]')!;
+    const passphraseEditor = form.querySelector<HTMLElement>('[data-passphrase-editor]')!;
+    const passphraseToggle = form.querySelector<HTMLButtonElement>('[data-passphrase-toggle]')!;
+    const passphraseDone = form.querySelector<HTMLButtonElement>('[data-passphrase-done]')!;
+    const passphraseLabel = form.querySelector<HTMLElement>('[data-passphrase-label]')!;
     const submitBtn = form.querySelector<HTMLButtonElement>('button[type="submit"]')!;
     const labelEl = submitBtn.querySelector<HTMLElement>('.btn-label')!;
     const kbdHint = submitBtn.querySelector<HTMLElement>('[data-shortcut-hint]')!;
     const errorEl = form.querySelector<HTMLElement>('[data-message-error]')!;
     const defaultLabel = labelEl.textContent ?? 'Create one-time link';
 
-    // Which chip opened the panel, so clicking it again closes it.
-    let openChip: string | null = null;
-    const setOptionsOpen = (open: boolean) => {
-        optionsPanel.toggleAttribute('hidden', !open);
-        optionChips.forEach((chip) => chip.setAttribute('aria-expanded', String(open)));
-        if (!open) openChip = null;
+    const setPassphraseOpen = (open: boolean, restoreFocus = true) => {
+        optionsRow.toggleAttribute('hidden', open);
+        passphraseEditor.toggleAttribute('hidden', !open);
+        passphraseToggle.setAttribute('aria-expanded', String(open));
+        if (open) keyInput.focus();
+        else if (restoreFocus) passphraseToggle.focus();
     };
-    const updateOptionChips = () => {
-        optionChips.forEach((chip) => {
-            const id = chip.dataset.chip;
-            const text = id === 'duration'
-                ? durationSelect.selectedOptions[0]?.textContent ?? '1 day'
-                : id === 'views'
-                    ? `${viewsSelect.value} view${viewsSelect.value === '1' ? '' : 's'}`
-                    : keyInput.value ? 'passphrase added' : 'set passphrase';
-            chip.querySelector<HTMLElement>('[data-chip-label]')!.textContent = text;
-        });
+    const updatePassphraseLabel = () => {
+        passphraseLabel.textContent = keyInput.value ? 'Passphrase ✓' : 'Passphrase';
     };
-    optionChips.forEach((chip) => chip.addEventListener('click', () => {
-        const id = chip.dataset.chip ?? null;
-        if (openChip === id) {
-            setOptionsOpen(false);
-            return;
-        }
-        setOptionsOpen(true);
-        openChip = id;
-        form.querySelector<HTMLElement>('#' + id)?.focus();
-    }));
-    durationSelect.addEventListener('change', updateOptionChips);
-    viewsSelect.addEventListener('change', updateOptionChips);
-    keyInput.addEventListener('input', updateOptionChips);
+    passphraseToggle.addEventListener('click', () => setPassphraseOpen(true));
+    passphraseDone.addEventListener('click', () => setPassphraseOpen(false));
+    keyInput.addEventListener('input', updatePassphraseLabel);
+    keyInput.addEventListener('keydown', (event) => {
+        if (event.key !== 'Enter' && event.key !== 'Escape') return;
+        event.preventDefault();
+        setPassphraseOpen(false);
+    });
 
     const setError = (msg: string) => {
         errorEl.textContent = msg;
@@ -100,8 +90,8 @@ if (form) {
                     keyInput.value = '';
                     durationSelect.value = String(Constants.defaultDurationSeconds);
                     viewsSelect.value = '1';
-                    updateOptionChips();
-                    setOptionsOpen(false);
+                    updatePassphraseLabel();
+                    setPassphraseOpen(false, false);
                     updateSubmitState(false);
                     textarea.focus();
                 }, {uses: selectedViews});
