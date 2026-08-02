@@ -42,8 +42,24 @@
   font-size: 14px;
 }
 
+.share-title {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 30px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
+.secret-textarea {
+  display: block;
+  min-height: 190px;
+  margin-top: 24px;
+  background: var(--surface);
+}
+
 .share-primary-actions {
-  margin-bottom: 16px;
+  margin: 24px 0 0;
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: start;
@@ -60,7 +76,7 @@
 
 .options-inline {
   display: grid;
-  grid-template-columns: 0.85fr 1.3fr 1fr;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
 }
 
@@ -74,27 +90,39 @@
 }
 
 .option-passphrase {
-  width: 100%;
-  min-width: 0;
-  min-height: 39px;
-  padding-inline: 10px;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  grid-column: 1 / -1;
 }
 
-.passphrase-editor {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+.share-form-error {
+  margin-top: 12px;
+}
+
+.share-note {
+  display: flex;
+  align-items: center;
   gap: 8px;
+  margin: 20px 0 0;
+  font-size: 14px;
 }
 
-.passphrase-editor .btn {
-  width: auto;
+.share-note svg {
+  flex-shrink: 0;
+  color: var(--success);
 }
 
 @media (max-width: 480px) {
+  .share-title {
+    font-size: 25px;
+  }
+
+  .secret-textarea,
   .share-primary-actions {
+    margin-top: 18px;
     grid-template-columns: 1fr;
+  }
+
+  .secret-textarea {
+    min-height: 140px;
   }
 
   .option-select,

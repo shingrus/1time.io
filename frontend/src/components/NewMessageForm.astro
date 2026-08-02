@@ -1,30 +1,33 @@
 ---
+import EncryptionNote from './EncryptionNote.astro';
 import LinkReadyTemplate from './LinkReadyTemplate.astro';
 import ShareOptions from './ShareOptions.astro';
 ---
 <form id="new-message-form" autocomplete="off">
-    <div class="form-field">
-        <label class="form-label" for="secretMessage">Your secret message, end-to-end encrypted.</label>
+    <div class="share-card">
+        <p class="share-title">Send a one-time secret</p>
         <textarea
-            autofocus
-            class="form-textarea"
+            class="form-textarea secret-textarea"
             id="secretMessage"
+            aria-label="Secret message"
+            autofocus
             autocomplete="off"
             autocapitalize="none"
-            placeholder="Paste a password, API key, private note, or any sensitive text..."
+            placeholder="Paste a password, API key, or private note"
             rows="5"
             spellcheck="false"
         ></textarea>
+
+        <ShareOptions kind="secret">
+            <button slot="submit" class="btn btn-success btn-lg" disabled type="submit">
+                <span class="btn-label">Create one-time link</span>
+                <kbd class="btn-kbd" data-shortcut-hint aria-hidden="true" hidden></kbd>
+            </button>
+        </ShareOptions>
+
+        <p class="form-help form-help-error share-form-error" data-message-error role="alert" hidden></p>
+        <EncryptionNote />
     </div>
-
-    <ShareOptions kind="secret" panelId="share-options">
-        <button slot="submit" class="btn btn-primary btn-lg" disabled type="submit">
-            <span class="btn-label">Create one-time link</span>
-            <kbd class="btn-kbd" data-shortcut-hint aria-hidden="true" hidden></kbd>
-        </button>
-    </ShareOptions>
-
-    <p class="form-help form-help-error" data-message-error role="alert" hidden></p>
 </form>
 
 <LinkReadyTemplate />

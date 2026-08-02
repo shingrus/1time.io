@@ -2,6 +2,15 @@ import {copyTextToClipboard} from '../lib/util.js';
 import {parseSecretLink} from '../lib/protocol.mjs';
 import {chromeStoreUrl} from '../lib/siteConfig.js';
 
+const loadStyles = async (id: string, importer: () => Promise<{default: string}>) => {
+    if (document.getElementById(id)) return;
+    const {default: css} = await importer();
+    const style = document.createElement('style');
+    style.id = id;
+    style.textContent = css;
+    document.head.append(style);
+};
+
 /**
  * Replace `formEl` with the populated #link-ready-template clone.
  * Wires up Copy / QR / Reset behavior on the clone.
@@ -9,12 +18,15 @@ import {chromeStoreUrl} from '../lib/siteConfig.js';
  * `uses` and `kind` keep one-time branding while making an explicitly selected
  * multi-use link honest about its actual destruction point.
  */
-export function showLinkReady(
+export async function showLinkReady(
     formEl: HTMLElement,
     link: string,
     onReset: () => void,
     {uses = 1, kind = 'secret'}: {uses?: number; kind?: 'secret' | 'file'} = {},
-): void {
+): Promise<void> {
+    // Success-state styles are not needed on first paint.
+    await loadStyles('link-ready-styles', () => import('../styles/link.css?raw')).catch(() => {});
+
     const tpl = document.getElementById('link-ready-template') as HTMLTemplateElement | null;
     if (!tpl) return;
 
@@ -134,7 +146,10 @@ export function showLinkReady(
         qrLoading = true;
         qrLabel.textContent = 'Loading QR...';
         try {
-            const {createQrSvg} = await import('../lib/qr.js');
+            const [{createQrSvg}] = await Promise.all([
+                import('../lib/qr.js'),
+                loadStyles('qr-panel-styles', () => import('../styles/qr-panel.css?raw')).catch(() => {}),
+            ]);
             qrSlot.innerHTML = await createQrSvg(link);
             qrPanel.toggleAttribute('hidden', false);
             qrVisible = true;

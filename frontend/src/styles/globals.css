@@ -42,9 +42,10 @@
   --accent-hover: #9A3412;
   --accent-light: #FFF7ED;
   --border: #E7E5E4;
-  --border-focus: #C2410C;
   --success: #15803D;
   --success-hover: #166534;
+  --border-focus: var(--success);
+  --focus-ring: rgba(21, 128, 61, 0.12);
   --danger: #DC2626;
   --warning: #B45309;
   --tip-bg: #FEFCE8;
@@ -96,7 +97,7 @@ body {
 .app-header,
 .app-main,
 .app-footer {
-  max-width: 640px;
+  max-width: 720px;
   margin: 0 auto;
   width: 100%;
 }
@@ -137,6 +138,7 @@ body {
   font-weight: 500;
   color: var(--text-secondary);
   text-decoration: none;
+  white-space: nowrap;
   padding: 6px 12px;
   border-radius: var(--radius-sm);
   transition: color var(--transition), background var(--transition);
@@ -263,7 +265,7 @@ h1, h2, h3 {
 
 .form-textarea:focus {
   border-color: var(--border-focus);
-  box-shadow: 0 0 0 3px rgba(194, 65, 12, 0.12);
+  box-shadow: 0 0 0 3px var(--focus-ring);
 }
 
 .form-textarea::placeholder {
@@ -284,7 +286,7 @@ h1, h2, h3 {
 
 .form-input:focus {
   border-color: var(--border-focus);
-  box-shadow: 0 0 0 3px rgba(194, 65, 12, 0.12);
+  box-shadow: 0 0 0 3px var(--focus-ring);
 }
 
 .form-input::placeholder {
@@ -319,7 +321,7 @@ h1, h2, h3 {
 
 .form-select:focus {
   border-color: var(--border-focus);
-  box-shadow: 0 0 0 3px rgba(194, 65, 12, 0.12);
+  box-shadow: 0 0 0 3px var(--focus-ring);
 }
 
 .form-help {
@@ -361,7 +363,7 @@ h1, h2, h3 {
 .btn-success:disabled {
   opacity: 1;
   background: var(--border);
-  color: var(--text-secondary);
+  color: var(--text);
 }
 
 .btn-primary:hover:not(:disabled) {
@@ -439,6 +441,24 @@ h1, h2, h3 {
 @media (max-width: 480px) {
   .app-header {
     padding: 12px 16px;
+    gap: 6px;
+  }
+  .app-logo {
+    gap: 6px;
+    flex-shrink: 0;
+  }
+  .app-logo-text {
+    font-size: 20px;
+  }
+  .app-nav {
+    gap: 0;
+  }
+  .app-nav a:not(.app-nav-icon) {
+    padding-inline: clamp(4px, 1.5vw, 7px);
+    font-size: clamp(11px, 3vw, 13px);
+  }
+  .app-nav-icon {
+    padding: 4px !important;
   }
   .app-main {
     padding: 8px 16px 32px;

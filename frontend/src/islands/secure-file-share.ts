@@ -5,6 +5,7 @@ import {showLinkReady} from './show-link-ready.js';
 
 const form = document.querySelector<HTMLFormElement>('#secure-file-form');
 if (form) {
+    const dropTarget = form.querySelector<HTMLElement>('.share-card')!;
     const dropZone = form.querySelector<HTMLElement>('[data-drop-zone]')!;
     const fileInput = form.querySelector<HTMLInputElement>('[data-file-input]')!;
     const selectedEl = form.querySelector<HTMLElement>('[data-file-selected]')!;
@@ -26,35 +27,11 @@ if (form) {
     const keyInput = form.querySelector<HTMLInputElement>('#secretKey')!;
     const durationSelect = form.querySelector<HTMLSelectElement>('#duration')!;
     const viewsSelect = form.querySelector<HTMLSelectElement>('#views')!;
-    const optionsRow = form.querySelector<HTMLElement>('[data-options-row]')!;
-    const passphraseEditor = form.querySelector<HTMLElement>('[data-passphrase-editor]')!;
-    const passphraseToggle = form.querySelector<HTMLButtonElement>('[data-passphrase-toggle]')!;
-    const passphraseDone = form.querySelector<HTMLButtonElement>('[data-passphrase-done]')!;
-    const passphraseLabel = form.querySelector<HTMLElement>('[data-passphrase-label]')!;
 
     let selectedFile: File | null = null;
     let isEncrypting = false;
     let isUploading = false;
     let uploadProgress = 0;
-
-    const setPassphraseOpen = (open: boolean, restoreFocus = true) => {
-        optionsRow.toggleAttribute('hidden', open);
-        passphraseEditor.toggleAttribute('hidden', !open);
-        passphraseToggle.setAttribute('aria-expanded', String(open));
-        if (open) keyInput.focus();
-        else if (restoreFocus) passphraseToggle.focus();
-    };
-    const updatePassphraseLabel = () => {
-        passphraseLabel.textContent = keyInput.value ? 'Passphrase ✓' : 'Passphrase';
-    };
-    passphraseToggle.addEventListener('click', () => setPassphraseOpen(true));
-    passphraseDone.addEventListener('click', () => setPassphraseOpen(false));
-    keyInput.addEventListener('input', updatePassphraseLabel);
-    keyInput.addEventListener('keydown', (event) => {
-        if (event.key !== 'Enter' && event.key !== 'Escape') return;
-        event.preventDefault();
-        setPassphraseOpen(false);
-    });
 
     const maxMb = Constants.maxFileSizeBytes / (1024 * 1024);
     // formatBytes always keeps one decimal; whole numbers read better without it.
@@ -85,7 +62,7 @@ if (form) {
             ? 'Encrypting...'
             : isUploading
                 ? `Uploading ${uploadProgress}%...`
-                : 'Create link';
+                : 'Create one-time link';
     };
 
     const renderProgress = () => {
@@ -138,14 +115,15 @@ if (form) {
         clearSelection();
         fileInput.click();
     });
-    dropZone.addEventListener('dragover', (e) => {
+    dropTarget.addEventListener('dragover', (e) => {
         e.preventDefault();
         dropZone.classList.add('file-drop-zone-active');
     });
-    dropZone.addEventListener('dragleave', () => {
+    dropTarget.addEventListener('dragleave', (e) => {
+        if (e.relatedTarget instanceof Node && dropTarget.contains(e.relatedTarget)) return;
         dropZone.classList.remove('file-drop-zone-active');
     });
-    dropZone.addEventListener('drop', (e) => {
+    dropTarget.addEventListener('drop', (e) => {
         e.preventDefault();
         dropZone.classList.remove('file-drop-zone-active');
         selectFile(e.dataTransfer?.files?.[0]);
@@ -193,13 +171,11 @@ if (form) {
                 isUploading = false;
                 uploadProgress = 0;
                 renderProgress();
-                showLinkReady(form, link, () => {
+                await showLinkReady(form, link, () => {
                     clearSelection();
                     keyInput.value = '';
                     durationSelect.value = String(Constants.defaultDurationSeconds);
                     viewsSelect.value = '1';
-                    updatePassphraseLabel();
-                    setPassphraseOpen(false, false);
                     updateSubmit();
                 }, {uses: selectedViews, kind: 'file'});
                 return;

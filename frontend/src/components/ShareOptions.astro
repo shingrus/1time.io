@@ -3,17 +3,16 @@ import {Constants, SHARE_DURATION_OPTIONS} from '../lib/util.js';
 
 interface Props {
     kind?: 'secret' | 'file';
-    panelId: string;
 }
 
-const {kind = 'secret', panelId} = Astro.props;
+const {kind = 'secret'} = Astro.props;
 const isFile = kind === 'file';
 const usageNoun = isFile ? 'download' : 'view';
 const usageOptions = [1, 2, 3, 5, 10];
 ---
 <div class="form-actions share-primary-actions">
     <div class="share-options">
-        <div class="options-inline" data-options-row>
+        <div class="options-inline">
             <select class="form-select option-select" id="duration" aria-label="Expire after">
                 {SHARE_DURATION_OPTIONS.map(({value, label}) => (
                     <option value={value} selected={value === Constants.defaultDurationSeconds}>{label}</option>
@@ -26,28 +25,16 @@ const usageOptions = [1, 2, 3, 5, 10];
                     </option>
                 ))}
             </select>
-            <button
-                type="button"
-                class="btn btn-secondary option-passphrase"
-                data-passphrase-toggle
-                aria-expanded="false"
-                aria-controls={panelId}
-            >
-                <span data-passphrase-label>Passphrase</span>
-            </button>
-        </div>
-        <div class="passphrase-editor" id={panelId} data-passphrase-editor hidden>
             <input
-                class="form-input"
+                class="form-input option-passphrase"
                 id="secretKey"
                 aria-label="Optional passphrase the recipient must know if set"
                 autocomplete="off"
                 autocapitalize="none"
-                placeholder="Optional passphrase"
+                placeholder="Passphrase (optional)"
                 spellcheck="false"
                 type="text"
             />
-            <button type="button" class="btn btn-secondary" data-passphrase-done>Done</button>
         </div>
     </div>
     <slot name="submit" />

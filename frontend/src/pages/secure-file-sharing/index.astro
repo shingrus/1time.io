@@ -1,5 +1,6 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import EncryptionNote from '../../components/EncryptionNote.astro';
 import InlineCss from '../../components/InlineCss.astro';
 import LinkReadyTemplate from '../../components/LinkReadyTemplate.astro';
 import ShareOptions from '../../components/ShareOptions.astro';
@@ -78,31 +79,23 @@ const jsonLd = [
 >
     <InlineCss slot="head" name="home" />
     <InlineCss slot="head" name="file-sharing" />
-    <InlineCss slot="head" name="link" />
-    <InlineCss slot="head" name="qr-panel" />
     <script slot="head" type="application/ld+json" set:html={JSON.stringify(jsonLd)} is:inline></script>
 
     <div class="share-flow-page">
         <nav class="share-mode-nav" aria-label="Choose sharing mode">
-            <a href="/share-password-securely/" class="share-mode-link">Text Secret</a>
-            <a href="/secure-file-sharing/" class="share-mode-link share-mode-link-active">One-Time File Sharing</a>
+            <a href="/share-password-securely/" class="share-mode-link">Text secret</a>
+            <a href="/secure-file-sharing/" class="share-mode-link share-mode-link-active">One-time file</a>
         </nav>
 
         <form id="secure-file-form" autocomplete="off">
-            <div class="file-card">
-                <h1 class="file-title">Send a one-time file</h1>
+            <div class="share-card">
+                <h1 class="share-title">Send a one-time file download link</h1>
 
                 <input type="file" data-file-input style="display:none" />
 
                 <button type="button" class="file-drop-zone" data-drop-zone>
-                    <span class="file-icon">
-                        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                            <polyline points="17 8 12 3 7 8"/>
-                            <line x1="12" y1="3" x2="12" y2="15"/>
-                        </svg>
-                    </span>
-                    <span class="file-drop-title">Drop a file here, or <span class="file-browse">browse</span></span>
+                    <span class="btn btn-success file-browse">Choose a file</span>
+                    <span class="file-drop-title">or drop file here</span>
                     <span class="file-drop-hint">Any file type, up to {maxMb} MB</span>
                 </button>
 
@@ -139,19 +132,12 @@ const jsonLd = [
                     <p class="form-help" data-progress-help></p>
                 </div>
 
-                <ShareOptions kind="file" panelId="file-share-options">
-                    <button slot="submit" class="btn btn-success btn-lg" disabled type="submit">Create link</button>
+                <ShareOptions kind="file">
+                    <button slot="submit" class="btn btn-success btn-lg" disabled type="submit">Create one-time link</button>
                 </ShareOptions>
 
-                <p class="form-help form-help-error file-form-error" data-file-note role="alert" hidden></p>
-
-                <p class="form-help file-note">
-                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-                        <polyline points="9 12 11 14 15 10"/>
-                    </svg>
-                    Encrypted in your browser. The key never reaches our servers.
-                </p>
+                <p class="form-help form-help-error share-form-error" data-file-note role="alert" hidden></p>
+                <EncryptionNote />
             </div>
         </form>
 

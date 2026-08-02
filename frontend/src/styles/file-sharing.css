@@ -1,25 +1,12 @@
-.file-card {
-  padding: 28px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-}
-
-.file-title {
-  margin: 0;
-  font-family: var(--font-body);
-  font-size: 30px;
-}
-
 .file-drop-zone {
   width: 100%;
   margin-top: 24px;
-  padding: 40px 20px;
+  padding: 48px 20px;
   color: inherit;
   font: inherit;
   text-align: center;
   cursor: pointer;
-  background: var(--bg);
+  background: var(--surface);
   border: 2px dashed #D6D3D1;
   border-radius: var(--radius);
   transition: border-color var(--transition), background var(--transition);
@@ -50,16 +37,22 @@
 }
 
 .file-drop-title {
-  margin-top: 18px;
-  color: var(--text);
-  font-size: 18px;
-  font-weight: 700;
+  margin-top: 14px;
+  color: var(--text-secondary);
+  font-size: 15px;
+  font-weight: 500;
 }
 
 .file-browse {
-  color: var(--success);
-  text-decoration: underline;
-  text-underline-offset: 3px;
+  padding: 12px 20px;
+  font-size: 17px;
+  font-weight: 700;
+  pointer-events: none;
+}
+
+.file-drop-zone:hover .file-browse,
+.file-drop-zone:focus-visible .file-browse {
+  background: var(--success-hover);
 }
 
 .file-drop-hint {
@@ -138,28 +131,6 @@
   margin-left: auto;
 }
 
-#secure-file-form .share-primary-actions {
-  margin-top: 26px;
-  margin-bottom: 0;
-}
-
-.file-form-error {
-  margin-top: 16px;
-}
-
-.file-note {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin: 22px 0 0;
-  font-size: 14px;
-}
-
-.file-note svg {
-  flex-shrink: 0;
-  color: var(--success);
-}
-
 .file-progress {
   margin-top: 24px;
   padding: 16px;
@@ -213,14 +184,6 @@
 }
 
 @media (max-width: 480px) {
-  .file-card {
-    padding: 20px;
-  }
-
-  .file-title {
-    font-size: 25px;
-  }
-
   .file-drop-zone {
     margin-top: 18px;
     padding: 26px 16px;
@@ -230,10 +193,6 @@
     width: 48px;
     height: 48px;
     border-radius: 13px;
-  }
-
-  #secure-file-form .share-primary-actions {
-    margin-top: 18px;
   }
 
   .file-state-error {
