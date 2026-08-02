@@ -50,8 +50,29 @@ export async function showLinkReady(
     input.value = link;
     input.setAttribute('aria-label', `${isFile ? 'File' : 'Secret'} one-time link`);
 
+    const footerMeta = clone.querySelector<HTMLElement>('[data-footer-meta]')!;
+    const footerSeparator = clone.querySelector<HTMLElement>('[data-footer-separator]')!;
     const referenceWrap = clone.querySelector<HTMLElement>('[data-reference-wrap]')!;
     const referenceName = clone.querySelector<HTMLElement>('[data-reference-name]')!;
+    const extensionLink = clone.querySelector<HTMLAnchorElement>('[data-extension-link]')!;
+    const updateFooterMeta = () => {
+        const hasReference = !referenceWrap.hidden;
+        const hasExtension = !extensionLink.hidden;
+        footerMeta.hidden = !hasReference && !hasExtension;
+        footerSeparator.hidden = !hasReference || !hasExtension;
+    };
+
+    const ua = navigator.userAgent || '';
+    const isDesktopChrome =
+        /Chrome\//.test(ua) &&
+        !/Android|Mobi|iPhone|iPad|iPod|Edg|OPR|Vivaldi|YaBrowser|SamsungBrowser/i.test(ua) &&
+        !('brave' in navigator);
+    if (isDesktopChrome) {
+        extensionLink.href = chromeStoreUrl;
+        extensionLink.hidden = false;
+        updateFooterMeta();
+    }
+
     void (async () => {
         try {
             const {id} = parseSecretLink(link);
@@ -61,21 +82,11 @@ export async function showLinkReady(
             if (!name) return;
             referenceName.textContent = name;
             referenceWrap.hidden = false;
+            updateFooterMeta();
         } catch {
             // A reference is helpful but never required to use the link.
         }
     })();
-
-    const extensionLink = clone.querySelector<HTMLAnchorElement>('[data-extension-link]')!;
-    const ua = navigator.userAgent || '';
-    const isDesktopChrome =
-        /Chrome\//.test(ua) &&
-        !/Android|Mobi|iPhone|iPad|iPod|Edg|OPR|Vivaldi|YaBrowser|SamsungBrowser/i.test(ua) &&
-        !('brave' in navigator);
-    if (isDesktopChrome) {
-        extensionLink.href = chromeStoreUrl;
-        extensionLink.hidden = false;
-    }
 
     const copyBtn = clone.querySelector<HTMLButtonElement>('[data-copy]')!;
     const copyLabel = clone.querySelector<HTMLElement>('[data-copy-label]')!;
@@ -86,7 +97,7 @@ export async function showLinkReady(
         if (copyTimer) clearTimeout(copyTimer);
         copyTimer = window.setTimeout(() => {
             copyLabel.textContent = 'Copy link';
-        }, 5000);
+        }, 4000);
     };
 
     const handleCopy = async () => {

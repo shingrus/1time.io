@@ -85,13 +85,14 @@
 .share-options-inline {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
+  background: var(--bg);
 }
 
 .share-option-field {
   position: relative;
   display: block;
   min-width: 0;
-  height: 62px;
+  height: 56px;
 }
 
 .share-option-field + .share-option-field {
@@ -114,7 +115,7 @@
 .share-option-label {
   position: absolute;
   z-index: 1;
-  top: 10px;
+  top: 8px;
   left: 16px;
   color: var(--text-muted);
   font-family: var(--font-body);
@@ -130,7 +131,7 @@
   position: absolute;
   inset: 0;
   height: 100%;
-  padding: 27px 36px 8px 16px;
+  padding: 23px 36px 6px 16px;
   background-color: transparent;
   background-position: right 16px center;
   border: 0;
@@ -153,7 +154,7 @@
   height: 42px;
   margin-top: 12px;
   padding: 0;
-  color: var(--success);
+  color: var(--text-muted);
   background: transparent;
   border: 0;
   font-family: var(--font-body);
@@ -216,16 +217,16 @@
   }
 
   .share-option-field {
-    height: 60px;
+    height: 54px;
   }
 
   .share-option-label {
-    top: 10px;
+    top: 8px;
     left: 12px;
   }
 
   .share-option-select {
-    padding: 26px 32px 7px 12px;
+    padding: 22px 32px 6px 12px;
     background-position: right 12px center;
     font-size: 16px;
   }

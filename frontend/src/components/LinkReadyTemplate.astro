@@ -13,33 +13,31 @@
                     <span data-link-expiry>Expires in 1 day</span>
                     <span aria-hidden="true"> · </span>
                     <span data-link-uses>1 view</span>
-                    <span data-reference-wrap hidden>
-                        <span aria-hidden="true"> · </span>reference <strong data-reference-name></strong>
-                    </span>
                 </p>
             </div>
         </header>
 
-        <input
-            class="link-display-input"
-            data-link-input
-            aria-label="Secret one-time link"
-            autocomplete="off"
-            autocapitalize="none"
-            spellcheck="false"
-            type="text"
-            readonly
-        />
-
-        <button class="btn btn-success btn-lg link-copy-button" type="button" data-copy>
-            <span data-copy-label aria-live="polite">Copy link</span>
-        </button>
+        <div class="link-copy-control">
+            <input
+                class="link-display-input"
+                data-link-input
+                aria-label="Secret one-time link"
+                autocomplete="off"
+                autocapitalize="none"
+                spellcheck="false"
+                type="text"
+                readonly
+            />
+            <button class="btn btn-success btn-lg link-copy-button" type="button" data-copy>
+                <span data-copy-label aria-live="polite">Copy link</span>
+            </button>
+        </div>
 
         <nav class="link-secondary-actions" aria-label="Link actions">
-            <button class="link-inline-action link-inline-action-primary" type="button" data-toggle-qr aria-expanded="false">
+            <button class="link-inline-action" type="button" data-toggle-qr aria-expanded="false">
                 <span data-qr-label>Show QR code</span>
             </button>
-            <button class="link-inline-action" type="button" data-reset>Send another secret</button>
+            <button class="link-inline-action link-inline-action-accent" type="button" data-reset>Send another secret</button>
         </nav>
 
         <section class="qr-panel" data-qr-panel hidden aria-live="polite">
@@ -50,6 +48,10 @@
             <p data-link-warning></p>
         </div>
 
-        <a class="link-extension" data-extension-link href="/chrome-extension/" hidden>Add the Chrome extension</a>
+        <div class="link-footer-meta" data-footer-meta hidden>
+            <span data-reference-wrap hidden>Reference <strong data-reference-name></strong></span>
+            <span data-footer-separator aria-hidden="true" hidden>·</span>
+            <a class="link-extension" data-extension-link href="/chrome-extension/" hidden>Add the Chrome extension</a>
+        </div>
     </section>
 </template>
