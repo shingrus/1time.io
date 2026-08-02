@@ -8,34 +8,50 @@ interface Props {
 const {kind = 'secret'} = Astro.props;
 const isFile = kind === 'file';
 const usageNoun = isFile ? 'download' : 'view';
+const usageLabel = isFile ? 'Downloads' : 'Views';
 const usageOptions = [1, 2, 3, 5, 10];
 ---
-<div class="form-actions share-primary-actions">
-    <div class="share-options">
-        <div class="options-inline">
-            <select class="form-select option-select" id="duration" aria-label="Expire after">
-                {SHARE_DURATION_OPTIONS.map(({value, label}) => (
-                    <option value={value} selected={value === Constants.defaultDurationSeconds}>{label}</option>
-                ))}
-            </select>
-            <select class="form-select option-select" id="views" aria-label={`${isFile ? 'Downloads' : 'Views'} allowed`}>
-                {usageOptions.map((count) => (
-                    <option value={count} selected={count === 1}>
-                        {count} {usageNoun}{count === 1 ? '' : 's'}
-                    </option>
-                ))}
-            </select>
-            <input
-                class="form-input option-passphrase"
-                id="secretKey"
-                aria-label="Optional passphrase the recipient must know if set"
-                autocomplete="off"
-                autocapitalize="none"
-                placeholder="Passphrase (optional)"
-                spellcheck="false"
-                type="text"
-            />
+<div
+    class:list={['share-options-panel', {'file-selected-panel': isFile}]}
+    data-file-selected={isFile ? true : undefined}
+    hidden={isFile}
+>
+    <div class:list={['share-settings-card', {'file-selection-card': isFile}]}>
+        <slot name="primary" />
+        <div class="share-options-inline">
+            <label class="share-option-field">
+                <span class="share-option-label">Expires</span>
+                <select class="form-select share-option-select" id="duration" aria-label="Expire after">
+                    {SHARE_DURATION_OPTIONS.map(({value, label}) => (
+                        <option value={value} selected={value === Constants.defaultDurationSeconds}>{label}</option>
+                    ))}
+                </select>
+            </label>
+            <label class="share-option-field">
+                <span class="share-option-label">{usageLabel}</span>
+                <select class="form-select share-option-select" id="views" aria-label={`${usageLabel} allowed`}>
+                    {usageOptions.map((count) => (
+                        <option value={count} selected={count === 1}>
+                            {count} {usageNoun}{count === 1 ? '' : 's'}
+                        </option>
+                    ))}
+                </select>
+            </label>
         </div>
+    </div>
+
+    <button class="share-passphrase-add" type="button" data-passphrase-add aria-controls={`${kind}-passphrase-field`} aria-expanded="false">+ Add a passphrase</button>
+    <div class="share-passphrase-field" id={`${kind}-passphrase-field`} data-passphrase-field hidden>
+        <input
+            class="form-input"
+            id="secretKey"
+            aria-label="Optional passphrase the recipient must know if set"
+            autocomplete="off"
+            autocapitalize="none"
+            placeholder="Optional passphrase"
+            spellcheck="false"
+            type="text"
+        />
     </div>
     <slot name="submit" />
 </div>

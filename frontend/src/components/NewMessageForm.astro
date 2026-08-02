@@ -6,19 +6,20 @@ import ShareOptions from './ShareOptions.astro';
 <form id="new-message-form" autocomplete="off">
     <div class="share-card">
         <p class="share-title">Send a one-time secret</p>
-        <textarea
-            class="form-textarea secret-textarea"
-            id="secretMessage"
-            aria-label="Secret message"
-            autofocus
-            autocomplete="off"
-            autocapitalize="none"
-            placeholder="Paste a password, API key, or private note"
-            rows="5"
-            spellcheck="false"
-        ></textarea>
 
         <ShareOptions kind="secret">
+            <textarea
+                slot="primary"
+                class="form-textarea secret-textarea"
+                id="secretMessage"
+                aria-label="Secret message"
+                autofocus
+                autocomplete="off"
+                autocapitalize="none"
+                placeholder="Paste a password, API key, or private note"
+                rows="5"
+                spellcheck="false"
+            ></textarea>
             <button slot="submit" class="btn btn-success btn-lg" disabled type="submit">
                 <span class="btn-label">Create one-time link</span>
                 <kbd class="btn-kbd" data-shortcut-hint aria-hidden="true" hidden></kbd>

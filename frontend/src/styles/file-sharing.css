@@ -71,6 +71,15 @@
   border-radius: var(--radius);
 }
 
+.file-selection-card .file-state-selected {
+  gap: 12px;
+  margin: 0;
+  padding: 8px 12px;
+  border: 0;
+  border-bottom: 1px solid var(--border);
+  border-radius: 0;
+}
+
 .file-state .file-icon {
   width: 48px;
   height: 48px;
@@ -90,6 +99,24 @@
   font-weight: 600;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.file-state-selected .file-icon {
+  width: 28px;
+  height: 32px;
+  color: var(--text-secondary);
+  background: transparent;
+  border-radius: 0;
+}
+
+.file-state-selected .file-state-title {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.file-state-selected .file-state-meta {
+  margin-top: 2px;
+  font-size: 14px;
 }
 
 .file-state-meta {
@@ -193,6 +220,17 @@
     width: 48px;
     height: 48px;
     border-radius: 13px;
+  }
+
+  .file-selected-panel {
+    padding: 16px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+  }
+
+  .file-selection-card .file-state-selected {
+    padding: 8px 12px;
   }
 
   .file-state-error {

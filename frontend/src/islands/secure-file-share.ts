@@ -25,6 +25,8 @@ if (form) {
     const progressHelp = form.querySelector<HTMLElement>('[data-progress-help]')!;
     const submitBtn = form.querySelector<HTMLButtonElement>('button[type="submit"]')!;
     const keyInput = form.querySelector<HTMLInputElement>('#secretKey')!;
+    const passphraseAddBtn = form.querySelector<HTMLButtonElement>('[data-passphrase-add]')!;
+    const passphraseField = form.querySelector<HTMLElement>('[data-passphrase-field]')!;
     const durationSelect = form.querySelector<HTMLSelectElement>('#duration')!;
     const viewsSelect = form.querySelector<HTMLSelectElement>('#views')!;
 
@@ -87,6 +89,13 @@ if (form) {
         renderSelection();
     };
 
+    const resetPassphrase = () => {
+        keyInput.value = '';
+        passphraseField.toggleAttribute('hidden', true);
+        passphraseAddBtn.toggleAttribute('hidden', false);
+        passphraseAddBtn.setAttribute('aria-expanded', 'false');
+    };
+
     const selectFile = (file: File | undefined | null) => {
         if (!file) return;
         if (file.size > Constants.maxFileSizeBytes) {
@@ -114,6 +123,12 @@ if (form) {
     chooseAnotherBtn.addEventListener('click', () => {
         clearSelection();
         fileInput.click();
+    });
+    passphraseAddBtn.addEventListener('click', () => {
+        passphraseAddBtn.toggleAttribute('hidden', true);
+        passphraseAddBtn.setAttribute('aria-expanded', 'true');
+        passphraseField.toggleAttribute('hidden', false);
+        keyInput.focus();
     });
     dropTarget.addEventListener('dragover', (e) => {
         e.preventDefault();
@@ -173,11 +188,11 @@ if (form) {
                 renderProgress();
                 await showLinkReady(form, link, () => {
                     clearSelection();
-                    keyInput.value = '';
+                    resetPassphrase();
                     durationSelect.value = String(Constants.defaultDurationSeconds);
                     viewsSelect.value = '1';
                     updateSubmit();
-                }, {uses: selectedViews, kind: 'file'});
+                }, {uses: selectedViews, kind: 'file', durationSeconds});
                 return;
             }
             setNote('Could not create the file link. Please try again.');

@@ -8,6 +8,8 @@ if (form) {
     const durationSelect = form.querySelector<HTMLSelectElement>('#duration')!;
     const viewsSelect = form.querySelector<HTMLSelectElement>('#views')!;
     const submitBtn = form.querySelector<HTMLButtonElement>('button[type="submit"]')!;
+    const passphraseAddBtn = form.querySelector<HTMLButtonElement>('[data-passphrase-add]')!;
+    const passphraseField = form.querySelector<HTMLElement>('[data-passphrase-field]')!;
     const labelEl = submitBtn.querySelector<HTMLElement>('.btn-label')!;
     const kbdHint = submitBtn.querySelector<HTMLElement>('[data-shortcut-hint]')!;
     const errorEl = form.querySelector<HTMLElement>('[data-message-error]')!;
@@ -16,6 +18,13 @@ if (form) {
     const setError = (msg: string) => {
         errorEl.textContent = msg;
         errorEl.toggleAttribute('hidden', !msg);
+    };
+
+    const resetPassphrase = () => {
+        keyInput.value = '';
+        passphraseField.toggleAttribute('hidden', true);
+        passphraseAddBtn.toggleAttribute('hidden', false);
+        passphraseAddBtn.setAttribute('aria-expanded', 'false');
     };
 
     let hintShown = false;
@@ -38,6 +47,12 @@ if (form) {
         setError('');
         updateSubmitState(false);
     });
+    passphraseAddBtn.addEventListener('click', () => {
+        passphraseAddBtn.toggleAttribute('hidden', true);
+        passphraseAddBtn.setAttribute('aria-expanded', 'true');
+        passphraseField.toggleAttribute('hidden', false);
+        keyInput.focus();
+    });
     updateSubmitState(false);
 
     form.addEventListener('keydown', (event) => {
@@ -53,22 +68,23 @@ if (form) {
         if (textarea.value.length === 0) return;
         setError('');
         updateSubmitState(true);
+        const durationSeconds = Number(durationSelect.value);
         const selectedViews = Number(viewsSelect.value);
         try {
             const {link} = await createSecretLink(textarea.value, {
                 secretKey: keyInput.value,
-                durationSeconds: Number(durationSelect.value),
+                durationSeconds,
                 views: selectedViews,
             });
             if (link) {
                 await showLinkReady(form, link, () => {
                     textarea.value = '';
-                    keyInput.value = '';
+                    resetPassphrase();
                     durationSelect.value = String(Constants.defaultDurationSeconds);
                     viewsSelect.value = '1';
                     updateSubmitState(false);
                     textarea.focus();
-                }, {uses: selectedViews});
+                }, {uses: selectedViews, durationSeconds});
                 return;
             }
         } catch {
