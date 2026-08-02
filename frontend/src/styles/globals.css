@@ -48,9 +48,6 @@
   --focus-ring: var(--border);
   --danger: #DC2626;
   --warning: #B45309;
-  --tip-bg: #FEFCE8;
-  --tip-fg: #854D0E;
-  --tip-border: #FEF08A;
   --radius: 10px;
   --radius-sm: 6px;
   --radius-lg: 16px;
@@ -289,14 +286,6 @@ h1, h2, h3 {
 
 .form-input::placeholder {
   color: var(--text-muted);
-}
-
-.form-input-readonly {
-  background: var(--bg);
-  cursor: pointer;
-  font-family: 'SF Mono', 'Fira Code', 'Fira Mono', monospace;
-  font-size: 14px;
-  letter-spacing: -0.01em;
 }
 
 .form-select {

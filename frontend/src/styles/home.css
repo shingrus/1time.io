@@ -99,15 +99,6 @@
   border-left: 1px solid var(--border);
 }
 
-.share-option-field:hover {
-  background: var(--bg);
-}
-
-.share-option-field:focus-within {
-  background: var(--bg);
-  box-shadow: none;
-}
-
 .share-option-field:focus-within .share-option-label {
   color: var(--text-secondary);
 }
@@ -172,10 +163,6 @@
 
 .share-passphrase-field .form-input {
   height: 42px;
-}
-
-.share-passphrase-field[hidden] {
-  display: none;
 }
 
 .share-options-panel > .btn {

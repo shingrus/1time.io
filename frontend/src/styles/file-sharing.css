@@ -24,11 +24,6 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  width: 58px;
-  height: 58px;
-  color: var(--success);
-  background: #F0FDF4;
-  border-radius: 16px;
 }
 
 .file-drop-title,
@@ -111,7 +106,6 @@
 
 .file-state-selected .file-state-title {
   font-size: 15px;
-  font-weight: 600;
 }
 
 .file-state-selected .file-state-meta {
@@ -216,21 +210,11 @@
     padding: 26px 16px;
   }
 
-  .file-icon {
-    width: 48px;
-    height: 48px;
-    border-radius: 13px;
-  }
-
   .file-selected-panel {
     padding: 16px;
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: var(--radius-lg);
-  }
-
-  .file-selection-card .file-state-selected {
-    padding: 8px 12px;
   }
 
   .file-state-error {

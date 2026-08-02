@@ -22,6 +22,9 @@ export async function showLinkReady(
         durationSeconds = Constants.defaultDurationSeconds,
     }: {uses?: number; kind?: 'secret' | 'file'; durationSeconds?: number} = {},
 ): Promise<void> {
+    // Start the best-effort auto-copy immediately instead of putting it behind a CSS request.
+    const autoCopy = copyTextToClipboard(link);
+
     // Success styles stay out of the initial page and fail open if their chunk is unavailable.
     await loadStyles('link-ready-styles', () => import('../styles/link.css?raw')).catch(() => {});
 
@@ -159,7 +162,7 @@ export async function showLinkReady(
     formEl.replaceWith(clone);
 
     // Clipboard permissions vary; a visible Copy button remains available when this fails.
-    void copyTextToClipboard(link).then((copied) => {
+    void autoCopy.then((copied) => {
         if (copied) showCopied();
     });
 }

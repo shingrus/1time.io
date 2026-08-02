@@ -145,10 +145,6 @@
   line-height: 1.5;
 }
 
-.link-extension[hidden] {
-  display: none;
-}
-
 @media (max-width: 480px) {
   .link-display {
     padding: 18px 16px;
