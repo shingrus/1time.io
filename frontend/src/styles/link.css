@@ -46,8 +46,7 @@
 }
 
 .link-copy-control {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  display: block;
   margin-top: 20px;
 }
 
@@ -59,8 +58,7 @@
   color: var(--text-secondary);
   background: var(--surface);
   border: 1px solid var(--border);
-  border-right: 0;
-  border-radius: var(--radius) 0 0 var(--radius);
+  border-radius: var(--radius);
   outline: none;
   font-family: 'SF Mono', 'Fira Code', 'Fira Mono', monospace;
   font-size: 14px;
@@ -81,11 +79,23 @@
 }
 
 .link-copy-button {
-  min-width: 156px;
-  min-height: 48px;
-  border-radius: 0 var(--radius) var(--radius) 0;
+  width: 100%;
+  min-width: 0;
+  min-height: 46px;
+  margin-top: 12px;
+  border-radius: var(--radius-sm);
   font-size: 16px;
   font-weight: 700;
+}
+
+.link-copy-status {
+  font-weight: 600;
+  opacity: 0.75;
+}
+
+.link-copy-status::before {
+  content: '·';
+  margin-right: 6px;
 }
 
 .link-secondary-actions {
@@ -168,21 +178,7 @@
   }
 
   .link-copy-control {
-    display: block;
     margin-top: 16px;
-  }
-
-  .link-display-input {
-    border-right: 1px solid var(--border);
-    border-radius: var(--radius);
-  }
-
-  .link-copy-button {
-    width: 100%;
-    min-width: 0;
-    min-height: 46px;
-    margin-top: 12px;
-    border-radius: var(--radius-sm);
   }
 
   .link-secondary-actions {

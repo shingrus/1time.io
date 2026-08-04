@@ -92,20 +92,22 @@ export async function showLinkReady(
     })();
 
     const copyBtn = clone.querySelector<HTMLButtonElement>('[data-copy]')!;
-    const copyLabel = clone.querySelector<HTMLElement>('[data-copy-label]')!;
+    const copyStatus = clone.querySelector<HTMLElement>('[data-copy-status]')!;
     let copyTimer: number | undefined;
 
-    const showCopied = () => {
-        copyLabel.textContent = 'Copied';
+    const showCopyStatus = (message: 'Already copied' | 'Copied') => {
+        copyStatus.textContent = message;
+        copyStatus.hidden = false;
         if (copyTimer) clearTimeout(copyTimer);
         copyTimer = window.setTimeout(() => {
-            copyLabel.textContent = 'Copy link';
+            copyStatus.hidden = true;
+            copyStatus.textContent = '';
         }, 4000);
     };
 
     const handleCopy = async () => {
         if (!await copyTextToClipboard(link)) return;
-        showCopied();
+        showCopyStatus('Copied');
     };
     copyBtn.addEventListener('click', handleCopy);
     input.addEventListener('click', handleCopy);
@@ -163,6 +165,6 @@ export async function showLinkReady(
 
     // Clipboard permissions vary; a visible Copy button remains available when this fails.
     void autoCopy.then((copied) => {
-        if (copied) showCopied();
+        if (copied) showCopyStatus('Already copied');
     });
 }
