@@ -1,86 +1,187 @@
-/* Link display */
+/* Loaded only after a link has been created. */
 .link-display {
-  text-align: center;
-  padding: 20px 0;
+  padding: 24px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
 }
 
-.link-display-icon {
-  margin-bottom: 24px;
+.link-ready-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.link-ready-icon {
+  display: inline-flex;
+  flex: 0 0 auto;
+  margin-top: 2px;
   color: var(--success);
 }
 
-.link-display-label,
-.link-notice {
-  color: var(--text-muted);
+.link-ready-copy {
+  min-width: 0;
 }
 
 .link-display-label {
-  font-size: 14px;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  margin-bottom: 12px;
+  margin: 0;
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+}
+
+.link-ready-meta {
+  margin-top: 4px;
+  color: var(--text-muted);
+  font-size: 15px;
+  line-height: 1.45;
+}
+
+.link-footer-meta strong {
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.link-copy-control {
+  display: block;
+  margin-top: 20px;
 }
 
 .link-display-input {
   width: 100%;
-  padding: 14px 16px;
-  font-family: 'SF Mono', 'Fira Code', monospace;
-  font-size: 14px;
-  color: var(--accent);
-  background: var(--accent-light);
-  border: 1.5px solid rgba(234, 88, 12, 0.2);
+  height: 48px;
+  padding: 0 14px;
+  overflow: hidden;
+  color: var(--text-secondary);
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: var(--radius);
-  text-align: center;
-  cursor: pointer;
   outline: none;
-  transition: border-color var(--transition);
-}
-
-.link-display-input:hover {
-  border-color: var(--accent);
-}
-
-.link-actions {
-  display: flex;
-  justify-content: center;
-  gap: 10px;
-  margin-top: 16px;
-}
-
-.link-notice {
+  font-family: 'SF Mono', 'Fira Code', 'Fira Mono', monospace;
   font-size: 14px;
-  margin-top: 20px;
-  line-height: 1.6;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
 }
 
-.link-display .callout {
-  border-radius: var(--radius);
+.link-display-input:hover,
+.link-display-input:focus {
+  border-color: var(--text-muted);
+}
+
+.link-display-input:focus {
+  position: relative;
+  z-index: 1;
+  box-shadow: 0 0 0 3px var(--border);
+}
+
+.link-copy-button {
+  width: 100%;
+  min-width: 0;
+  min-height: 46px;
+  margin-top: 12px;
+  border-radius: var(--radius-sm);
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.link-copy-status {
+  font-weight: 600;
+  opacity: 0.75;
+}
+
+.link-copy-status::before {
+  content: '·';
+  margin-right: 6px;
+}
+
+.link-secondary-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 28px;
+  margin-top: 14px;
+}
+
+.link-inline-action,
+.link-extension {
+  padding: 0;
+  color: var(--text-muted);
+  background: transparent;
+  border: 0;
+  font: inherit;
+  font-size: 15px;
+  line-height: 1.4;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.link-inline-action-accent {
+  color: var(--accent);
+}
+
+.link-inline-action:hover,
+.link-inline-action:focus-visible,
+.link-extension:hover,
+.link-extension:focus-visible {
+  color: var(--text);
+}
+
+.link-inline-action-accent:hover,
+.link-inline-action-accent:focus-visible {
+  color: var(--accent-hover);
+}
+
+.link-warning {
+  margin-top: 18px;
+  padding-top: 18px;
+  color: var(--text-muted);
+  border-top: 1px solid var(--border);
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.link-footer-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px;
+  margin-top: 14px;
+  color: var(--text-muted);
   font-size: 14px;
   line-height: 1.5;
-  margin: 28px 0 0;
-  padding: 12px 14px;
-  text-align: left;
-}
-
-.link-display .callout-tip {
-  background: var(--tip-bg);
-  border: 1px solid var(--tip-border);
-  color: var(--tip-fg);
 }
 
 @media (max-width: 480px) {
-  .link-actions {
-    flex-direction: column;
+  .link-display {
+    padding: 18px 16px;
   }
-  .link-actions .btn {
-    width: 100%;
-  }
-}
 
-/* Layout only — accent color + underline come from the shared link rule in globals.css */
-.link-my-secrets {
-  display: inline-block;
-  margin-top: 14px;
-  font-size: 14px;
+  .link-ready-header {
+    gap: 9px;
+  }
+
+  .link-ready-icon svg {
+    width: 21px;
+    height: 21px;
+  }
+
+  .link-display-label {
+    font-size: 18px;
+  }
+
+  .link-ready-meta {
+    font-size: 14px;
+  }
+
+  .link-copy-control {
+    margin-top: 16px;
+  }
+
+  .link-secondary-actions {
+    gap: 10px 24px;
+  }
 }

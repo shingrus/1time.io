@@ -1,5 +1,6 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import EncryptionNote from '../../components/EncryptionNote.astro';
 import InlineCss from '../../components/InlineCss.astro';
 import LinkReadyTemplate from '../../components/LinkReadyTemplate.astro';
 import ShareOptions from '../../components/ShareOptions.astro';
@@ -78,71 +79,76 @@ const jsonLd = [
 >
     <InlineCss slot="head" name="home" />
     <InlineCss slot="head" name="file-sharing" />
-    <InlineCss slot="head" name="link" />
-    <InlineCss slot="head" name="qr-panel" />
     <script slot="head" type="application/ld+json" set:html={JSON.stringify(jsonLd)} is:inline></script>
 
     <div class="share-flow-page">
         <nav class="share-mode-nav" aria-label="Choose sharing mode">
-            <a href="/share-password-securely/" class="share-mode-link">Text Secret</a>
-            <a href="/secure-file-sharing/" class="share-mode-link share-mode-link-active">One-Time File Sharing</a>
+            <a href="/share-password-securely/" class="share-mode-link">Text secret</a>
+            <a href="/secure-file-sharing/" class="share-mode-link share-mode-link-active">One-time file</a>
         </nav>
 
         <form id="secure-file-form" autocomplete="off">
-            <div class="form-field">
-                <label class="form-label">Your file, end-to-end encrypted.</label>
-                <div class="file-drop-zone" data-drop-zone>
-                    <input type="file" data-file-input style="display:none" />
-                    <div class="file-drop-prompt" data-file-prompt>
-                        <span class="file-drop-btn">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                <path d="M3 7.5A2.5 2.5 0 0 1 5.5 5H10l2 2h6.5A2.5 2.5 0 0 1 21 9.5v7A2.5 2.5 0 0 1 18.5 19h-13A2.5 2.5 0 0 1 3 16.5z" />
-                                <path d="M3 10h18" />
-                            </svg>
-                            Choose a file
+            <div class="share-card">
+                <h1 class="share-title">Send a one-time file download link</h1>
+
+                <input type="file" data-file-input hidden />
+
+                <button type="button" class="file-drop-zone" data-drop-zone>
+                    <span class="btn btn-success file-browse">Choose a file</span>
+                    <span class="file-drop-title">or drop file here</span>
+                    <span class="file-drop-hint">Any file type, up to {maxMb} MB</span>
+                </button>
+
+                <div class="file-state file-state-error" data-file-error-card hidden role="alert">
+                    <span class="file-icon">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                    </span>
+                    <span class="file-state-copy">
+                        <span class="file-state-title" data-file-error></span>
+                        <span class="form-help file-state-meta" data-file-error-sub></span>
+                    </span>
+                    <button type="button" class="btn btn-secondary file-choose-another" data-file-choose-another>Choose another</button>
+                </div>
+
+                <div class="file-progress" data-file-progress hidden aria-live="polite">
+                    <div class="file-progress-head">
+                        <span class="form-label file-progress-label" data-progress-label></span>
+                        <span class="form-help file-progress-value" data-progress-value></span>
+                    </div>
+                    <div class="file-progress-track" data-progress-track>
+                        <div class="file-progress-fill" data-progress-fill style="width:0%"></div>
+                    </div>
+                    <p class="form-help" data-progress-help></p>
+                </div>
+
+                <ShareOptions kind="file">
+                    <div slot="primary" class="file-state file-state-selected">
+                        <span class="file-icon">
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
                         </span>
-                        <p>or drop it here</p>
-                        <p class="file-drop-limit">Max {maxMb} MB</p>
+                        <span class="file-state-copy">
+                            <span class="file-state-title" data-file-name></span>
+                            <span class="form-help file-state-meta" data-file-size></span>
+                        </span>
+                        <button type="button" class="btn btn-ghost file-remove" data-file-remove aria-label="Remove file">&times;</button>
                     </div>
-                    <div class="file-selected" data-file-selected hidden>
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-                        <span class="file-selected-name" data-file-name></span>
-                        <span class="file-selected-size" data-file-size></span>
-                        <button type="button" class="file-selected-remove" data-file-remove aria-label="Remove file">&times;</button>
-                    </div>
-                </div>
-                <p class="form-help form-help-error" data-file-error role="alert" hidden></p>
-            </div>
+                    <button slot="submit" class="btn btn-success btn-lg" disabled type="submit">Create one-time link</button>
+                </ShareOptions>
 
-            <div class="file-progress" data-file-progress hidden aria-live="polite">
-                <div class="file-progress-head">
-                    <span class="file-progress-label" data-progress-label></span>
-                    <span class="file-progress-value" data-progress-value></span>
-                </div>
-                <div class="file-progress-track" data-progress-track>
-                    <div class="file-progress-fill" data-progress-fill style="width:0%"></div>
-                </div>
-                <p class="form-help" data-progress-help></p>
+                <p class="form-help form-help-error share-form-error" data-file-note role="alert" hidden></p>
+                <EncryptionNote />
             </div>
-
-            <ShareOptions kind="file" panelId="file-share-options">
-                <button slot="submit" class="btn btn-primary btn-lg" disabled type="submit">Create file link</button>
-            </ShareOptions>
         </form>
 
         <LinkReadyTemplate />
 
         <section class="seo-section">
-            <h1>Send a One-Time File — Encrypted, Self-Destructing Download Link</h1>
             <h2>What is a one-time file?</h2>
             <p>
                 A <strong>one-time file</strong> is a file you send through a one-time download link.
-                It allows one download by default, then the encrypted copy is permanently deleted from the server.
+                The recipient can download it once by default, then the encrypted copy is permanently deleted.
+                If you allow up to 10 downloads, it remains available only until the final download or expiry.
                 It is the file-sharing equivalent of a self-destructing message: a one-time URL that disappears after the file lands.
-            </p>
-            <p>
-                One download remains the default. If you choose a higher limit, the encrypted copy remains
-                available only until the last of up to 10 downloads or expiry.
             </p>
             <h2>Why use one-time encrypted file sharing?</h2>
             <p>
