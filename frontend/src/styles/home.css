@@ -62,24 +62,35 @@
   border-radius: var(--radius);
 }
 
+.share-settings-card:not(.file-selection-card) {
+  --share-field-border: #A8A29E;
+  border-color: var(--share-field-border);
+  transition: border-color var(--transition), box-shadow var(--transition);
+}
+
 .share-settings-card .secret-textarea {
   display: block;
   min-height: 190px;
   margin: 0;
   border: 0;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--share-field-border);
   border-radius: 0;
   resize: none;
 }
 
 .share-settings-card .secret-textarea:focus {
-  border-color: var(--border);
+  border-color: var(--share-field-border);
   box-shadow: none;
 }
 
 .share-settings-card:focus-within {
   border-color: var(--text-muted);
   box-shadow: 0 0 0 3px var(--border);
+}
+
+.share-settings-card:not(.file-selection-card):focus-within {
+  border-color: var(--text-secondary);
+  box-shadow: 0 0 0 3px rgba(87, 83, 78, 0.18);
 }
 
 .share-options-inline {
