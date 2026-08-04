@@ -206,12 +206,27 @@
     font-size: 25px;
   }
 
+  .share-options-panel:not(.file-selected-panel) {
+    display: flex;
+    flex-direction: column;
+  }
+
   .share-options-panel {
     margin-top: 18px;
   }
 
   .share-settings-card .secret-textarea {
-    min-height: 140px;
+    height: 116px;
+    min-height: 116px;
+  }
+
+  .share-options-panel:not(.file-selected-panel) > .btn {
+    order: 2;
+  }
+
+  .share-options-panel:not(.file-selected-panel) > .share-passphrase-add,
+  .share-options-panel:not(.file-selected-panel) > .share-passphrase-field {
+    order: 3;
   }
 
   .share-option-field {
