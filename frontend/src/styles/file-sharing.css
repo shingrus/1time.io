@@ -1,163 +1,123 @@
 .file-drop-zone {
-  width: 100%;
-  margin-top: 24px;
-  padding: 48px 20px;
-  color: inherit;
-  font: inherit;
+  border: 2px dashed var(--text-muted);
+  border-radius: var(--radius);
+  padding: 40px 20px;
   text-align: center;
   cursor: pointer;
-  background: var(--surface);
-  border: 2px dashed #D6D3D1;
-  border-radius: var(--radius);
+  background: var(--bg);
   transition: border-color var(--transition), background var(--transition);
 }
 
 .file-drop-zone:hover,
-.file-drop-zone:focus-visible,
 .file-drop-zone-active {
-  background: #F0FDF4;
-  border-color: var(--success);
+  border-color: var(--accent);
+  background: var(--accent-light);
 }
 
-.file-icon {
+.file-drop-zone-has-file {
+  border-style: solid;
+  border-color: var(--accent);
+  background: var(--accent-light);
+  padding: 16px 20px;
+}
+
+.file-drop-prompt {
+  color: var(--text-secondary);
+}
+
+.file-drop-btn {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
+  gap: 6px;
+  padding: 9px 14px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--success);
+  background: var(--success);
+  color: #fff;
+  box-shadow: var(--shadow-sm);
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  transition:
+    border-color var(--transition),
+    color var(--transition),
+    background var(--transition);
+}
+
+.file-drop-zone:hover .file-drop-btn {
+  border-color: var(--success-hover);
+  background: var(--success-hover);
+  color: #fff;
+}
+
+.file-drop-btn svg {
   flex-shrink: 0;
 }
 
-.file-drop-title,
-.file-drop-hint {
-  display: block;
-}
-
-.file-drop-title {
-  margin-top: 14px;
-  color: var(--text-secondary);
-  font-size: 15px;
+.file-drop-prompt p {
+  margin: 0;
+  font-size: 14px;
   font-weight: 500;
+  line-height: 1.6;
 }
 
-.file-browse {
-  padding: 12px 20px;
-  font-size: 17px;
-  font-weight: 700;
-  pointer-events: none;
-}
-
-.file-drop-zone:hover .file-browse,
-.file-drop-zone:focus-visible .file-browse {
-  background: var(--success-hover);
-}
-
-.file-drop-hint {
-  margin-top: 6px;
+.file-drop-limit {
+  font-size: 13px !important;
   color: var(--text-muted);
-  font-size: 15px;
+  margin-top: 6px !important;
 }
 
-.file-state {
+.file-selected {
   display: flex;
   align-items: center;
-  gap: 16px;
-  margin-top: 24px;
-  padding: 16px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
+  gap: 10px;
 }
 
-.file-selection-card .file-state-selected {
-  gap: 12px;
-  margin: 0;
-  padding: 8px 12px;
-  border: 0;
-  border-bottom: 1px solid var(--border);
-  border-radius: 0;
+.file-selected svg {
+  flex-shrink: 0;
+  color: var(--accent);
 }
 
-.file-state .file-icon {
-  width: 48px;
-  height: 48px;
-  color: var(--text-secondary);
-  background: var(--bg);
-  border-radius: 13px;
-}
-
-.file-state-copy {
-  flex: 1;
+.file-selected-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   min-width: 0;
 }
 
-.file-state-title {
-  display: block;
-  overflow: hidden;
-  font-weight: 600;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.file-state-selected .file-icon {
-  width: 28px;
-  height: 32px;
-  color: var(--text-secondary);
-  background: transparent;
-  border-radius: 0;
-}
-
-.file-state-selected .file-state-title {
-  font-size: 15px;
-}
-
-.file-state-selected .file-state-meta {
-  margin-top: 2px;
-  font-size: 14px;
-}
-
-.file-state-meta {
-  display: block;
-  overflow-wrap: anywhere;
-}
-
-.file-state-error {
-  background: var(--accent-light);
-  border-color: var(--accent);
-}
-
-.file-state-error .file-icon {
-  color: var(--accent);
-  background: var(--surface);
-}
-
-.file-state-error .file-state-title {
-  overflow: visible;
-  color: var(--accent-hover);
-  white-space: normal;
-}
-
-.file-state-error .file-state-meta {
-  color: var(--accent);
-}
-
-.file-remove {
+.file-selected-size {
+  font-size: 13px;
+  color: var(--text-muted);
   flex-shrink: 0;
-  margin-left: auto;
-  min-width: 44px;
-  min-height: 44px;
-  padding: 0;
-  font-size: 22px;
 }
 
-.file-choose-another {
-  flex-shrink: 0;
+.file-selected-remove {
   margin-left: auto;
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  font-size: 18px;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 0 4px;
+  line-height: 1;
+}
+
+.file-selected-remove:hover {
+  color: var(--danger);
 }
 
 .file-progress {
-  margin-top: 24px;
+  margin-bottom: 16px;
   padding: 16px;
-  background: #F0FDF4;
-  border: 1px solid var(--border);
+  border: 1px solid rgba(194, 65, 12, 0.18);
   border-radius: var(--radius);
+  background:
+    linear-gradient(180deg, rgba(255, 251, 235, 0.96), rgba(255, 247, 237, 0.98));
 }
 
 .file-progress-head {
@@ -168,25 +128,30 @@
 }
 
 .file-progress-label {
-  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
 }
 
 .file-progress-value {
-  margin: 0;
+  font-size: 13px;
+  color: var(--text-muted);
   white-space: nowrap;
 }
 
 .file-progress-track {
+  position: relative;
+  overflow: hidden;
   height: 10px;
   margin-top: 10px;
-  overflow: hidden;
-  background: var(--border);
   border-radius: var(--radius-sm);
+  background: rgba(148, 163, 184, 0.18);
 }
 
 .file-progress-fill {
   height: 100%;
-  background: var(--success);
+  border-radius: var(--radius-sm);
+  background: linear-gradient(90deg, #C2410C, #EA580C);
   transition: width 160ms linear;
 }
 
@@ -201,28 +166,5 @@
   }
   100% {
     transform: translateX(220%);
-  }
-}
-
-@media (max-width: 480px) {
-  .file-drop-zone {
-    margin-top: 18px;
-    padding: 26px 16px;
-  }
-
-  .file-selected-panel {
-    padding: 16px;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-lg);
-  }
-
-  .file-state-error {
-    flex-wrap: wrap;
-  }
-
-  .file-choose-another {
-    width: 100%;
-    margin-left: 0;
   }
 }

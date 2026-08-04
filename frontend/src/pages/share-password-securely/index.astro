@@ -63,13 +63,15 @@ const jsonLd = [
     ogImageAlt="Share passwords securely with encrypted one-time links"
 >
     <InlineCss slot="head" name="home" />
+    <InlineCss slot="head" name="link" />
+    <InlineCss slot="head" name="qr-panel" />
     <InlineCss slot="head" name="article" />
     <script slot="head" type="application/ld+json" set:html={JSON.stringify(jsonLd)} is:inline></script>
 
     <div class="share-flow-page">
         <nav class="share-mode-nav" aria-label="Choose sharing mode">
-            <a href="/share-password-securely/" class="share-mode-link share-mode-link-active">Text secret</a>
-            <a href="/secure-file-sharing/" class="share-mode-link">One-time file</a>
+            <a href="/share-password-securely/" class="share-mode-link share-mode-link-active">Text Secret</a>
+            <a href="/secure-file-sharing/" class="share-mode-link">One-Time File Sharing</a>
         </nav>
 
         <NewMessageForm />

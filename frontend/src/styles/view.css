@@ -95,27 +95,6 @@
   min-width: 156px;
 }
 
-/* The receive page adds context above the shared QR code surface. */
-.qr-panel-title {
-  margin: 0;
-  color: var(--text);
-  font-size: 14px;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-}
-
-.qr-panel-note {
-  max-width: 360px;
-  margin: 12px auto 0;
-  color: var(--text-muted);
-  font-size: 13px;
-  line-height: 1.6;
-}
-
-.qr-panel-note + .qr-panel-code {
-  margin-top: 12px;
-}
-
 /* Confirmation gate */
 .confirm-gate {
   padding: 32px 20px;

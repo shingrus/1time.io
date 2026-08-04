@@ -262,7 +262,7 @@ if (root) {
         try {
             const {link} = await createSecretLink(generated);
             if (link) {
-                await showLinkReady(root, link, () => {
+                showLinkReady(root, link, () => {
                     isSharing = false;
                     shareLabel.textContent = 'Share as link';
                     shareBtn.disabled = !generated;

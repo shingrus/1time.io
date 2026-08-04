@@ -42,12 +42,14 @@
   --accent-hover: #9A3412;
   --accent-light: #FFF7ED;
   --border: #E7E5E4;
+  --border-focus: #C2410C;
   --success: #15803D;
   --success-hover: #166534;
-  --border-focus: var(--text-muted);
-  --focus-ring: var(--border);
   --danger: #DC2626;
   --warning: #B45309;
+  --tip-bg: #FEFCE8;
+  --tip-fg: #854D0E;
+  --tip-border: #FEF08A;
   --radius: 10px;
   --radius-sm: 6px;
   --radius-lg: 16px;
@@ -94,7 +96,7 @@ body {
 .app-header,
 .app-main,
 .app-footer {
-  max-width: 720px;
+  max-width: 640px;
   margin: 0 auto;
   width: 100%;
 }
@@ -135,7 +137,6 @@ body {
   font-weight: 500;
   color: var(--text-secondary);
   text-decoration: none;
-  white-space: nowrap;
   padding: 6px 12px;
   border-radius: var(--radius-sm);
   transition: color var(--transition), background var(--transition);
@@ -206,10 +207,11 @@ body {
   color: var(--accent);
 }
 
-/* Shared accent text links in prose sections. */
+/* Shared accent text links (prose sections + standalone CTAs) */
 .article-body a:not(.btn),
 .seo-section p a,
-.gen-seo-text a {
+.gen-seo-text a,
+.link-my-secrets {
   color: var(--accent);
   text-decoration: underline;
   text-underline-offset: 2px;
@@ -217,7 +219,8 @@ body {
 
 .article-body a:not(.btn):hover,
 .seo-section p a:hover,
-.gen-seo-text a:hover {
+.gen-seo-text a:hover,
+.link-my-secrets:hover {
   color: var(--accent-hover);
 }
 
@@ -260,7 +263,7 @@ h1, h2, h3 {
 
 .form-textarea:focus {
   border-color: var(--border-focus);
-  box-shadow: 0 0 0 3px var(--focus-ring);
+  box-shadow: 0 0 0 3px rgba(194, 65, 12, 0.12);
 }
 
 .form-textarea::placeholder {
@@ -281,11 +284,19 @@ h1, h2, h3 {
 
 .form-input:focus {
   border-color: var(--border-focus);
-  box-shadow: 0 0 0 3px var(--focus-ring);
+  box-shadow: 0 0 0 3px rgba(194, 65, 12, 0.12);
 }
 
 .form-input::placeholder {
   color: var(--text-muted);
+}
+
+.form-input-readonly {
+  background: var(--bg);
+  cursor: pointer;
+  font-family: 'SF Mono', 'Fira Code', 'Fira Mono', monospace;
+  font-size: 14px;
+  letter-spacing: -0.01em;
 }
 
 .form-select {
@@ -308,7 +319,7 @@ h1, h2, h3 {
 
 .form-select:focus {
   border-color: var(--border-focus);
-  box-shadow: 0 0 0 3px var(--focus-ring);
+  box-shadow: 0 0 0 3px rgba(194, 65, 12, 0.12);
 }
 
 .form-help {
@@ -344,13 +355,6 @@ h1, h2, h3 {
 .btn-primary {
   background: var(--accent);
   color: #fff;
-}
-
-.btn-primary:disabled,
-.btn-success:disabled {
-  opacity: 1;
-  background: var(--border);
-  color: var(--text);
 }
 
 .btn-primary:hover:not(:disabled) {
@@ -428,24 +432,6 @@ h1, h2, h3 {
 @media (max-width: 480px) {
   .app-header {
     padding: 12px 16px;
-    gap: 6px;
-  }
-  .app-logo {
-    gap: 6px;
-    flex-shrink: 0;
-  }
-  .app-logo-text {
-    font-size: 20px;
-  }
-  .app-nav {
-    gap: 0;
-  }
-  .app-nav a:not(.app-nav-icon) {
-    padding-inline: clamp(4px, 1.5vw, 7px);
-    font-size: clamp(11px, 3vw, 13px);
-  }
-  .app-nav-icon {
-    padding: 4px !important;
   }
   .app-main {
     padding: 8px 16px 32px;
