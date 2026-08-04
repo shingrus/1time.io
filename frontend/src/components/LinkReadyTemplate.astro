@@ -1,53 +1,58 @@
 <template id="link-ready-template">
-    <div class="link-display">
-        <div class="link-display-icon">
-            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
-                <polyline points="22 4 12 14.01 9 11.01"/>
-            </svg>
-        </div>
-        <p class="link-display-label"><span data-link-kind>Your one-time secret link</span><span data-fingerprint-name></span> is ready</p>
-        <input class="link-display-input" data-link-input aria-label="Secret one-time link" type="text" readonly />
-        <section class="qr-panel" data-qr-panel hidden aria-live="polite">
-            <p class="qr-panel-title">Scan from another device</p>
-            <p class="qr-panel-note" data-qr-note>This QR encodes the same one-time link shown above.</p>
-            <div class="qr-panel-code"><div data-qr-slot aria-label="Secret link QR code"></div></div>
-        </section>
-        <div class="link-actions">
-            <button class="btn btn-success btn-lg" type="button" data-copy>
-                <svg data-copy-icon-default width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
-                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+    <section class="link-display" aria-labelledby="link-ready-title">
+        <header class="link-ready-header">
+            <span class="link-ready-icon" aria-hidden="true">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="9" />
+                    <polyline points="8.5 12 11 14.5 15.75 9.75" />
                 </svg>
-                <svg data-copy-icon-done width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:none">
-                    <polyline points="20 6 9 17 4 12"/>
-                </svg>
-                <span data-copy-label>Copy link</span>
+            </span>
+            <div class="link-ready-copy">
+                <h2 class="link-display-label" id="link-ready-title" data-link-title>Your one-time secret link is ready</h2>
+                <p class="link-ready-meta">
+                    <span data-link-expiry>Expires in 1 day</span>
+                    <span aria-hidden="true"> · </span>
+                    <span data-link-uses>1 view</span>
+                </p>
+            </div>
+        </header>
+
+        <div class="link-copy-control">
+            <input
+                class="link-display-input"
+                data-link-input
+                aria-label="Secret one-time link"
+                autocomplete="off"
+                autocapitalize="none"
+                spellcheck="false"
+                type="text"
+                readonly
+            />
+            <button class="btn btn-success btn-lg link-copy-button" type="button" data-copy>
+                <span>Copy</span>
+                <span class="link-copy-status" data-copy-status aria-live="polite" hidden></span>
             </button>
-            <button class="btn btn-secondary btn-lg" type="button" data-toggle-qr>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                    <path d="M3 3h6v6H3z"/>
-                    <path d="M15 3h6v6h-6z"/>
-                    <path d="M3 15h6v6H3z"/>
-                    <path d="M15 15h3"/>
-                    <path d="M18 12v3"/>
-                    <path d="M21 15v6"/>
-                    <path d="M15 21h3"/>
-                    <path d="M21 21h.01"/>
-                </svg>
+        </div>
+
+        <nav class="link-secondary-actions" aria-label="Link actions">
+            <button class="link-inline-action" type="button" data-toggle-qr aria-expanded="false">
                 <span data-qr-label>Show QR code</span>
             </button>
+            <button class="link-inline-action link-inline-action-accent" type="button" data-reset>Send another secret</button>
+        </nav>
+
+        <section class="qr-panel" data-qr-panel hidden aria-live="polite">
+            <div class="qr-panel-code"><div data-qr-slot aria-label="Secret link QR code"></div></div>
+        </section>
+
+        <div class="link-warning" role="note">
+            <p data-link-warning></p>
         </div>
-        <div class="link-actions">
-            <button class="btn btn-primary btn-lg" type="button" data-reset>Create another</button>
+
+        <div class="link-footer-meta" data-footer-meta hidden>
+            <span data-reference-wrap hidden>Reference <strong data-reference-name></strong></span>
+            <span data-footer-separator aria-hidden="true" hidden>·</span>
+            <a class="link-extension" data-extension-link href="/chrome-extension/" hidden>Add the Chrome extension</a>
         </div>
-        <p class="link-notice">
-            This link works only once. After it is opened, the secret is permanently destroyed.
-            Even we cannot read it because encryption happens in your browser.
-        </p>
-        <div class="callout callout-tip" role="note">
-            <span class="callout-icon" aria-hidden="true">💡</span>
-            <span data-tip-text>Bookmark 1time.io so you can find it next time — <span data-bookmark-shortcut>Ctrl+D</span></span>
-        </div>
-    </div>
+    </section>
 </template>

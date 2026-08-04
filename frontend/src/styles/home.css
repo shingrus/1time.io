@@ -14,8 +14,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 8px 16px;
-  font-size: 14px;
+  padding: 8px 10px;
+  font-size: clamp(13px, 3.5vw, 14px);
   font-weight: 500;
   color: var(--text-muted);
   text-decoration: none;
@@ -42,60 +42,266 @@
   font-size: 14px;
 }
 
-.options-grid {
-  display: grid;
-  gap: 12px;
-  margin-bottom: 16px;
+.share-title {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 30px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
 }
 
-.share-primary-actions {
-  margin-bottom: 16px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  flex-wrap: wrap;
+.share-options-panel {
+  --share-accent-ring: rgba(194, 65, 12, 0.15);
+  margin-top: 24px;
 }
 
-.share-primary-actions .btn-lg {
-  padding-inline: 18px;
-  margin-left: auto;
+.share-settings-card {
+  overflow: hidden;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
 }
 
-.options-chips,
-.option-chip {
-  display: flex;
-  align-items: center;
-}
-
-.options-chips {
-  flex-wrap: wrap;
-  gap: 18px;
-}
-
-.option-chip {
-  gap: 6px;
-  font-family: inherit;
-  font-size: 14px;
-  padding: 4px 0;
+.share-settings-card .secret-textarea {
+  display: block;
+  min-height: 190px;
+  margin: 0;
   border: 0;
-  background: none;
+  border-radius: 0;
+  resize: none;
+}
+
+.share-settings-card .secret-textarea:focus {
+  box-shadow: none;
+}
+
+.share-settings-card:has(.secret-textarea:focus) {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--share-accent-ring);
+}
+
+.share-settings-card:focus-within {
+  border-color: var(--text-muted);
+  box-shadow: 0 0 0 3px var(--border);
+}
+
+.share-options-controls {
+  display: grid;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.share-options-line {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  column-gap: 24px;
+  min-height: 44px;
+}
+
+.share-option-field,
+.share-passphrase-add {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
   color: var(--text-secondary);
+}
+
+.share-option-field {
   cursor: pointer;
 }
 
-.option-chip:hover,
-.option-chip[aria-expanded='true'] {
-  color: var(--text);
+.share-option-icon {
+  flex: 0 0 auto;
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  pointer-events: none;
 }
 
-@media (min-width: 480px) {
-  .options-grid {
-    grid-template-columns: 1fr 1fr;
+.share-option-field:hover,
+.share-option-field:focus-within,
+.share-passphrase-add:hover,
+.share-passphrase-add:focus-visible {
+  color: var(--accent);
+}
+
+.share-option-select {
+  field-sizing: content;
+  width: auto;
+  min-width: 0;
+  height: 30px;
+  padding: 0;
+  color: inherit;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 1.2;
+  text-decoration-line: underline;
+  text-decoration-style: dotted;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 4px;
+}
+
+.share-option-select:focus {
+  box-shadow: none;
+}
+
+.share-option-select:focus-visible,
+.share-passphrase-add:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.share-passphrase-add {
+  padding: 0;
+  background: transparent;
+  border: 0;
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.share-passphrase-add span {
+  padding-bottom: 2px;
+  border-bottom: 1px dotted currentColor;
+}
+
+.share-passphrase-add:focus-visible {
+  border-radius: 2px;
+}
+
+.share-passphrase-field {
+  display: block;
+  height: 46px;
+}
+
+.share-passphrase-field .form-input {
+  height: 46px;
+}
+
+.share-passphrase-field .form-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--share-accent-ring);
+}
+
+.share-submit {
+  min-width: 0;
+}
+
+.share-submit > .btn {
+  width: 100%;
+  min-height: 46px;
+  font-weight: 700;
+}
+
+@media (min-width: 640px) {
+  .share-options-controls {
+    grid-template-columns: minmax(0, 1fr) minmax(190px, 32%);
+    column-gap: 24px;
   }
 
-  .options-grid .options-grid-full {
+  .share-passphrase-field {
     grid-column: 1 / -1;
+  }
+
+  .share-options-line {
+    grid-column: 1;
+    justify-content: flex-start;
+  }
+
+  .share-submit {
+    grid-column: 2;
+  }
+}
+
+.share-form-error {
+  margin-top: 12px;
+}
+
+.share-note {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 20px 0 0;
+  font-size: 14px;
+}
+
+.share-note svg {
+  flex-shrink: 0;
+  color: var(--success);
+}
+
+@media (max-width: 480px) {
+  .share-title {
+    font-size: 25px;
+  }
+
+  .share-options-panel {
+    margin-top: 18px;
+  }
+
+  .share-settings-card .secret-textarea {
+    height: 116px;
+    min-height: 116px;
+  }
+
+  .share-options-line {
+    column-gap: 12px;
+  }
+
+  .share-option-field,
+  .share-passphrase-add {
+    gap: 4px;
+  }
+
+  .share-option-select {
+    font-size: 15px;
+  }
+
+  .share-passphrase-field,
+  .share-passphrase-field .form-input {
+    height: 44px;
+  }
+
+  .share-passphrase-add {
+    font-size: 15px;
+  }
+
+  .share-option-icon {
+    width: 17px;
+    height: 17px;
+  }
+}
+
+@supports not (field-sizing: content) {
+  .share-option-field-duration .share-option-select {
+    width: 7ch;
+  }
+
+  .share-option-field-usage .share-option-select {
+    width: 11ch;
+  }
+
+  @media (max-width: 480px) {
+    .share-option-field-duration .share-option-select {
+      width: 5.5ch;
+    }
+
+    .share-option-field-usage .share-option-select {
+      width: 10ch;
+    }
   }
 }
 
