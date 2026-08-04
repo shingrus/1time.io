@@ -18,17 +18,46 @@ const usageOptions = [1, 2, 3, 5, 10];
 >
     <div class:list={['share-settings-card', {'file-selection-card': isFile}]}>
         <slot name="primary" />
-        <div class="share-options-inline">
-            <label class="share-option-field">
-                <span class="share-option-label">Expires</span>
+    </div>
+
+    <div class="share-options-controls">
+        <div class="share-passphrase-field" id={`${kind}-passphrase-field`} data-passphrase-field hidden>
+            <input
+                class="form-input"
+                id="secretKey"
+                aria-label="Optional passphrase the recipient must know if set"
+                autocomplete="off"
+                autocapitalize="none"
+                placeholder="Optional passphrase"
+                spellcheck="false"
+                type="text"
+            />
+        </div>
+        <div class="share-options-line">
+            <label class="share-option-field share-option-field-duration">
+                <svg class="share-option-icon" aria-hidden="true" viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="9"></circle>
+                    <path d="M12 7v5l3 2"></path>
+                </svg>
                 <select class="form-select share-option-select" id="duration" aria-label="Expire after">
                     {SHARE_DURATION_OPTIONS.map(({value, label}) => (
                         <option value={value} selected={value === Constants.defaultDurationSeconds}>{label}</option>
                     ))}
                 </select>
             </label>
-            <label class="share-option-field">
-                <span class="share-option-label">{usageLabel}</span>
+            <label class="share-option-field share-option-field-usage">
+                {isFile ? (
+                    <svg class="share-option-icon" aria-hidden="true" viewBox="0 0 24 24">
+                        <path d="M12 3v12"></path>
+                        <path d="m7 10 5 5 5-5"></path>
+                        <path d="M5 21h14"></path>
+                    </svg>
+                ) : (
+                    <svg class="share-option-icon" aria-hidden="true" viewBox="0 0 24 24">
+                        <path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"></path>
+                        <circle cx="12" cy="12" r="2.5"></circle>
+                    </svg>
+                )}
                 <select class="form-select share-option-select" id="views" aria-label={`${usageLabel} allowed`}>
                     {usageOptions.map((count) => (
                         <option value={count} selected={count === 1}>
@@ -37,21 +66,16 @@ const usageOptions = [1, 2, 3, 5, 10];
                     ))}
                 </select>
             </label>
+            <button class="share-passphrase-add" type="button" data-passphrase-add aria-controls={`${kind}-passphrase-field`} aria-expanded="false">
+                <svg class="share-option-icon" aria-hidden="true" viewBox="0 0 24 24">
+                    <rect x="5" y="10" width="14" height="11" rx="2"></rect>
+                    <path d="M8 10V7a4 4 0 0 1 8 0v3"></path>
+                </svg>
+                <span>Set passphrase</span>
+            </button>
+        </div>
+        <div class="share-submit">
+            <slot name="submit" />
         </div>
     </div>
-
-    <button class="share-passphrase-add" type="button" data-passphrase-add aria-controls={`${kind}-passphrase-field`} aria-expanded="false">+ Add a passphrase</button>
-    <div class="share-passphrase-field" id={`${kind}-passphrase-field`} data-passphrase-field hidden>
-        <input
-            class="form-input"
-            id="secretKey"
-            aria-label="Optional passphrase the recipient must know if set"
-            autocomplete="off"
-            autocapitalize="none"
-            placeholder="Optional passphrase"
-            spellcheck="false"
-            type="text"
-        />
-    </div>
-    <slot name="submit" />
 </div>
