@@ -479,7 +479,7 @@ export const blogPosts: BlogPost[] = [
         "tag": "Security",
         "heading": "Is Slack Safe for Sharing Passwords? What Admins Can Actually See",
         "excerpt": "You probably share passwords over Slack DMs. So does everyone else. Here is why that is a serious security risk and what to do instead.",
-        "meta": "By Igor Ermakov · Dec 29, 2025 · 6 min read",
+        "meta": "By Igor Ermakov · Updated Aug 1, 2026 · 6 min read",
         "schemas": [
             {
                 "@context": "https://schema.org",
@@ -546,13 +546,13 @@ export const blogPosts: BlogPost[] = [
         "tag": "Comparison",
         "heading": "OneTimeSecret Alternative: An Honest 1time.io Comparison",
         "excerpt": "OneTimeSecret is the most well-known one-time secret sharing tool. We built 1time.io to address what we see as gaps in its approach. Here is an honest comparison — where we are better, where we are similar, and where OneTimeSecret has the edge.",
-        "meta": "By Igor Ermakov · Updated Apr 17, 2026 · 5 min read",
+        "meta": "By Igor Ermakov · Updated Aug 1, 2026 · 5 min read",
         "schemas": [
             {
                 "@context": "https://schema.org",
                 "@type": "Article",
                 "headline": "OneTimeSecret Alternative: An Honest 1time.io Comparison",
-                "description": "An honest, transparent comparison between 1time.io and OneTimeSecret (onetimesecret.com). Compare encryption, privacy, features, pricing, and open-source status side by side.",
+                "description": "Looking for a OneTimeSecret alternative? 1time.io encrypts in your browser, so the server never sees your secret. Free, open source, no signup — honest comparison.",
                 "datePublished": "2025-12-15",
                 "dateModified": "2026-08-01",
                 "author": {
@@ -793,23 +793,23 @@ export const blogPosts: BlogPost[] = [
     },
     {
         "slug": "privnote-alternative",
-        "title": "1time.io vs Privnote — Encrypted Alternative — 1time.io",
-        "description": "Compare 1time.io and Privnote for self-destructing messages. Learn why Privnote lacks end-to-end encryption and what that means for your secrets.",
-        "ogTitle": "1time.io vs Privnote — Why Encryption Matters",
-        "ogDescription": "Privnote deletes messages but does not encrypt them end-to-end. Here is why that matters.",
-        "ogImageAlt": "1time.io vs Privnote",
+        "title": "Privnote Alternative — Open Source, No Ads, No Signup",
+        "description": "Looking for a Privnote alternative? 1time.io uses authenticated AES-GCM encryption instead of Privnote's deprecated AES-CBC. Open source, no ads, no signup.",
+        "ogTitle": "Privnote Alternative — Open Source, No Ads, No Signup",
+        "ogDescription": "A Privnote alternative with authenticated encryption (AES-GCM), no ads, and fully open source. Honest side-by-side comparison.",
+        "ogImageAlt": "Privnote Alternative",
         "tag": "Comparison",
-        "heading": "1time.io vs Privnote — Why Encryption Matters",
-        "excerpt": "Privnote is one of the oldest self-destructing message tools. But deleting a message after reading is only half the equation. If the server can read your message in the first place, is it really private?",
-        "meta": "By Igor Ermakov · Updated Apr 17, 2026 · 5 min read",
+        "heading": "Privnote Alternative: An Honest 1time.io Comparison",
+        "excerpt": "Privnote is one of the oldest self-destructing message tools, and like 1time.io it encrypts in your browser. But the crypto library it relies on has been deprecated and archived. Here is what that difference actually costs you.",
+        "meta": "By Igor Ermakov · Updated Aug 1, 2026 · 5 min read",
         "schemas": [
             {
                 "@context": "https://schema.org",
                 "@type": "Article",
-                "headline": "1time.io vs Privnote — Why Encryption Matters",
-                "description": "Compare 1time.io and Privnote for self-destructing messages. Learn why Privnote lacks end-to-end encryption and what that means for your secrets.",
+                "headline": "Privnote Alternative: An Honest 1time.io Comparison",
+                "description": "Looking for a Privnote alternative? 1time.io uses authenticated AES-GCM encryption instead of Privnote's deprecated AES-CBC. Open source, no ads, no signup.",
                 "datePublished": "2026-01-05",
-                "dateModified": "2026-04-17",
+                "dateModified": "2026-08-01",
                 "author": {
                     "@type": "Person",
                     "name": "Igor Ermakov",
@@ -850,7 +850,7 @@ export const blogPosts: BlogPost[] = [
                     {
                         "@type": "ListItem",
                         "position": 3,
-                        "name": "1time.io vs Privnote",
+                        "name": "Privnote Alternative",
                         "item": "https://1time.io/blog/privnote-alternative/"
                     }
                 ]
@@ -864,7 +864,7 @@ export const blogPosts: BlogPost[] = [
                         "name": "What is the difference between Privnote and 1time.io?",
                         "acceptedAnswer": {
                             "@type": "Answer",
-                            "text": "Both Privnote and 1time.io encrypt in the browser and store the decryption key only in the URL fragment — the server never sees your plaintext. The key difference is the quality of the cryptographic implementation. Privnote uses Gibberish-AES, an unmaintained library from 2012 that implements AES-CBC with MD5 key derivation. 1time.io uses AES-GCM (authenticated encryption) with HKDF key derivation via the native Web Crypto API. Additionally, 1time.io is fully open source, has no ads, and includes a password generator, file sharing, and a CLI."
+                            "text": "Both Privnote and 1time.io encrypt in the browser and store the decryption key only in the URL fragment — the server never sees your plaintext. The key difference is the quality of the cryptographic implementation. Privnote uses Gibberish-AES, a deprecated library implementing unauthenticated AES-CBC with MD5 key derivation; its repository was archived in 2018. 1time.io uses AES-GCM (authenticated encryption) with HKDF key derivation via the native Web Crypto API. Additionally, 1time.io is fully open source, has no ads, and includes a password generator, file sharing, and a CLI."
                         }
                     },
                     {
