@@ -7,40 +7,24 @@ if (form) {
     const keyInput = form.querySelector<HTMLInputElement>('#secretKey')!;
     const durationSelect = form.querySelector<HTMLSelectElement>('#duration')!;
     const viewsSelect = form.querySelector<HTMLSelectElement>('#views')!;
-    const optionsPanel = form.querySelector<HTMLElement>('[data-options-panel]')!;
-    const optionChips = form.querySelectorAll<HTMLButtonElement>('.option-chip');
     const submitBtn = form.querySelector<HTMLButtonElement>('button[type="submit"]')!;
+    const passphraseAddBtn = form.querySelector<HTMLButtonElement>('[data-passphrase-add]')!;
+    const passphraseField = form.querySelector<HTMLElement>('[data-passphrase-field]')!;
     const labelEl = submitBtn.querySelector<HTMLElement>('.btn-label')!;
     const kbdHint = submitBtn.querySelector<HTMLElement>('[data-shortcut-hint]')!;
     const errorEl = form.querySelector<HTMLElement>('[data-message-error]')!;
     const defaultLabel = labelEl.textContent ?? 'Create one-time link';
 
-    const setOptionsOpen = (open: boolean) => {
-        optionsPanel.toggleAttribute('hidden', !open);
-        optionChips.forEach((chip) => chip.setAttribute('aria-expanded', String(open)));
-    };
-    const updateOptionChips = () => {
-        optionChips.forEach((chip) => {
-            const id = chip.dataset.chip;
-            const text = id === 'duration'
-                ? durationSelect.selectedOptions[0]?.textContent ?? '1 day'
-                : id === 'views'
-                    ? `${viewsSelect.value} view${viewsSelect.value === '1' ? '' : 's'}`
-                    : keyInput.value ? 'passphrase added' : 'set passphrase';
-            chip.querySelector<HTMLElement>('[data-chip-label]')!.textContent = text;
-        });
-    };
-    optionChips.forEach((chip) => chip.addEventListener('click', () => {
-        setOptionsOpen(true);
-        form.querySelector<HTMLElement>('#' + chip.dataset.chip)?.focus();
-    }));
-    durationSelect.addEventListener('change', updateOptionChips);
-    viewsSelect.addEventListener('change', updateOptionChips);
-    keyInput.addEventListener('input', updateOptionChips);
-
     const setError = (msg: string) => {
         errorEl.textContent = msg;
         errorEl.toggleAttribute('hidden', !msg);
+    };
+
+    const resetPassphrase = () => {
+        keyInput.value = '';
+        passphraseField.toggleAttribute('hidden', true);
+        passphraseAddBtn.toggleAttribute('hidden', false);
+        passphraseAddBtn.setAttribute('aria-expanded', 'false');
     };
 
     let hintShown = false;
@@ -63,6 +47,12 @@ if (form) {
         setError('');
         updateSubmitState(false);
     });
+    passphraseAddBtn.addEventListener('click', () => {
+        passphraseAddBtn.toggleAttribute('hidden', true);
+        passphraseAddBtn.setAttribute('aria-expanded', 'true');
+        passphraseField.toggleAttribute('hidden', false);
+        keyInput.focus();
+    });
     updateSubmitState(false);
 
     form.addEventListener('keydown', (event) => {
@@ -78,24 +68,23 @@ if (form) {
         if (textarea.value.length === 0) return;
         setError('');
         updateSubmitState(true);
+        const durationSeconds = Number(durationSelect.value);
         const selectedViews = Number(viewsSelect.value);
         try {
             const {link} = await createSecretLink(textarea.value, {
                 secretKey: keyInput.value,
-                durationSeconds: Number(durationSelect.value),
+                durationSeconds,
                 views: selectedViews,
             });
             if (link) {
-                showLinkReady(form, link, () => {
+                await showLinkReady(form, link, () => {
                     textarea.value = '';
-                    keyInput.value = '';
+                    resetPassphrase();
                     durationSelect.value = String(Constants.defaultDurationSeconds);
                     viewsSelect.value = '1';
-                    updateOptionChips();
-                    setOptionsOpen(false);
                     updateSubmitState(false);
                     textarea.focus();
-                }, {uses: selectedViews});
+                }, {uses: selectedViews, durationSeconds});
                 return;
             }
         } catch {
