@@ -74,6 +74,7 @@ make build
 - Prefer `stdin` for `send`; positional secrets leak through shell history and process listings.
 - `read` and `read-file` currently accept the full secret link as a positional argument only, which also exposes decryption material in shell history and process listings.
 - `send-file` and `read-file` support optional passphrases via `--passphrase` or `1TIME_PASSPHRASE`.
+- `send` and `send-file` accept `--views <N>` (default `1`, max `10`, matching the backend caps); `read` and `read-file` print the remaining views/downloads on `stderr` so `stdout` stays pipeable.
 - File links use the `/f/#<randomKey><id>` format.
 - `read-file --out <path>` refuses to start if the target path already exists.
 - `read-file` without `--out` writes into the current directory using the original filename and auto-suffixes collisions like `report (1).txt`.

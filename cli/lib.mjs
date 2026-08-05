@@ -23,6 +23,8 @@ const secondsPerHour = 60 * 60;
 const secondsPerDay = secondsPerHour * 24;
 const maxExpiresInSeconds = 30 * secondsPerDay;
 const defaultExpiresInSeconds = ProtocolConstants.defaultDuration * secondsPerDay;
+const defaultViews = 1;
+const maxViews = 10;
 
 function write(stream, text) {
     if (text) {
@@ -34,9 +36,9 @@ export function getHelpText() {
     return `1time v0
 
 Usage:
-  1time send [--host <host-or-origin>] [--expires-in <Nd|Nh|NdNh>] [secret]
+  1time send [--host <host-or-origin>] [--expires-in <Nd|Nh|NdNh>] [--views <N>] [secret]
   1time read [--host <host-or-origin>] <link>
-  1time send-file [--host <host-or-origin>] [--expires-in <Nd|Nh|NdNh>] [--passphrase <passphrase>] <path>
+  1time send-file [--host <host-or-origin>] [--expires-in <Nd|Nh|NdNh>] [--views <N>] [--passphrase <passphrase>] <path>
   1time read-file [--host <host-or-origin>] [--passphrase <passphrase>] [--out <path>] <link>
   1time --help
 
@@ -48,6 +50,8 @@ Input precedence for send:
 Notes:
   - send-file/read-file support optional passphrases via --passphrase or 1TIME_PASSPHRASE
   - --expires-in supports h and d units, for example 23h, 2d, or 2d23h (default 1d, max 30d)
+  - --views sets how many times the link can be opened, downloads for files (default 1, max 10)
+  - read/read-file report the remaining views on stderr, so stdout stays pipeable
   - http:// is only allowed for loopback hosts such as 127.0.0.1
 `;
 }
@@ -118,6 +122,24 @@ function parseExpiresIn(value) {
     return totalSeconds;
 }
 
+function parseViews(value) {
+    if (value === undefined) {
+        return defaultViews;
+    }
+
+    const raw = String(value).trim();
+    if (!/^\d+$/.test(raw)) {
+        throw new Error(`Invalid views value "${raw}": use a whole number between 1 and ${maxViews}.`);
+    }
+
+    const views = Number(raw);
+    if (views < 1 || views > maxViews) {
+        throw new Error(`Invalid views value "${raw}": use a whole number between 1 and ${maxViews}.`);
+    }
+
+    return views;
+}
+
 async function postJson({origin, path, payload, fetchImpl}) {
     const response = await fetchImpl(buildApiUrl(origin, path), {
         method: 'POST',
@@ -134,7 +156,7 @@ async function postJson({origin, path, payload, fetchImpl}) {
     return response.json();
 }
 
-export async function createSecretLink({host, secret, expiresInSeconds = defaultExpiresInSeconds, fetchImpl}) {
+export async function createSecretLink({host, secret, expiresInSeconds = defaultExpiresInSeconds, views = defaultViews, fetchImpl}) {
     const origin = normalizeOrigin(host || ProtocolConstants.defaultHost);
     const generatedKey = getRandomString(ProtocolConstants.randomKeyLen);
     //left for later passphrase
@@ -146,6 +168,7 @@ export async function createSecretLink({host, secret, expiresInSeconds = default
             secretMessage: encryptedMessage,
             hashedKey,
             duration: expiresInSeconds,
+            views,
         },
         fetchImpl,
     });
@@ -215,7 +238,7 @@ async function writeFileToAvailablePath(targetPath, fileBytes) {
     throw new Error(`Failed to allocate output path for ${targetPath}`);
 }
 
-async function createFileLink({host, filePath, passphrase = '', expiresInSeconds = defaultExpiresInSeconds, fetchImpl}) {
+async function createFileLink({host, filePath, passphrase = '', expiresInSeconds = defaultExpiresInSeconds, views = defaultViews, fetchImpl}) {
     const origin = normalizeOrigin(host || ProtocolConstants.defaultHost);
     const fileBytes = await readFile(filePath);
     const meta = {
@@ -232,6 +255,9 @@ async function createFileLink({host, filePath, passphrase = '', expiresInSeconds
     formData.append('file', new Blob([encryptedBytes]), 'encrypted.bin');
     formData.append('hashedKey', hashedKey);
     formData.append('duration', String(expiresInSeconds));
+    if (views !== 1) {
+        formData.append('views', String(views));
+    }
 
     const response = await fetchImpl(buildApiUrl(origin, 'saveFile'), {
         method: 'POST',
@@ -282,6 +308,7 @@ async function readFileLink({host, link, passphrase = '', outPath, cwd = process
         throw new Error(`Request failed with status ${response.status}`);
     }
 
+    const viewsLeft = parseViewsLeftHeader(response.headers?.get?.('X-1Time-Views-Left'));
     const contentType = response.headers?.get?.('Content-Type') || response.headers?.get?.('content-type') || '';
     if (contentType.includes('application/json')) {
         const data = await response.json();
@@ -301,12 +328,26 @@ async function readFileLink({host, link, passphrase = '', outPath, cwd = process
     if (outPath) {
         const resolvedOut = resolve(cwd, outPath);
         await writeFile(resolvedOut, fileBytes);
-        return {outputPath: resolvedOut, meta};
+        return {outputPath: resolvedOut, meta, viewsLeft};
     }
 
     const defaultName = basename(meta?.name || 'download.bin');
     const outputPath = await writeFileToAvailablePath(resolve(cwd, defaultName), fileBytes);
-    return {outputPath, meta};
+    return {outputPath, meta, viewsLeft};
+}
+
+function parseViewsLeftHeader(value) {
+    // Older backends omit the header; treat that as the consumed one-time case.
+    const parsed = Number.parseInt(value ?? '', 10);
+    return Number.isNaN(parsed) ? 0 : parsed;
+}
+
+function formatViewsLeft(viewsLeft, noun) {
+    if (viewsLeft <= 0) {
+        return 'This link is now consumed and has been deleted from the server.\n';
+    }
+
+    return `This link has ${viewsLeft} ${viewsLeft === 1 ? noun : `${noun}s`} remaining.\n`;
 }
 
 export async function revealSecret({host, link, fetchImpl}) {
@@ -334,7 +375,9 @@ export async function revealSecret({host, link, fetchImpl}) {
         throw new Error('Failed to read secret link');
     }
 
-    return decryptSecretMessage(data.cryptedMessage, parsedLink.randomKey);
+    const secret = await decryptSecretMessage(data.cryptedMessage, parsedLink.randomKey);
+    // Older backends omit viewsLeft; treat that as the consumed one-time case.
+    return {secret, viewsLeft: typeof data.viewsLeft === 'number' ? data.viewsLeft : 0};
 }
 
 function parseSendArgs(args) {
@@ -350,6 +393,9 @@ function parseSendArgs(args) {
                 type: 'string',
             },
             'expires-in': {
+                type: 'string',
+            },
+            views: {
                 type: 'string',
             },
         },
@@ -369,6 +415,9 @@ function parseSendFileArgs(args) {
                 type: 'string',
             },
             'expires-in': {
+                type: 'string',
+            },
+            views: {
                 type: 'string',
             },
             passphrase: {
@@ -416,6 +465,17 @@ function parseReadFileArgs(args) {
     });
 }
 
+// parseArgs throws on a missing option value or an unknown flag, so every
+// command routes through here to report it instead of crashing with a stack.
+function parseCommandArgs(parseArgsForCommand, args, stderr) {
+    try {
+        return parseArgsForCommand(args);
+    } catch (error) {
+        write(stderr, `${error.message}\n`);
+        return null;
+    }
+}
+
 export async function run(argv = process.argv.slice(2), io = {}) {
     const stdin = io.stdin || process.stdin;
     const stdout = io.stdout || process.stdout;
@@ -436,7 +496,11 @@ export async function run(argv = process.argv.slice(2), io = {}) {
     }
 
     if (command === 'send') {
-        const {values, positionals} = parseSendArgs(rest);
+        const parsed = parseCommandArgs(parseSendArgs, rest, stderr);
+        if (!parsed) {
+            return 1;
+        }
+        const {values, positionals} = parsed;
         if (values.help) {
             write(stdout, getHelpText());
             return 0;
@@ -448,6 +512,7 @@ export async function run(argv = process.argv.slice(2), io = {}) {
 
         try {
             const expiresInSeconds = parseExpiresIn(values['expires-in']);
+            const views = parseViews(values.views);
             const secret = await resolveSecret({
                 stdin,
                 env,
@@ -461,6 +526,7 @@ export async function run(argv = process.argv.slice(2), io = {}) {
                 host: values.host,
                 secret,
                 expiresInSeconds,
+                views,
                 fetchImpl,
             });
             write(stdout, `${link}\n`);
@@ -472,7 +538,11 @@ export async function run(argv = process.argv.slice(2), io = {}) {
     }
 
     if (command === 'send-file') {
-        const {values, positionals} = parseSendFileArgs(rest);
+        const parsed = parseCommandArgs(parseSendFileArgs, rest, stderr);
+        if (!parsed) {
+            return 1;
+        }
+        const {values, positionals} = parsed;
         if (values.help) {
             write(stdout, getHelpText());
             return 0;
@@ -484,11 +554,13 @@ export async function run(argv = process.argv.slice(2), io = {}) {
 
         try {
             const expiresInSeconds = parseExpiresIn(values['expires-in']);
+            const views = parseViews(values.views);
             const link = await createFileLink({
                 host: values.host,
                 filePath: positionals[0],
                 passphrase: resolveOptionalPassphrase({env, values, stderr}),
                 expiresInSeconds,
+                views,
                 fetchImpl,
             });
             write(stdout, `${link}\n`);
@@ -500,7 +572,11 @@ export async function run(argv = process.argv.slice(2), io = {}) {
     }
 
     if (command === 'read') {
-        const {values, positionals} = parseReadArgs(rest);
+        const parsed = parseCommandArgs(parseReadArgs, rest, stderr);
+        if (!parsed) {
+            return 1;
+        }
+        const {values, positionals} = parsed;
         if (values.help) {
             write(stdout, getHelpText());
             return 0;
@@ -511,12 +587,13 @@ export async function run(argv = process.argv.slice(2), io = {}) {
         }
 
         try {
-            const secret = await revealSecret({
+            const {secret, viewsLeft} = await revealSecret({
                 host: values.host,
                 link: positionals[0],
                 fetchImpl,
             });
             write(stdout, `${secret}\n`);
+            write(stderr, formatViewsLeft(viewsLeft, 'view'));
             return 0;
         } catch (error) {
             write(stderr, `${error.message}\n`);
@@ -525,7 +602,11 @@ export async function run(argv = process.argv.slice(2), io = {}) {
     }
 
     if (command === 'read-file') {
-        const {values, positionals} = parseReadFileArgs(rest);
+        const parsed = parseCommandArgs(parseReadFileArgs, rest, stderr);
+        if (!parsed) {
+            return 1;
+        }
+        const {values, positionals} = parsed;
         if (values.help) {
             write(stdout, getHelpText());
             return 0;
@@ -536,7 +617,7 @@ export async function run(argv = process.argv.slice(2), io = {}) {
         }
 
         try {
-            const {outputPath} = await readFileLink({
+            const {outputPath, viewsLeft} = await readFileLink({
                 host: values.host,
                 link: positionals[0],
                 passphrase: resolveOptionalPassphrase({env, values, stderr}),
@@ -545,6 +626,7 @@ export async function run(argv = process.argv.slice(2), io = {}) {
                 fetchImpl,
             });
             write(stdout, `${outputPath}\n`);
+            write(stderr, formatViewsLeft(viewsLeft, 'download'));
             return 0;
         } catch (error) {
             write(stderr, `${error.message}\n`);

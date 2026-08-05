@@ -319,6 +319,216 @@ test('run send rejects duplicate --expires-in units', async () => {
     assert.match(stderr.getOutput(), /"1d2d": use d and h units/);
 });
 
+test('run send sends the default view count', async () => {
+    const stdout = createWritableCapture();
+    const stderr = createWritableCapture();
+    let requestBody = null;
+
+    const exitCode = await run(['send'], {
+        stdin: createStdin('secret from stdin'),
+        stdout: stdout.stream,
+        stderr: stderr.stream,
+        env: {},
+        fetchImpl: async (_url, options) => {
+            requestBody = JSON.parse(options.body);
+            return {
+                ok: true,
+                json: async () => ({
+                    status: 'ok',
+                    newId: 'abc123',
+                }),
+            };
+        },
+    });
+
+    assert.equal(exitCode, 0);
+    assert.equal(requestBody.views, 1);
+});
+
+test('run send accepts --views', async () => {
+    const stdout = createWritableCapture();
+    const stderr = createWritableCapture();
+    let requestBody = null;
+
+    const exitCode = await run(['send', '--views', '3'], {
+        stdin: createStdin('secret from stdin'),
+        stdout: stdout.stream,
+        stderr: stderr.stream,
+        env: {},
+        fetchImpl: async (_url, options) => {
+            requestBody = JSON.parse(options.body);
+            return {
+                ok: true,
+                json: async () => ({
+                    status: 'ok',
+                    newId: 'abc123',
+                }),
+            };
+        },
+    });
+
+    assert.equal(exitCode, 0);
+    assert.equal(stderr.getOutput(), '');
+    assert.equal(requestBody.views, 3);
+    assert.match(stdout.getOutput(), /^https:\/\/1time\.io\/v\/#/);
+});
+
+test('run send rejects --views above the maximum', async () => {
+    const stdout = createWritableCapture();
+    const stderr = createWritableCapture();
+    let fetchCalled = false;
+
+    const exitCode = await run(['send', '--views', '11'], {
+        stdin: createStdin('secret from stdin'),
+        stdout: stdout.stream,
+        stderr: stderr.stream,
+        env: {},
+        fetchImpl: async () => {
+            fetchCalled = true;
+            throw new Error('should not fetch');
+        },
+    });
+
+    assert.equal(exitCode, 1);
+    assert.equal(stdout.getOutput(), '');
+    assert.equal(fetchCalled, false);
+    assert.match(stderr.getOutput(), /"11": use a whole number between 1 and 10/);
+});
+
+test('run send rejects non-numeric --views values', async () => {
+    const stdout = createWritableCapture();
+    const stderr = createWritableCapture();
+    let fetchCalled = false;
+
+    const exitCode = await run(['send', '--views', '2.5'], {
+        stdin: createStdin('secret from stdin'),
+        stdout: stdout.stream,
+        stderr: stderr.stream,
+        env: {},
+        fetchImpl: async () => {
+            fetchCalled = true;
+            throw new Error('should not fetch');
+        },
+    });
+
+    assert.equal(exitCode, 1);
+    assert.equal(stdout.getOutput(), '');
+    assert.equal(fetchCalled, false);
+    assert.match(stderr.getOutput(), /"2\.5": use a whole number between 1 and 10/);
+});
+
+test('run send reports a missing --views value instead of throwing', async () => {
+    const stdout = createWritableCapture();
+    const stderr = createWritableCapture();
+    let fetchCalled = false;
+
+    const exitCode = await run(['send', '--views'], {
+        stdin: createStdin('secret from stdin'),
+        stdout: stdout.stream,
+        stderr: stderr.stream,
+        env: {},
+        fetchImpl: async () => {
+            fetchCalled = true;
+            throw new Error('should not fetch');
+        },
+    });
+
+    assert.equal(exitCode, 1);
+    assert.equal(stdout.getOutput(), '');
+    assert.equal(fetchCalled, false);
+    assert.match(stderr.getOutput(), /--views <value>' argument missing/);
+});
+
+test('run send-file reports a missing --views value instead of throwing', async () => {
+    const stdout = createWritableCapture();
+    const stderr = createWritableCapture();
+    let fetchCalled = false;
+
+    const exitCode = await run(['send-file', '--views'], {
+        stdin: createStdin('', true),
+        stdout: stdout.stream,
+        stderr: stderr.stream,
+        env: {},
+        fetchImpl: async () => {
+            fetchCalled = true;
+            throw new Error('should not fetch');
+        },
+    });
+
+    assert.equal(exitCode, 1);
+    assert.equal(stdout.getOutput(), '');
+    assert.equal(fetchCalled, false);
+    assert.match(stderr.getOutput(), /--views <value>' argument missing/);
+});
+
+test('run reports unparsable arguments for every command instead of throwing', async () => {
+    for (const argv of [
+        ['send', '--host'],
+        ['send', '--unknown-flag'],
+        ['read', '--host'],
+        ['send-file', '--expires-in'],
+        ['read-file', '--out'],
+    ]) {
+        const stdout = createWritableCapture();
+        const stderr = createWritableCapture();
+
+        const exitCode = await run(argv, {
+            stdin: createStdin('', true),
+            stdout: stdout.stream,
+            stderr: stderr.stream,
+            env: {},
+            fetchImpl: async () => {
+                throw new Error('should not fetch');
+            },
+        });
+
+        assert.equal(exitCode, 1, `expected exit code 1 for ${argv.join(' ')}`);
+        assert.equal(stdout.getOutput(), '', `expected empty stdout for ${argv.join(' ')}`);
+        assert.notEqual(stderr.getOutput(), '', `expected an error on stderr for ${argv.join(' ')}`);
+    }
+});
+
+test('run read reports the remaining views on stderr', async () => {
+    let storedPayload = null;
+    const createdLink = await createSecretLink({
+        secret: 'multi-view secret',
+        views: 3,
+        fetchImpl: async (_url, options) => {
+            storedPayload = JSON.parse(options.body);
+            return {
+                ok: true,
+                json: async () => ({
+                    status: 'ok',
+                    newId: 'server-id-123',
+                }),
+            };
+        },
+    });
+
+    const stdout = createWritableCapture();
+    const stderr = createWritableCapture();
+
+    const exitCode = await run(['read', createdLink], {
+        stdin: createStdin('', true),
+        stdout: stdout.stream,
+        stderr: stderr.stream,
+        env: {},
+        fetchImpl: async () => ({
+            ok: true,
+            json: async () => ({
+                status: 'ok',
+                cryptedMessage: storedPayload.secretMessage,
+                viewsLeft: 2,
+            }),
+        }),
+    });
+
+    assert.equal(exitCode, 0);
+    assert.equal(storedPayload.views, 3);
+    assert.equal(stdout.getOutput(), 'multi-view secret\n');
+    assert.equal(stderr.getOutput(), 'This link has 2 views remaining.\n');
+});
+
 test('createSecretLink and revealSecret round-trip through the API protocol', async () => {
     let storedPayload = null;
     const createdLink = await createSecretLink({
@@ -336,7 +546,7 @@ test('createSecretLink and revealSecret round-trip through the API protocol', as
         },
     });
 
-    const decryptedSecret = await revealSecret({
+    const {secret: decryptedSecret} = await revealSecret({
         link: createdLink,
         fetchImpl: async (_url, options) => {
             const requestBody = JSON.parse(options.body);
@@ -423,6 +633,117 @@ test('run send-file accepts --expires-in', async () => {
     assert.match(stdout.getOutput(), /^https:\/\/1time\.io\/f\/#/);
 });
 
+test('run send-file accepts --views and omits the field for single downloads', async () => {
+    const tempDir = await mkdtemp(join(tmpdir(), '1time-cli-send-file-'));
+    const sourcePath = join(tempDir, 'secret.txt');
+    await writeFile(sourcePath, 'file from cli');
+
+    const stdout = createWritableCapture();
+    const stderr = createWritableCapture();
+    const requestBodies = [];
+    const fetchImpl = async (_url, options) => {
+        requestBodies.push(options.body);
+        return new Response(JSON.stringify({
+            status: 'ok',
+            newId: 'file123',
+        }), {
+            status: 200,
+            headers: {'Content-Type': 'application/json'},
+        });
+    };
+
+    const io = {
+        stdin: createStdin('', true),
+        stdout: stdout.stream,
+        stderr: stderr.stream,
+        env: {},
+        fetchImpl,
+    };
+
+    assert.equal(await run(['send-file', '--views', '5', sourcePath], io), 0);
+    assert.equal(await run(['send-file', sourcePath], io), 0);
+
+    assert.equal(stderr.getOutput(), '');
+    assert.equal(requestBodies[0].get('views'), '5');
+    assert.equal(requestBodies[1].get('views'), null);
+});
+
+test('run send-file rejects --views below the minimum', async () => {
+    const tempDir = await mkdtemp(join(tmpdir(), '1time-cli-send-file-'));
+    const sourcePath = join(tempDir, 'secret.txt');
+    await writeFile(sourcePath, 'file from cli');
+
+    const stdout = createWritableCapture();
+    const stderr = createWritableCapture();
+    let fetchCalled = false;
+
+    const exitCode = await run(['send-file', '--views', '0', sourcePath], {
+        stdin: createStdin('', true),
+        stdout: stdout.stream,
+        stderr: stderr.stream,
+        env: {},
+        fetchImpl: async () => {
+            fetchCalled = true;
+            throw new Error('should not fetch');
+        },
+    });
+
+    assert.equal(exitCode, 1);
+    assert.equal(stdout.getOutput(), '');
+    assert.equal(fetchCalled, false);
+    assert.match(stderr.getOutput(), /"0": use a whole number between 1 and 10/);
+});
+
+test('run read-file reports the remaining downloads on stderr', async () => {
+    const sourceDir = await mkdtemp(join(tmpdir(), '1time-cli-source-'));
+    const outputDir = await mkdtemp(join(tmpdir(), '1time-cli-output-'));
+    const sourcePath = join(sourceDir, 'report.txt');
+    await writeFile(sourcePath, 'round-trip file');
+
+    const sendStdout = createWritableCapture();
+    let encryptedBytes = null;
+
+    const sendExitCode = await run(['send-file', '--views', '3', sourcePath], {
+        stdin: createStdin('', true),
+        stdout: sendStdout.stream,
+        stderr: createWritableCapture().stream,
+        env: {},
+        fetchImpl: async (_url, options) => {
+            encryptedBytes = new Uint8Array(await options.body.get('file').arrayBuffer());
+            return new Response(JSON.stringify({
+                status: 'ok',
+                newId: 'server-file-123',
+            }), {
+                status: 200,
+                headers: {'Content-Type': 'application/json'},
+            });
+        },
+    });
+
+    assert.equal(sendExitCode, 0);
+
+    const readStdout = createWritableCapture();
+    const readStderr = createWritableCapture();
+    const readExitCode = await run(['read-file', sendStdout.getOutput().trim()], {
+        stdin: createStdin('', true),
+        stdout: readStdout.stream,
+        stderr: readStderr.stream,
+        env: {},
+        cwd: outputDir,
+        fetchImpl: async () => new Response(encryptedBytes, {
+            status: 200,
+            headers: {
+                'Content-Type': 'application/octet-stream',
+                'X-1Time-Views-Left': '2',
+            },
+        }),
+    });
+
+    assert.equal(readExitCode, 0);
+    assert.equal(readStderr.getOutput(), 'This link has 2 downloads remaining.\n');
+    assert.equal(await readFile(readStdout.getOutput().trim(), 'utf8'), 'round-trip file');
+});
+
 test('run read-file downloads the decrypted file into the current directory', async () => {
     const sourceDir = await mkdtemp(join(tmpdir(), '1time-cli-source-'));
     const outputDir = await mkdtemp(join(tmpdir(), '1time-cli-output-'));
@@ -476,7 +797,7 @@ test('run read-file downloads the decrypted file into the current directory', as
     });
 
     assert.equal(readExitCode, 0);
-    assert.equal(readStderr.getOutput(), passphraseWarningLine());
+    assert.equal(readStderr.getOutput(), `${passphraseWarningLine()}${consumedLine()}`);
     const outputPath = readStdout.getOutput().trim();
     assert.equal(outputPath, resolve(outputDir, basename(sourcePath)));
     assert.equal(await readFile(outputPath, 'utf8'), 'round-trip file');
@@ -559,7 +880,7 @@ test('read-file picks a unique filename when the decrypted name already exists',
     });
 
     assert.equal(readExitCode, 0);
-    assert.equal(readStderr.getOutput(), passphraseWarningLine());
+    assert.equal(readStderr.getOutput(), `${passphraseWarningLine()}${consumedLine()}`);
 
     const outputPath = readStdout.getOutput().trim();
     assert.equal(outputPath, resolve(outputDir, 'report (1).txt'));
@@ -596,4 +917,8 @@ test('read-file fails before fetching when --out already exists', async () => {
 
 function passphraseWarningLine() {
     return 'Warning: passing the passphrase in argv may leak via shell history or process listings.\n';
+}
+
+function consumedLine() {
+    return 'This link is now consumed and has been deleted from the server.\n';
 }

@@ -114,9 +114,17 @@ printf 'hello' | 1time send --expires-in 2d
 printf 'hello' | 1time send --expires-in 2d23h
 ```
 
+Allow more than one view before the link self-destructs:
+
+```bash
+printf 'hello' | 1time send --views 3
+```
+
 ### `1time read <link>`
 
 Fetch and decrypt a one-time link.
+
+The secret goes to `stdout`. The number of views left on the link is reported on `stderr`, so piping stays clean.
 
 Examples:
 
@@ -150,11 +158,15 @@ Examples:
 1time send-file --expires-in 2d23h ./report.zip
 ```
 
+```bash
+1time send-file --views 3 ./report.zip
+```
+
 ### `1time read-file <link>`
 
 Fetch, decrypt, and save a one-time file link.
 
-By default, the file is written to the current directory using the original filename.
+By default, the file is written to the current directory using the original filename. The number of downloads left on the link is reported on `stderr`.
 
 Examples:
 
@@ -174,6 +186,7 @@ Examples:
 
 - `--host <host-or-origin>`
 - `--expires-in <duration>` for `send` and `send-file`; supports `h` and `d`, for example `23h`, `2d`, or `2d23h`; default is `1d`; maximum is `30d`
+- `--views <N>` for `send` and `send-file`; how many times the link can be opened (downloads for files) before it self-destructs; default is `1`; maximum is `10`
 - `--passphrase <passphrase>` for `send-file` and `read-file`
 - `--out <path>` for `read-file`
 - `-h`, `--help`
@@ -191,7 +204,7 @@ Examples:
 - `1time send 'secret'` is supported for convenience, but it is insecure because command-line arguments can leak through shell history and process listings.
 - `1time read <link>` also places the full secret link in command history and process listings. In this protocol, the URL fragment contains the decryption material.
 - `send-file` and `read-file` support optional passphrases via `--passphrase` or `1TIME_PASSPHRASE`.
-- `--expires-in` is validated locally before the CLI sends the secret or file.
+- `--expires-in` and `--views` are validated locally before the CLI sends the secret or file.
 
 ## Current Limitations
 
