@@ -417,6 +417,92 @@ test('run send rejects non-numeric --views values', async () => {
     assert.match(stderr.getOutput(), /"2\.5": use a whole number between 1 and 10/);
 });
 
+test('every api request carries the src=cli marker', async () => {
+    const sourceDir = await mkdtemp(join(tmpdir(), '1time-cli-source-'));
+    const outputDir = await mkdtemp(join(tmpdir(), '1time-cli-output-'));
+    const sourcePath = join(sourceDir, 'report.txt');
+    await writeFile(sourcePath, 'round-trip file');
+
+    const requests = [];
+    const captureRequest = (url) => {
+        requests.push(url);
+    };
+
+    const sendStdout = createWritableCapture();
+    let storedPayload = null;
+    await run(['send', '--host', 'http://127.0.0.1:8080'], {
+        stdin: createStdin('marker secret'),
+        stdout: sendStdout.stream,
+        stderr: createWritableCapture().stream,
+        env: {},
+        fetchImpl: async (url, options) => {
+            captureRequest(url, options);
+            storedPayload = JSON.parse(options.body);
+            return {
+                ok: true,
+                json: async () => ({status: 'ok', newId: 'server-id-123'}),
+            };
+        },
+    });
+
+    await run(['read', sendStdout.getOutput().trim()], {
+        stdin: createStdin('', true),
+        stdout: createWritableCapture().stream,
+        stderr: createWritableCapture().stream,
+        env: {},
+        fetchImpl: async (url, options) => {
+            captureRequest(url, options);
+            return {
+                ok: true,
+                json: async () => ({status: 'ok', cryptedMessage: storedPayload.secretMessage}),
+            };
+        },
+    });
+
+    const sendFileStdout = createWritableCapture();
+    let encryptedBytes = null;
+    await run(['send-file', sourcePath], {
+        stdin: createStdin('', true),
+        stdout: sendFileStdout.stream,
+        stderr: createWritableCapture().stream,
+        env: {},
+        fetchImpl: async (url, options) => {
+            captureRequest(url, options);
+            encryptedBytes = new Uint8Array(await options.body.get('file').arrayBuffer());
+            return new Response(JSON.stringify({status: 'ok', newId: 'server-file-123'}), {
+                status: 200,
+                headers: {'Content-Type': 'application/json'},
+            });
+        },
+    });
+
+    await run(['read-file', sendFileStdout.getOutput().trim()], {
+        stdin: createStdin('', true),
+        stdout: createWritableCapture().stream,
+        stderr: createWritableCapture().stream,
+        env: {},
+        cwd: outputDir,
+        fetchImpl: async (url, options) => {
+            captureRequest(url, options);
+            return new Response(encryptedBytes, {
+                status: 200,
+                headers: {'Content-Type': 'application/octet-stream'},
+            });
+        },
+    });
+
+    assert.deepEqual(requests.map((url) => new URL(url).pathname), [
+        '/api/saveSecret',
+        '/api/get',
+        '/api/saveFile',
+        '/api/getFile',
+    ]);
+
+    for (const url of requests) {
+        assert.equal(new URL(url).searchParams.get('src'), 'cli', `missing src=cli on ${url}`);
+    }
+});
+
 test('run send reports a missing --views value instead of throwing', async () => {
     const stdout = createWritableCapture();
     const stderr = createWritableCapture();

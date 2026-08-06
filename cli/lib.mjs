@@ -25,6 +25,13 @@ const maxExpiresInSeconds = 30 * secondsPerDay;
 const defaultExpiresInSeconds = ProtocolConstants.defaultDuration * secondsPerDay;
 const defaultViews = 1;
 const maxViews = 10;
+// Self-reported log marker mirroring the extension's ?src=ext. Not trustworthy
+// attribution — anyone can send it — so nothing may gate on it.
+const clientSource = 'cli';
+
+function apiUrl(origin, path) {
+    return buildApiUrl(origin, `${path}?src=${clientSource}`);
+}
 
 function write(stream, text) {
     if (text) {
@@ -141,7 +148,7 @@ function parseViews(value) {
 }
 
 async function postJson({origin, path, payload, fetchImpl}) {
-    const response = await fetchImpl(buildApiUrl(origin, path), {
+    const response = await fetchImpl(apiUrl(origin, path), {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -259,7 +266,7 @@ async function createFileLink({host, filePath, passphrase = '', expiresInSeconds
         formData.append('views', String(views));
     }
 
-    const response = await fetchImpl(buildApiUrl(origin, 'saveFile'), {
+    const response = await fetchImpl(apiUrl(origin, 'saveFile'), {
         method: 'POST',
         body: formData,
     });
@@ -293,7 +300,7 @@ async function readFileLink({host, link, passphrase = '', outPath, cwd = process
     }
 
     const hashedKey = await hashSecretKey(fullSecretKey);
-    const response = await fetchImpl(buildApiUrl(parsedLink.origin, 'getFile'), {
+    const response = await fetchImpl(apiUrl(parsedLink.origin, 'getFile'), {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
