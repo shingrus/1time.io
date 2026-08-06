@@ -9,11 +9,11 @@ interface RouteEntry {
 }
 
 const coreRoutes: RouteEntry[] = [
-    {path: '/', priority: 1.0, changefreq: 'weekly', lastmod: '2026-07-26'},
+    {path: '/', priority: 1.0, changefreq: 'weekly', lastmod: '2026-08-01'},
     {path: '/secure-file-sharing/', priority: 0.9, changefreq: 'weekly', lastmod: '2026-07-26'},
     {path: '/chrome-extension/', priority: 0.8, changefreq: 'weekly', lastmod: '2026-07-23'},
     {path: '/password-generator/', priority: 0.9, changefreq: 'weekly', lastmod: '2026-03-23'},
-    {path: '/passphrase-generator/', priority: 0.8, changefreq: 'weekly', lastmod: '2026-03-23'},
+    {path: '/passphrase-generator/', priority: 0.8, changefreq: 'weekly', lastmod: '2026-08-05'},
     {path: '/password-generator-12-characters/', priority: 0.7, changefreq: 'monthly', lastmod: '2026-03-22'},
     {path: '/password-generator-14-characters/', priority: 0.7, changefreq: 'monthly', lastmod: '2026-03-21'},
     {path: '/password-generator-15-characters/', priority: 0.7, changefreq: 'monthly', lastmod: '2026-03-22'},
@@ -41,10 +41,10 @@ const blogRoutes: RouteEntry[] = [
     {path: '/blog/password-pusher-alternative/', priority: 0.6, changefreq: 'monthly', lastmod: '2026-07-26'},
     {path: '/blog/team-password-sharing/', priority: 0.6, changefreq: 'monthly', lastmod: '2026-04-17'},
     {path: '/blog/how-to-share-api-keys/', priority: 0.6, changefreq: 'monthly', lastmod: '2026-03-20'},
-    {path: '/blog/privnote-alternative/', priority: 0.6, changefreq: 'monthly', lastmod: '2026-04-17'},
-    {path: '/blog/is-slack-safe-for-passwords/', priority: 0.6, changefreq: 'monthly', lastmod: '2026-03-19'},
+    {path: '/blog/privnote-alternative/', priority: 0.6, changefreq: 'monthly', lastmod: '2026-08-01'},
+    {path: '/blog/is-slack-safe-for-passwords/', priority: 0.6, changefreq: 'monthly', lastmod: '2026-08-01'},
     {path: '/blog/how-to-send-passwords-over-email/', priority: 0.6, changefreq: 'monthly', lastmod: '2026-03-19'},
-    {path: '/blog/onetimesecret-alternative/', priority: 0.6, changefreq: 'monthly', lastmod: '2026-04-17'},
+    {path: '/blog/onetimesecret-alternative/', priority: 0.6, changefreq: 'monthly', lastmod: '2026-08-01'},
     {path: '/blog/self-destructing-messages-explained/', priority: 0.6, changefreq: 'monthly', lastmod: '2026-04-14'},
     {path: '/blog/stop-sending-passwords-over-slack/', priority: 0.6, changefreq: 'monthly', lastmod: '2026-03-31'},
 ];
