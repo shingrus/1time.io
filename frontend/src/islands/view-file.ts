@@ -22,20 +22,6 @@ if (form) {
     const hash = window.location.hash || '';
     const linkKey = hash.length > 1 ? hash.slice(1) : '';
 
-    // Same A/B/C/D banner test as view-secret.
-    const REPLY_HEADINGS = [
-        'Keep the conversation private.',
-        'Your reply deserves the same protection.',
-        'Sending something back? Keep it out of the chat history too.',
-        'Reply securely with a one-time link.',
-    ];
-    const pickReplyVariant = () => {
-        const v = Math.floor(Math.random() * REPLY_HEADINGS.length) + 1;
-        const h = form.querySelector<HTMLElement>('[data-reply-heading]');
-        const b = form.querySelector<HTMLAnchorElement>('[data-reply-btn]');
-        if (h) h.textContent = REPLY_HEADINGS[v - 1];
-        if (b) b.href = `/secure-file-sharing/?reply=${v}`;
-    };
     // Terminal states are mutually exclusive; the passphrase field overlays pre-read.
     const showOnly = (visible: HTMLElement) => {
         for (const el of [preReadSection, passphraseSection, downloadedSection, noMessageSection, errorSection]) {
@@ -145,7 +131,6 @@ if (form) {
                 downloadState.textContent = viewsLeft > 0
                     ? `This 1time link has ${viewsLeft} ${viewsLeft === 1 ? 'download' : 'downloads'} remaining and will self-destruct after the last.${expiryClause}`
                     : 'One-time delivery complete. The encrypted file has been deleted from our servers.';
-                pickReplyVariant();
                 setPhase('idle');
                 showOnly(downloadedSection);
             } catch {

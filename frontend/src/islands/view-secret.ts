@@ -43,22 +43,6 @@ if (form) {
         qrToggle.disabled = true;
     }
 
-    // A/B/C/D banner copy test: variant is encoded in the reply URL (?reply=N)
-    // so nginx logs measure clicks per variant with no extra tracking.
-    const REPLY_HEADINGS = [
-        'Keep the conversation private.',
-        'Your reply deserves the same protection.',
-        'Sending something back? Keep it out of the chat history too.',
-        'Reply securely with a one-time link.',
-    ];
-    const pickReplyVariant = () => {
-        const v = Math.floor(Math.random() * REPLY_HEADINGS.length) + 1;
-        const h = form.querySelector<HTMLElement>('[data-reply-heading]');
-        const b = form.querySelector<HTMLAnchorElement>('[data-reply-btn]');
-        if (h) h.textContent = REPLY_HEADINGS[v - 1];
-        if (b) b.href = `/?reply=${v}`;
-    };
-
     const showOnly = (visible: HTMLElement) => {
         for (const el of [preReadSection, passphraseSection, decryptedSection, noMessageSection]) {
             el.toggleAttribute('hidden', el !== visible);
@@ -161,7 +145,6 @@ if (form) {
                     ? `This link can be opened ${viewsLeft} more ${viewsLeft === 1 ? 'time' : 'times'}.${expiryClause}`
                     : 'This message is burned.';
                 viewsLeftNote.toggleAttribute('hidden', false);
-                pickReplyVariant();
                 qrAction.toggleAttribute('hidden', true);
                 postReadCta.toggleAttribute('hidden', false);
                 showOnly(decryptedSection);

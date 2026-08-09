@@ -85,7 +85,7 @@ export const blogPosts: BlogPost[] = [
                 "headline": "Bitwarden Send Alternative — Free, No Account Required",
                 "description": "Need to share a secret without a Bitwarden account? Use zero-knowledge one-time links for encrypted password and file sharing.",
                 "datePublished": "2026-03-06",
-                "dateModified": "2026-07-25",
+                "dateModified": "2026-08-09",
                 "author": {
                     "@type": "Person",
                     "name": "Igor Ermakov",
@@ -204,9 +204,9 @@ export const blogPosts: BlogPost[] = [
     {
         "slug": "firefox-send-alternative",
         "title": "Firefox Send Alternative (2026) — Open Source, No Signup",
-        "description": "Firefox Send alternative for encrypted one-time file sharing. Encrypted in your browser, one-time download links, up to 40 MB, no signup, open source.",
+        "description": "Firefox Send alternative for encrypted one-time file sharing. Encrypted in your browser, one-time download links, up to 80 MB, no signup, open source.",
         "ogTitle": "Firefox Send Alternative (2026) — Open Source, No Signup",
-        "ogDescription": "Firefox Send alternative for encrypted one-time file sharing. Encrypted in your browser, one-time download links, up to 40 MB, no signup, open source.",
+        "ogDescription": "Firefox Send alternative for encrypted one-time file sharing. Encrypted in your browser, one-time download links, up to 80 MB, no signup, open source.",
         "ogImageAlt": "Firefox Send Alternative — 1time.io",
         "tag": "Comparison",
         "heading": "Best Firefox Send Alternative — Free & Self-Hostable",
@@ -219,7 +219,7 @@ export const blogPosts: BlogPost[] = [
                 "headline": "Best Firefox Send Alternative — Free & Self-Hostable",
                 "description": "Firefox Send is gone. Share encrypted files with zero-knowledge one-time links. Free, open source, no signup, and self-hostable.",
                 "datePublished": "2026-04-04",
-                "dateModified": "2026-07-26",
+                "dateModified": "2026-08-09",
                 "author": {
                     "@type": "Person",
                     "name": "Igor Ermakov",

@@ -542,7 +542,10 @@ func TestAPISaveSecretFileCleansMultipartTempFiles(t *testing.T) {
 	}
 
 	chunk := bytes.Repeat([]byte("a"), 1024*1024)
-	remaining := maxFileSize + 1
+	// Must exceed the wire limit, not the advertised plaintext limit — the body cap
+	// is what MaxBytesReader actually enforces, and this test exists to prove the
+	// multipart temp files are removed when that cap trips mid-parse.
+	remaining := maxFileUploadBodyBytes + 1
 	for remaining > 0 {
 		nextChunk := len(chunk)
 		if remaining < nextChunk {

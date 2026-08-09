@@ -9,7 +9,7 @@ server {
 
     root   /usr/share/nginx/html;
     index  index.html;
-    client_max_body_size 41m;
+    client_max_body_size 81m;
 
     gzip on;
     gzip_vary on;
@@ -74,7 +74,7 @@ server {
 
     location = /api/saveFile {
         limit_req zone=api_write burst=10 nodelay;
-        client_body_timeout 5m;
+        client_body_timeout 10m;
         proxy_pass http://${BACKEND_UPSTREAM};
         proxy_http_version 1.1;
         proxy_set_header Host $host;
@@ -85,8 +85,8 @@ server {
 
     location = /api/getFile {
         limit_req zone=api_read burst=15 nodelay;
-        send_timeout 5m;
-        proxy_read_timeout 5m;
+        send_timeout 10m;
+        proxy_read_timeout 10m;
         proxy_pass http://${BACKEND_UPSTREAM};
         proxy_http_version 1.1;
         proxy_set_header Host $host;

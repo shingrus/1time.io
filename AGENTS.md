@@ -28,8 +28,8 @@ The server never sees plaintext or the decryption key. All crypto is client-side
 - Redis access: `backend/storage.go`
 - File upload/download API endpoints live in `backend/handlers.go` as `/api/saveFile` and `/api/getFile`.
 - `/api/secretStatus` (`apiSecretStatus` in `backend/handlers.go`) is a **non-consuming** batch existence check used by the Outbox / "My Secrets" page — it reads whether ids still exist and never deletes.
-- Backend file size limit is `40 MB` via `maxFileSize` in `backend/handlers.go`.
-- Every JSON endpoint caps its request body with `http.MaxBytesReader`: `maxSaveSecretBodyBytes` (25 MB — base64url adds ~4/3 over AES-GCM, so roughly 18 MB of plaintext), `maxStatusBodyBytes` (8 KB), and `maxLookupBodyBytes` (1 KB for `/api/get`, `/api/getFile`, `/api/stat`). `maxSaveSecretBodyBytes` is deliberately **decoupled** from `maxFileSize`: text secrets gain nothing from a larger cap, so it stays at 25 MB while the file limit is 40 MB. Keep `maxSaveSecretBodyBytes` under nginx's `client_max_body_size` (`41m`). There is **no client-side length guard**, so oversized text fails with a generic error.
+- Backend file size limit is `80 MB` via `maxFileSize` in `backend/handlers.go`.
+- Every JSON endpoint caps its request body with `http.MaxBytesReader`: `maxSaveSecretBodyBytes` (25 MB — base64url adds ~4/3 over AES-GCM, so roughly 18 MB of plaintext), `maxStatusBodyBytes` (8 KB), and `maxLookupBodyBytes` (1 KB for `/api/get`, `/api/getFile`, `/api/stat`). `maxSaveSecretBodyBytes` is deliberately **decoupled** from `maxFileSize`: text secrets gain nothing from a larger cap, so it stays at 25 MB while the file limit is 80 MB. Keep `maxSaveSecretBodyBytes` under nginx's `client_max_body_size` (`81m`). There is **no client-side length guard**, so oversized text fails with a generic error.
 - `/api/get` and `/api/getFile` validate the id and hashed-key **shapes** (`isValidStorageID`, `isValidHashedKey`) before any Redis key is built. Malformed input is answered with the same statuses the storage layer would return (`no message` / `wrong key`), deliberately introducing no new response shape — see the exporter coupling under "Analytics & Ops Scripts".
 - Stored text/file counters and their respective view/download distributions are each written together — see "View-counter stats" below.
 - Uploaded encrypted files are written to `FILE_STORAGE_DIR/<id>.enc` and the Redis record stores the path plus hashed key.
@@ -105,7 +105,7 @@ npm pack --dry-run
 
 ## Chrome Extension
 
-- Lives in `extension/` — a Manifest V3 extension, loaded unpacked (not on the Web Store).
+- Lives in `extension/` — a Manifest V3 extension published on the Chrome Web Store. The canonical listing URL lives in `frontend/src/lib/siteConfig.js`; use that shared value for website CTAs instead of duplicating the URL.
 - Share flow: select text → keyboard shortcut (default `Alt+Shift+S`), the selection context-menu item, or the share button in the toolbar popup → `background.js` reads the selection via `chrome.scripting`, encrypts it with the shared protocol, POSTs `/api/saveSecret`, copies the one-time link via an **offscreen document**, then injects a **generic** status toast into the page.
 - **Never put the link in the page DOM:** the clipboard write happens in `offscreen.html`/`offscreen.js` (an extension-owned context), and the injected toast only ever shows generic text. Isolated-world scripts share the page's DOM, so the secret fragment must never be rendered or inserted there.
 - The created link is also saved to `chrome.storage.session` (in-memory, not disk, not synced, not readable by pages) and shown in the popup's "Last link" card (copy / clear) — the popup is extension-owned, so this is safe. Preferences use `chrome.storage.local` (never `sync`, since a self-hosted host can be sensitive).
@@ -165,7 +165,7 @@ npm run build
 - File download UI lives on `/f/` and uses `frontend/src/islands/view-file.ts`.
 - The secure file sharing island encrypts the file in the browser, uploads with `XMLHttpRequest`, shows upload progress, and allows `1 / 2 / 3 / 5 / 10` downloads (one by default).
 - The file download island reads the link key from the URL hash first; generated file links are hash-based. Successful binary responses expose remaining downloads and TTL in response headers. Missing headers mean a legacy one-download backend.
-- Frontend file size limit is `Constants.maxFileSizeBytes = 25 * 1024 * 1024` in `frontend/src/lib/util.js`; keep it aligned with the backend limit.
+- Frontend file size limit is `Constants.maxFileSizeBytes = 80 * 1024 * 1024` in `frontend/src/lib/util.js`; keep it aligned with the backend's `maxFileSize`. Both describe the **plaintext** file; the wire limit is `maxFileUploadBodyBytes` (81 MB), which allows for the AES-GCM IV/tag and multipart overhead and matches nginx's `81m`.
 - File metadata (`name`, `type`, `size`) is packed into the encrypted payload before upload; the web app server does not store that metadata separately.
 - Pages with `robots: 'noindex, nofollow'` in metadata: `/v/`, `/f/`.
 - Outbox / "My Secrets": the `/my-secrets/` page + `frontend/src/islands/mySecrets.ts` keep a `localStorage` list of the secrets **this browser** created and batch-check their read status via `POST /api/secretStatus` (non-consuming). Linked from the success screen (`components/LinkReadyTemplate.astro`) and the footer. localStorage is per-browser — no cross-device, no account.
@@ -211,7 +211,7 @@ npm run build
 - Backend production binary from `make build`: `bin/1time-api`
 - Example nginx config: `configs/nginx/1time.conf`
 - nginx serves frontend statics and proxies `/api` to the Go app on `127.0.0.1:8080`.
-- nginx upload ceiling is `41m` in both `configs/nginx/1time.conf` and `docker/nginx/default.conf.template` to stay above the backend's `40 MB` multipart limit.
+- nginx upload ceiling is `81m` in both `configs/nginx/1time.conf` and `docker/nginx/default.conf.template` to stay above the backend's `80 MB` multipart limit. Upload/download timeouts on `/api/saveFile` and `/api/getFile` are `10m`, sized so an 80 MB transfer survives a slow mobile uplink.
 - Host nginx has an exact `/f/` location with the same sensitive-header treatment as `/v/`.
 - The nginx `try_files` directive includes `$uri/index.html` for static trailing-slash routes.
 

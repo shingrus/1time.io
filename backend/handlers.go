@@ -37,26 +37,33 @@ type StoredFile struct {
 	Views int `json:"views,omitempty"`
 }
 
-const maxFileSize = 40 * 1024 * 1024       // 40MB
-const maxMultipartMemory = 4 * 1024 * 1024 // 4MB
+const (
+	// maxFileSize is the advertised limit on the ORIGINAL plaintext file, matched
+	// by Constants.maxFileSizeBytes on the frontend. Nothing in the backend can
+	// check it directly — the server only ever sees ciphertext.
+	maxFileSize = 80 * 1024 * 1024
+	// fileUploadOverheadBytes covers what rides along with the ciphertext: the
+	// AES-GCM 12-byte IV and 16-byte tag, multipart boundaries, and the hashedKey,
+	// duration and views form fields.
+	fileUploadOverheadBytes = 1024 * 1024
+	// maxFileUploadBodyBytes is what MaxBytesReader actually enforces. Derived from
+	// maxFileSize so the two cannot silently diverge. Keep nginx's
+	// client_max_body_size equal to this (81m) so both reject at the same point.
+	maxFileUploadBodyBytes = maxFileSize + fileUploadOverheadBytes
+	maxMultipartMemory     = 4 * 1024 * 1024
+)
 const maxFileViews = 10
 
 // maxStatusIDs bounds how many ids /api/secretStatus will check per request.
-// Matches the client-side secrets cap so the my-secrets page fits in a single request.
 const maxStatusIDs = 128
 
 // maxStatusBodyBytes caps the /api/secretStatus request body. 128 ids of 22
-// base64url chars is ~3.2KB of JSON; 8KB leaves slack for whitespace while
-// bounding the payload far below nginx's generic client_max_body_size.
 const maxStatusBodyBytes = 8 * 1024
 
 // maxSaveSecretBodyBytes caps the /api/saveSecret request body. base64url adds ~4/3 expansion on top of AES-GCM
 const maxSaveSecretBodyBytes = 25 * 1024 * 1024
 
 // maxLookupBodyBytes caps the small JSON bodies of the lookup endpoints
-// (/api/get, /api/getFile, /api/stat). Their largest legitimate payload is a
-// 22-char id plus a 64-char hashedKey (~120 bytes of JSON), so 1KB is generous
-// while keeping them far below nginx's global client_max_body_size.
 const maxLookupBodyBytes = 1024
 
 var fileStorageDir = os.Getenv("FILE_STORAGE_DIR")
@@ -266,7 +273,7 @@ func apiSaveSecretFile(r *http.Request) (responseCode int, response []byte) {
 		NewId  string `json:"newId"`
 	}{Status: "error", NewId: "0"}
 
-	r.Body = http.MaxBytesReader(nil, r.Body, maxFileSize+1024) // file + form fields
+	r.Body = http.MaxBytesReader(nil, r.Body, maxFileUploadBodyBytes)
 
 	if err := r.ParseMultipartForm(maxMultipartMemory); err != nil {
 		if r.MultipartForm != nil {
