@@ -15,17 +15,40 @@ Expected Redis key layout from the Go app:
   - stats:views:file:day:YYYYMMDD:VIEWS      -> per-day files created with VIEWS downloads
 
 Nginx sender/receiver analytics:
-  - Reads /var/log/nginx/1time.access.log and /var/log/nginx/1time.access.log.1
-    by default.
-  - Use --nginx-log PATH one or more times to override the default log paths.
+  - Reads /var/log/nginx/1time.access.log plus every rotated sibling
+    (1time.access.log.1, 1time.access.log.2.gz, ...) by default. Gzipped logs
+    are decompressed transparently, so the whole rotation window is available.
+  - Use --nginx-log PATH one or more times to override the defaults. Paths may
+    contain glob patterns.
   - Counts unique IP + User-Agent pairs per UTC date.
   - Successful text sends are POST /api/saveSecret responses without the known
     error response body size.
   - Successful text reads are POST /api/get responses without the known
     "no message", "wrong key", or generic error response body sizes.
   - File sends/reads are counted separately from text sends/reads.
+  - senders/receivers/dau are unions of those identity sets, so a person who
+    sends both a text and a file counts once.
+  - wau is the same union taken across the trailing 7 days, deduplicated - a
+    person active on three of those days counts once. It is left EMPTY when
+    any of the 7 days is missing from the parsed window, and an empty value
+    preserves whatever the sheet already holds rather than blanking it. That
+    matters as the rotation window slides: the oldest dates lose their history
+    and would otherwise have a correct WAU overwritten with a partial one.
+    wau is not comparable to a 7-day rolling mean of dau, which averages seven
+    daily counts without deduplicating across days.
+  - whale_dau counts the known high-volume identities, which are *included* in
+    dau; subtract it in the sheet for an organic figure.
+  - ext_saves/cli_saves are successful saves tagged ?src=ext / ?src=cli (or a
+    non-browser User-Agent), counted as events rather than unique identities.
+  - Rotation overlap is resolved the way the log-analysis skill does it: for
+    each date, only the file holding the most lines for that date is counted.
+    Identical lines are never de-duplicated - they are real repeat requests.
+  - NOTE: identity here is the raw IP + UA. The log-analysis skill collapses
+    IPv6 to /64 and drops whales entirely, so its DAU reads slightly lower.
+    The rule is kept as-is so this tab stays consistent with its own history.
   - The senders_receivers tab is merged by date: recalculated dates replace
     existing rows, while dates outside the current log window are preserved.
+    The header row is rewritten whenever the column set changes.
 
 Dependencies:
   pip install redis google-api-python-client google-auth
@@ -55,6 +78,8 @@ from __future__ import annotations
 
 import argparse
 import datetime as dt
+import glob
+import gzip
 import os
 import re
 import sys
@@ -96,10 +121,32 @@ TAB_NAMES = (
     "senders_receivers",
 )
 LEGACY_TAB_NAMES = ("file_views_total",)
+# Every rotated sibling, not just .1 - the rotation window is the history.
 DEFAULT_NGINX_LOG_PATHS = (
     "/var/log/nginx/1time.access.log",
-    "/var/log/nginx/1time.access.log.1",
+    "/var/log/nginx/1time.access.log.*",
 )
+
+# Kept in sync with .claude/skills/log-analysis/analyze.py.
+WHALE_IP_PREFIXES = ("31.217.", "46.188.", "212.15.178.", "95.168.")  # Zagreb pair
+WHALE_IP_EXACT = {"195.23.138.189"}  # Lisbon B2B distributor
+CLI_USER_AGENT_RE = re.compile(r"node|undici|curl|python|go-http|okhttp", re.I)
+
+SENDER_RECEIVER_COLUMNS = [
+    "date",
+    "text_senders",
+    "text_receivers",
+    "file_senders",
+    "file_receivers",
+    "senders",
+    "receivers",
+    "dau",
+    "wau",
+    "whale_dau",
+    "ext_saves",
+    "cli_saves",
+]
+IDENTITY_METRICS = ("text_senders", "text_receivers", "file_senders", "file_receivers")
 
 NGINX_COMBINED_LOG_RE = re.compile(
     r"^(?P<remote_addr>\S+) \S+ \S+ \[(?P<time>[^\]]+)\] "
@@ -179,9 +226,31 @@ def warn(message: str) -> None:
 
 
 def get_nginx_log_paths(args: argparse.Namespace) -> List[str]:
-    if args.nginx_logs:
-        return args.nginx_logs
-    return list(DEFAULT_NGINX_LOG_PATHS)
+    """Expand glob patterns so rotated (and gzipped) logs are picked up too."""
+    patterns = args.nginx_logs or list(DEFAULT_NGINX_LOG_PATHS)
+
+    paths: List[str] = []
+    seen: set[str] = set()
+    for pattern in patterns:
+        is_glob = any(char in pattern for char in "*?[")
+        # Literal paths are kept even when missing, so the warning still fires.
+        matches = sorted(glob.glob(pattern)) if is_glob else [pattern]
+        for path in matches:
+            if path not in seen:
+                seen.add(path)
+                paths.append(path)
+
+    return paths
+
+
+def open_nginx_log(path: str):
+    if path.endswith(".gz"):
+        return gzip.open(path, "rt", encoding="utf-8", errors="replace")
+    return open(path, encoding="utf-8", errors="replace")
+
+
+def is_whale_ip(ip: str) -> bool:
+    return ip in WHALE_IP_EXACT or ip.startswith(WHALE_IP_PREFIXES)
 
 
 def build_redis_client(args: argparse.Namespace) -> redis.Redis:
@@ -342,6 +411,8 @@ def parse_nginx_access_line(line: str) -> Dict[str, object] | None:
         "ip": values["remote_addr"],
         "method": method,
         "path": path,
+        # Kept with the query string: ?src=ext / ?src=cli live here.
+        "target": target,
         "status": int(values["status"]),
         "body_size": parse_nginx_body_size(values["body_bytes_sent"]),
         "user_agent": values["user_agent"],
@@ -368,47 +439,79 @@ def successful_nginx_metric(entry: Dict[str, object]) -> str | None:
     return None
 
 
+def new_day_bucket() -> Dict[str, object]:
+    bucket: Dict[str, object] = {metric: set() for metric in IDENTITY_METRICS}
+    bucket["whales"] = set()
+    bucket["ext_saves"] = 0
+    bucket["cli_saves"] = 0
+    return bucket
+
+
+def accumulate_nginx_entry(bucket: Dict[str, object], entry: Dict[str, object]) -> None:
+    metric = successful_nginx_metric(entry)
+    if metric is None:
+        return
+
+    if metric in ("text_senders", "file_senders"):
+        target = str(entry["target"])
+        user_agent = str(entry["user_agent"])
+        if "src=ext" in target:
+            bucket["ext_saves"] = int(bucket["ext_saves"]) + 1
+        elif "src=cli" in target or CLI_USER_AGENT_RE.search(user_agent):
+            bucket["cli_saves"] = int(bucket["cli_saves"]) + 1
+
+    ip = str(entry["ip"])
+    identity = (ip, str(entry["user_agent"]))
+    bucket[metric].add(identity)  # type: ignore[union-attr]
+    if is_whale_ip(ip):
+        bucket["whales"].add(identity)  # type: ignore[union-attr]
+
+
+def trailing_week_actives(
+    day: str,
+    active_by_day: Dict[str, set[Tuple[str, str]]],
+) -> int | None:
+    """WAU for the 7 days ending on `day`, or None when the window is short.
+
+    None means "keep whatever the sheet already has": a partial window would
+    understate WAU, and writing it would destroy a value computed correctly on
+    an earlier run.
+    """
+    end = dt.date.fromisoformat(day)
+    window = [(end - dt.timedelta(days=offset)).isoformat() for offset in range(7)]
+    if any(other not in active_by_day for other in window):
+        return None
+    return len(set().union(*(active_by_day[other] for other in window)))
+
+
 def collect_nginx_daily_uniques(log_paths: Sequence[str]) -> List[List[object]]:
-    columns = [
-        "date",
-        "text_senders",
-        "text_receivers",
-        "file_senders",
-        "file_receivers",
-    ]
-    daily: Dict[str, Dict[str, set[Tuple[str, str]]]] = {}
+    # Rotation can put the same date in two files. Accumulate per (file, date)
+    # and keep only the file holding the most lines for that date - the same
+    # rule the log-analysis skill uses. Never de-duplicate identical lines.
+    per_file_day: Dict[Tuple[str, str], Dict[str, object]] = {}
+    parsed_lines: Dict[Tuple[str, str], int] = {}
     readable_logs = 0
 
     for log_path in log_paths:
         try:
-            with open(log_path, encoding="utf-8", errors="replace") as log_file:
+            with open_nginx_log(log_path) as log_file:
                 readable_logs += 1
                 for line in log_file:
                     entry = parse_nginx_access_line(line)
                     if entry is None:
                         continue
 
-                    metric = successful_nginx_metric(entry)
-                    if metric is None:
-                        continue
-
-                    day = str(entry["day"])
-                    identity = (str(entry["ip"]), str(entry["user_agent"]))
-                    day_metrics = daily.setdefault(
-                        day,
-                        {
-                            "text_senders": set(),
-                            "text_receivers": set(),
-                            "file_senders": set(),
-                            "file_receivers": set(),
-                        },
-                    )
-                    day_metrics[metric].add(identity)
+                    key = (log_path, str(entry["day"]))
+                    parsed_lines[key] = parsed_lines.get(key, 0) + 1
+                    bucket = per_file_day.get(key)
+                    if bucket is None:
+                        bucket = per_file_day[key] = new_day_bucket()
+                    accumulate_nginx_entry(bucket, entry)
         except FileNotFoundError:
             warn(f"Nginx access log not found, skipping: {log_path}")
         except PermissionError as exc:
             warn(f"Nginx access log not readable, skipping: {log_path}: {exc}")
-        except OSError as exc:
+        except (OSError, EOFError, gzip.BadGzipFile) as exc:
             warn(f"Nginx access log could not be read, skipping: {log_path}: {exc}")
 
     if readable_logs == 0:
@@ -417,15 +520,44 @@ def collect_nginx_daily_uniques(log_paths: Sequence[str]) -> List[List[object]]:
             "senders_receivers tab will contain headers only."
         )
 
-    rows: List[List[object]] = [columns]
-    for day in sorted(daily):
-        day_metrics = daily[day]
+    best_file_by_day: Dict[str, Tuple[int, str]] = {}
+    for (log_path, day), line_count in parsed_lines.items():
+        current = best_file_by_day.get(day)
+        if current is None or line_count > current[0]:
+            best_file_by_day[day] = (line_count, log_path)
+
+    selected = {
+        day: per_file_day[(log_path, day)]
+        for day, (_, log_path) in best_file_by_day.items()
+    }
+    active_by_day: Dict[str, set[Tuple[str, str]]] = {
+        day: set().union(*(bucket[metric] for metric in IDENTITY_METRICS))
+        for day, bucket in selected.items()
+    }
+
+    rows: List[List[object]] = [list(SENDER_RECEIVER_COLUMNS)]
+    for day in sorted(selected):
+        bucket = selected[day]
+        text_senders = bucket["text_senders"]
+        text_receivers = bucket["text_receivers"]
+        file_senders = bucket["file_senders"]
+        file_receivers = bucket["file_receivers"]
+        senders = text_senders | file_senders
+        receivers = text_receivers | file_receivers
+
         rows.append([
             day,
-            len(day_metrics["text_senders"]),
-            len(day_metrics["text_receivers"]),
-            len(day_metrics["file_senders"]),
-            len(day_metrics["file_receivers"]),
+            len(text_senders),
+            len(text_receivers),
+            len(file_senders),
+            len(file_receivers),
+            len(senders),
+            len(receivers),
+            len(senders | receivers),
+            trailing_week_actives(day, active_by_day),
+            len(bucket["whales"]),
+            bucket["ext_saves"],
+            bucket["cli_saves"],
         ])
 
     return rows
@@ -708,27 +840,32 @@ def write_senders_receivers_tab(
         format_tab(service, spreadsheet_id, sheet_id, values)
         return len(current_log_rows)
 
-    existing_row_numbers_by_date: Dict[str, int] = {}
+    existing_by_date: Dict[str, Tuple[int, List[object]]] = {}
+    # Append after the last row that actually holds a date, not after the last
+    # row the API returns - a fill-down formula in a column to the right would
+    # otherwise push new rows hundreds of rows down the sheet.
+    last_data_row = 1
     for row_number, row in enumerate(existing_rows[1:], start=2):
         if not row:
             continue
-        day = str(row[0])
+        day = str(row[0]).strip()
         if not day:
             continue
-        if day in existing_row_numbers_by_date:
+        last_data_row = row_number
+        if day in existing_by_date:
             warn(
                 f"Duplicate date {day} in tab {title}; updating first occurrence only."
             )
             continue
-        existing_row_numbers_by_date[day] = row_number
+        existing_by_date[day] = (row_number, list(row))
 
     updates = []
     new_rows: List[List[object]] = []
 
     for row in current_log_rows:
         day = str(row[0])
-        padded_row = pad_row(row, column_count)
-        existing_row_number = existing_row_numbers_by_date.get(day)
+        existing_row_number, existing_row = existing_by_date.get(day, (None, []))
+        padded_row = pad_row(row, column_count, existing_row)
         if existing_row_number is None:
             new_rows.append(padded_row)
         else:
@@ -738,8 +875,21 @@ def write_senders_receivers_tab(
             })
 
     changed_row_count = len(updates) + len(new_rows)
+
+    # The merge path used to leave row 1 untouched, so a new column landed in
+    # the sheet without a label. Rewrite the header whenever it drifted.
+    padded_header = pad_row(header, column_count)
+    existing_header = pad_row(existing_rows[0] if existing_rows else [], column_count)
+    if [str(cell) for cell in existing_header[:column_count]] != [
+        str(cell) for cell in padded_header
+    ]:
+        updates.append({
+            "range": f"{title}!A1:{column_end}1",
+            "values": [padded_header],
+        })
+
     if new_rows:
-        start_row = len(existing_rows) + 1
+        start_row = last_data_row + 1
         end_row = start_row + len(new_rows) - 1
         updates.append({
             "range": f"{title}!A{start_row}:{column_end}{end_row}",
@@ -761,10 +911,22 @@ def write_senders_receivers_tab(
     return changed_row_count
 
 
-def pad_row(row: Sequence[object], column_count: int) -> List[object]:
-    padded = list(row)
-    if len(padded) < column_count:
-        padded.extend([""] * (column_count - len(padded)))
+def pad_row(
+    row: Sequence[object],
+    column_count: int,
+    existing: Sequence[object] = (),
+) -> List[object]:
+    """Pad to width, carrying forward the sheet's own value for None cells.
+
+    None means "not computable this run" (see trailing_week_actives), so the
+    cell must keep whatever it already holds instead of being blanked.
+    """
+    padded: List[object] = []
+    for index in range(max(len(row), column_count)):
+        cell = row[index] if index < len(row) else ""
+        if cell is None:
+            cell = existing[index] if index < len(existing) else ""
+        padded.append(cell)
     return padded
 
 
