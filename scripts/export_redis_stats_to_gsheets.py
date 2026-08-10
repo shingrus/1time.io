@@ -48,7 +48,22 @@ Nginx sender/receiver analytics:
     The rule is kept as-is so this tab stays consistent with its own history.
   - The senders_receivers tab is merged by date: recalculated dates replace
     existing rows, while dates outside the current log window are preserved.
-    The header row is rewritten whenever the column set changes.
+    The header row is rewritten whenever the column set changes, and rows
+    whose values already match the sheet are skipped entirely.
+
+Hourly tab (hourly_raw), keyed "YYYY-MM-DDTHH" in column A:
+  - One row per (date, hour) in UTC, including hours with no traffic, so a
+    weekday baseline that averages a given hour across days keeps a full pool.
+  - complete=0 marks the hour still in progress; it is rewritten on each run
+    until the hour elapses. Charts should drop incomplete rows.
+  - *_cum columns are running totals within the day. Event counts simply add
+    up; dau_cum is a running union of identities, because someone active at
+    both 09:00 and 14:00 is one active user rather than two - so it cannot be
+    reproduced with SUM() over the per-hour columns.
+  - dow is the ISO weekday (Mon=1 .. Sun=7), written so the sheet can filter
+    a weekday pool without parsing dates.
+  - Built from the same parse and the same per-date file selection as
+    senders_receivers, so the two tabs can never disagree.
 
 Dependencies:
   pip install redis google-api-python-client google-auth
@@ -119,7 +134,10 @@ TAB_NAMES = (
     "views_daily",
     "file_views_daily",
     "senders_receivers",
+    "hourly_raw",
 )
+# Tabs merged row-by-row on a key in column A, rather than cleared and rewritten.
+MERGED_TAB_NAMES = ("senders_receivers", "hourly_raw")
 LEGACY_TAB_NAMES = ("file_views_total",)
 # Every rotated sibling, not just .1 - the rotation window is the history.
 DEFAULT_NGINX_LOG_PATHS = (
@@ -147,6 +165,30 @@ SENDER_RECEIVER_COLUMNS = [
     "cli_saves",
 ]
 IDENTITY_METRICS = ("text_senders", "text_receivers", "file_senders", "file_receivers")
+
+HOURLY_EVENT_FIELDS = {
+    "text_senders": "text_saves",
+    "file_senders": "file_saves",
+    "text_receivers": "text_reads",
+    "file_receivers": "file_reads",
+}
+HOURLY_COLUMNS = [
+    "ts_key",
+    "date",
+    "dow",
+    "hour",
+    "complete",
+    "text_saves",
+    "file_saves",
+    "text_reads",
+    "file_reads",
+    "text_saves_cum",
+    "file_saves_cum",
+    "text_reads_cum",
+    "file_reads_cum",
+    "actives",
+    "dau_cum",
+]
 
 NGINX_COMBINED_LOG_RE = re.compile(
     r"^(?P<remote_addr>\S+) \S+ \S+ \[(?P<time>[^\]]+)\] "
@@ -406,8 +448,11 @@ def parse_nginx_access_line(line: str) -> Dict[str, object] | None:
     if not path:
         path = target
 
+    utc = timestamp.astimezone(dt.timezone.utc)
+
     return {
-        "day": timestamp.astimezone(dt.timezone.utc).date().isoformat(),
+        "day": utc.date().isoformat(),
+        "hour": utc.hour,
         "ip": values["remote_addr"],
         "method": method,
         "path": path,
@@ -439,11 +484,18 @@ def successful_nginx_metric(entry: Dict[str, object]) -> str | None:
     return None
 
 
+def new_hour_bucket() -> Dict[str, object]:
+    bucket: Dict[str, object] = {field: 0 for field in HOURLY_EVENT_FIELDS.values()}
+    bucket["actives"] = set()
+    return bucket
+
+
 def new_day_bucket() -> Dict[str, object]:
     bucket: Dict[str, object] = {metric: set() for metric in IDENTITY_METRICS}
     bucket["whales"] = set()
     bucket["ext_saves"] = 0
     bucket["cli_saves"] = 0
+    bucket["hours"] = {}
     return bucket
 
 
@@ -466,6 +518,15 @@ def accumulate_nginx_entry(bucket: Dict[str, object], entry: Dict[str, object]) 
     if is_whale_ip(ip):
         bucket["whales"].add(identity)  # type: ignore[union-attr]
 
+    # Same pass feeds the hourly tab, so daily and hourly can never disagree.
+    hours: Dict[int, Dict[str, object]] = bucket["hours"]  # type: ignore[assignment]
+    hour_bucket = hours.get(int(entry["hour"]))
+    if hour_bucket is None:
+        hour_bucket = hours[int(entry["hour"])] = new_hour_bucket()
+    field = HOURLY_EVENT_FIELDS[metric]
+    hour_bucket[field] = int(hour_bucket[field]) + 1
+    hour_bucket["actives"].add(identity)  # type: ignore[union-attr]
+
 
 def trailing_week_actives(
     day: str,
@@ -484,7 +545,7 @@ def trailing_week_actives(
     return len(set().union(*(active_by_day[other] for other in window)))
 
 
-def collect_nginx_daily_uniques(log_paths: Sequence[str]) -> List[List[object]]:
+def collect_nginx_day_buckets(log_paths: Sequence[str]) -> Dict[str, Dict[str, object]]:
     # Rotation can put the same date in two files. Accumulate per (file, date)
     # and keep only the file holding the most lines for that date - the same
     # rule the log-analysis skill uses. Never de-duplicate identical lines.
@@ -517,7 +578,7 @@ def collect_nginx_daily_uniques(log_paths: Sequence[str]) -> List[List[object]]:
     if readable_logs == 0:
         warn(
             "No readable nginx access logs; "
-            "senders_receivers tab will contain headers only."
+            "the nginx tabs will contain headers only."
         )
 
     best_file_by_day: Dict[str, Tuple[int, str]] = {}
@@ -526,10 +587,15 @@ def collect_nginx_daily_uniques(log_paths: Sequence[str]) -> List[List[object]]:
         if current is None or line_count > current[0]:
             best_file_by_day[day] = (line_count, log_path)
 
-    selected = {
+    return {
         day: per_file_day[(log_path, day)]
         for day, (_, log_path) in best_file_by_day.items()
     }
+
+
+def build_sender_receiver_rows(
+    selected: Dict[str, Dict[str, object]],
+) -> List[List[object]]:
     active_by_day: Dict[str, set[Tuple[str, str]]] = {
         day: set().union(*(bucket[metric] for metric in IDENTITY_METRICS))
         for day, bucket in selected.items()
@@ -563,11 +629,68 @@ def collect_nginx_daily_uniques(log_paths: Sequence[str]) -> List[List[object]]:
     return rows
 
 
+def build_hourly_rows(
+    selected: Dict[str, Dict[str, object]],
+    now: dt.datetime | None = None,
+) -> List[List[object]]:
+    """One row per (date, hour), including hours with no traffic.
+
+    Empty hours are emitted on purpose: the weekday baseline averages a given
+    hour across days, so a missing row would silently shrink the pool rather
+    than contribute a zero. Cumulative columns are running totals within the
+    day - events simply add up, but dau_cum is a running *union*, because the
+    same person active at 09:00 and 14:00 is one active user, not two.
+    """
+    now = now or dt.datetime.now(dt.timezone.utc)
+    today = now.date().isoformat()
+
+    rows: List[List[object]] = [list(HOURLY_COLUMNS)]
+    for day in sorted(selected):
+        if day > today:
+            warn(f"Ignoring nginx log entries dated in the future: {day}")
+            continue
+
+        hours: Dict[int, Dict[str, object]] = selected[day]["hours"]  # type: ignore[assignment]
+        last_hour = now.hour if day == today else 23
+        day_of_week = dt.date.fromisoformat(day).isoweekday()
+
+        cumulative = {field: 0 for field in HOURLY_EVENT_FIELDS.values()}
+        seen_today: set[Tuple[str, str]] = set()
+
+        for hour in range(last_hour + 1):
+            bucket = hours.get(hour) or new_hour_bucket()
+            for field in HOURLY_EVENT_FIELDS.values():
+                cumulative[field] += int(bucket[field])
+            seen_today |= bucket["actives"]  # type: ignore[operator]
+
+            rows.append([
+                f"{day}T{hour:02d}",
+                day,
+                day_of_week,
+                hour,
+                0 if (day == today and hour == now.hour) else 1,
+                bucket["text_saves"],
+                bucket["file_saves"],
+                bucket["text_reads"],
+                bucket["file_reads"],
+                cumulative["text_saves"],
+                cumulative["file_saves"],
+                cumulative["text_reads"],
+                cumulative["file_reads"],
+                len(bucket["actives"]),  # type: ignore[arg-type]
+                len(seen_today),
+            ])
+
+    return rows
+
+
 def collect_stats(
     client: redis.Redis,
     nginx_log_paths: Sequence[str],
 ) -> Dict[str, List[List[object]]]:
     exported_at = dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat()
+    # One parse feeds both nginx tabs.
+    nginx_day_buckets = collect_nginx_day_buckets(nginx_log_paths)
 
     total_stored_text = safe_int(client.get(STORED_TEXT_TOTAL_KEY))
     total_stored_files = safe_int(client.get(STORED_FILE_TOTAL_KEY))
@@ -669,7 +792,8 @@ def collect_stats(
         "views_total": views_total_rows,
         "views_daily": views_daily_rows,
         "file_views_daily": file_views_daily_rows,
-        "senders_receivers": collect_nginx_daily_uniques(nginx_log_paths),
+        "senders_receivers": build_sender_receiver_rows(nginx_day_buckets),
+        "hourly_raw": build_hourly_rows(nginx_day_buckets),
     }
 
 
@@ -795,14 +919,37 @@ def format_tab(
     ).execute()
 
 
-def write_senders_receivers_tab(
+def normalize_cell(value: object) -> str:
+    """Canonical form for comparing a computed cell against the sheet's copy.
+
+    The API hands numbers back as formatted strings, so 12 and "12" have to
+    compare equal or every row would look changed on every run.
+    """
+    if value is None or value == "":
+        return ""
+    if isinstance(value, bool):
+        return str(value)
+    text = str(value).strip()
+    try:
+        return f"{float(text):.10g}"
+    except ValueError:
+        return text
+
+
+def write_merged_tab(
     service,
     spreadsheet_id: str,
     sheet_id: int,
     title: str,
     rows: Sequence[Sequence[object]],
 ) -> int:
-    """Write only dates present in the current nginx log export."""
+    """Merge rows into a tab by the key in column A.
+
+    Keys present in the export replace their existing row; keys outside the
+    current log window are left alone. Rows whose values already match the
+    sheet are skipped, which is what keeps a 12-minute cron cheap once the
+    history has been backfilled.
+    """
     if not rows:
         return 0
 
@@ -814,7 +961,7 @@ def write_senders_receivers_tab(
     ]
     if not current_log_rows:
         warn(
-            f"No current nginx log dates found; leaving tab {title} unchanged."
+            f"No current nginx log rows found; leaving tab {title} unchanged."
         )
         return 0
 
@@ -840,39 +987,47 @@ def write_senders_receivers_tab(
         format_tab(service, spreadsheet_id, sheet_id, values)
         return len(current_log_rows)
 
-    existing_by_date: Dict[str, Tuple[int, List[object]]] = {}
-    # Append after the last row that actually holds a date, not after the last
+    existing_by_key: Dict[str, Tuple[int, List[object]]] = {}
+    # Append after the last row that actually holds a key, not after the last
     # row the API returns - a fill-down formula in a column to the right would
     # otherwise push new rows hundreds of rows down the sheet.
     last_data_row = 1
     for row_number, row in enumerate(existing_rows[1:], start=2):
         if not row:
             continue
-        day = str(row[0]).strip()
-        if not day:
+        key = str(row[0]).strip()
+        if not key:
             continue
         last_data_row = row_number
-        if day in existing_by_date:
+        if key in existing_by_key:
             warn(
-                f"Duplicate date {day} in tab {title}; updating first occurrence only."
+                f"Duplicate key {key} in tab {title}; updating first occurrence only."
             )
             continue
-        existing_by_date[day] = (row_number, list(row))
+        existing_by_key[key] = (row_number, list(row))
 
     updates = []
     new_rows: List[List[object]] = []
 
     for row in current_log_rows:
-        day = str(row[0])
-        existing_row_number, existing_row = existing_by_date.get(day, (None, []))
+        key = str(row[0])
+        existing_row_number, existing_row = existing_by_key.get(key, (None, []))
         padded_row = pad_row(row, column_count, existing_row)
         if existing_row_number is None:
             new_rows.append(padded_row)
-        else:
-            updates.append({
-                "range": f"{title}!A{existing_row_number}:{column_end}{existing_row_number}",
-                "values": [padded_row],
-            })
+            continue
+
+        # Past days never change once written. Skipping them is what keeps the
+        # request small when the tab holds hundreds of historical rows.
+        if [normalize_cell(cell) for cell in padded_row] == [
+            normalize_cell(cell) for cell in pad_row(existing_row, column_count)
+        ]:
+            continue
+
+        updates.append({
+            "range": f"{title}!A{existing_row_number}:{column_end}{existing_row_number}",
+            "values": [padded_row],
+        })
 
     changed_row_count = len(updates) + len(new_rows)
 
@@ -977,15 +1132,15 @@ def main() -> int:
 
     for base_name, rows in stats.items():
         title = full_tab_names[base_name]
-        if base_name == "senders_receivers":
-            changed_rows = write_senders_receivers_tab(
+        if base_name in MERGED_TAB_NAMES:
+            changed_rows = write_merged_tab(
                 service=service,
                 spreadsheet_id=args.spreadsheet_id,
                 sheet_id=sheet_map[title],
                 title=title,
                 rows=rows,
             )
-            print(f"Updated/appended {changed_rows} current-log rows in tab {title}")
+            print(f"Updated/appended {changed_rows} changed rows in tab {title}")
         else:
             write_tab(
                 service=service,
