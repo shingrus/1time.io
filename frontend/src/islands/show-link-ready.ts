@@ -1,6 +1,5 @@
 import {Constants, copyTextToClipboard, formatRemaining} from '../lib/util.js';
 import {parseSecretLink} from '../lib/protocol.mjs';
-import {chromeStoreUrl} from '../lib/siteConfig.js';
 
 const loadStyles = async (id: string, importer: () => Promise<{default: string}>) => {
     if (document.getElementById(id)) return;
@@ -53,28 +52,12 @@ export async function showLinkReady(
     input.value = link;
     input.setAttribute('aria-label', `${isFile ? 'File' : 'Secret'} one-time link`);
 
-    const footerMeta = clone.querySelector<HTMLElement>('[data-footer-meta]')!;
     const footerSeparator = clone.querySelector<HTMLElement>('[data-footer-separator]')!;
     const referenceWrap = clone.querySelector<HTMLElement>('[data-reference-wrap]')!;
     const referenceName = clone.querySelector<HTMLElement>('[data-reference-name]')!;
-    const extensionLink = clone.querySelector<HTMLAnchorElement>('[data-extension-link]')!;
     const updateFooterMeta = () => {
-        const hasReference = !referenceWrap.hidden;
-        const hasExtension = !extensionLink.hidden;
-        footerMeta.hidden = !hasReference && !hasExtension;
-        footerSeparator.hidden = !hasReference || !hasExtension;
+        footerSeparator.hidden = referenceWrap.hidden;
     };
-
-    const ua = navigator.userAgent || '';
-    const isDesktopChrome =
-        /Chrome\//.test(ua) &&
-        !/Android|Mobi|iPhone|iPad|iPod|Edg|OPR|Vivaldi|YaBrowser|SamsungBrowser/i.test(ua) &&
-        !('brave' in navigator);
-    if (isDesktopChrome) {
-        extensionLink.href = chromeStoreUrl;
-        extensionLink.hidden = false;
-        updateFooterMeta();
-    }
 
     void (async () => {
         try {
