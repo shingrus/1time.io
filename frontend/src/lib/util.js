@@ -69,7 +69,7 @@ export async function createSecretLink(secretMessage, options = {}) {
     // util chunk (which every page loads). Fire-and-forget: best-effort, must not
     // delay showing the link or run on pages that don't create secrets.
     void import('./mySecrets.js')
-        .then(({recordSecret}) => recordSecret({id: data.newId, kind: 'message', durationSeconds}))
+        .then(({recordSecret}) => recordSecret({id: data.newId, kind: 'message', durationSeconds, views}))
         .catch(() => {});
 
     return {

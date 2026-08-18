@@ -1,6 +1,7 @@
 /**
  * Browser-local list for My Secrets.
- * Stores only id, kind, and timestamps; never plaintext, keys, or human labels.
+ * Stores only id, kind, view allowance and timestamps; never plaintext, keys,
+ * or human labels.
  * Expired entries are pruned locally before status checks.
  */
 const STORAGE_KEY = '1time.secretsList.v1';
@@ -10,6 +11,8 @@ const MAX_ENTRIES = 128;
  * @typedef {Object} SecretEntry
  * @property {string} id          Server storage id (locates the secret).
  * @property {'message'|'file'} kind
+ * @property {number} [views]     View allowance chosen at send time; absent on
+ *                                entries written before this was recorded.
  * @property {number} createdAt   ms epoch.
  * @property {number} expiresAt   ms epoch.
  */
@@ -61,15 +64,16 @@ export function removeSecret(id) {
 /**
  * Record a freshly created secret. Best-effort and never throws.
  *
- * @param {{id: string, kind?: 'message'|'file', durationSeconds?: number}} params
+ * @param {{id: string, kind?: 'message'|'file', durationSeconds?: number, views?: number}} params
  */
-export function recordSecret({id, kind = 'message', durationSeconds = 86400}) {
+export function recordSecret({id, kind = 'message', durationSeconds = 86400, views = 1}) {
     if (!id || typeof localStorage === 'undefined') return;
 
     const createdAt = Date.now();
     const entry = {
         id,
         kind,
+        views,
         createdAt,
         expiresAt: createdAt + durationSeconds * 1000,
     };
