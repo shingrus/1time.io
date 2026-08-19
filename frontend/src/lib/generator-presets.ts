@@ -240,9 +240,9 @@ export const PRESETS: Record<string, GeneratorPreset> = {
             {q: 'How often should I rotate API keys?', a: 'Rotate immediately if a key is exposed (committed to a public repo, shared in an unencrypted channel). For routine rotation, every 90 days is a common policy. Automated rotation through a secrets manager is ideal. Always have a plan for rotating keys without downtime — most services support having two active keys simultaneously for this purpose.'},
         ],
         meta: {
-            title: `API Key Generator — ${siteHost}`,
+            title: `Random API Key Generator — Never Sent to a Server | ${siteHost}`,
             description: 'Generate random API keys and tokens in your browser. Cryptographically secure, customizable length, no server involved. Free and open source.',
-            ogTitle: `API Key Generator — ${siteHost}`,
+            ogTitle: `Random API Key Generator — Never Sent to a Server | ${siteHost}`,
             ogDescription: 'Generate random API keys and tokens in your browser. Cryptographically secure and instant.',
             ogImageAlt: 'API Key Generator',
         },
