@@ -24,6 +24,7 @@ const coreRoutes: RouteEntry[] = [
     {path: '/share-passwords-with-qr-code/', priority: 0.7, changefreq: 'weekly', lastmod: '2026-03-31'},
     {path: '/share-passwords-microsoft-teams/', priority: 0.8, changefreq: 'weekly', lastmod: '2026-06-12'},
     {path: '/about/', priority: 0.5, changefreq: 'monthly', lastmod: '2026-05-23'},
+    {path: '/no-cookie-banner/', priority: 0.6, changefreq: 'monthly', lastmod: '2026-08-27'},
     {path: '/privacy/', priority: 0.4, changefreq: 'monthly', lastmod: '2026-03-22'},
 ];
 

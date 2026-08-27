@@ -1,0 +1,148 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import InlineCss from '../../components/InlineCss.astro';
+import {absoluteUrl, siteHost, siteUrl} from '../../lib/siteConfig.js';
+
+const title = `No Cookie Banner — Why ${siteHost} Stores Nothing Instead of Asking Permission`;
+const description = `Consent banners do not prevent tracking, they request it. ${siteHost} has no cookies, no analytics and no banner — including a measurement we wanted and turned down.`;
+
+const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Article',
+    headline: 'No cookie banner',
+    description,
+    url: absoluteUrl('/no-cookie-banner/'),
+    author: {'@type': 'Organization', '@id': `${siteUrl}#organization`, name: siteHost},
+    publisher: {'@type': 'Organization', '@id': `${siteUrl}#organization`, name: siteHost},
+};
+---
+<BaseLayout
+    title={title}
+    description={description}
+    canonical="/no-cookie-banner/"
+    ogTitle="No cookie banner"
+    ogDescription="Consent banners made surveillance polite. They did not make it rare."
+    ogImageAlt={`${siteHost} — no cookie banner`}
+>
+    <InlineCss slot="head" name="about" />
+    <script slot="head" type="application/ld+json" set:html={JSON.stringify(jsonLd)} is:inline></script>
+
+    <div class="about-page">
+        <h1>No cookie banner</h1>
+        <p class="subtitle">{siteHost} does not ask permission to track you, because it does not track you.</p>
+
+        <div class="about-section">
+            <h2>What the rule actually says</h2>
+            <p>
+                The law people call "the cookie law" is Article 5(3) of the EU ePrivacy Directive,
+                and it never mentions cookies. It governs "the storing of information, or the gaining
+                of access to information already stored, in the terminal equipment of a subscriber or user."
+            </p>
+            <p>
+                Information on your device. Not cookies specifically — local storage, session storage,
+                IndexedDB, cache entries, fingerprinting scripts. The mechanism is irrelevant.
+            </p>
+            <p>
+                It allows two exemptions: storage strictly necessary to transmit a communication, and
+                storage strictly necessary to deliver a service you explicitly asked for. Everything
+                else needs your consent.
+            </p>
+        </div>
+
+        <div class="about-section">
+            <h2>Which means the banner was never the point</h2>
+            <p>
+                If the rule is about putting things on your device, there are two ways to satisfy it.
+                Ask permission, or put nothing there.
+            </p>
+            <p>
+                Almost the entire web chose to ask. That is why you dismiss a dialog on every site you
+                visit, and why "reject all" so often sits three clicks behind "accept all". The banner
+                does not prevent tracking — it requests it, and most people click yes because the
+                dialog exists to be cleared rather than read.
+            </p>
+            <p><strong>A consent banner is a confession with a checkbox.</strong></p>
+        </div>
+
+        <div class="about-section">
+            <h2>We chose the other option</h2>
+            <p>
+                {siteHost} puts nothing on your device for our benefit. No cookies, not even a session
+                cookie. No analytics scripts. No third-party requests at all, so no CDN, ad network or
+                font host ever learns that you were here.
+            </p>
+            <p>There is nothing to ask you about, so we do not ask.</p>
+        </div>
+
+        <div class="about-section">
+            <h2>What we gave up to keep it that way</h2>
+            <p>
+                This is not free, and it is worth being specific about the cost rather than claiming
+                there isn't one.
+            </p>
+            <p>
+                We would like to know how many people who send a secret come back and send another.
+                It is the most useful number we could have for deciding what to build next. The honest
+                way to measure it is to put an anonymous marker in your browser — no name, no email,
+                no profile, nothing that identifies you, just a random string that distinguishes a
+                returning browser from a new one.
+            </p>
+            <p>
+                Article 5(3) has no exemption for anonymity. It is about your device, not about whether
+                we could identify you. An anonymous marker, stored for our analytics, would have
+                required a consent banner.
+            </p>
+            <p>
+                So we do not have that number. What we have is a floor: we can see that repeat use is
+                rising, and we cannot tell you precisely how fast, because our only signal is a coarse
+                server-side one that loses anyone who changes network. We decided that was the better
+                trade.
+            </p>
+        </div>
+
+        <div class="about-section">
+            <h2>What we do know, and how</h2>
+            <p>
+                <strong>Server logs.</strong> IP address, timestamp, path and user agent, kept up to
+                14 days for security and abuse prevention. Never secret content, never decryption keys.
+            </p>
+            <p>
+                <strong>Aggregate counters.</strong> Total secrets shared, and page visits by category.
+                Plain numbers with no identifiers attached and no way to link a count to a person.
+            </p>
+            <p>That is the whole of it. There is no third source.</p>
+        </div>
+
+        <div class="about-section">
+            <h2>What your browser does store</h2>
+            <p>
+                One thing, and only if you use it. If you open <a href="/my-secrets/">My Secrets</a>,
+                your browser keeps a local list of the links you created — their ids and timestamps.
+                Never the secrets themselves, and never the decryption keys, which we could not read
+                in any case.
+            </p>
+            <p>
+                That list never leaves your device. We cannot see it. Clearing it deletes nothing on
+                our side. This is exactly the case the second exemption exists for: storage that
+                <em>is</em> the service you asked for.
+            </p>
+        </div>
+
+        <div class="about-section">
+            <h2>The position</h2>
+            <p>
+                Consent banners made surveillance polite. They did not make it rare.
+            </p>
+            <p>
+                The alternative was always available: build the thing so there is nothing to disclose.
+                It is harder, it costs you measurements you would genuinely like to have, and it means
+                you sometimes cannot answer questions about your own users. We think that is the
+                correct price.
+            </p>
+        </div>
+
+        <div style="text-align:center;padding-top:16px">
+            <a href="/" class="btn btn-primary btn-lg">Create a one-time link</a>
+        </div>
+    </div>
+</BaseLayout>
