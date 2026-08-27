@@ -2,7 +2,7 @@ import React, {Component} from "react";
 import {Button, FormGroup, FormControl, ControlLabel,} from "react-bootstrap";
 import axios from "axios"
 import CryptoJS from 'crypto-js'
-import {getRandomString, Constants} from '../utils/util';
+import {getRandomString, generatePassword, Constants} from '../utils/util';
 
 
 import "./Container.css";
@@ -17,6 +17,8 @@ export default class NewMessage extends Component {
             duration: Constants.defaultDuration,
             needOptions:false,
             isLoading: false,
+            // generated once here so they don't change on every re-render (e.g. on each keystroke)
+            randomPasswords: [generatePassword(), generatePassword(), generatePassword(), generatePassword()],
         };
         this.handleSubmit = this.handleSubmit.bind(this)
 
@@ -129,6 +131,12 @@ export default class NewMessage extends Component {
                             {!this.state.isLoading ? "Get a link" : "Loading..."}
                         </Button></FormGroup>
                     <FormGroup>
+                        <div className="small">For your convenience, here are a few strong random passwords:<br/>
+                            {this.state.randomPasswords[0]}<br/>
+                            {this.state.randomPasswords[1]}<br/>
+                            {this.state.randomPasswords[2]}<br/>
+                            {this.state.randomPasswords[3]}
+                        </div>
                         <FormControl.Static className="small">Send passwords, one-time tokens, private messages or any sensitive
                             data with
                             strongly encrypted one-time link. When the user opens the link content is destroyed. It's

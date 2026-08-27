@@ -23,6 +23,20 @@ export function getRandomString(stringLen) {
     return randomstring;
 }
 
+const passwordChars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz123456789-_=+.,%:";
+// generate a strong random password suggestion for the user
+// uses crypto.getRandomValues instead of Math.random for better randomness
+export function generatePassword() {
+    let values = new Uint32Array(16);
+    window.crypto.getRandomValues(values);
+    let password = '';
+
+    for (let i = 0; i < values.length; i++) {
+        password += passwordChars[values[i] % passwordChars.length];
+    }
+    return password;
+}
+
 
 
 
