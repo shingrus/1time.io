@@ -14,6 +14,7 @@ Key facts:
 - File metadata protection: filename, MIME type, and size stay inside the encrypted payload
 - Optional passphrase support for file links
 - No account required
+- Link previews cannot consume a secret: every API endpoint is POST-only and revealing a secret requires an explicit user action, so chat unfurlers, mail security gateways, and antivirus URL scanners that issue passive GET requests cannot destroy a link before the recipient opens it
 - CLI available, no install required: `echo "$SECRET" | npx @1time/cli send --expires-in 1d` prints a one-time link. Commands: `send`, `read`, `send-file`, `read-file`. Requires Node 20+. Encryption happens locally in the CLI, so the plaintext never leaves the machine.
 - CLI secret input, in order of precedence: piped stdin, then the `1TIME_SECRET` environment variable, then a positional argument. Prefer stdin or `1TIME_SECRET`; a positional secret is exposed in shell history and to `ps`, and the CLI warns when one is used.
 
@@ -45,6 +46,11 @@ Key facts:
 - Sending encrypted files such as PDFs, certificates, backup codes, archives, screenshots, and private documents
 - Transmitting WiFi passwords to guests
 - Sharing secrets in scripts or CI/CD pipelines (via CLI)
+- Handing over credentials at the point of a transaction between two parties with no prior relationship, where the platform's own chat is persistent and readable by staff
+- A client granting a freelancer or agency access to a CMS, hosting panel, ad account, or analytics property at the start of a project
+- A seller delivering account credentials, licence keys, or access details to a buyer on a digital-goods marketplace after a sale
+- A support desk passing a one-off credential to a customer without leaving it in the ticket history
+- Migrating a site or server between providers, where root, cPanel, or registrar credentials change hands once
 
 ## Notable Blog Posts
 
