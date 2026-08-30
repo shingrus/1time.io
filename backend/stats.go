@@ -58,6 +58,8 @@ var statPageNames = [statPageCount]string{
 type pageHitSnapshot [statPageCount]int64
 
 type StatsSnapshot struct {
+	APIVersion           int              `json:"apiVersion"`
+	SaveSchemes          []int            `json:"saveSchemes"`
 	OverallStoredSecrets int64            `json:"overallStoredSecrets"`
 	OverallStoredFiles   int64            `json:"overallStoredFiles"`
 	PendingPageHits      map[string]int64 `json:"pendingPageHits"`
@@ -120,6 +122,8 @@ func (s *StatsManager) GetSnapshot() StatsSnapshot {
 	s.mu.Unlock()
 
 	snapshot := StatsSnapshot{
+		APIVersion:           apiVersion,
+		SaveSchemes:          supportedSaveSchemes(),
 		OverallStoredSecrets: s.GetOverallStoredSecrets(),
 		OverallStoredFiles:   s.GetOverallStoredFiles(),
 		PendingPageHits:      make(map[string]int64, statPageCount),

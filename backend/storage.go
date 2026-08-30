@@ -2,8 +2,10 @@ package main
 
 import (
 	"crypto/rand"
+	"crypto/sha256"
 	"crypto/subtle"
 	"encoding/base64"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"log"
@@ -23,6 +25,38 @@ const redisTimeout = time.Second * 10
 const fileJanitorInterval = 2 * time.Hour
 
 const hashedKeyHexLen = 64
+
+// secretSchemeV3 records store SHA-256(readToken) rather than the token, so the
+// server holds nothing that can read a secret. Version 0 means v2 (the token
+// itself), which is what pre-existing records unmarshal to.
+const secretSchemeV3 = 3
+
+// tokenMatchesStored reports whether the token a reader presented matches what
+// the record holds. v2 records store the token itself; v3 records store its
+// SHA-256.
+//
+// The hash is taken over the token's HEX STRING as transmitted, not the 32 raw
+// bytes it encodes. protocol.mjs must hash the same representation: this is the
+// one place client and server can disagree silently, and every v3 secret would
+// become unreadable. Both stored forms are 64 hex characters, so
+// isValidHashedKey validates either.
+func tokenMatchesStored(stored string, version int, presented string) bool {
+	var candidate string
+	switch version {
+	case 0:
+		candidate = presented
+	case secretSchemeV3:
+		sum := sha256.Sum256([]byte(presented))
+		candidate = hex.EncodeToString(sum[:])
+	default:
+		// Written by a newer binary — a rolling deploy, or a rollback. No safe
+		// guess exists, so refuse.
+		return false
+	}
+
+	return subtle.ConstantTimeCompare([]byte(stored), []byte(candidate)) == 1
+}
+
 const consumeMessageRetryWindow = 500 * time.Millisecond
 const consumeMessageRetryBaseDelay = 5 * time.Millisecond
 const consumeMessageRetryMaxDelay = 40 * time.Millisecond
@@ -210,7 +244,7 @@ func reserveFileDownloadWithClient(client *redis.Client, key string, hashedKey s
 			if unmarshalErr := json.Unmarshal([]byte(value), &current); unmarshalErr != nil {
 				return unmarshalErr
 			}
-			if subtle.ConstantTimeCompare([]byte(current.HashedKey), []byte(hashedKey)) != 1 {
+			if !tokenMatchesStored(current.HashedKey, current.Version, hashedKey) {
 				status = "wrong key"
 				return nil
 			}
@@ -411,7 +445,7 @@ func consumeMessageFromStorageWithClient(client *redis.Client, key string, hashe
 				return unmarshalErr
 			}
 
-			if subtle.ConstantTimeCompare([]byte(current.HashedKey), []byte(hashedKey)) != 1 {
+			if !tokenMatchesStored(current.HashedKey, current.Version, hashedKey) {
 				status = "wrong key"
 				return nil
 			}

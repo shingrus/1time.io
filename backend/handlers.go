@@ -92,9 +92,13 @@ func apiSaveSecret(r *http.Request) (responseCode int, response []byte) {
 
 	r.Body = http.MaxBytesReader(nil, r.Body, maxSaveSecretBodyBytes)
 
+	// Unknown fields are ignored on purpose (encoding/json's default), so a
+	// later addition such as manageTokenHash needs no version bump here.
 	var payload struct {
 		SecretMessage string `json:"secretMessage"`
 		HashedKey     string `json:"hashedKey"`
+		ReadTokenHash string `json:"readTokenHash"`
+		Version       int    `json:"v"`
 		Duration      int    `json:"duration"`
 		Views         int    `json:"views"`
 	}
@@ -103,12 +107,14 @@ func apiSaveSecret(r *http.Request) (responseCode int, response []byte) {
 	if dec.More() {
 		err := dec.Decode(&payload)
 		if err == nil {
-			if len(payload.SecretMessage) > 0 && len(payload.HashedKey) > 0 {
+			readTokenHash, scheme, schemeOK := resolveSaveScheme(payload.HashedKey, payload.ReadTokenHash, payload.Version)
+			if len(payload.SecretMessage) > 0 && schemeOK {
 
 				newMessage := StoredMessage{
 					Encrypted: true,
 					Message:   payload.SecretMessage,
-					HashedKey: payload.HashedKey,
+					HashedKey: readTokenHash,
+					Version:   scheme,
 				}
 				views := min(max(payload.Views, 1), maxViews)
 				// Single view stays 0 so default records match the legacy shape.
@@ -121,7 +127,7 @@ func apiSaveSecret(r *http.Request) (responseCode int, response []byte) {
 				}
 
 				if DEBUG {
-					log.Printf("payload -> storage: %v, HashedKey: %v, Duration: %v\n", payload.SecretMessage, payload.HashedKey, payload.Duration)
+					log.Printf("payload -> storage: %v, stored key: %v, scheme: %v, Duration: %v\n", payload.SecretMessage, readTokenHash, scheme, payload.Duration)
 				}
 				valueToStore, _ := json.Marshal(newMessage)
 				storeKey, err := saveToStorageFunc(valueToStore, time.Duration(payload.Duration)*time.Second, views)
@@ -295,6 +301,8 @@ func apiSaveSecretFile(r *http.Request) (responseCode int, response []byte) {
 	}()
 
 	hashedKey := r.FormValue("hashedKey")
+	submittedHash := r.FormValue("readTokenHash")
+	schemeVersion, _ := strconv.Atoi(r.FormValue("v"))
 	durationStr := r.FormValue("duration")
 	viewsStr := r.FormValue("views")
 
@@ -306,7 +314,8 @@ func apiSaveSecretFile(r *http.Request) (responseCode int, response []byte) {
 	}
 	defer file.Close()
 
-	if hashedKey == "" {
+	readTokenHash, scheme, schemeOK := resolveSaveScheme(hashedKey, submittedHash, schemeVersion)
+	if !schemeOK {
 		response, _ = json.Marshal(jResponse)
 		return
 	}
@@ -324,7 +333,7 @@ func apiSaveSecretFile(r *http.Request) (responseCode int, response []byte) {
 	}
 
 	if DEBUG {
-		log.Printf("payload -> file storage: %v bytes, HashedKey: %v, Duration: %v\n", fileHeader.Size, hashedKey, duration)
+		log.Printf("payload -> file storage: %v bytes, stored key: %v, scheme: %v, Duration: %v\n", fileHeader.Size, readTokenHash, scheme, duration)
 	}
 
 	// Ensure storage dir exists
@@ -388,7 +397,8 @@ func apiSaveSecretFile(r *http.Request) (responseCode int, response []byte) {
 		record := StoredFile{
 			Encrypted: true,
 			FileUri:   filePath,
-			HashedKey: hashedKey,
+			HashedKey: readTokenHash,
+			Version:   scheme,
 		}
 		if views != 1 {
 			record.Views = views
