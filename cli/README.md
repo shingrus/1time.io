@@ -50,7 +50,7 @@ Download a one-time file:
 
 1. You send a secret from your terminal.
 2. The CLI encrypts it locally using the same protocol as the web app.
-3. The backend stores only ciphertext plus an authentication token.
+3. The backend stores only ciphertext plus a SHA-256 hash of the read token — never the token itself, so the stored record cannot read or destroy the secret.
 4. The recipient opens the one-time link and decrypts the payload with the key material stored in the URL fragment.
 
 The server does not receive the plaintext secret.

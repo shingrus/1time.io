@@ -21,11 +21,12 @@ const UPLOAD_STALL_MS = 150000; // abort+retry only if the upload makes NO progr
 const UPLOAD_RETRY_STATUS = new Set([408, 500, 502, 503, 504]);
 const UPLOAD_BACKOFF_MS = [1000, 2000];
 
-function attemptUpload(encryptedBlob, hashedKey, durationSeconds, views, onProgress) {
+function attemptUpload(encryptedBlob, readTokenHash, durationSeconds, views, onProgress) {
     // Fresh FormData per attempt (avoids consumed-stream issues on retry).
     const formData = new FormData();
     formData.append('file', encryptedBlob, 'encrypted.bin');
-    formData.append('hashedKey', hashedKey);
+    formData.append('readTokenHash', readTokenHash);
+    formData.append('v', String(Constants.saveSchemeVersion));
     formData.append('duration', String(durationSeconds));
     if (views !== 1) {
         formData.append('views', String(views));
@@ -106,12 +107,14 @@ const delay = (ms) => new Promise((r) => setTimeout(r, ms));
 /**
  * Upload encrypted file blob to server, with transparent retries on transient
  * failures (network drop / timeout / 5xx / 408). Returns { status, newId }.
+ *
+ * Takes readTokenHash (SHA-256 of the read token), never the token itself.
  */
-export async function saveFile(encryptedBlob, hashedKey, durationSeconds, views, onProgress) {
+export async function saveFile(encryptedBlob, readTokenHash, durationSeconds, views, onProgress) {
     let lastError;
     for (let attempt = 0; attempt < UPLOAD_MAX_ATTEMPTS; attempt += 1) {
         try {
-            return await attemptUpload(encryptedBlob, hashedKey, durationSeconds, views, onProgress);
+            return await attemptUpload(encryptedBlob, readTokenHash, durationSeconds, views, onProgress);
         } catch (error) {
             lastError = error;
             const hasMoreTries = attempt < UPLOAD_MAX_ATTEMPTS - 1;

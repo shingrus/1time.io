@@ -71,8 +71,12 @@ export function unpackFile(decryptedBuffer) {
 }
 
 /**
- * Encrypt a file: pack metadata + content, then AES-256-GCM encrypt
- * Returns { encryptedBlob: Blob, hashedKey: string, randomKey: string }
+ * Encrypt a file: pack metadata + content, then AES-256-GCM encrypt.
+ *
+ * Returns { encryptedBlob: Blob, readTokenHash: string, randomKey: string }.
+ * Deliberately does NOT return the read token: uploads carry only its SHA-256,
+ * so nothing that observes a save request can read or destroy the file. The
+ * recipient re-derives the token from the link when downloading.
  */
 export async function encryptFile(file, secretKey) {
     const fileBytes = new Uint8Array(await file.arrayBuffer());
@@ -80,11 +84,11 @@ export async function encryptFile(file, secretKey) {
 
     const randomKey = getRandomString(Constants.randomKeyLen);
     const fullSecretKey = (secretKey || '') + randomKey;
-    const {encryptedBytes, hashedKey} = await encryptSecretBytes(packed, fullSecretKey);
+    const {encryptedBytes, readTokenHash} = await encryptSecretBytes(packed, fullSecretKey);
 
     return {
         encryptedBlob: new Blob([encryptedBytes]),
-        hashedKey,
+        readTokenHash,
         randomKey,
     };
 }

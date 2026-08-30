@@ -92,14 +92,16 @@ async function copyToClipboard(text) {
 
 async function createOneTimeLink(origin, secret, expiresInSeconds) {
     const randomKey = getRandomString(ProtocolConstants.randomKeyLen);
-    const {encryptedMessage, hashedKey} = await encryptSecretMessage(secret, randomKey);
+    // v3: upload SHA-256(readToken), never the token. See protocol.mjs.
+    const {encryptedMessage, readTokenHash} = await encryptSecretMessage(secret, randomKey);
 
     const response = await fetch(buildApiUrl(origin, 'saveSecret?src=ext'), {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({
             secretMessage: encryptedMessage,
-            hashedKey,
+            readTokenHash,
+            v: ProtocolConstants.saveSchemeVersion,
             duration: expiresInSeconds,
         }),
     });

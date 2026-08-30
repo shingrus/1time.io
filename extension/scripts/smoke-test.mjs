@@ -20,14 +20,15 @@ const origin = normalizeOrigin(process.argv[2] || 'http://127.0.0.1:8080');
 const secret = `smoke-test ${getRandomString(8)}`;
 
 const randomKey = getRandomString(ProtocolConstants.randomKeyLen);
-const {encryptedMessage, hashedKey} = await encryptSecretMessage(secret, randomKey);
+const {encryptedMessage, readTokenHash} = await encryptSecretMessage(secret, randomKey);
 
 const saveResponse = await fetch(buildApiUrl(origin, 'saveSecret'), {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
     body: JSON.stringify({
         secretMessage: encryptedMessage,
-        hashedKey,
+        readTokenHash,
+        v: ProtocolConstants.saveSchemeVersion,
         duration: 60,
     }),
 });

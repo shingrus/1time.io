@@ -12,13 +12,16 @@ const ORIGIN = process.env.ONETIME_ORIGIN || 'https://1time.io';
 
 // Mirrors frontend/src/lib/util.js -> createSecretLink(), with z.request in
 // place of fetch. Encryption happens here (on Zapier), so the 1time server only
-// ever receives ciphertext + the auth hash; the key stays in the URL fragment.
+// ever receives ciphertext + SHA-256 of the read token — never the token itself,
+// which means the stored record cannot read or destroy the secret. The key stays
+// in the URL fragment.
 const perform = async (z, bundle) => {
     const {secret, passphrase, duration_days} = bundle.inputData;
 
     const randomKey = getRandomString(ProtocolConstants.randomKeyLen);
     const fullSecretKey = (passphrase || '') + randomKey; // passphrase first, then key
-    const {encryptedMessage, hashedKey} = await encryptSecretMessage(secret, fullSecretKey);
+    // v3: upload SHA-256(readToken), never the token. See protocol.mjs.
+    const {encryptedMessage, readTokenHash} = await encryptSecretMessage(secret, fullSecretKey);
 
     const response = await z.request({
         url: `${ORIGIN}/api/saveSecret`,
@@ -26,7 +29,8 @@ const perform = async (z, bundle) => {
         headers: {'Content-Type': 'application/json'},
         body: {
             secretMessage: encryptedMessage,
-            hashedKey,
+            readTokenHash,
+            v: ProtocolConstants.saveSchemeVersion,
             duration: Number(duration_days || 1) * 86400, // API expects seconds
         },
     });

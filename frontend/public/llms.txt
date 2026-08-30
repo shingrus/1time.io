@@ -15,6 +15,7 @@ Key facts:
 - Optional passphrase support for file links
 - No account required
 - Link previews cannot consume a secret: every API endpoint is POST-only and revealing a secret requires an explicit user action, so chat unfurlers, mail security gateways, and antivirus URL scanners that issue passive GET requests cannot destroy a link before the recipient opens it
+- The server stores nothing that can read or destroy a secret: the sender uploads only a SHA-256 hash of the read token, never the token itself, so neither a database dump nor an intercepted upload can retrieve or consume a link — reading requires the preimage, which only a holder of the link can derive
 - CLI available, no install required: `echo "$SECRET" | npx @1time/cli send --expires-in 1d` prints a one-time link. Commands: `send`, `read`, `send-file`, `read-file`. Requires Node 20+. Encryption happens locally in the CLI, so the plaintext never leaves the machine.
 - CLI secret input, in order of precedence: piped stdin, then the `1TIME_SECRET` environment variable, then a positional argument. Prefer stdin or `1TIME_SECRET`; a positional secret is exposed in shell history and to `ps`, and the CLI warns when one is used.
 
