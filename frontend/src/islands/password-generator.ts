@@ -123,10 +123,6 @@ if (root) {
     const meterBits = root.querySelector<HTMLElement>('[data-meter-bits]')!;
 
     const regenerateBtn = root.querySelector<HTMLButtonElement>('[data-regenerate]')!;
-    const copyBtn = root.querySelector<HTMLButtonElement>('[data-copy]')!;
-    const copyLabel = root.querySelector<HTMLElement>('[data-copy-label]')!;
-    const copyIconDefault = root.querySelector<SVGElement>('[data-copy-icon-default]')!;
-    const copyIconDone = root.querySelector<SVGElement>('[data-copy-icon-done]')!;
     const shareBtn = root.querySelector<HTMLButtonElement>('[data-share]')!;
     const shareLabel = root.querySelector<HTMLElement>('[data-share-label]')!;
 
@@ -177,10 +173,10 @@ if (root) {
     };
 
     let copyTimer: number | undefined;
+
+    // Regenerating invalidates whatever is on the clipboard, so the tick clears with it.
     const resetCopiedUi = () => {
-        copyLabel.textContent = 'Copy';
-        copyIconDefault.style.display = '';
-        copyIconDone.style.display = 'none';
+        outputEl.classList.remove('gen-output-copied');
         if (copyTimer) {
             clearTimeout(copyTimer);
             copyTimer = undefined;
@@ -191,9 +187,7 @@ if (root) {
         if (!generated) return;
         const ok = await copyTextToClipboard(generated);
         if (!ok) return;
-        copyLabel.textContent = 'Copied!';
-        copyIconDefault.style.display = 'none';
-        copyIconDone.style.display = '';
+        outputEl.classList.add('gen-output-copied');
         if (copyTimer) clearTimeout(copyTimer);
         copyTimer = window.setTimeout(resetCopiedUi, 3000);
     };
@@ -252,7 +246,12 @@ if (root) {
 
     regenerateBtn.addEventListener('click', () => void generate());
     outputEl.addEventListener('click', () => void handleCopy());
-    copyBtn.addEventListener('click', () => void handleCopy());
+    // role="button" does not bring keyboard activation with it.
+    outputEl.addEventListener('keydown', (event) => {
+        if (event.key !== 'Enter' && event.key !== ' ') return;
+        event.preventDefault();
+        void handleCopy();
+    });
 
     shareBtn.addEventListener('click', async () => {
         if (!generated || isSharing) return;

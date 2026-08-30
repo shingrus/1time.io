@@ -793,21 +793,21 @@ export const blogPosts: BlogPost[] = [
     },
     {
         "slug": "privnote-alternative",
-        "title": "Privnote Alternative — Open Source, No Ads, No Signup",
-        "description": "Looking for a Privnote alternative? 1time.io uses authenticated AES-GCM encryption instead of Privnote's deprecated AES-CBC. Open source, no ads, no signup.",
-        "ogTitle": "Privnote Alternative — Open Source, No Ads, No Signup",
-        "ogDescription": "A Privnote alternative with authenticated encryption (AES-GCM), no ads, and fully open source. Honest side-by-side comparison.",
+        "title": "Is Privnote Safe? Its Crypto Library Was Archived in 2018",
+        "description": "Privnote uses Gibberish-AES — archived in 2018, with no tamper detection. Side-by-side with a free, open-source, ad-free alternative. No signup.",
+        "ogTitle": "Is Privnote Safe? Its Crypto Library Was Archived in 2018",
+        "ogDescription": "Privnote's encryption library was archived by its maintainer in 2018 and its AES-CBC mode cannot detect tampering. An honest side-by-side comparison.",
         "ogImageAlt": "Privnote Alternative",
         "tag": "Comparison",
-        "heading": "Privnote Alternative: An Honest 1time.io Comparison",
+        "heading": "Is Privnote Safe? An Honest 1time.io Comparison",
         "excerpt": "Privnote is one of the oldest self-destructing message tools, and like 1time.io it encrypts in your browser. But the crypto library it relies on has been deprecated and archived. Here is what that difference actually costs you.",
         "meta": "By Igor Ermakov · Updated Aug 1, 2026 · 5 min read",
         "schemas": [
             {
                 "@context": "https://schema.org",
                 "@type": "Article",
-                "headline": "Privnote Alternative: An Honest 1time.io Comparison",
-                "description": "Looking for a Privnote alternative? 1time.io uses authenticated AES-GCM encryption instead of Privnote's deprecated AES-CBC. Open source, no ads, no signup.",
+                "headline": "Is Privnote Safe? An Honest 1time.io Comparison",
+                "description": "Privnote uses Gibberish-AES — archived in 2018, with no tamper detection. Side-by-side with a free, open-source, ad-free alternative. No signup.",
                 "datePublished": "2026-01-05",
                 "dateModified": "2026-08-01",
                 "author": {

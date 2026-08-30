@@ -83,8 +83,20 @@
   overflow-x: auto;
 }
 
-.gen-output:hover {
+.gen-output:hover,
+.gen-output:focus-visible {
   border-color: var(--accent);
+}
+
+/* Copy icon swaps to a tick while .gen-output-copied is set. No JS beyond the
+   class the island already toggles. */
+.gen-output-icon-done,
+.gen-output-copied .gen-output-icon-copy {
+  display: none;
+}
+
+.gen-output-copied .gen-output-icon-done {
+  display: block;
 }
 
 .gen-output-text {
