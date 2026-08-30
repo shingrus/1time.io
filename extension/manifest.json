@@ -1,7 +1,7 @@
 {
     "manifest_version": 3,
     "name": "1time — One-Time Secret Links",
-    "version": "1.0.3",
+    "version": "1.0.4",
     "description": "Share passwords & secrets as encrypted one-time links. Select text, right-click, done — zero-knowledge, self-hosted ready.",
     "minimum_chrome_version": "116",
     "icons": {

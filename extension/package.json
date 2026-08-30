@@ -1,6 +1,6 @@
 {
   "name": "1time-extension",
-  "version": "1.0.0",
+  "version": "1.0.4",
   "description": "Chrome extension for sharing selected text as zero-knowledge one-time links via 1time.io",
   "type": "module",
   "private": true,
