@@ -1,6 +1,8 @@
 package main
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"io"
@@ -615,5 +617,235 @@ func TestSaveToStorageCountsStoredSecretOnce(t *testing.T) {
 	}
 	if len(gotViews) != 1 || gotViews[0] != 5 {
 		t.Fatalf("recorded views = %#v, want [5]", gotViews)
+	}
+}
+
+// --- v3 scheme: SHA-256(readToken) at rest -----------------------------------
+//
+// The migration rests on one claim: a client that knows nothing about v3 can
+// still read a v3 record, because the read request is byte-identical in both
+// schemes. These tests exist to keep that claim true.
+
+func v3StoredHash(readToken string) string {
+	sum := sha256.Sum256([]byte(readToken))
+	return hex.EncodeToString(sum[:])
+}
+
+func TestConsumeMessageV3RecordAcceptsUnchangedReadToken(t *testing.T) {
+	client := startTestRedis(t)
+	const id = "v3-old-client"
+	readToken := strings.Repeat("a", hashedKeyHexLen)
+	storeTestMessage(t, client, id, StoredMessage{
+		Encrypted: true,
+		Message:   "ciphertext",
+		HashedKey: v3StoredHash(readToken),
+		Version:   secretSchemeV3,
+	}, time.Minute)
+
+	// Exactly what a pre-v3 client sends: the token itself, no version.
+	stored, _, _, status, err := consumeMessageFromStorageWithClient(client, id, readToken)
+	if err != nil {
+		t.Fatalf("consumeMessageFromStorageWithClient() error = %v", err)
+	}
+	if status != "ok" || stored.Message != "ciphertext" {
+		t.Fatalf("v3 record rejected an unmodified client: status = %q, message = %q", status, stored.Message)
+	}
+}
+
+func TestConsumeMessageV3RecordRejectsTheStoredHash(t *testing.T) {
+	client := startTestRedis(t)
+	const id = "v3-hash-replay"
+	readToken := strings.Repeat("a", hashedKeyHexLen)
+	storedHash := v3StoredHash(readToken)
+	storeTestMessage(t, client, id, StoredMessage{
+		Encrypted: true,
+		Message:   "ciphertext",
+		HashedKey: storedHash,
+		Version:   secretSchemeV3,
+	}, time.Minute)
+
+	// Anyone holding the database (or an intercepted save request) has the hash
+	// but not its preimage. Presenting the hash must not read the secret — this
+	// is the entire point of the scheme.
+	_, _, _, status, err := consumeMessageFromStorageWithClient(client, id, storedHash)
+	if err != nil {
+		t.Fatalf("consumeMessageFromStorageWithClient() error = %v", err)
+	}
+	if status != "wrong key" {
+		t.Fatalf("stored hash was accepted as a read token: status = %q, want \"wrong key\"", status)
+	}
+	if err := client.Get(getStoreKey(id)).Err(); err == redis.Nil {
+		t.Fatal("failed read consumed the record")
+	}
+}
+
+func TestResolveSaveSchemeRejectsMismatchedVersionAndField(t *testing.T) {
+	token := strings.Repeat("a", hashedKeyHexLen)
+	hash := v3StoredHash(token)
+
+	cases := []struct {
+		name       string
+		legacy     string
+		hash       string
+		version    int
+		wantStored string
+		wantScheme int
+		wantOK     bool
+	}{
+		{"legacy client", token, "", 0, token, 0, true},
+		{"v3 client", "", hash, secretSchemeV3, hash, secretSchemeV3, true},
+		{"v3 claimed without hash", token, "", secretSchemeV3, "", 0, false},
+		{"hash sent without version", "", hash, 0, "", 0, false},
+		{"nothing at all", "", "", 0, "", 0, false},
+		// Unknown schemes are refused, never reinterpreted as the newest known.
+		{"future version with hash", "", hash, 4, "", 0, false},
+		{"future version with token", token, "", 4, "", 0, false},
+		{"unknown version between", token, hash, 2, "", 0, false},
+		// A v3 upload must not carry the read token at all.
+		{"v3 with the token alongside the hash", token, hash, secretSchemeV3, "", 0, false},
+		// A malformed hash can never match at read time.
+		{"v3 hash too short", "", "abc", secretSchemeV3, "", 0, false},
+		{"v3 hash not hex", "", strings.Repeat("z", hashedKeyHexLen), secretSchemeV3, "", 0, false},
+		{"v3 hash uppercase hex", "", strings.ToUpper(hash), secretSchemeV3, "", 0, false},
+		{"v3 hash one char long", "", hash + "a", secretSchemeV3, "", 0, false},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			stored, scheme, ok := resolveSaveScheme(tc.legacy, tc.hash, tc.version)
+			if stored != tc.wantStored || scheme != tc.wantScheme || ok != tc.wantOK {
+				t.Fatalf("resolveSaveScheme() = (%q, %d, %v), want (%q, %d, %v)",
+					stored, scheme, ok, tc.wantStored, tc.wantScheme, tc.wantOK)
+			}
+		})
+	}
+}
+
+// TestInteropVectorFromProtocolMjs pins the one thing the two languages must
+// agree on: what gets hashed. The vector below was produced by
+// frontend/src/lib/protocol.mjs -> encryptSecretMessage('K7bQ2mXp9vRt4nLw8zYc').
+//
+// Regenerate it with:
+//
+//	node --input-type=module -e "import {encryptSecretMessage} from
+//	  './frontend/src/lib/protocol.mjs';
+//	  const {hashedKey, readTokenHash} =
+//	    await encryptSecretMessage('x', 'K7bQ2mXp9vRt4nLw8zYc');
+//	  console.log(hashedKey, readTokenHash)"
+//
+// If this fails, one side changed what it digests — the hex string or the raw
+// bytes it encodes — and every v3 secret would become unreadable in production
+// with no error logged anywhere.
+func TestInteropVectorFromProtocolMjs(t *testing.T) {
+	const readToken = "5e6c13f429c1e6eb0c69bc2e67e98e7aa18db0a4bac73f943858694ac3fbe957"
+	const readTokenHash = "3bfecb0a1d1bc37a3e70eb843af6578ee1fa34c19fd059a89dfbdda4523bf396"
+
+	if !tokenMatchesStored(readTokenHash, secretSchemeV3, readToken) {
+		t.Fatal("Go rejected the hash produced by protocol.mjs: client and server disagree on what is hashed")
+	}
+	if tokenMatchesStored(readTokenHash, 0, readToken) {
+		t.Fatal("v2 comparison accepted a v3 hash")
+	}
+}
+
+// The file path carries the same scheme, and its reservation logic is the most
+// delicate code here, so the compatibility claim is proved for it too.
+
+func TestReserveFileDownloadV3RecordAcceptsUnchangedReadToken(t *testing.T) {
+	client := startTestRedis(t)
+	filePath := filepath.Join(t.TempDir(), "v3.enc")
+	if err := os.WriteFile(filePath, []byte("ciphertext"), 0o600); err != nil {
+		t.Fatalf("write test file: %v", err)
+	}
+	readToken := strings.Repeat("e", hashedKeyHexLen)
+	storeTestFile(t, client, "v3-file", StoredFile{
+		Encrypted: true,
+		FileUri:   filePath,
+		HashedKey: v3StoredHash(readToken),
+		Version:   secretSchemeV3,
+	}, time.Minute)
+
+	// A pre-v3 client downloads a v3 file link: the token, unchanged.
+	reservation, status, err := reserveFileDownloadWithClient(client, "v3-file", readToken)
+	if err != nil {
+		t.Fatalf("reserveFileDownloadWithClient() error = %v", err)
+	}
+	if status != "ok" || reservation.File == nil {
+		t.Fatalf("v3 file record rejected an unmodified client: (%+v, %q)", reservation, status)
+	}
+	reservation.File.Close()
+}
+
+func TestReserveFileDownloadV3RecordRejectsTheStoredHash(t *testing.T) {
+	client := startTestRedis(t)
+	filePath := filepath.Join(t.TempDir(), "v3-replay.enc")
+	if err := os.WriteFile(filePath, []byte("ciphertext"), 0o600); err != nil {
+		t.Fatalf("write test file: %v", err)
+	}
+	readToken := strings.Repeat("e", hashedKeyHexLen)
+	storedHash := v3StoredHash(readToken)
+	storeTestFile(t, client, "v3-replay", StoredFile{
+		Encrypted: true,
+		FileUri:   filePath,
+		HashedKey: storedHash,
+		Version:   secretSchemeV3,
+	}, time.Minute)
+
+	// Whoever holds the database holds the hash but not its preimage.
+	_, status, err := reserveFileDownloadWithClient(client, "v3-replay", storedHash)
+	if err != nil {
+		t.Fatalf("reserveFileDownloadWithClient() error = %v", err)
+	}
+	if status != "wrong key" {
+		t.Fatalf("stored hash was accepted for a file download: %q, want \"wrong key\"", status)
+	}
+	if err := client.Get(getFileStoreKey("v3-replay")).Err(); err == redis.Nil {
+		t.Fatal("failed download consumed the record")
+	}
+}
+
+func TestConsumeMessageV3MultiViewDecrementsWithoutRehashConfusion(t *testing.T) {
+	client := startTestRedis(t)
+	readToken := strings.Repeat("d", hashedKeyHexLen)
+	storeTestMessage(t, client, "v3-multi", StoredMessage{
+		Encrypted: true,
+		Message:   "ciphertext",
+		HashedKey: v3StoredHash(readToken),
+		Views:     3,
+		Version:   secretSchemeV3,
+	}, time.Minute)
+
+	// Each read must re-hash the presented token, not compare it to the value
+	// left over from the previous pass.
+	for want := 2; want >= 0; want-- {
+		_, viewsLeft, _, status, err := consumeMessageFromStorageWithClient(client, "v3-multi", readToken)
+		if err != nil {
+			t.Fatalf("read error: %v", err)
+		}
+		if status != "ok" || viewsLeft != want {
+			t.Fatalf("read: status = %q, viewsLeft = %d, want ok/%d", status, viewsLeft, want)
+		}
+	}
+	if err := client.Get(getStoreKey("v3-multi")).Err(); err != redis.Nil {
+		t.Fatal("record survived its last view")
+	}
+}
+
+func TestTokenMatchesStoredRefusesUnknownScheme(t *testing.T) {
+	token := strings.Repeat("a", hashedKeyHexLen)
+
+	if !tokenMatchesStored(token, 0, token) {
+		t.Fatal("v2 record rejected its own token")
+	}
+	if !tokenMatchesStored(v3StoredHash(token), secretSchemeV3, token) {
+		t.Fatal("v3 record rejected its own token")
+	}
+	// A record written by a newer binary. Neither comparison is known to apply,
+	// so both must fail closed rather than guess.
+	if tokenMatchesStored(token, 4, token) {
+		t.Fatal("unknown scheme fell through to the v2 comparison")
+	}
+	if tokenMatchesStored(v3StoredHash(token), 4, token) {
+		t.Fatal("unknown scheme fell through to the v3 comparison")
 	}
 }

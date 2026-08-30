@@ -847,3 +847,115 @@ func TestAPIGetFileRejectsBadPayload(t *testing.T) {
 		t.Fatal("reserveFileDownloadFunc should not be called for bad payload")
 	}
 }
+
+// A real SHA-256, in the form a client actually uploads. A placeholder here
+// would let a missing shape check pass unnoticed.
+const validReadTokenHash = "ffe054fe7ae0cb6dc65c3af9b61d5209f439851db43d0ba5997337df154668eb"
+
+// --- v3 save wiring ----------------------------------------------------------
+//
+// resolveSaveScheme is unit-tested in isolation, which proves nothing about the
+// handlers persisting the version they resolved. Dropping `Version: scheme`
+// from either struct literal keeps every other test green and loses every v3
+// secret. These are that guard.
+
+func TestAPISaveSecretPersistsV3Scheme(t *testing.T) {
+	restoreHandlerHooks(t)
+
+	var stored StoredMessage
+	saveToStorageFunc = func(value interface{}, duration time.Duration, views int) (string, error) {
+		raw, _ := value.([]byte)
+		if err := json.Unmarshal(raw, &stored); err != nil {
+			t.Fatalf("stored payload is not StoredMessage JSON: %v", err)
+		}
+		return "msg-v3", nil
+	}
+
+	req := httptest.NewRequest(http.MethodPost, "/api/saveSecret",
+		strings.NewReader(`{"secretMessage":"ciphertext","readTokenHash":"ffe054fe7ae0cb6dc65c3af9b61d5209f439851db43d0ba5997337df154668eb","v":3,"duration":60}`))
+	responseCode, response := apiSaveSecret(req)
+
+	if responseCode != http.StatusOK || !strings.Contains(string(response), `"status":"ok"`) {
+		t.Fatalf("apiSaveSecret() = (%d, %s), want ok", responseCode, response)
+	}
+	if stored.Version != secretSchemeV3 {
+		t.Fatalf("stored Version = %d, want %d — a v3 upload was recorded as v2 and is now unreadable",
+			stored.Version, secretSchemeV3)
+	}
+	if stored.HashedKey != validReadTokenHash {
+		t.Fatalf("stored HashedKey = %q, want the uploaded hash", stored.HashedKey)
+	}
+}
+
+func TestAPISaveSecretLegacyUploadStaysScheme0(t *testing.T) {
+	restoreHandlerHooks(t)
+
+	var stored StoredMessage
+	saveToStorageFunc = func(value interface{}, duration time.Duration, views int) (string, error) {
+		raw, _ := value.([]byte)
+		_ = json.Unmarshal(raw, &stored)
+		return "msg-v2", nil
+	}
+
+	req := httptest.NewRequest(http.MethodPost, "/api/saveSecret",
+		strings.NewReader(`{"secretMessage":"ciphertext","hashedKey":"thetoken","duration":60}`))
+	if code, _ := apiSaveSecret(req); code != http.StatusOK {
+		t.Fatalf("legacy save rejected: code = %d", code)
+	}
+	if stored.Version != 0 || stored.HashedKey != "thetoken" {
+		t.Fatalf("legacy record = %#v, want the token stored under scheme 0", stored)
+	}
+}
+
+func TestAPISaveSecretFilePersistsV3Scheme(t *testing.T) {
+	restoreHandlerHooks(t)
+
+	originalDir := fileStorageDir
+	fileStorageDir = t.TempDir()
+	t.Cleanup(func() { fileStorageDir = originalDir })
+
+	var body bytes.Buffer
+	writer := multipart.NewWriter(&body)
+	fileWriter, err := writer.CreateFormFile("file", "secret.enc")
+	if err != nil {
+		t.Fatalf("CreateFormFile error: %v", err)
+	}
+	if _, err := fileWriter.Write([]byte("encrypted file bytes")); err != nil {
+		t.Fatalf("Write error: %v", err)
+	}
+	if err := writer.WriteField("readTokenHash", validReadTokenHash); err != nil {
+		t.Fatalf("WriteField readTokenHash error: %v", err)
+	}
+	if err := writer.WriteField("v", "3"); err != nil {
+		t.Fatalf("WriteField v error: %v", err)
+	}
+	if err := writer.WriteField("duration", "120"); err != nil {
+		t.Fatalf("WriteField duration error: %v", err)
+	}
+	if err := writer.Close(); err != nil {
+		t.Fatalf("Close writer error: %v", err)
+	}
+
+	var record StoredFile
+	setFileRecordFunc = func(storeKey string, value interface{}, duration time.Duration) (bool, error) {
+		raw, _ := value.([]byte)
+		if err := json.Unmarshal(raw, &record); err != nil {
+			t.Fatalf("file record JSON error: %v", err)
+		}
+		return true, nil
+	}
+	incrementStoredFileCountersFunc = func(views int, now time.Time) error { return nil }
+
+	req := httptest.NewRequest(http.MethodPost, "/api/saveFile", bytes.NewReader(body.Bytes()))
+	req.Header.Set("Content-Type", writer.FormDataContentType())
+	if code, _ := apiSaveSecretFile(req); code != http.StatusOK {
+		t.Fatalf("v3 file save rejected: code = %d", code)
+	}
+	if record.Version != secretSchemeV3 {
+		t.Fatalf("stored file Version = %d, want %d — v3 upload recorded as v2, file now undownloadable",
+			record.Version, secretSchemeV3)
+	}
+	if record.HashedKey != validReadTokenHash {
+		t.Fatalf("stored file HashedKey = %q, want the uploaded hash", record.HashedKey)
+	}
+}

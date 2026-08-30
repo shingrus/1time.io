@@ -1,6 +1,8 @@
 package main
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"errors"
 	"net/http"
 	"net/http/httptest"
@@ -366,5 +368,48 @@ func TestAPIStatSnapshotReturnsBufferedStats(t *testing.T) {
 	}
 	if !strings.Contains(body, `"password":2`) {
 		t.Fatalf("snapshot body = %s, missing password count", body)
+	}
+}
+
+// The scheme list on /api/ss is only useful if it cannot drift from what the
+// server actually accepts — an operator reading it is deciding whether a
+// rollback is safe, so a stale list is worse than none.
+func TestStatSnapshotAdvertisesTheSchemesItAccepts(t *testing.T) {
+	advertised := supportedSaveSchemes()
+	if len(advertised) == 0 {
+		t.Fatal("no save schemes advertised")
+	}
+
+	token := strings.Repeat("a", hashedKeyHexLen)
+	sum := sha256.Sum256([]byte(token))
+	hash := hex.EncodeToString(sum[:])
+
+	accepts := func(scheme int) bool {
+		if scheme == 0 {
+			_, _, ok := resolveSaveScheme(token, "", 0)
+			return ok
+		}
+		_, _, ok := resolveSaveScheme("", hash, scheme)
+		return ok
+	}
+
+	for _, scheme := range advertised {
+		if !accepts(scheme) {
+			t.Fatalf("scheme %d is advertised but resolveSaveScheme rejects it", scheme)
+		}
+	}
+
+	// And nothing outside the list is quietly accepted.
+	for _, scheme := range []int{1, 2, 4, 99} {
+		if accepts(scheme) {
+			t.Fatalf("scheme %d is accepted but not advertised", scheme)
+		}
+	}
+}
+
+func TestStatSnapshotCarriesAPIVersion(t *testing.T) {
+	snapshot := NewStatsManager().GetSnapshot()
+	if snapshot.APIVersion != apiVersion {
+		t.Fatalf("snapshot APIVersion = %d, want %d", snapshot.APIVersion, apiVersion)
 	}
 }
