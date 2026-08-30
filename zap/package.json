@@ -1,6 +1,6 @@
 {
   "name": "zap",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "",
   "scripts": {
     "sync": "node scripts/sync-protocol.mjs",
@@ -10,7 +10,7 @@
     "test": "node --test"
   },
   "dependencies": {
-    "zapier-platform-core": "19.0.0"
+    "zapier-platform-core": "19.1.0"
   },
   "overrides": {
     "form-data": "^4.0.6"

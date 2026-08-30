@@ -24,7 +24,7 @@ const perform = async (z, bundle) => {
     const {encryptedMessage, readTokenHash} = await encryptSecretMessage(secret, fullSecretKey);
 
     const response = await z.request({
-        url: `${ORIGIN}/api/saveSecret`,
+        url: `${ORIGIN}/api/saveSecret?src=zap`,
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         body: {
