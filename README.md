@@ -76,11 +76,11 @@ You                          Server                        Recipient
  │                             │        with key from #       │
 ```
 
-The encryption key stays in the URL fragment (`#`), which is **never sent to the server**. Even with full database access, secrets cannot be read.
+The encryption key stays in the URL fragment (`#`), which is **never sent to the server**. Even with full database access, secrets cannot be read — and since the server stores only a hash of the read token, database access cannot consume or destroy them either.
 
 The same zero-knowledge model also powers encrypted file sharing: the browser encrypts the file and its metadata before upload, and the server stores only encrypted bytes until the one default download—or the last explicitly allowed download—is reserved.
 
-**Cryptographic details:** Keys are derived using HKDF-SHA256 with a fixed salt. Two separate keys are produced — one for AES-256-GCM encryption and one for authentication (hash-based proof-of-knowledge). The server verifies the auth hash with constant-time comparison before releasing the encrypted blob, then permanently deletes it.
+**Cryptographic details:** Keys are derived using HKDF-SHA256 with a fixed salt. Two separate keys are produced — one for AES-256-GCM encryption and one read token (hash-based proof-of-knowledge). The sender uploads only **SHA-256 of the read token**, never the token itself, so the stored record cannot be used to read or destroy a secret. The recipient presents the token, the server hashes it and compares constant-time before releasing the encrypted blob, then permanently deletes it.
 
 ---
 

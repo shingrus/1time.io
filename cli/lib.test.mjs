@@ -4,8 +4,18 @@ import {join, basename, resolve} from 'node:path';
 import {Readable} from 'node:stream';
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {createHash} from 'node:crypto';
 
 import {createSecretLink, revealSecret, run} from './lib.mjs';
+
+// v3 saves upload SHA-256(readToken); reads still send the token itself. These
+// tests therefore assert that the two are related by a hash, NOT that they are
+// equal — equality was the v2 property, and asserting it would silently pin the
+// weaker scheme back in place. Mirrors TestInteropVectorFromProtocolMjs on the
+// Go side, and hashes the token's hex string for the same reason.
+function sha256Hex(text) {
+    return createHash('sha256').update(text, 'utf8').digest('hex');
+}
 
 function createWritableCapture() {
     let output = '';
@@ -637,7 +647,7 @@ test('createSecretLink and revealSecret round-trip through the API protocol', as
         fetchImpl: async (_url, options) => {
             const requestBody = JSON.parse(options.body);
             assert.equal(requestBody.id, 'server-id-123');
-            assert.equal(requestBody.hashedKey, storedPayload.hashedKey);
+            assert.equal(sha256Hex(requestBody.hashedKey), storedPayload.readTokenHash);
 
             return {
                 ok: true,
@@ -681,7 +691,7 @@ test('run send-file uploads a file and prints the created file link', async () =
     assert.equal(exitCode, 0);
     assert.equal(stderr.getOutput(), '');
     assert.equal(requestBody.get('duration'), '86400');
-    assert.equal(typeof requestBody.get('hashedKey'), 'string');
+    assert.equal(typeof requestBody.get('readTokenHash'), 'string');
     assert.ok(requestBody.get('file') instanceof Blob);
     assert.match(stdout.getOutput(), /^https:\/\/1time\.example\/f\/#/);
     assert.match(stdout.getOutput(), /file123/);
@@ -838,7 +848,7 @@ test('run read-file downloads the decrypted file into the current directory', as
 
     const sendStdout = createWritableCapture();
     let encryptedBytes = null;
-    let storedHashedKey = null;
+    let storedReadTokenHash = null;
 
     const sendExitCode = await run(['send-file', '--passphrase', 'extra-passphrase', sourcePath], {
         stdin: createStdin('', true),
@@ -847,7 +857,7 @@ test('run read-file downloads the decrypted file into the current directory', as
         env: {},
         fetchImpl: async (_url, options) => {
             const formData = options.body;
-            storedHashedKey = formData.get('hashedKey');
+            storedReadTokenHash = formData.get('readTokenHash');
             encryptedBytes = new Uint8Array(await formData.get('file').arrayBuffer());
             return new Response(JSON.stringify({
                 status: 'ok',
@@ -873,7 +883,7 @@ test('run read-file downloads the decrypted file into the current directory', as
         fetchImpl: async (_url, options) => {
             const requestBody = JSON.parse(options.body);
             assert.equal(requestBody.id, 'server-file-123');
-            assert.equal(requestBody.hashedKey, storedHashedKey);
+            assert.equal(sha256Hex(requestBody.hashedKey), storedReadTokenHash);
 
             return new Response(encryptedBytes, {
                 status: 200,
@@ -921,7 +931,7 @@ test('read-file picks a unique filename when the decrypted name already exists',
 
     const sendStdout = createWritableCapture();
     let encryptedBytes = null;
-    let storedHashedKey = null;
+    let storedReadTokenHash = null;
 
     const sendExitCode = await run(['send-file', '--passphrase', 'extra-passphrase', sourcePath], {
         stdin: createStdin('', true),
@@ -930,7 +940,7 @@ test('read-file picks a unique filename when the decrypted name already exists',
         env: {},
         fetchImpl: async (_url, options) => {
             const formData = options.body;
-            storedHashedKey = formData.get('hashedKey');
+            storedReadTokenHash = formData.get('readTokenHash');
             encryptedBytes = new Uint8Array(await formData.get('file').arrayBuffer());
             return new Response(JSON.stringify({
                 status: 'ok',
@@ -956,7 +966,7 @@ test('read-file picks a unique filename when the decrypted name already exists',
         fetchImpl: async (_url, options) => {
             const requestBody = JSON.parse(options.body);
             assert.equal(requestBody.id, 'server-file-123');
-            assert.equal(requestBody.hashedKey, storedHashedKey);
+            assert.equal(sha256Hex(requestBody.hashedKey), storedReadTokenHash);
 
             return new Response(encryptedBytes, {
                 status: 200,

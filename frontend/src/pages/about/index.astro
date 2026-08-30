@@ -67,6 +67,7 @@ const jsonLd = {
             <ul>
                 <li>End-to-end encryption: your data is encrypted in the browser before transmission</li>
                 <li>Zero-knowledge: we never have access to your plaintext data or encryption keys</li>
+                <li>Our database holds nothing that can read or destroy your secret: the sender uploads only a SHA-256 hash of the read token, so even a full database dump cannot retrieve or consume a link</li>
                 <li>One-time access: each link can only be opened once, then the data is destroyed</li>
                 <li>Auto-expiry: even unread messages are automatically deleted after your chosen period</li>
                 <li>Optional passphrase: add a second layer of protection with a shared passphrase</li>

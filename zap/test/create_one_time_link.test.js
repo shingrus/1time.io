@@ -4,7 +4,8 @@ const assert = require('node:assert/strict');
 globalThis.crypto ??= require('node:crypto').webcrypto;
 
 const create = require('../creates/create_one_time_link');
-const {parseSecretLink, decryptSecretMessage} = require('../lib/protocol.js');
+const {createHash} = require('node:crypto');
+const {parseSecretLink, decryptSecretMessage, hashSecretKey, ProtocolConstants} = require('../lib/protocol.js');
 
 // Run perform() with a fake `z` (no network): capture the ciphertext it would
 // POST, then decrypt it using the key parsed back out of the returned link.
@@ -32,6 +33,15 @@ test('produces a link whose secret decrypts (no passphrase)', async () => {
     const {randomKey} = parseSecretLink(out.link);
     const decrypted = await decryptSecretMessage(captured.body.secretMessage, randomKey);
     assert.equal(decrypted, 'hunter2-correct-horse');
+
+    // v3: the upload carries SHA-256(readToken) and the scheme version, and must
+    // NOT carry the read token itself — that is the whole point of the scheme.
+    assert.equal(captured.body.v, ProtocolConstants.saveSchemeVersion);
+    assert.equal(captured.body.hashedKey, undefined);
+    assert.equal(
+        captured.body.readTokenHash,
+        createHash('sha256').update(await hashSecretKey(randomKey), 'utf8').digest('hex'),
+    );
 });
 
 test('honors an extra passphrase (passphrase + key order)', async () => {

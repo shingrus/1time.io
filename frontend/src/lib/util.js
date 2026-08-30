@@ -52,11 +52,15 @@ export async function createSecretLink(secretMessage, options = {}) {
 
     const randomKey = getRandomString(Constants.randomKeyLen);
     const fullSecretKey = secretKey + randomKey;
-    const {encryptedMessage, hashedKey} = await encryptSecretMessage(secretMessage, fullSecretKey);
+    // v3 uploads SHA-256(readToken), never the token itself, so the server can
+    // verify a reader without ever holding a value that could read the secret.
+    // Readers are unaffected — they still send the token, exactly as before.
+    const {encryptedMessage, readTokenHash} = await encryptSecretMessage(secretMessage, fullSecretKey);
 
     const data = await postJson('saveSecret', {
         secretMessage: encryptedMessage,
-        hashedKey,
+        readTokenHash,
+        v: Constants.saveSchemeVersion,
         duration: durationSeconds,
         ...(views !== 1 && {views}),
     });

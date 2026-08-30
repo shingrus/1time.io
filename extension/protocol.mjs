@@ -5,6 +5,10 @@ export const ProtocolConstants = {
     hkdfSalt: 'onetimelink:v2',
     hkdfEncryptInfo: 'encrypt',
     hkdfAuthInfo: 'auth',
+    // Save-request scheme. v3 uploads SHA-256(readToken) instead of readToken.
+    // Reads are identical in both schemes, so a client that predates v3 can
+    // still open a v3 link; only the save path is version-aware.
+    saveSchemeVersion: 3,
 };
 
 const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
@@ -133,6 +137,18 @@ async function deriveAuthToken(fullSecretKey) {
     return bytesToHex(new Uint8Array(authBits));
 }
 
+// SHA-256 of the read token, as a v3 server stores it.
+//
+// Digests the token's 64-character HEX STRING, not the 32 bytes it encodes.
+// backend/storage.go tokenMatchesStored hashes the same representation; the two
+// must change together or not at all.
+async function hashReadToken(readToken) {
+    const crypto = requireWebCrypto();
+    const digest = await crypto.subtle.digest('SHA-256', textEncoder.encode(readToken));
+
+    return bytesToHex(new Uint8Array(digest));
+}
+
 function isLoopbackHostname(hostname) {
     return hostname === '127.0.0.1' || hostname === 'localhost' || hostname === '::1' || hostname === '[::1]';
 }
@@ -198,9 +214,14 @@ export async function encryptSecretBytes(secretBytes, fullSecretKey) {
     encryptedBytes.set(iv);
     encryptedBytes.set(new Uint8Array(encryptedBuffer), iv.length);
 
+    // Derived once and returned in both forms callers need: hashedKey is the
+    // read token a reader presents, readTokenHash is what a v3 sender uploads.
+    const readToken = await deriveAuthToken(fullSecretKey);
+
     return {
         encryptedBytes,
-        hashedKey: await deriveAuthToken(fullSecretKey),
+        hashedKey: readToken,
+        readTokenHash: await hashReadToken(readToken),
     };
 }
 
@@ -226,11 +247,12 @@ export async function decryptSecretBytes(encryptedPayload, fullSecretKey) {
 }
 
 export async function encryptSecretMessage(secretMessage, fullSecretKey) {
-    const {encryptedBytes, hashedKey} = await encryptSecretBytes(textEncoder.encode(secretMessage), fullSecretKey);
+    const {encryptedBytes, hashedKey, readTokenHash} = await encryptSecretBytes(textEncoder.encode(secretMessage), fullSecretKey);
 
     return {
         encryptedMessage: `${toBase64Url(encryptedBytes.slice(0, 12))}.${toBase64Url(encryptedBytes.slice(12))}`,
         hashedKey,
+        readTokenHash,
     };
 }
 

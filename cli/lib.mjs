@@ -167,13 +167,17 @@ export async function createSecretLink({host, secret, expiresInSeconds = default
     const origin = normalizeOrigin(host || ProtocolConstants.defaultHost);
     const generatedKey = getRandomString(ProtocolConstants.randomKeyLen);
     //left for later passphrase
-    const {encryptedMessage, hashedKey} = await encryptSecretMessage(secret, generatedKey);
+    // v3 uploads SHA-256(readToken) rather than the token, so neither this
+    // request nor the server's stored record can be used to read or destroy the
+    // secret. Reading is unchanged: the recipient still sends the token itself.
+    const {encryptedMessage, readTokenHash} = await encryptSecretMessage(secret, generatedKey);
     const data = await postJson({
         origin,
         path: 'saveSecret',
         payload: {
             secretMessage: encryptedMessage,
-            hashedKey,
+            readTokenHash,
+            v: ProtocolConstants.saveSchemeVersion,
             duration: expiresInSeconds,
             views,
         },
@@ -256,11 +260,12 @@ async function createFileLink({host, filePath, passphrase = '', expiresInSeconds
     const packed = packFilePayload(meta, fileBytes);
     const randomKey = getRandomString(ProtocolConstants.randomKeyLen);
     const fullSecretKey = `${passphrase}${randomKey}`;
-    const {encryptedBytes, hashedKey} = await encryptSecretBytes(packed, fullSecretKey);
+    const {encryptedBytes, readTokenHash} = await encryptSecretBytes(packed, fullSecretKey);
 
     const formData = new FormData();
     formData.append('file', new Blob([encryptedBytes]), 'encrypted.bin');
-    formData.append('hashedKey', hashedKey);
+    formData.append('readTokenHash', readTokenHash);
+    formData.append('v', String(ProtocolConstants.saveSchemeVersion));
     formData.append('duration', String(expiresInSeconds));
     if (views !== 1) {
         formData.append('views', String(views));
