@@ -28,9 +28,15 @@
 ---
 
 <p align="center">
-  <img src="docs/screenshot-create.png" alt="Create a secret" width="45%">
+  <img src="docs/screenshot-create.png" alt="Create a one-time secret" width="45%">
   &nbsp;&nbsp;
-  <img src="docs/screenshot-reveal.png" alt="Reveal a secret" width="45%">
+  <img src="docs/screenshot-reveal.png" alt="Reveal a one-time secret" width="45%">
+</p>
+
+<p align="center">
+  <img src="docs/screenshot-file-sharing.png" alt="Send an encrypted file with a one-time download link" width="45%">
+  &nbsp;&nbsp;
+  <img src="docs/screenshot-password-generator.png" alt="Generate a strong password" width="45%">
 </p>
 
 ## Why 1time?
