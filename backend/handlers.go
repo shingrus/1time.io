@@ -21,6 +21,10 @@ type StoredMessage struct {
 	// Views is the number of reads remaining. 0 (legacy records) or 1 means
 	// single view, N > 1 means N reads left.
 	Views int `json:"views,omitempty"`
+	// Version selects how HashedKey is compared. 0 (every record written before
+	// the v3 rollout) means HashedKey is the read token itself; secretSchemeV3
+	// means it is SHA-256 of that token. See tokenMatchesStored.
+	Version int `json:"v,omitempty"`
 }
 
 // maxViews caps the per-secret view count accepted by the API. It also bounds
@@ -35,6 +39,45 @@ type StoredFile struct {
 	// Views is the number of downloads remaining. Missing/0 and 1 both mean
 	// the legacy single-download behaviour.
 	Views int `json:"views,omitempty"`
+	// Version selects how HashedKey is compared; see StoredMessage.Version.
+	Version int `json:"v,omitempty"`
+}
+
+// apiVersion identifies the HTTP API surface exposed under /api/.
+const apiVersion = 1
+
+// supportedSaveSchemes lists what resolveSaveScheme accepts, newest last, for
+// /api/ss.
+func supportedSaveSchemes() []int {
+	return []int{0, secretSchemeV3}
+}
+
+// resolveSaveScheme decides what a save request wants stored and under which
+// scheme, for both the JSON text path and the multipart file path.
+//
+func resolveSaveScheme(legacyHashedKey, readTokenHash string, version int) (stored string, scheme int, ok bool) {
+	switch version {
+	case secretSchemeV3:
+		if legacyHashedKey != "" {
+			return "", 0, false
+		}
+
+		if !isValidHashedKey(readTokenHash) {
+			return "", 0, false
+		}
+
+		return readTokenHash, secretSchemeV3, true
+
+	case 0:
+		if readTokenHash != "" || legacyHashedKey == "" {
+			return "", 0, false
+		}
+
+		return legacyHashedKey, 0, true
+
+	default:
+		return "", 0, false
+	}
 }
 
 const (
