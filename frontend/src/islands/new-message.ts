@@ -43,9 +43,31 @@ if (form) {
         if (!submitBtn.disabled) showShortcutHint();
     };
 
+    // Strength meter: loaded on demand, never on first paint. The inline shape test
+    // keeps the chunk off the wire entirely for notes, key blobs and pasted files.
+    const strengthSlot = form.querySelector<HTMLElement>('[data-strength]')!;
+    const isCredentialShaped = (v: string) =>
+        v.length >= 4 && v.length <= 100 && !/[\n\r]/.test(v) && v.trim().split(/\s+/).length <= 8;
+
+    let strengthMeter: Promise<{update(value: string): void}> | null = null;
+    let strengthTimer = 0;
+    const updateStrength = () => {
+        const value = textarea.value;
+        if (!strengthMeter) {
+            if (!isCredentialShaped(value)) return;
+            strengthMeter = import('./strength-meter').then((m) => m.mountStrengthMeter(strengthSlot));
+        }
+        clearTimeout(strengthTimer);
+        // A phone keyboard fires input far faster than anyone can read a verdict.
+        strengthTimer = window.setTimeout(() => {
+            strengthMeter!.then((meter) => meter.update(value));
+        }, 150);
+    };
+
     textarea.addEventListener('input', () => {
         setError('');
         updateSubmitState(false);
+        updateStrength();
     });
     passphraseAddBtn.addEventListener('click', () => {
         passphraseAddBtn.toggleAttribute('hidden', true);
@@ -83,6 +105,7 @@ if (form) {
                     durationSelect.value = String(Constants.defaultDurationSeconds);
                     viewsSelect.value = '1';
                     updateSubmitState(false);
+                    updateStrength();
                     textarea.focus();
                 }, {uses: selectedViews, durationSeconds});
                 return;
