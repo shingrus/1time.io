@@ -204,7 +204,7 @@ export function estimate(value: string): Estimate {
     // Offline attack against a fast hash; halved because the average hit is mid-space.
     const crackTime = humaniseTime(Math.pow(2, Math.min(bits, 200)) / 2 / 1e10);
 
-    let hint = '';
+    let hint;
     if (dictionary !== null) hint = 'This is on every breach list — attackers try it first.';
     else if (score === 4) hint = '';
     else if (patterned) hint = 'Runs like 1234 or qwerty barely count. Break the pattern.';
