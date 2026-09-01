@@ -129,7 +129,9 @@ function dictionaryBits(value: string): number | null {
  * they never pass the all-lowercase-or-Capitalised test below.
  */
 function wordBits(value: string): number | null {
-    const tokens = value.split(/[^A-Za-z]+/).filter((t) => t.length >= 3);
+    // Split camelCase too: "CompanyName2024" is two dictionary words, not 15 random
+    // characters, and without this boundary it slips through as one unrecognisable token.
+    const tokens = value.replace(/([a-z])([A-Z])/g, '$1 $2').split(/[^A-Za-z]+/).filter((t) => t.length >= 3);
     if (tokens.length === 0) return null;
 
     const letters = tokens.join('').length;
@@ -145,8 +147,9 @@ function wordBits(value: string): number | null {
 
 function humaniseTime(seconds: number): string {
     if (seconds < 1) return 'instantly';
+    // Each entry names the unit you land in *after* dividing, not the one you left.
     const units: Array<[number, string]> = [
-        [60, 'second'], [60, 'minute'], [24, 'hour'], [30, 'day'], [12, 'month'], [100, 'year'],
+        [60, 'minute'], [60, 'hour'], [24, 'day'], [30, 'month'], [12, 'year'],
     ];
     let value = seconds;
     let name = 'second';
