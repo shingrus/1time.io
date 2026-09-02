@@ -18,7 +18,7 @@ const description = `Privacy policy for ${siteHost}. Zero-knowledge architecture
 
     <div class="about-page">
         <h1>Privacy Policy</h1>
-        <p class="subtitle">Last updated: March 22, 2026</p>
+        <p class="subtitle">Last updated: September 2, 2026</p>
 
         <div class="about-section">
             <h2>The short version</h2>
@@ -54,6 +54,17 @@ const description = `Privacy policy for ${siteHost}. Zero-knowledge architecture
                     not per-user or per-session. No IP addresses, no identifiers, no way to link
                     a count to any individual.
                 </li>
+                <li>
+                    <strong>Read notifications (only if you turn them on):</strong> asking to be
+                    notified when your link is opened stores a push subscription — an address your
+                    browser's push service issued, plus the keys used to encrypt the notification —
+                    alongside the secret, deleted with it. Sending the notification means one request
+                    to your browser's own push service, run by Google, Mozilla, Apple or Microsoft
+                    depending on your browser. That notification carries no secret content and no
+                    decryption key, and its contents are encrypted so the push service cannot read
+                    them. Turn it off any time on the My Secrets page; nothing is stored or sent
+                    unless you opt in.
+                </li>
             </ul>
         </div>
 
@@ -63,7 +74,10 @@ const description = `Privacy policy for ${siteHost}. Zero-knowledge architecture
                 <li>No accounts or personal information — the service works without sign-up</li>
                 <li>No cookies — not even a session cookie</li>
                 <li>No analytics or tracking scripts — no Google Analytics, no pixels, no fingerprinting. We only keep an aggregate secret count with no identifying information</li>
-                <li>No third-party requests — no CDNs, ad networks, or external resources</li>
+                <li>
+                    No third-party requests — no CDNs, ad networks, or external resources. The one
+                    exception is read notifications, if you turn them on: see below.
+                </li>
                 <li>No plaintext secrets — encryption happens client-side before transmission</li>
             </ul>
         </div>

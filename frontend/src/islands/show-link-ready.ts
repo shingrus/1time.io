@@ -19,7 +19,15 @@ export async function showLinkReady(
         uses = 1,
         kind = 'secret',
         durationSeconds = Constants.defaultDurationSeconds,
-    }: {uses?: number; kind?: 'secret' | 'file'; durationSeconds?: number} = {},
+        manageToken = '',
+        vapidPublicKey = '',
+    }: {
+        uses?: number;
+        kind?: 'secret' | 'file';
+        durationSeconds?: number;
+        manageToken?: string;
+        vapidPublicKey?: string;
+    } = {},
 ): Promise<void> {
     // Start the best-effort auto-copy immediately instead of putting it behind a CSS request.
     const autoCopy = copyTextToClipboard(link);
@@ -59,9 +67,16 @@ export async function showLinkReady(
         footerSeparator.hidden = referenceWrap.hidden;
     };
 
+    let secretId = '';
+    try {
+        ({id: secretId} = parseSecretLink(link));
+    } catch {
+        // A reference and a notification are both optional; the link still works.
+    }
+
     void (async () => {
         try {
-            const {id} = parseSecretLink(link);
+            const id = secretId;
             if (!id) return;
             const {nameForId} = await import('../lib/secretName.js');
             const name = nameForId(id);
@@ -137,6 +152,16 @@ export async function showLinkReady(
         qrToggle.setAttribute('aria-expanded', 'true');
         qrLabel.textContent = 'Hide QR code';
     });
+
+    // Everything about notifications lives in pushNotifications.js, reached only
+    // through this dynamic import. Keeping it out of this module matters: this
+    // chunk is preloaded on every page carrying a share form, so anything left
+    // here is paid for by senders who never subscribe anything.
+    if (secretId && manageToken && vapidPublicKey) {
+        void import('../lib/pushNotifications.js')
+            .then((push) => push.mountNotifyControl(clone, {id: secretId, isFile, manageToken, vapidPublicKey}))
+            .catch(() => {});
+    }
 
     resetBtn.addEventListener('click', () => {
         if (copyTimer) clearTimeout(copyTimer);
