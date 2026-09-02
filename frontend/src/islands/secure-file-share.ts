@@ -179,7 +179,8 @@ if (form) {
             if (data.status === 'ok' && data.newId) {
                 // Lazy so the my-secrets store stays off the file page's initial load.
                 void import('../lib/mySecrets.js')
-                    .then(({recordSecret}) => recordSecret({id: data.newId, kind: 'file', durationSeconds, views: selectedViews}))
+                    .then(({recordSecret}) =>
+                        recordSecret({id: data.newId, kind: 'file', durationSeconds, views: selectedViews}))
                     .catch(() => {});
                 const link = `${window.location.origin}/f/#${randomKey}${data.newId}`;
                 isEncrypting = false;
@@ -192,7 +193,13 @@ if (form) {
                     durationSelect.value = String(Constants.defaultDurationSeconds);
                     viewsSelect.value = '1';
                     updateSubmit();
-                }, {uses: selectedViews, kind: 'file', durationSeconds});
+                }, {
+                    uses: selectedViews,
+                    kind: 'file',
+                    durationSeconds,
+                    manageToken: data.manageToken,
+                    vapidPublicKey: data.vapidPublicKey,
+                });
                 return;
             }
             setNote('Could not create the file link. Please try again.');

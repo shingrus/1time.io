@@ -4,10 +4,13 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "predev": "node scripts/build-push-sw.mjs",
     "dev": "astro dev --port 3001",
+    "prebuild": "node scripts/build-push-sw.mjs",
     "build": "astro build && node scripts/add-modulepreload.mjs",
     "preview": "astro preview --port 3001",
-    "check": "astro check"
+    "check": "astro check",
+    "test": "node --test test/*.test.mjs"
   },
   "dependencies": {
     "astro": "^7.1.0",
@@ -15,6 +18,7 @@
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.9",
+    "esbuild": "^0.28.1",
     "@types/node": "^22.10.5",
     "typescript": "^5.6.3"
   },
