@@ -1,9 +1,4 @@
-import {loadSecrets, notificationsOptedOut, removeSecret, setNotificationsOptedOut} from '../lib/mySecrets.js';
-// Static, not dynamic: a dynamic import here was the one thing tipping Rollup
-// into splitting out Vite's preload helper, putting an extra request on every
-// page in the site. Imported from pushRegistrations rather than
-// pushNotifications so this page gets the sweep without the subscribe code.
-import {sweepStaleRegistrations} from '../lib/pushRegistrations.js';
+import {loadSecrets, removeSecret} from '../lib/mySecrets.js';
 import {nameForId} from '../lib/secretName.js';
 
 type Kind = 'message' | 'file';
@@ -112,43 +107,6 @@ async function updateStatuses(entries: Entry[], statusEls: Map<string, HTMLEleme
         const exists = secrets ? secrets[e.id] : undefined;
         applyStatus(el, classify(exists, typeof e.views === 'number' ? e.views : 1));
     }
-}
-
-// Read notifications are per-browser, so the switch lives here rather than on a
-// single link. Without it, turning one secret off lasts only until the next one
-// is created — permission is already granted, so that one subscribes itself.
-const notifyToggle = document.querySelector<HTMLButtonElement>('[data-my-secrets-notify]');
-if (
-    notifyToggle &&
-    typeof Notification !== 'undefined' &&
-    'serviceWorker' in navigator &&
-    'PushManager' in window &&
-    Notification.permission === 'granted'
-) {
-    // Only shown once notifications have actually been granted: with nothing
-    // subscribed and none possible, a switch would be a control over nothing.
-    void (async () => {
-        const render = () => {
-            notifyToggle.textContent = notificationsOptedOut()
-                ? 'Turn read notifications back on'
-                : 'Turn off read notifications';
-        };
-
-        notifyToggle.addEventListener('click', async () => {
-            const turningOff = !notificationsOptedOut();
-            setNotificationsOptedOut(turningOff);
-            render();
-
-            if (turningOff) {
-                // Drop every live registration too, or secrets subscribed before the
-                // switch was flipped would still notify.
-                await sweepStaleRegistrations(new Set<string>());
-            }
-        });
-
-        render();
-        notifyToggle.hidden = false;
-    })();
 }
 
 const listEl = document.querySelector<HTMLUListElement>('[data-my-secrets-list]');

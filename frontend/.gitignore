@@ -5,6 +5,3 @@ build
 .env.*
 !.env.example
 .DS_Store
-
-# Generated from src/sw/push-sw.js by scripts/build-push-sw.mjs
-public/push-sw.js

@@ -135,16 +135,6 @@
   color: var(--accent-hover);
 }
 
-/* The control sits in the footer meta row, so it inherits that row's colour and
-   spacing; only the inert state needs saying. Scoped so the QR and reset
-   controls keep their own. */
-.link-footer-meta .link-extension:disabled {
-  color: var(--text-muted);
-  text-decoration: none;
-  cursor: default;
-  opacity: 0.7;
-}
-
 .link-warning {
   margin-top: 18px;
   padding-top: 18px;
