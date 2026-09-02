@@ -71,7 +71,7 @@ if (form) {
         const durationSeconds = Number(durationSelect.value);
         const selectedViews = Number(viewsSelect.value);
         try {
-            const {link, manageToken, vapidPublicKey} = await createSecretLink(textarea.value, {
+            const {link} = await createSecretLink(textarea.value, {
                 secretKey: keyInput.value,
                 durationSeconds,
                 views: selectedViews,
@@ -84,7 +84,7 @@ if (form) {
                     viewsSelect.value = '1';
                     updateSubmitState(false);
                     textarea.focus();
-                }, {uses: selectedViews, durationSeconds, manageToken, vapidPublicKey});
+                }, {uses: selectedViews, durationSeconds});
                 return;
             }
         } catch {

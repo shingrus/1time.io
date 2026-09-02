@@ -8,16 +8,10 @@ Type=simple
 User=1time
 Group=1time
 WorkingDirectory=/opt/1time
-# All configuration lives in the env file, not here: this unit is rewritten on
-# every deploy, and a secret written into it would be cleared by any run that
-# did not happen to pass it. That file is 0640, owned by root and readable by
-# the service group set above, so it is also not world-readable the way this
-# unit is.
-#
-# Written by scripts/update_vm.sh --init; edit it directly to change anything.
-# The leading '-' lets the service start when it is missing, which is how a
-# deployment with no Web Push keys simply runs without notifications.
-EnvironmentFile=-/etc/1time/env
+Environment=LISTEN_ADDR=127.0.0.1:8080
+Environment=REDISHOST=127.0.0.1:6379
+Environment=REDISPASS=
+Environment=FILE_STORAGE_DIR=/opt/1time/files
 ExecStart=/opt/1time/bin/1time-api
 Restart=always
 RestartSec=3

@@ -100,7 +100,7 @@ func TestAPISaveSecretStoresEncryptedPayload(t *testing.T) {
 		return "msg123", nil
 	}
 
-	req := httptest.NewRequest(http.MethodPost, "/api/saveSecret", strings.NewReader(`{"secretMessage":"ciphertext","hashedKey":"`+testHashedKey+`","duration":60}`))
+	req := httptest.NewRequest(http.MethodPost, "/api/saveSecret", strings.NewReader(`{"secretMessage":"ciphertext","hashedKey":"hash","duration":60}`))
 	responseCode, response := apiSaveSecret(req)
 
 	if responseCode != http.StatusOK {
@@ -109,7 +109,7 @@ func TestAPISaveSecretStoresEncryptedPayload(t *testing.T) {
 	if !strings.Contains(string(response), `"status":"ok"`) || !strings.Contains(string(response), `"newId":"msg123"`) {
 		t.Fatalf("response = %s, want ok with new id", response)
 	}
-	if !stored.Encrypted || stored.Message != "ciphertext" || stored.HashedKey != testHashedKey {
+	if !stored.Encrypted || stored.Message != "ciphertext" || stored.HashedKey != "hash" {
 		t.Fatalf("stored payload = %#v, want encrypted ciphertext with hash", stored)
 	}
 	if ttl != 60*time.Second {
@@ -123,13 +123,13 @@ func TestAPISaveSecretStoresClampedViews(t *testing.T) {
 		payload   string
 		wantViews int
 	}{
-		{name: "absent views stays legacy shape", payload: `{"secretMessage":"c","hashedKey":"` + testHashedKey + `","duration":60}`, wantViews: 0},
-		{name: "explicit single view stays legacy shape", payload: `{"secretMessage":"c","hashedKey":"` + testHashedKey + `","duration":60,"views":1}`, wantViews: 0},
-		{name: "multi view stored as-is", payload: `{"secretMessage":"c","hashedKey":"` + testHashedKey + `","duration":60,"views":5}`, wantViews: 5},
-		{name: "maximum views stored as-is", payload: `{"secretMessage":"c","hashedKey":"` + testHashedKey + `","duration":60,"views":10}`, wantViews: maxViews},
-		{name: "former unlimited sentinel collapses to single view", payload: `{"secretMessage":"c","hashedKey":"` + testHashedKey + `","duration":60,"views":-1}`, wantViews: 0},
-		{name: "oversized clamped to max", payload: `{"secretMessage":"c","hashedKey":"` + testHashedKey + `","duration":60,"views":5000}`, wantViews: maxViews},
-		{name: "garbage negative collapses to single view", payload: `{"secretMessage":"c","hashedKey":"` + testHashedKey + `","duration":60,"views":-7}`, wantViews: 0},
+		{name: "absent views stays legacy shape", payload: `{"secretMessage":"c","hashedKey":"h","duration":60}`, wantViews: 0},
+		{name: "explicit single view stays legacy shape", payload: `{"secretMessage":"c","hashedKey":"h","duration":60,"views":1}`, wantViews: 0},
+		{name: "multi view stored as-is", payload: `{"secretMessage":"c","hashedKey":"h","duration":60,"views":5}`, wantViews: 5},
+		{name: "maximum views stored as-is", payload: `{"secretMessage":"c","hashedKey":"h","duration":60,"views":10}`, wantViews: maxViews},
+		{name: "former unlimited sentinel collapses to single view", payload: `{"secretMessage":"c","hashedKey":"h","duration":60,"views":-1}`, wantViews: 0},
+		{name: "oversized clamped to max", payload: `{"secretMessage":"c","hashedKey":"h","duration":60,"views":5000}`, wantViews: maxViews},
+		{name: "garbage negative collapses to single view", payload: `{"secretMessage":"c","hashedKey":"h","duration":60,"views":-7}`, wantViews: 0},
 	}
 
 	for _, tt := range tests {
@@ -163,12 +163,12 @@ func TestAPISaveSecretPassesClampedViewsToStorage(t *testing.T) {
 		payload   string
 		wantViews int
 	}{
-		{name: "absent views passes single view", payload: `{"secretMessage":"c","hashedKey":"` + testHashedKey + `","duration":60}`, wantViews: 1},
-		{name: "multi view passed as-is", payload: `{"secretMessage":"c","hashedKey":"` + testHashedKey + `","duration":60,"views":5}`, wantViews: 5},
-		{name: "maximum views passed as-is", payload: `{"secretMessage":"c","hashedKey":"` + testHashedKey + `","duration":60,"views":10}`, wantViews: maxViews},
-		{name: "previous maximum clamped", payload: `{"secretMessage":"c","hashedKey":"` + testHashedKey + `","duration":60,"views":100}`, wantViews: maxViews},
-		{name: "passed after clamping", payload: `{"secretMessage":"c","hashedKey":"` + testHashedKey + `","duration":60,"views":5000}`, wantViews: maxViews},
-		{name: "negative collapses to single view", payload: `{"secretMessage":"c","hashedKey":"` + testHashedKey + `","duration":60,"views":-1}`, wantViews: 1},
+		{name: "absent views passes single view", payload: `{"secretMessage":"c","hashedKey":"h","duration":60}`, wantViews: 1},
+		{name: "multi view passed as-is", payload: `{"secretMessage":"c","hashedKey":"h","duration":60,"views":5}`, wantViews: 5},
+		{name: "maximum views passed as-is", payload: `{"secretMessage":"c","hashedKey":"h","duration":60,"views":10}`, wantViews: maxViews},
+		{name: "previous maximum clamped", payload: `{"secretMessage":"c","hashedKey":"h","duration":60,"views":100}`, wantViews: maxViews},
+		{name: "passed after clamping", payload: `{"secretMessage":"c","hashedKey":"h","duration":60,"views":5000}`, wantViews: maxViews},
+		{name: "negative collapses to single view", payload: `{"secretMessage":"c","hashedKey":"h","duration":60,"views":-1}`, wantViews: 1},
 	}
 
 	for _, tt := range tests {
@@ -206,7 +206,7 @@ func TestAPISaveSecretRejectsMissingFields(t *testing.T) {
 		return "unexpected", nil
 	}
 
-	req := httptest.NewRequest(http.MethodPost, "/api/saveSecret", strings.NewReader(`{"secretMessage":"","hashedKey":"`+testHashedKey+`","duration":60}`))
+	req := httptest.NewRequest(http.MethodPost, "/api/saveSecret", strings.NewReader(`{"secretMessage":"","hashedKey":"hash","duration":60}`))
 	_, response := apiSaveSecret(req)
 
 	if called {
@@ -228,7 +228,7 @@ func TestAPISaveSecretRejectsOversizedBody(t *testing.T) {
 
 	// A secretMessage larger than the body cap should be rejected before storage.
 	oversized := strings.Repeat("A", maxSaveSecretBodyBytes+1)
-	body := `{"secretMessage":"` + oversized + `","hashedKey":"` + testHashedKey + `","duration":60}`
+	body := `{"secretMessage":"` + oversized + `","hashedKey":"hash","duration":60}`
 	req := httptest.NewRequest(http.MethodPost, "/api/saveSecret", strings.NewReader(body))
 	_, response := apiSaveSecret(req)
 
@@ -453,6 +453,7 @@ func TestAPISecretStatusFiltersInvalidIDs(t *testing.T) {
 	if err != nil {
 		t.Fatalf("generateStorageID error: %v", err)
 	}
+
 	body, _ := json.Marshal(struct {
 		Ids []string `json:"ids"`
 	}{Ids: []string{valid, "tooshort", "bad*chars/not+base64url", "", valid + "extra"}})
@@ -598,7 +599,7 @@ func TestAPISaveSecretFileStoresBlobAndRecord(t *testing.T) {
 	if _, err := fileWriter.Write([]byte("encrypted file bytes")); err != nil {
 		t.Fatalf("Write error: %v", err)
 	}
-	if err := writer.WriteField("hashedKey", testHashedKey); err != nil {
+	if err := writer.WriteField("hashedKey", "filehash"); err != nil {
 		t.Fatalf("WriteField hashedKey error: %v", err)
 	}
 	if err := writer.WriteField("duration", "120"); err != nil {
@@ -643,8 +644,8 @@ func TestAPISaveSecretFileStoresBlobAndRecord(t *testing.T) {
 	if !strings.Contains(string(response), `"status":"ok"`) {
 		t.Fatalf("response = %s, want ok", response)
 	}
-	if !record.Encrypted || record.HashedKey != testHashedKey {
-		t.Fatalf("record = %#v, want encrypted record with the legacy key", record)
+	if !record.Encrypted || record.HashedKey != "filehash" {
+		t.Fatalf("record = %#v, want encrypted filehash", record)
 	}
 	if record.Views != 5 || countedViews != 5 {
 		t.Fatalf("stored views = %d, counted views = %d, want 5", record.Views, countedViews)
@@ -897,11 +898,11 @@ func TestAPISaveSecretLegacyUploadStaysScheme0(t *testing.T) {
 	}
 
 	req := httptest.NewRequest(http.MethodPost, "/api/saveSecret",
-		strings.NewReader(`{"secretMessage":"ciphertext","hashedKey":"`+testHashedKey+`","duration":60}`))
+		strings.NewReader(`{"secretMessage":"ciphertext","hashedKey":"thetoken","duration":60}`))
 	if code, _ := apiSaveSecret(req); code != http.StatusOK {
 		t.Fatalf("legacy save rejected: code = %d", code)
 	}
-	if stored.Version != 0 || stored.HashedKey != testHashedKey {
+	if stored.Version != 0 || stored.HashedKey != "thetoken" {
 		t.Fatalf("legacy record = %#v, want the token stored under scheme 0", stored)
 	}
 }
@@ -956,28 +957,5 @@ func TestAPISaveSecretFilePersistsV3Scheme(t *testing.T) {
 	}
 	if record.HashedKey != validReadTokenHash {
 		t.Fatalf("stored file HashedKey = %q, want the uploaded hash", record.HashedKey)
-	}
-}
-
-// A v2 save carrying a malformed key would store a secret the read path can
-// never accept, since apiGetMessage and consumeMessageFromStorage both require
-// isValidHashedKey. Refusing it at save time is the difference between an error
-// and a link that is dead on arrival.
-func TestResolveSaveSchemeRejectsMalformedLegacyKey(t *testing.T) {
-	if _, _, ok := resolveSaveScheme(testHashedKey, "", 0); !ok {
-		t.Fatal("a well-formed legacy key should be accepted")
-	}
-
-	for _, bad := range []string{
-		"",
-		"tooshort",
-		testHashedKey + "a",                  // too long
-		testHashedKey[:len(testHashedKey)-1], // too short
-		strings.ToUpper(testHashedKey),       // hex, but uppercase
-		testHashedKey[:len(testHashedKey)-1] + "z", // right length, not hex
-	} {
-		if _, _, ok := resolveSaveScheme(bad, "", 0); ok {
-			t.Fatalf("legacy key %q should be rejected", bad)
-		}
 	}
 }

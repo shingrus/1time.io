@@ -260,30 +260,10 @@ make build
 
 ```bash
 make build
-
-# First time on a fresh host. Note `sudo env` — a plain `sudo VAR=... ./script`
-# is refused by the default sudoers, and the install would silently end up with
-# empty values.
-sudo env REDIS_PASS=... VAPID_PUBLIC_KEY=... VAPID_PRIVATE_KEY=... \
-    ./scripts/update_vm.sh --init
-
-# Every deploy after that. Configuration is never touched.
-sudo ./scripts/update_vm.sh
+sudo ./scripts/init_vm.sh
 ```
 
-`--init` installs nginx and Redis, creates the service user, and writes
-`/etc/1time/env`. It will **not** overwrite that file on a later run, so if the
-first attempt captured the wrong values, edit `/etc/1time/env` directly and
-`sudo systemctl restart 1time`.
-
-Web Push is optional: leave the `VAPID_*` values out and the site runs with
-notifications off. Generate a pair with `npx web-push generate-vapid-keys`, and
-set `VAPID_SUBJECT` to your own contact if you are self-hosting. All three are
-required together — the service logs which are missing at startup.
-
-Later deploys install the binary, the static site, the nginx config and the unit,
-then restart. They never read or write `/etc/1time/env`, so a deploy cannot clear
-a secret by forgetting to pass it.
+Installs nginx, Redis, creates the `1time` systemd service, and deploys the built artifacts.
 
 ---
 

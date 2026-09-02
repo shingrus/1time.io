@@ -25,11 +25,6 @@ type StoredMessage struct {
 	// the v3 rollout) means HashedKey is the read token itself; secretSchemeV3
 	// means it is SHA-256 of that token. See tokenMatchesStored.
 	Version int `json:"v,omitempty"`
-	// ManageHash is SHA-256 of the manage token handed to the creator, and is
-	// what authorises attaching a push subscription. It is never part of a share
-	// link, so a reader holding the id cannot subscribe — or silence — notifications.
-	// Empty on every record written before push notifications existed.
-	ManageHash string `json:"manageHash,omitempty"`
 }
 
 // maxViews caps the per-secret view count accepted by the API. It also bounds
@@ -46,8 +41,6 @@ type StoredFile struct {
 	Views int `json:"views,omitempty"`
 	// Version selects how HashedKey is compared; see StoredMessage.Version.
 	Version int `json:"v,omitempty"`
-	// ManageHash authorises push subscribing; see StoredMessage.ManageHash.
-	ManageHash string `json:"manageHash,omitempty"`
 }
 
 // apiVersion identifies the HTTP API surface exposed under /api/.
@@ -61,6 +54,7 @@ func supportedSaveSchemes() []int {
 
 // resolveSaveScheme decides what a save request wants stored and under which
 // scheme, for both the JSON text path and the multipart file path.
+//
 func resolveSaveScheme(legacyHashedKey, readTokenHash string, version int) (stored string, scheme int, ok bool) {
 	switch version {
 	case secretSchemeV3:
@@ -75,11 +69,7 @@ func resolveSaveScheme(legacyHashedKey, readTokenHash string, version int) (stor
 		return readTokenHash, secretSchemeV3, true
 
 	case 0:
-		// Shape-checked like the v3 branch, not merely non-empty. The read path
-		// runs isValidHashedKey before it will look at anything, so a legacy save
-		// carrying a malformed key would store a secret that can never be read.
-		// Better to refuse it here than to hand back a link that is already dead.
-		if readTokenHash != "" || !isValidHashedKey(legacyHashedKey) {
+		if readTokenHash != "" || legacyHashedKey == "" {
 			return "", 0, false
 		}
 
@@ -138,11 +128,6 @@ func apiSaveSecret(r *http.Request) (responseCode int, response []byte) {
 	jResponse := struct {
 		Status string `json:"status"`
 		NewId  string `json:"newId"`
-		// Both are present only when this deployment can send notifications, so
-		// their absence is how a client learns push is unavailable — no separate
-		// config endpoint, and nothing to rebuild when self-hosting.
-		ManageToken    string `json:"manageToken,omitempty"`
-		VapidPublicKey string `json:"vapidPublicKey,omitempty"`
 	}{
 		Status: "error",
 		NewId:  "0",
@@ -174,11 +159,6 @@ func apiSaveSecret(r *http.Request) (responseCode int, response []byte) {
 					HashedKey: readTokenHash,
 					Version:   scheme,
 				}
-
-				// Minted only where it can be used. A token that cannot
-				// subscribe to anything is a field on every record for nothing.
-				manageToken, manageHash := mintManageToken()
-				newMessage.ManageHash = manageHash
 				views := min(max(payload.Views, 1), maxViews)
 				// Single view stays 0 so default records match the legacy shape.
 				if views != 1 {
@@ -197,10 +177,6 @@ func apiSaveSecret(r *http.Request) (responseCode int, response []byte) {
 				if err == nil {
 					jResponse.NewId = storeKey
 					jResponse.Status = "ok"
-					if manageToken != "" {
-						jResponse.ManageToken = manageToken
-						jResponse.VapidPublicKey = vapidPublicKey
-					}
 				} else {
 					log.Println(err)
 				}
@@ -268,11 +244,6 @@ func apiGetMessage(r *http.Request) (responseCode int, response []byte) {
 						jResponse.CryptedMessage = storedMessage.Message
 						jResponse.ViewsLeft = viewsLeft
 						jResponse.ExpiresIn = expiresIn
-						// The read is committed; tell the sender. This returns
-						// immediately — the lookup and the outbound request both
-						// happen on their own goroutine, so the reader waits for
-						// nothing.
-						notifySecretReadFunc(payload.Id, pushKindMessage, viewsLeft)
 					case "wrong key":
 						jResponse.Status = "wrong key"
 						log.Println("Hashes aren't equal")
@@ -349,9 +320,6 @@ func apiSaveSecretFile(r *http.Request) (responseCode int, response []byte) {
 	jResponse := struct {
 		Status string `json:"status"`
 		NewId  string `json:"newId"`
-		// See apiSaveSecret: absent unless this deployment can send push.
-		ManageToken    string `json:"manageToken,omitempty"`
-		VapidPublicKey string `json:"vapidPublicKey,omitempty"`
 	}{Status: "error", NewId: "0"}
 
 	r.Body = http.MaxBytesReader(nil, r.Body, maxFileUploadBodyBytes)
@@ -419,10 +387,6 @@ func apiSaveSecretFile(r *http.Request) (responseCode int, response []byte) {
 	}
 	ttl := time.Duration(duration) * time.Second
 
-	// Minted once, outside the retry loop: a fresh id does not need a fresh
-	// manage token. See apiSaveSecret.
-	manageToken, manageHash := mintManageToken()
-
 	for attempt := 0; attempt < maxStorageIDAttempts; attempt++ {
 		now := time.Now().UTC()
 		storeKey, err := generateStorageID()
@@ -474,11 +438,10 @@ func apiSaveSecretFile(r *http.Request) (responseCode int, response []byte) {
 		}
 
 		record := StoredFile{
-			Encrypted:  true,
-			FileUri:    filePath,
-			HashedKey:  readTokenHash,
-			Version:    scheme,
-			ManageHash: manageHash,
+			Encrypted: true,
+			FileUri:   filePath,
+			HashedKey: readTokenHash,
+			Version:   scheme,
 		}
 		if views != 1 {
 			record.Views = views
@@ -502,10 +465,6 @@ func apiSaveSecretFile(r *http.Request) (responseCode int, response []byte) {
 
 		jResponse.Status = "ok"
 		jResponse.NewId = storeKey
-		if manageToken != "" {
-			jResponse.ManageToken = manageToken
-			jResponse.VapidPublicKey = vapidPublicKey
-		}
 		response, _ = json.Marshal(jResponse)
 		return
 	}
@@ -570,11 +529,6 @@ func apiGetFile(w http.ResponseWriter, r *http.Request) {
 
 	defer reservation.File.Close()
 
-	// Fired on reservation rather than after the stream: that is the moment the
-	// download is authorised and counted, so the sender is told about it whether
-	// or not the transfer itself completes.
-	notifySecretReadFunc(payload.Id, pushKindFile, reservation.ViewsLeft)
-
 	w.Header().Set("Content-Type", "application/octet-stream")
 	w.Header().Set("X-1Time-Views-Left", strconv.Itoa(reservation.ViewsLeft))
 	if reservation.ExpiresInSeconds > 0 {
@@ -634,8 +588,6 @@ func apiHandler(w http.ResponseWriter, r *http.Request) {
 		responseCode, response = apiGetMessage(r)
 	case "secretStatus":
 		responseCode, response = apiSecretStatus(r)
-	case "subscribeToUpdates":
-		responseCode, response = apiSubscribeToUpdates(r)
 	case "saveFile":
 		responseCode, response = apiSaveSecretFile(r)
 	case "getFile":

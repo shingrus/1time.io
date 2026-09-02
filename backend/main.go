@@ -6,8 +6,8 @@ import (
 	"os"
 )
 
-const defaultDuration = 86400  // keep for 1 day (matches the client + protocol default)
-const maxDuration = 86400 * 30 // keep for 1 month
+const defaultDuration = 86400 // keep for 1 day (matches the client + protocol default)
+const maxDuration = 86400 * 30    // keep for 1 month
 //const randKeyLen = 12
 
 //const secretMessageFieldName = "secretMessage"
@@ -26,8 +26,6 @@ func main() {
 		log.Printf("Env %s is not set, exiting", FILE_STORAGE_DIR_VAR)
 		os.Exit(1)
 	}
-
-	logPushConfiguration()
 
 	appStats.Start()
 	startFileJanitor()
