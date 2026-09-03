@@ -17,35 +17,14 @@ import (
 	webpush "github.com/SherClockHolmes/webpush-go"
 )
 
-// Web Push needs an application-server (VAPID) key pair. The PRIVATE key signs
-// the JWT that proves to a push service we are entitled to push to a
-// subscription; the PUBLIC key is handed to the browser at subscribe time and is
-// public by design.
-//
-// The public key is returned on every save response rather than baked into the
-// frontend bundle, so self-hosting is a matter of setting an env var instead of
-// rebuilding the static site. Its absence is also the feature flag: no keys
-// configured means no push offered, with no separate config endpoint to probe.
 var vapidPublicKey = os.Getenv("VAPID_PUBLIC_KEY")
 var vapidPrivateKey = os.Getenv("VAPID_PRIVATE_KEY")
 
-// vapidSubject is the abuse contact carried in the "sub" claim of every push
-// JWT, as a mailto: or https: URI. Push services use it to reach the operator of
-// a misbehaving application server; Mozilla rejects a push without it.
-//
-// It has no default in code on purpose. A self-hosted deployment that inherited
-// one would send someone else's contact address to Google, Mozilla and Apple on
-// every push, and abuse reports about that server would arrive in the wrong
-// inbox. The value lives in the deployment config instead.
 var vapidSubject = os.Getenv("VAPID_SUBJECT")
 
 // vapidPrivateByteLen is the raw P-256 scalar behind a VAPID private key.
 const vapidPrivateByteLen = 32
 
-// describeVapidKeyProblem reports what is wrong with the configured key pair and
-// subject, or "" if they are well formed. pushEnabled deliberately does not
-// apply these checks — it only asks whether values are present, so a local run
-// with placeholders can still exercise subscribing.
 func describeVapidKeyProblem() string {
 	decoded, ok := decodeSubscriptionKey(vapidPublicKey)
 	if !ok || len(decoded) != p256dhByteLen || decoded[0] != 0x04 {
@@ -66,8 +45,6 @@ func describeVapidKeyProblem() string {
 }
 
 // logPushConfiguration says once, at startup, whether notifications are on.
-// A half-configured deployment otherwise omits the push fields from every save
-// response with nothing in a request to explain why.
 func logPushConfiguration() {
 	missing := []string{}
 	for name, value := range map[string]string{
@@ -95,15 +72,6 @@ func logPushConfiguration() {
 
 // mintManageToken returns a fresh manage token and the hash to store beside the
 // secret.
-//
-// It lives in this file rather than beside the token primitives in storage.go
-// because the rule it encodes is a push decision, not a storage one: subscribing is
-// the token's only consumer, so a deployment without VAPID keys gets no token
-// and no hash on the record rather than a field nothing will ever read. Keeping
-// it here also leaves storage.go with no dependency on push at all.
-//
-// Empty strings rather than an error, so callers need no branch — a secret that
-// could not be given a token is still worth storing unsubscribed.
 func mintManageToken() (token string, hash string) {
 	if !pushEnabled() {
 		return "", ""
@@ -119,15 +87,11 @@ func mintManageToken() (token string, hash string) {
 }
 
 // pushEnabled reports whether this deployment can send notifications at all.
-// All three values are required: a half-configured sender would subscribe senders who
-// then never hear anything.
 func pushEnabled() bool {
 	return vapidPublicKey != "" && vapidPrivateKey != "" && vapidSubject != ""
 }
 
-// maxSubscribeBodyBytes caps the /api/subscribeToUpdates request body. A real
-// subscription is well under 1 KB: an endpoint of a few hundred characters plus
-// two short keys, an id and a manage token.
+// maxSubscribeBodyBytes caps the /api/subscribeToUpdates request body.
 const maxSubscribeBodyBytes = 4 * 1024
 
 // maxPushEndpointLen bounds the endpoint URL before it is parsed.
@@ -139,16 +103,6 @@ const p256dhByteLen = 65
 const authByteLen = 16
 
 // pushEndpointHosts is the allowlist of hosts this server will POST to.
-//
-// The endpoint arrives from the client, and the server later makes an outbound
-// request to it — an unvalidated one is a server-side request forgery vector,
-// and it is a sharp one here because Redis listens on localhost and parses
-// newline-delimited inline commands. Validating at write time keeps a hostile
-// endpoint out of storage entirely rather than relying on the send path to
-// notice.
-//
-// The cost of an allowlist is that a browser shipping a new push service is
-// rejected until its host is added here. That is the right trade.
 var pushEndpointHosts = map[string]bool{
 	"fcm.googleapis.com":                true, // Chrome, Edge, Chromium forks
 	"updates.push.services.mozilla.com": true, // Firefox
@@ -357,35 +311,15 @@ const (
 	pushKindFile    = "file"
 )
 
-// pushSendTimeout bounds the outbound request to a push service. It runs on its
-// own goroutine with its own context, so this never delays a reader — but an
-// unbounded request would leak goroutines against a hanging endpoint.
 const pushSendTimeout = 15 * time.Second
 
-// pushMessageTTL is how long a push service should hold a notification that
-// cannot be delivered yet, in seconds. Generous on purpose: push services are
-// store-and-forward, so a sender whose laptop is asleep still learns their
-// secret was read when they next open it. Only after this does the message get
-// dropped for good.
 const pushMessageTTL = 24 * 60 * 60
 
-// pushPayload is what the service worker receives, encrypted end-to-end per RFC
-// 8291 — the push service relays it without being able to read it.
-//
-// It carries no human-readable label. The two-word name shown in the
-// notification is derived from the id by nameForId, which is a pure function, so
-// the worker computes "brave-otter" locally and nothing resembling a title ever
-// crosses the wire.
 type pushPayload struct {
-	Id   string `json:"id"`
-	Kind string `json:"kind"`
-	// ViewsLeft renders as "2 views left" only when positive, so the ordinary
-	// one-time notification stays a single clean line.
-	ViewsLeft int `json:"viewsLeft"`
-	// ReadAt is a Unix timestamp, not a formatted time. The worker renders
-	// Date.now() - readAt as an elapsed duration, which needs no time zone and
-	// stops a notification delivered hours late from implying "just now".
-	ReadAt int64 `json:"readAt"`
+	Id        string `json:"id"`
+	Kind      string `json:"kind"`
+	ViewsLeft int    `json:"viewsLeft"`
+	ReadAt    int64  `json:"readAt"`
 }
 
 var notifySecretReadFunc = notifySecretRead
@@ -470,12 +404,15 @@ func sendPushNotification(id string, subscription PushSubscription, payload push
 		// read several times while the browser was offline.
 	})
 	if err != nil {
+		appStats.RecordPushSend(false)
 		log.Printf("send push notification to %s: %s", pushEndpointHost(subscription.Endpoint), describeSendError(err))
 		return
 	}
 	defer response.Body.Close()
 	// Drain so the connection can be reused.
 	_, _ = io.Copy(io.Discard, response.Body)
+
+	appStats.RecordPushSend(response.StatusCode < 300)
 
 	switch {
 	case response.StatusCode == http.StatusNotFound, response.StatusCode == http.StatusGone:

@@ -13,6 +13,7 @@ Expected Redis key layout from the Go app:
   - stats:views:day:YYYYMMDD:VIEWS           -> per-day secrets created with VIEWS views
   - stats:views:file:total:VIEWS             -> lifetime files created with VIEWS downloads
   - stats:views:file:day:YYYYMMDD:VIEWS      -> per-day files created with VIEWS downloads
+  - stats:push:day:YYYYMMDD                  -> hash: outcome -> daily read-notification sends
 
 Nginx sender/receiver analytics:
   - Reads /var/log/nginx/1time.access.log plus every rotated sibling
@@ -123,6 +124,9 @@ VIEWS_TOTAL_KEY_PREFIX = "stats:views:total:"
 VIEWS_DAY_KEY_PREFIX = "stats:views:day:"
 FILE_VIEWS_TOTAL_KEY_PREFIX = "stats:views:file:total:"
 FILE_VIEWS_DAY_KEY_PREFIX = "stats:views:file:day:"
+PUSH_DAY_KEY_PREFIX = "stats:push:day:"
+# Pinned so a day with no successes still gets a succeeded column.
+PUSH_OUTCOMES = ("all", "succeeded")
 
 SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
 TAB_NAMES = (
@@ -130,6 +134,7 @@ TAB_NAMES = (
     "stored_daily",
     "page_hits_total",
     "page_hits_daily",
+    "push_daily",
     "views_total",
     "views_daily",
     "file_views_daily",
@@ -402,19 +407,19 @@ def build_views_total_rows(
     return rows
 
 
-def build_page_hits_daily_rows(
-    page_hits_daily: Dict[str, Dict[str, int]],
-    known_pages: Iterable[str] = (),
+def build_daily_field_rows(
+    daily: Dict[str, Dict[str, int]],
+    known_fields: Iterable[str] = (),
 ) -> List[List[object]]:
-    days = sorted(page_hits_daily)
-    pages = sorted(
-        set(known_pages)
-        | {page for fields in page_hits_daily.values() for page in fields}
+    days = sorted(daily)
+    fields = sorted(
+        set(known_fields)
+        | {field for values in daily.values() for field in values}
     )
 
-    rows: List[List[object]] = [["date", *pages]]
+    rows: List[List[object]] = [["date", *fields]]
     for day in days:
-        rows.append([day, *[page_hits_daily.get(day, {}).get(page, 0) for page in pages]])
+        rows.append([day, *[daily.get(day, {}).get(field, 0) for field in fields]])
 
     return rows
 
@@ -725,6 +730,13 @@ def collect_stats(
             for page, hits in sorted(fields.items(), key=lambda item: item[0])
         }
 
+    push_daily: Dict[str, Dict[str, int]] = {}
+    for key in scan_keys(client, f"{PUSH_DAY_KEY_PREFIX}*"):
+        day = key.removeprefix(PUSH_DAY_KEY_PREFIX)
+        push_daily[day] = {
+            outcome: safe_int(count) for outcome, count in client.hgetall(key).items()
+        }
+
     # View-counter distribution: how many secrets were created per view bucket.
     views_total = {
         key.removeprefix(VIEWS_TOTAL_KEY_PREFIX): safe_int(client.get(key))
@@ -758,10 +770,14 @@ def collect_stats(
     views_total_sum = sum(views_total.values())
     file_views_total_sum = sum(file_views_total.values())
 
-    page_hits_daily_rows = build_page_hits_daily_rows(
+    page_hits_daily_rows = build_daily_field_rows(
         page_hits_daily,
-        known_pages=(page for page, _ in page_hits_total),
+        known_fields=(page for page, _ in page_hits_total),
     )
+    push_daily_rows = build_daily_field_rows(push_daily, known_fields=PUSH_OUTCOMES)
+    push_window_all = sum(day.get("all", 0) for day in push_daily.values())
+    push_window_succeeded = sum(day.get("succeeded", 0) for day in push_daily.values())
+
     page_hits_daily_day_count = max(len(page_hits_daily_rows) - 1, 0)
     page_hits_daily_page_count = max(len(page_hits_daily_rows[0]) - 1, 0)
 
@@ -778,6 +794,8 @@ def collect_stats(
         ["views_multi_view_secrets", views_total_sum - views_total.get("1", 0)],
         ["views_counted_files", file_views_total_sum],
         ["views_multi_download_files", file_views_total_sum - file_views_total.get("1", 0)],
+        ["push_all_window", push_window_all],
+        ["push_succeeded_window", push_window_succeeded],
     ]
 
     page_hits_total_rows: List[List[object]] = [["page", "hits"]]
@@ -789,6 +807,7 @@ def collect_stats(
         "stored_daily": stored_daily_rows,
         "page_hits_total": page_hits_total_rows,
         "page_hits_daily": page_hits_daily_rows,
+        "push_daily": push_daily_rows,
         "views_total": views_total_rows,
         "views_daily": views_daily_rows,
         "file_views_daily": file_views_daily_rows,

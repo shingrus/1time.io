@@ -14,29 +14,27 @@ import (
 )
 
 const (
-	pageHitTotalKey        = "stats:page:hits:total"
-	pageHitDayKeyPrefix    = "stats:page:hits:day:"
-	storedTextTotalKey     = "stats:stored:text:total"
-	storedTextDayKeyPrefix = "stats:stored:text:day:"
-	storedFileTotalKey     = "stats:stored:file:total"
-	storedFileDayKeyPrefix = "stats:stored:file:day:"
-	// View-counter distribution. Keys are suffixed with the clamped view count
-	// (1, 3, 5, 10, ...), so a changed option set just adds new suffixes:
-	//   stats:views:total:<views>
-	//   stats:views:day:YYYYMMDD:<views>
-	viewsTotalKeyPrefix = "stats:views:total:"
-	viewsDayKeyPrefix   = "stats:views:day:"
-	// File download-limit distribution stays separate from text views because
-	// its bandwidth cost and product behaviour are materially different.
+	pageHitTotalKey         = "stats:page:hits:total"
+	pageHitDayKeyPrefix     = "stats:page:hits:day:"
+	storedTextTotalKey      = "stats:stored:text:total"
+	storedTextDayKeyPrefix  = "stats:stored:text:day:"
+	storedFileTotalKey      = "stats:stored:file:total"
+	storedFileDayKeyPrefix  = "stats:stored:file:day:"
+	viewsTotalKeyPrefix     = "stats:views:total:"
+	viewsDayKeyPrefix       = "stats:views:day:"
 	fileViewsTotalKeyPrefix = "stats:views:file:total:"
 	fileViewsDayKeyPrefix   = "stats:views:file:day:"
+	// stats:push:day:YYYYMMDD -> hash: outcome -> daily count. Day keys only.
+	pushOutcomeDayKeyPrefix = "stats:push:day:"
 	statsHistoryTTL         = time.Hour * 24 * 60
 	statsFlushInterval      = time.Second * 10
 	statPageCount           = 3
+	pushOutcomeCount        = 2
 )
 
 type statPageIndex int
 type storedCounterKind int
+type pushOutcomeIndex int
 
 const (
 	statPageHome statPageIndex = iota
@@ -49,13 +47,33 @@ const (
 	storedCounterFile
 )
 
+const (
+	// Overlapping, not disjoint: succeeded is a subset of all, so the failure
+	// count is all-succeeded.
+	pushOutcomeAll pushOutcomeIndex = iota
+	pushOutcomeSucceeded
+)
+
 var statPageNames = [statPageCount]string{
 	"home",
 	"blog",
 	"password",
 }
 
+var pushOutcomeNames = [pushOutcomeCount]string{
+	"all",
+	"succeeded",
+}
+
 type pageHitSnapshot [statPageCount]int64
+
+type pushOutcomeSnapshot [pushOutcomeCount]int64
+
+// Buffered in memory, written to Redis by flushLoop.
+type pendingCounters struct {
+	pageHits     pageHitSnapshot
+	pushOutcomes pushOutcomeSnapshot
+}
 
 type StatsSnapshot struct {
 	APIVersion           int              `json:"apiVersion"`
@@ -69,7 +87,7 @@ type StatsSnapshot struct {
 
 type StatsManager struct {
 	mu                   sync.Mutex
-	pendingPageHits      pageHitSnapshot
+	pending              pendingCounters
 	overallStoredSecrets atomic.Int64
 	overallStoredFiles   atomic.Int64
 }
@@ -77,7 +95,7 @@ type StatsManager struct {
 var appStats = NewStatsManager()
 
 var (
-	flushPageHitCountersFunc             = flushPageHitCounters
+	flushCountersFunc                    = flushCounters
 	getOverallStoredCounterFromRedisFunc = getOverallStoredCounterFromRedis
 	incrementStoredSecretCountersFunc    = incrementStoredSecretCounters
 )
@@ -96,7 +114,20 @@ func (s *StatsManager) Start() {
 
 func (s *StatsManager) RecordPageHit(page statPageIndex) {
 	s.mu.Lock()
-	s.pendingPageHits[page]++
+	s.pending.pageHits[page]++
+	s.mu.Unlock()
+}
+
+// RecordPushSend counts one finished send attempt. Both counters move under a
+// single lock acquisition so they always land in the same flush, and therefore
+// the same day key — recorded separately, a send straddling midnight UTC could
+// put its attempt and its success on different days and report succeeded > all.
+func (s *StatsManager) RecordPushSend(succeeded bool) {
+	s.mu.Lock()
+	s.pending.pushOutcomes[pushOutcomeAll]++
+	if succeeded {
+		s.pending.pushOutcomes[pushOutcomeSucceeded]++
+	}
 	s.mu.Unlock()
 }
 
@@ -118,7 +149,7 @@ func (s *StatsManager) GetOverallStoredFiles() int64 {
 
 func (s *StatsManager) GetSnapshot() StatsSnapshot {
 	s.mu.Lock()
-	pendingPageHits := s.pendingPageHits
+	pendingPageHits := s.pending.pageHits
 	s.mu.Unlock()
 
 	snapshot := StatsSnapshot{
@@ -161,50 +192,65 @@ func (s *StatsManager) flushLoop() {
 	defer ticker.Stop()
 
 	for range ticker.C {
-		if err := s.FlushPageHits(); err != nil {
+		if err := s.FlushCounters(); err != nil {
 			log.Println(err)
 		}
 	}
 }
 
-func (s *StatsManager) FlushPageHits() error {
-	pageHits, hasPageHits := s.snapshotPageHits()
-	if !hasPageHits {
+func (s *StatsManager) FlushCounters() error {
+	pending, hasPending := s.snapshotPending()
+	if !hasPending {
 		return nil
 	}
 
-	if err := flushPageHitCountersFunc(pageHits, time.Now().UTC()); err != nil {
-		s.mergePageHits(pageHits)
+	if err := flushCountersFunc(pending, time.Now().UTC()); err != nil {
+		s.mergePending(pending)
 		return err
 	}
 
 	return nil
 }
 
-func (s *StatsManager) snapshotPageHits() (pageHitSnapshot, bool) {
+func (s *StatsManager) snapshotPending() (pendingCounters, bool) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	if s.pendingPageHits.isEmpty() {
-		return pageHitSnapshot{}, false
+	if s.pending.isEmpty() {
+		return pendingCounters{}, false
 	}
 
-	pageHits := s.pendingPageHits
-	s.pendingPageHits = pageHitSnapshot{}
-	return pageHits, true
+	pending := s.pending
+	s.pending = pendingCounters{}
+	return pending, true
 }
 
-func (s *StatsManager) mergePageHits(pageHits pageHitSnapshot) {
+func (s *StatsManager) mergePending(pending pendingCounters) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	for page, delta := range pageHits {
-		s.pendingPageHits[page] += delta
+	for page, delta := range pending.pageHits {
+		s.pending.pageHits[page] += delta
 	}
+	for outcome, delta := range pending.pushOutcomes {
+		s.pending.pushOutcomes[outcome] += delta
+	}
+}
+
+func (p pendingCounters) isEmpty() bool {
+	return p.pageHits.isEmpty() && p.pushOutcomes.isEmpty()
 }
 
 func (p pageHitSnapshot) isEmpty() bool {
-	for _, delta := range p {
+	return hasNoDeltas(p[:])
+}
+
+func (p pushOutcomeSnapshot) isEmpty() bool {
+	return hasNoDeltas(p[:])
+}
+
+func hasNoDeltas(deltas []int64) bool {
+	for _, delta := range deltas {
 		if delta != 0 {
 			return false
 		}
@@ -254,6 +300,10 @@ func getStoredCounterTotalKey(kind storedCounterKind) string {
 
 func getPageHitDayKey(now time.Time) string {
 	return pageHitDayKeyPrefix + getStatsDay(now)
+}
+
+func getPushOutcomeDayKey(now time.Time) string {
+	return pushOutcomeDayKeyPrefix + getStatsDay(now)
 }
 
 func getViewsTotalKey(views int) string {
@@ -332,21 +382,37 @@ func incrementStoredCountersWithClient(
 	return err
 }
 
-func flushPageHitCounters(pageHits pageHitSnapshot, now time.Time) error {
+func flushCounters(pending pendingCounters, now time.Time) error {
 	client := getRedisClient()
-	dayKey := getPageHitDayKey(now)
+	pageHitDayKey := getPageHitDayKey(now)
+	pushOutcomeDayKey := getPushOutcomeDayKey(now)
 
 	_, err := client.TxPipelined(func(pipe redis.Pipeliner) error {
-		for page, delta := range pageHits {
-			if delta == 0 {
-				continue
-			}
+		// Each family guards its own Expire so a push-only flush leaves the
+		// page-hit day key alone, and vice versa.
+		if !pending.pageHits.isEmpty() {
+			for page, delta := range pending.pageHits {
+				if delta == 0 {
+					continue
+				}
 
-			pageName := statPageNames[page]
-			pipe.HIncrBy(pageHitTotalKey, pageName, delta)
-			pipe.HIncrBy(dayKey, pageName, delta)
+				pageName := statPageNames[page]
+				pipe.HIncrBy(pageHitTotalKey, pageName, delta)
+				pipe.HIncrBy(pageHitDayKey, pageName, delta)
+			}
+			pipe.Expire(pageHitDayKey, statsHistoryTTL)
 		}
-		pipe.Expire(dayKey, statsHistoryTTL)
+
+		if !pending.pushOutcomes.isEmpty() {
+			for outcome, delta := range pending.pushOutcomes {
+				if delta == 0 {
+					continue
+				}
+
+				pipe.HIncrBy(pushOutcomeDayKey, pushOutcomeNames[outcome], delta)
+			}
+			pipe.Expire(pushOutcomeDayKey, statsHistoryTTL)
+		}
 		return nil
 	})
 

@@ -88,44 +88,53 @@ func TestStatsManagerSnapshotAndMerge(t *testing.T) {
 	stats.RecordPageHit(statPageBlog)
 	stats.RecordPageHit(statPagePassword)
 
-	snapshot, ok := stats.snapshotPageHits()
+	snapshot, ok := stats.snapshotPending()
 	if !ok {
-		t.Fatal("snapshotPageHits() reported no hits")
+		t.Fatal("snapshotPending() reported no hits")
 	}
-	if snapshot[statPageBlog] != 2 {
-		t.Fatalf("blog hits = %d, want 2", snapshot[statPageBlog])
+	if snapshot.pageHits[statPageBlog] != 2 {
+		t.Fatalf("blog hits = %d, want 2", snapshot.pageHits[statPageBlog])
 	}
-	if snapshot[statPagePassword] != 1 {
-		t.Fatalf("password hits = %d, want 1", snapshot[statPagePassword])
-	}
-
-	if _, ok := stats.snapshotPageHits(); ok {
-		t.Fatal("snapshotPageHits() should clear pending hits")
+	if snapshot.pageHits[statPagePassword] != 1 {
+		t.Fatalf("password hits = %d, want 1", snapshot.pageHits[statPagePassword])
 	}
 
-	stats.mergePageHits(snapshot)
+	if _, ok := stats.snapshotPending(); ok {
+		t.Fatal("snapshotPending() should clear pending hits")
+	}
 
-	merged, ok := stats.snapshotPageHits()
+	stats.mergePending(snapshot)
+
+	merged, ok := stats.snapshotPending()
 	if !ok {
-		t.Fatal("snapshotPageHits() should see merged hits")
+		t.Fatal("snapshotPending() should see merged hits")
 	}
 	if merged != snapshot {
 		t.Fatalf("merged snapshot = %#v, want %#v", merged, snapshot)
 	}
 }
 
-func TestStatsManagerFlushPageHits(t *testing.T) {
-	originalFlush := flushPageHitCountersFunc
+func TestStatsManagerFlushCounters(t *testing.T) {
+	originalFlush := flushCountersFunc
 	t.Cleanup(func() {
-		flushPageHitCountersFunc = originalFlush
+		flushCountersFunc = originalFlush
 	})
 
 	stats := NewStatsManager()
 	called := false
-	flushPageHitCountersFunc = func(pageHits pageHitSnapshot, now time.Time) error {
+	flushCountersFunc = func(pending pendingCounters, now time.Time) error {
 		called = true
-		if pageHits[statPageHome] != 1 || pageHits[statPageBlog] != 2 {
-			t.Fatalf("flushed hits = %#v, want 1 home and 2 blog", pageHits)
+		if pending.pageHits[statPageHome] != 1 || pending.pageHits[statPageBlog] != 2 {
+			t.Fatalf("flushed hits = %#v, want 1 home and 2 blog", pending.pageHits)
+		}
+		if pending.pushOutcomes[pushOutcomeAll] != 3 {
+			t.Fatalf("flushed push sends = %d, want 3", pending.pushOutcomes[pushOutcomeAll])
+		}
+		if pending.pushOutcomes[pushOutcomeSucceeded] != 1 {
+			t.Fatalf("flushed push successes = %d, want 1", pending.pushOutcomes[pushOutcomeSucceeded])
+		}
+		if pending.pushOutcomes[pushOutcomeSucceeded] > pending.pushOutcomes[pushOutcomeAll] {
+			t.Fatal("successes must never exceed attempts")
 		}
 		return nil
 	}
@@ -133,38 +142,45 @@ func TestStatsManagerFlushPageHits(t *testing.T) {
 	stats.RecordPageHit(statPageHome)
 	stats.RecordPageHit(statPageBlog)
 	stats.RecordPageHit(statPageBlog)
+	stats.RecordPushSend(true)
+	stats.RecordPushSend(false)
+	stats.RecordPushSend(false)
 
-	if err := stats.FlushPageHits(); err != nil {
-		t.Fatalf("FlushPageHits() error = %v", err)
+	if err := stats.FlushCounters(); err != nil {
+		t.Fatalf("FlushCounters() error = %v", err)
 	}
 	if !called {
-		t.Fatal("flushPageHitCountersFunc was not called")
+		t.Fatal("flushCountersFunc was not called")
 	}
-	if _, ok := stats.snapshotPageHits(); ok {
+	if _, ok := stats.snapshotPending(); ok {
 		t.Fatal("successful flush should clear pending hits")
 	}
 }
 
-func TestStatsManagerFlushPageHitsMergesBackOnError(t *testing.T) {
-	originalFlush := flushPageHitCountersFunc
+func TestStatsManagerFlushCountersMergesBackOnError(t *testing.T) {
+	originalFlush := flushCountersFunc
 	t.Cleanup(func() {
-		flushPageHitCountersFunc = originalFlush
+		flushCountersFunc = originalFlush
 	})
 
 	stats := NewStatsManager()
 	wantErr := errors.New("redis unavailable")
-	flushPageHitCountersFunc = func(pageHits pageHitSnapshot, now time.Time) error {
+	flushCountersFunc = func(pending pendingCounters, now time.Time) error {
 		return wantErr
 	}
 
 	stats.RecordPageHit(statPagePassword)
+	stats.RecordPushSend(true)
 
-	if err := stats.FlushPageHits(); !errors.Is(err, wantErr) {
-		t.Fatalf("FlushPageHits() error = %v, want %v", err, wantErr)
+	if err := stats.FlushCounters(); !errors.Is(err, wantErr) {
+		t.Fatalf("FlushCounters() error = %v, want %v", err, wantErr)
 	}
-	snapshot, ok := stats.snapshotPageHits()
-	if !ok || snapshot[statPagePassword] != 1 {
+	snapshot, ok := stats.snapshotPending()
+	if !ok || snapshot.pageHits[statPagePassword] != 1 {
 		t.Fatalf("failed flush should restore pending hit, got %#v ok=%v", snapshot, ok)
+	}
+	if snapshot.pushOutcomes[pushOutcomeAll] != 1 || snapshot.pushOutcomes[pushOutcomeSucceeded] != 1 {
+		t.Fatalf("failed flush should restore pending push send, got %#v", snapshot)
 	}
 }
 
@@ -319,8 +335,8 @@ func TestAPIStatReturnsNoContentAndRecordsOnlyAllowedPages(t *testing.T) {
 		t.Fatalf("apiStat() body length = %d, want 0", len(response))
 	}
 
-	snapshot, ok := appStats.snapshotPageHits()
-	if !ok || snapshot[statPageBlog] != 1 {
+	snapshot, ok := appStats.snapshotPending()
+	if !ok || snapshot.pageHits[statPageBlog] != 1 {
 		t.Fatalf("blog hits after valid request = %#v, want 1 blog hit", snapshot)
 	}
 
@@ -333,7 +349,7 @@ func TestAPIStatReturnsNoContentAndRecordsOnlyAllowedPages(t *testing.T) {
 		t.Fatalf("apiStat() body length for ignored page = %d, want 0", len(response))
 	}
 
-	if _, ok := appStats.snapshotPageHits(); ok {
+	if _, ok := appStats.snapshotPending(); ok {
 		t.Fatal("ignored page should not be recorded")
 	}
 }
