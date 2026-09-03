@@ -49,7 +49,7 @@ minutes. The same applies to whales and to any single-day record.
 - `X-Forwarded-For` is set to `$remote_addr`, not `$proxy_add_x_forwarded_for`,
   to avoid duplicating the client IP behind the proxy.
 - **Open:** Cloudflare WAF rules for credential-path probes and an `/api/*`
-  allowlist (7 real endpoints: `saveSecret get secretStatus saveFile getFile stat ss`);
+  allowlist (8 real endpoints: `saveSecret get secretStatus subscribeToUpdates saveFile getFile stat ss`);
   origin firewall restricting 80/443 to Cloudflare's 22 ranges. Do **not** enable
   Bot Fight Mode on the Free plan — it has no path exemptions and would break the
   CLI and Zapier app.
