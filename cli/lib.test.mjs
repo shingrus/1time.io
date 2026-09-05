@@ -55,7 +55,7 @@ test('run send prefers stdin over env and prints the created link', async () => 
                 ok: true,
                 json: async () => ({
                     status: 'ok',
-                    newId: 'abc123',
+                    newId: 'abc123456789abcdefghij',
                 }),
             };
         },
@@ -81,7 +81,7 @@ test('run send warns when the secret is passed as a positional argv argument', a
             ok: true,
             json: async () => ({
                 status: 'ok',
-                newId: 'abc123',
+                newId: 'abc123456789abcdefghij',
             }),
         }),
     });
@@ -107,7 +107,7 @@ test('run send accepts compact --expires-in day and hour units', async () => {
                 ok: true,
                 json: async () => ({
                     status: 'ok',
-                    newId: 'abc123',
+                    newId: 'abc123456789abcdefghij',
                 }),
             };
         },
@@ -135,7 +135,7 @@ test('run send accepts --expires-in equals form', async () => {
                 ok: true,
                 json: async () => ({
                     status: 'ok',
-                    newId: 'abc123',
+                    newId: 'abc123456789abcdefghij',
                 }),
             };
         },
@@ -185,7 +185,7 @@ test('run send accepts --expires-in at the maximum boundary', async () => {
                 ok: true,
                 json: async () => ({
                     status: 'ok',
-                    newId: 'abc123',
+                    newId: 'abc123456789abcdefghij',
                 }),
             };
         },
@@ -345,7 +345,7 @@ test('run send sends the default view count', async () => {
                 ok: true,
                 json: async () => ({
                     status: 'ok',
-                    newId: 'abc123',
+                    newId: 'abc123456789abcdefghij',
                 }),
             };
         },
@@ -371,7 +371,7 @@ test('run send accepts --views', async () => {
                 ok: true,
                 json: async () => ({
                     status: 'ok',
-                    newId: 'abc123',
+                    newId: 'abc123456789abcdefghij',
                 }),
             };
         },
@@ -450,7 +450,7 @@ test('every api request carries the src=cli marker', async () => {
             storedPayload = JSON.parse(options.body);
             return {
                 ok: true,
-                json: async () => ({status: 'ok', newId: 'server-id-123'}),
+                json: async () => ({status: 'ok', newId: 'serverId123456789abcde'}),
             };
         },
     });
@@ -479,7 +479,7 @@ test('every api request carries the src=cli marker', async () => {
         fetchImpl: async (url, options) => {
             captureRequest(url, options);
             encryptedBytes = new Uint8Array(await options.body.get('file').arrayBuffer());
-            return new Response(JSON.stringify({status: 'ok', newId: 'server-file-123'}), {
+            return new Response(JSON.stringify({status: 'ok', newId: 'serverFile123456789abc'}), {
                 status: 200,
                 headers: {'Content-Type': 'application/json'},
             });
@@ -595,7 +595,7 @@ test('run read reports the remaining views on stderr', async () => {
                 ok: true,
                 json: async () => ({
                     status: 'ok',
-                    newId: 'server-id-123',
+                    newId: 'serverId123456789abcde',
                 }),
             };
         },
@@ -636,7 +636,7 @@ test('createSecretLink and revealSecret round-trip through the API protocol', as
                 ok: true,
                 json: async () => ({
                     status: 'ok',
-                    newId: 'server-id-123',
+                    newId: 'serverId123456789abcde',
                 }),
             };
         },
@@ -646,7 +646,7 @@ test('createSecretLink and revealSecret round-trip through the API protocol', as
         link: createdLink,
         fetchImpl: async (_url, options) => {
             const requestBody = JSON.parse(options.body);
-            assert.equal(requestBody.id, 'server-id-123');
+            assert.equal(requestBody.id, 'serverId123456789abcde');
             assert.equal(sha256Hex(requestBody.hashedKey), storedPayload.readTokenHash);
 
             return {
@@ -680,7 +680,7 @@ test('run send-file uploads a file and prints the created file link', async () =
             requestBody = options.body;
             return new Response(JSON.stringify({
                 status: 'ok',
-                newId: 'file123',
+                newId: 'file123456789abcdefghi',
             }), {
                 status: 200,
                 headers: {'Content-Type': 'application/json'},
@@ -715,7 +715,7 @@ test('run send-file accepts --expires-in', async () => {
             requestBody = options.body;
             return new Response(JSON.stringify({
                 status: 'ok',
-                newId: 'file123',
+                newId: 'file123456789abcdefghi',
             }), {
                 status: 200,
                 headers: {'Content-Type': 'application/json'},
@@ -741,7 +741,7 @@ test('run send-file accepts --views and omits the field for single downloads', a
         requestBodies.push(options.body);
         return new Response(JSON.stringify({
             status: 'ok',
-            newId: 'file123',
+            newId: 'file123456789abcdefghi',
         }), {
             status: 200,
             headers: {'Content-Type': 'application/json'},
@@ -808,7 +808,7 @@ test('run read-file reports the remaining downloads on stderr', async () => {
             encryptedBytes = new Uint8Array(await options.body.get('file').arrayBuffer());
             return new Response(JSON.stringify({
                 status: 'ok',
-                newId: 'server-file-123',
+                newId: 'serverFile123456789abc',
             }), {
                 status: 200,
                 headers: {'Content-Type': 'application/json'},
@@ -861,7 +861,7 @@ test('run read-file downloads the decrypted file into the current directory', as
             encryptedBytes = new Uint8Array(await formData.get('file').arrayBuffer());
             return new Response(JSON.stringify({
                 status: 'ok',
-                newId: 'server-file-123',
+                newId: 'serverFile123456789abc',
             }), {
                 status: 200,
                 headers: {'Content-Type': 'application/json'},
@@ -882,7 +882,7 @@ test('run read-file downloads the decrypted file into the current directory', as
         cwd: outputDir,
         fetchImpl: async (_url, options) => {
             const requestBody = JSON.parse(options.body);
-            assert.equal(requestBody.id, 'server-file-123');
+            assert.equal(requestBody.id, 'serverFile123456789abc');
             assert.equal(sha256Hex(requestBody.hashedKey), storedReadTokenHash);
 
             return new Response(encryptedBytes, {
@@ -903,7 +903,7 @@ test('read-file reports when a passphrase-protected file link is missing the pas
     const stdout = createWritableCapture();
     const stderr = createWritableCapture();
 
-    const exitCode = await run(['read-file', 'https://1time.io/f/#AbCdEfGhIjKlMnOpQr-_file123'], {
+    const exitCode = await run(['read-file', 'https://1time.io/f/#AbCdEfGhIjKlMnOpQr-_file123456789abcdefghi'], {
         stdin: createStdin('', true),
         stdout: stdout.stream,
         stderr: stderr.stream,
@@ -944,7 +944,7 @@ test('read-file picks a unique filename when the decrypted name already exists',
             encryptedBytes = new Uint8Array(await formData.get('file').arrayBuffer());
             return new Response(JSON.stringify({
                 status: 'ok',
-                newId: 'server-file-123',
+                newId: 'serverFile123456789abc',
             }), {
                 status: 200,
                 headers: {'Content-Type': 'application/json'},
@@ -965,7 +965,7 @@ test('read-file picks a unique filename when the decrypted name already exists',
         cwd: outputDir,
         fetchImpl: async (_url, options) => {
             const requestBody = JSON.parse(options.body);
-            assert.equal(requestBody.id, 'server-file-123');
+            assert.equal(requestBody.id, 'serverFile123456789abc');
             assert.equal(sha256Hex(requestBody.hashedKey), storedReadTokenHash);
 
             return new Response(encryptedBytes, {
@@ -993,7 +993,7 @@ test('read-file fails before fetching when --out already exists', async () => {
     const stderr = createWritableCapture();
     let fetchCalled = false;
 
-    const exitCode = await run(['read-file', '--out', targetPath, 'https://1time.io/f/#AbCdEfGhIjKlMnOpQr-_file123'], {
+    const exitCode = await run(['read-file', '--out', targetPath, 'https://1time.io/f/#AbCdEfGhIjKlMnOpQr-_file123456789abcdefghi'], {
         stdin: createStdin('', true),
         stdout: stdout.stream,
         stderr: stderr.stream,

@@ -6,6 +6,7 @@ import {
     hashSecretKey,
     postJson,
 } from '../lib/util.js';
+import {isValidLinkToken} from '../lib/protocol.mjs';
 
 // A read may only be retried when our backend explicitly reports contention
 // (503 + {"status":"retry"}). Anything else — including a bare proxy 503 — may
@@ -24,6 +25,7 @@ if (form) {
     const decryptedSection = form.querySelector<HTMLElement>('[data-state="decrypted"]')!;
     const decryptedBody = form.querySelector<HTMLElement>('[data-decrypted-body]')!;
     const noMessageSection = form.querySelector<HTMLElement>('[data-state="no-message"]')!;
+    const brokenLinkSection = form.querySelector<HTMLElement>('[data-state="broken-link"]')!;
     const viewsLeftNote = form.querySelector<HTMLElement>('[data-views-left]')!;
     const postReadCta = form.querySelector<HTMLElement>('[data-state="post-read-cta"]')!;
     const revealBtn = form.querySelector<HTMLButtonElement>('[data-reveal]')!;
@@ -39,15 +41,24 @@ if (form) {
 
     const hash = window.location.hash || '';
     const linkKey = hash.length > 1 ? hash.slice(1) : '';
-    if (!linkKey || linkKey.length <= Constants.randomKeyLen) {
+    const linkIsBroken = !isValidLinkToken(linkKey);
+    if (linkIsBroken) {
         qrToggle.disabled = true;
     }
 
     const showOnly = (visible: HTMLElement) => {
-        for (const el of [preReadSection, passphraseSection, decryptedSection, noMessageSection]) {
+        for (const el of [preReadSection, passphraseSection, decryptedSection, noMessageSection, brokenLinkSection]) {
             el.toggleAttribute('hidden', el !== visible);
         }
     };
+
+    // Decided at load, not on click. The fragment is already in hand, so the
+    // confirm gate has nothing to protect here — no request will ever be made —
+    // and "Someone sent you a secret" is a claim a nameless fragment cannot back.
+    if (linkIsBroken) {
+        qrAction.toggleAttribute('hidden', true);
+        showOnly(brokenLinkSection);
+    }
 
     const setLoading = (loading: boolean) => {
         revealBtn.disabled = loading;
@@ -103,9 +114,12 @@ if (form) {
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
         wrongKeyAlert.toggleAttribute('hidden', true);
-        if (!linkKey || linkKey.length <= Constants.randomKeyLen) {
+        // A fragment that is not exactly randomKeyLen + storageIdLen base64url
+        // characters cannot name a secret, so this is a cut or mangled link, not
+        // a consumed one. Reporting it as "gone" was both wrong and unactionable.
+        if (!isValidLinkToken(linkKey)) {
             qrAction.toggleAttribute('hidden', true);
-            showOnly(noMessageSection);
+            showOnly(brokenLinkSection);
             return;
         }
         setLoading(true);

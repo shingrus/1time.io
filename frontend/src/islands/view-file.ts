@@ -1,5 +1,5 @@
 import {Constants, formatRemaining} from '../lib/util.js';
-import {hashSecretKey} from '../lib/protocol.mjs';
+import {hashSecretKey, isValidLinkToken} from '../lib/protocol.mjs';
 import {formatBytes, getFile} from '../lib/fileApi.js';
 import {decryptFile, downloadFile} from '../lib/fileProtocol.js';
 
@@ -11,6 +11,7 @@ if (form) {
     const preReadSection = form.querySelector<HTMLElement>('[data-state="pre-read"]')!;
     const downloadedSection = form.querySelector<HTMLElement>('[data-state="downloaded"]')!;
     const noMessageSection = form.querySelector<HTMLElement>('[data-state="no-message"]')!;
+    const brokenLinkSection = form.querySelector<HTMLElement>('[data-state="broken-link"]')!;
     const errorSection = form.querySelector<HTMLElement>('[data-state="error"]')!;
     const downloadBtn = form.querySelector<HTMLButtonElement>('[data-download]')!;
     const downloadLabel = form.querySelector<HTMLElement>('[data-download-label]')!;
@@ -24,10 +25,16 @@ if (form) {
 
     // Terminal states are mutually exclusive; the passphrase field overlays pre-read.
     const showOnly = (visible: HTMLElement) => {
-        for (const el of [preReadSection, passphraseSection, downloadedSection, noMessageSection, errorSection]) {
+        for (const el of [preReadSection, passphraseSection, downloadedSection, noMessageSection, errorSection, brokenLinkSection]) {
             el.toggleAttribute('hidden', el !== visible);
         }
     };
+
+    // See view-secret.ts: a fragment that cannot name a file is known bad at load,
+    // so there is nothing to confirm and nothing to consume.
+    if (!isValidLinkToken(linkKey)) {
+        showOnly(brokenLinkSection);
+    }
 
     let isDownloading = false;
     type Phase = 'idle' | 'downloading' | 'decrypting';
@@ -77,8 +84,10 @@ if (form) {
             return; 
         }
         wrongKeyAlert.toggleAttribute('hidden', true);
-        if (!linkKey || linkKey.length <= Constants.randomKeyLen) {
-            showOnly(noMessageSection);
+        // See view-secret.ts: a fragment of the wrong length or alphabet is a cut
+        // link, not a consumed one.
+        if (!isValidLinkToken(linkKey)) {
+            showOnly(brokenLinkSection);
             return;
         }
 

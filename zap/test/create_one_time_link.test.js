@@ -15,7 +15,8 @@ function fakeZ(captured) {
     return {
         request: async (opts) => {
             captured.body = opts.body;
-            return {data: {status: 'ok', newId: 'NEWID123'}};
+            // 22 base64url chars — the real id length parseSecretLink enforces.
+            return {data: {status: 'ok', newId: 'NEWID123456789abcdefgh'}};
         },
         errors: {Error: class ZError extends Error {}},
     };
@@ -27,7 +28,7 @@ test('produces a link whose secret decrypts (no passphrase)', async () => {
         inputData: {secret: 'hunter2-correct-horse', duration_days: 1},
     });
 
-    assert.match(out.link, /\/v\/#.+NEWID123$/);
+    assert.match(out.link, /\/v\/#.+NEWID123456789abcdefgh$/);
     assert.equal(captured.body.duration, 86400); // days -> seconds
 
     const {randomKey} = parseSecretLink(out.link);

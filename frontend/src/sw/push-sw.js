@@ -26,6 +26,9 @@ const ACTIONS = {
 
 const FALLBACK_TITLE = 'Your secret was viewed';
 const SECRETS_PATH = '/my-secrets';
+// Redirects to SECRETS_PATH. A path of its own so a click is countable in the
+// access log; nothing else on the site links to it.
+const CLICK_PATH = '/pn';
 
 /**
  * Elapsed time as a phrase, from a Unix timestamp.
@@ -127,7 +130,7 @@ self.addEventListener('notificationclick', (event) => {
             // Absolute, not relative. The spec says openWindow resolves against
             // the worker's URL, but Safari does not do so reliably and simply
             // opens nothing.
-            const target = new URL(`${SECRETS_PATH}/`, self.location.origin).href;
+            const target = new URL(CLICK_PATH, self.location.origin).href;
 
             const windows = await self.clients.matchAll({type: 'window', includeUncontrolled: true});
             const open = windows.find((client) => new URL(client.url).pathname.startsWith(SECRETS_PATH));

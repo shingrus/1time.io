@@ -36,6 +36,29 @@ const WORKER_URL = '/push-sw.js';
  */
 
 /**
+ * iOS and iPadOS expose Web Push only to a web app installed on the Home
+ * Screen, never to an ordinary Safari tab. Checked explicitly rather than left
+ * to the API sniffing below, so a Safari release that starts exposing the
+ * interfaces in a tab cannot put a control on screen that could only fail.
+ */
+function iosOutsideHomeScreen() {
+    if (typeof navigator === 'undefined' || typeof window === 'undefined') return false;
+
+    // iPadOS reports a Macintosh user agent, so touch points are what separate
+    // it from a desktop Mac, where maxTouchPoints is 0.
+    const isApplePhoneOrTablet =
+        /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+        (/Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints > 1);
+    if (!isApplePhoneOrTablet) return false;
+
+    const installed =
+        window.navigator.standalone === true ||
+        window.matchMedia?.('(display-mode: standalone)').matches === true;
+
+    return !installed;
+}
+
+/**
  * Whether this browser can subscribe at all.
  *
  * `vapidPublicKey` is absent whenever the deployment has no push configured, so
@@ -48,7 +71,8 @@ export function pushAvailable(vapidPublicKey) {
         window.isSecureContext &&
         'serviceWorker' in navigator &&
         'PushManager' in window &&
-        typeof Notification !== 'undefined',
+        typeof Notification !== 'undefined' &&
+        !iosOutsideHomeScreen(),
     );
 }
 
@@ -209,6 +233,11 @@ export async function subscribeToUpdates({id, manageToken, vapidPublicKey}) {
 export async function mountNotifyControl(card, {id, isFile, manageToken, vapidPublicKey}) {
     if (!id || !manageToken || !pushAvailable(vapidPublicKey)) return;
 
+    // Denied is permanent until the sender changes it in site settings, and no
+    // browser will re-prompt. Leave the template's "Check if it's been read"
+    // link in place rather than swapping in a control that cannot work.
+    if (permissionState() === 'denied') return;
+
     // Takes the place of the "Check if it's been read" link, which points at the
     // same destination the notification opens. Same answer, one pulled and one
     // pushed — so they are alternatives rather than two controls. Only swapped
@@ -261,27 +290,14 @@ export async function mountNotifyControl(card, {id, isFile, manageToken, vapidPu
     };
 
     /**
-     * Blocked in this browser. Browsers will not re-prompt once denied, so the
-     * control stays visible but inert and the row offers the manual check.
+     * Denied at the prompt. Restores the exact node the template rendered, so
+     * the row ends up as if notifications had never been offered.
      */
-    const renderBlocked = () => {
-        toggle.textContent = IDLE_LABEL;
-        toggle.disabled = true;
-
-        const readAnyway = document.createElement('a');
-        readAnyway.className = 'link-extension';
-        readAnyway.href = '/my-secrets/';
-        readAnyway.textContent = "Check if it's been read";
-
-        status.replaceChildren(readAnyway);
-        status.hidden = false;
-        statusSeparator.hidden = false;
+    const restoreReadLink = () => {
+        statusSeparator.remove();
+        status.remove();
+        toggle.replaceWith(readLink);
     };
-
-    if (permissionState() === 'denied') {
-        renderBlocked();
-        return;
-    }
 
     const subscribe = async () => {
         render({label: IDLE_LABEL, enabled: false, message: 'Setting up...'});
@@ -311,7 +327,7 @@ export async function mountNotifyControl(card, {id, isFile, manageToken, vapidPu
                 });
                 return;
             case 'denied':
-                renderBlocked();
+                restoreReadLink();
                 return;
             default:
                 render({label: 'Try again', enabled: true, message: "Couldn't set up notifications"});

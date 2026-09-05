@@ -1,5 +1,6 @@
 export const ProtocolConstants = {
     randomKeyLen: 20,
+    storageIdLen: 22,
     defaultDuration: 1,
     defaultHost: '1time.io',
     hkdfSalt: 'onetimelink:v2',
@@ -277,6 +278,17 @@ export function buildSecretLink(origin, randomString, newId) {
     return `${normalizeOrigin(origin)}/v/#${randomString}${newId}`;
 }
 
+// A link fragment is exactly randomKeyLen + storageIdLen base64url characters —
+// nothing else can name a secret. The old check only rejected tokens of
+// randomKeyLen or fewer, so a link cut anywhere in the middle reached the server
+// and came back "no message", indistinguishable from an already-read secret.
+// Callers use this to tell the reader their link is broken rather than gone.
+export function isValidLinkToken(token) {
+    const s = String(token ?? '');
+    return s.length === ProtocolConstants.randomKeyLen + ProtocolConstants.storageIdLen
+        && /^[A-Za-z0-9_-]+$/.test(s);
+}
+
 export function parseSecretLink(link, fallbackHost = ProtocolConstants.defaultHost) {
     const trimmed = String(link || '').trim();
     if (!trimmed) {
@@ -302,7 +314,7 @@ export function parseSecretLink(link, fallbackHost = ProtocolConstants.defaultHo
         token = trimmed.slice(1);
     }
 
-    if (!token || token.length <= ProtocolConstants.randomKeyLen) {
+    if (!isValidLinkToken(token)) {
         throw new Error('Invalid secret link');
     }
 

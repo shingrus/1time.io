@@ -1,0 +1,26 @@
+---
+// Fallback for the notification click target. nginx answers /pn with a 302
+// (configs/nginx/1time.conf), which wins as an exact match, so this page only
+// serves where that block is absent: a self-hosted deployment behind another
+// server, or the window between shipping the bundle and reloading nginx.
+//
+// No BaseLayout on purpose. The header, nav and CSS would delay a page nobody
+// is meant to look at.
+---
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="robots" content="noindex, nofollow" />
+        <meta http-equiv="refresh" content="0;url=/my-secrets/" />
+        <title>Redirecting…</title>
+        <script is:inline>
+            // replace(), not href: Back would otherwise return here and bounce
+            // forward again.
+            location.replace('/my-secrets/');
+        </script>
+    </head>
+    <body>
+        <a href="/my-secrets/">Continue to My Secrets</a>
+    </body>
+</html>

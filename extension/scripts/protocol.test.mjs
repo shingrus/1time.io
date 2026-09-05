@@ -26,7 +26,9 @@ test('encrypt -> decrypt round-trips and the auth hash is stable', async () => {
 
 test('secret link parses back to its key and id', () => {
     const key = getRandomString(ProtocolConstants.randomKeyLen);
-    const id = 'abc123';
+    // A real storage id is always storageIdLen base64url chars; parseSecretLink
+    // now enforces that, so a short stand-in would be rejected as a broken link.
+    const id = getRandomString(ProtocolConstants.storageIdLen);
     const parsed = parseSecretLink(buildSecretLink('https://1time.io', key, id));
 
     assert.equal(parsed.randomKey, key);

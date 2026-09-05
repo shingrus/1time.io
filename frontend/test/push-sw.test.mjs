@@ -141,7 +141,7 @@ test('the payload carries no human-readable label', async () => {
     assert.notEqual(NAME, '');
 });
 
-test('clicking opens My Secrets when no window is open', async () => {
+test('clicking opens the /pn redirect when no window is open', async () => {
     const worker = loadWorker();
     let opened = null;
     let closed = false;
@@ -163,9 +163,12 @@ test('clicking opens My Secrets when no window is open', async () => {
     });
     await pending;
 
+    // /pn rather than /my-secrets/ directly: it 302s to the same place, and the
+    // hop is what makes a notification click countable in the access log.
+    //
     // Absolute rather than relative, because Safari does not resolve a relative
     // openWindow URL against the worker's origin.
-    assert.equal(opened, 'https://1time.io/my-secrets/');
+    assert.equal(opened, 'https://1time.io/pn');
     assert.equal(closed, true);
 });
 

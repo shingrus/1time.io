@@ -118,6 +118,30 @@ const description = 'Open an encrypted secret link shared through 1time.io. The 
                 </div>
             </div>
 
+            {/* Shown instead of "gone" when the fragment cannot name a secret at
+                all. The key lives after the #, and chat apps and mail wrappers cut
+                long URLs, so this is a mangled link rather than a consumed one —
+                saying "gone" here is simply wrong and leaves the reader nothing
+                to act on. reply=5 keeps it countable in the access log. */}
+            <div data-state="broken-link" hidden>
+                <div class="confirm-gate">
+                    <div class="confirm-gate-icon confirm-gate-icon-muted" aria-hidden="true">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M9 17H7A5 5 0 0 1 7 7h2"/>
+                            <path d="M15 7h2a5 5 0 0 1 4 8"/>
+                            <line x1="8" y1="12" x2="12" y2="12"/>
+                            <line x1="2" y1="2" x2="22" y2="22"/>
+                        </svg>
+                    </div>
+                    <h2 class="confirm-gate-title">This link is incomplete</h2>
+                    <p class="confirm-gate-desc">
+                        The part after <strong>#</strong> carries the decryption key, and chat
+                        apps sometimes cut it off. Go back to the message and copy the whole link.
+                    </p>
+                    <a class="btn btn-primary btn-lg" href="/?reply=5">Create your own secret link</a>
+                </div>
+            </div>
+
             <div data-state="post-read-cta" hidden>
                 <div class="view-cta">
                     <div class="view-cta-box">
