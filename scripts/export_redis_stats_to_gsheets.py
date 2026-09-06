@@ -53,14 +53,8 @@ Nginx sender/receiver analytics:
     whose values already match the sheet are skipped entirely.
 
 Hourly tab (hourly_raw), keyed "YYYY-MM-DDTHH" in column A:
-  - A ROLLING WINDOW of the last HOURLY_RETENTION_DAYS days, not a history.
-    The block is rewritten in place on every run and anything left below it is
-    blanked, so the tab stays a fixed handful of rows instead of growing by 24
-    a day. Older hours are gone for good once they leave the window - the
-    daily history lives in senders_receivers, which is still merged and kept.
-  - One row per (date, hour) in UTC, including hours with no traffic and days
-    with none at all, so the window always has the same shape and a chart
-    reading a fixed range never sees a hole.
+  - One row per (date, hour) in UTC, including hours with no traffic, so a
+    weekday baseline that averages a given hour across days keeps a full pool.
   - complete=0 marks the hour still in progress; it is rewritten on each run
     until the hour elapses. Charts should drop incomplete rows.
   - *_cum columns are running totals within the day. Event counts simply add
@@ -68,7 +62,7 @@ Hourly tab (hourly_raw), keyed "YYYY-MM-DDTHH" in column A:
     both 09:00 and 14:00 is one active user rather than two - so it cannot be
     reproduced with SUM() over the per-hour columns.
   - dow is the ISO weekday (Mon=1 .. Sun=7), written so the sheet can filter
-    by weekday without parsing dates.
+    a weekday pool without parsing dates.
   - Built from the same parse and the same per-date file selection as
     senders_receivers, so the two tabs can never disagree.
 
@@ -148,9 +142,7 @@ TAB_NAMES = (
     "hourly_raw",
 )
 # Tabs merged row-by-row on a key in column A, rather than cleared and rewritten.
-MERGED_TAB_NAMES = ("senders_receivers",)
-# Tabs holding a rolling window: the same rows are overwritten each run.
-ROLLING_TAB_NAMES = ("hourly_raw",)
+MERGED_TAB_NAMES = ("senders_receivers", "hourly_raw")
 LEGACY_TAB_NAMES = ("file_views_total",)
 # Every rotated sibling, not just .1 - the rotation window is the history.
 DEFAULT_NGINX_LOG_PATHS = (
@@ -185,12 +177,6 @@ HOURLY_EVENT_FIELDS = {
     "text_receivers": "text_reads",
     "file_receivers": "file_reads",
 }
-# How many days the hourly tab keeps, today included. Two leaves yesterday in
-# place so today's curve has something to sit against; 1 is "today only", 7
-# restores a week. Changing it only costs rows in the sheet - the parse already
-# covers the whole rotation window either way.
-HOURLY_RETENTION_DAYS = 2
-
 HOURLY_COLUMNS = [
     "ts_key",
     "date",
@@ -652,32 +638,24 @@ def build_hourly_rows(
     selected: Dict[str, Dict[str, object]],
     now: dt.datetime | None = None,
 ) -> List[List[object]]:
-    """One row per (date, hour) over the trailing HOURLY_RETENTION_DAYS days.
+    """One row per (date, hour), including hours with no traffic.
 
-    The window is driven by the clock, not by what the logs happen to contain,
-    so a day with no traffic still gets its 24 zero rows and the block keeps a
-    predictable size. Empty hours are emitted for the same reason: a chart
-    reading a fixed range must see a zero rather than a hole. Cumulative
-    columns are running totals within the day - events simply add up, but
-    dau_cum is a running *union*, because the same person active at 09:00 and
-    14:00 is one active user, not two.
+    Empty hours are emitted on purpose: the weekday baseline averages a given
+    hour across days, so a missing row would silently shrink the pool rather
+    than contribute a zero. Cumulative columns are running totals within the
+    day - events simply add up, but dau_cum is a running *union*, because the
+    same person active at 09:00 and 14:00 is one active user, not two.
     """
     now = now or dt.datetime.now(dt.timezone.utc)
     today = now.date().isoformat()
 
+    rows: List[List[object]] = [list(HOURLY_COLUMNS)]
     for day in sorted(selected):
         if day > today:
             warn(f"Ignoring nginx log entries dated in the future: {day}")
+            continue
 
-    window = [
-        (now.date() - dt.timedelta(days=offset)).isoformat()
-        for offset in reversed(range(HOURLY_RETENTION_DAYS))
-    ]
-
-    rows: List[List[object]] = [list(HOURLY_COLUMNS)]
-    for day in window:
-        day_bucket = selected.get(day) or {}
-        hours: Dict[int, Dict[str, object]] = day_bucket.get("hours", {})  # type: ignore[assignment]
+        hours: Dict[int, Dict[str, object]] = selected[day]["hours"]  # type: ignore[assignment]
         last_hour = now.hour if day == today else 23
         day_of_week = dt.date.fromisoformat(day).isoweekday()
 
@@ -1107,55 +1085,6 @@ def write_merged_tab(
     return changed_row_count
 
 
-def write_rolling_tab(
-    service,
-    spreadsheet_id: str,
-    sheet_id: int,
-    title: str,
-    rows: Sequence[Sequence[object]],
-) -> int:
-    """Rewrite a fixed-size tab in place and blank whatever sits below it.
-
-    The rows are reused rather than appended to, so the tab never grows: row N
-    always holds the same slot of the rolling window. The block shrinks
-    whenever the day rolls over (a fresh day contributes one hour, not 24), and
-    the first run after switching a tab to this writer replaces a long history,
-    so the leftover rows have to be cleared explicitly.
-
-    Only the columns this script owns are written. A values().clear() over the
-    whole tab would take out any formula column the sheet keeps to the right.
-    """
-    if not rows:
-        return 0
-
-    column_count = max(len(row) for row in rows)
-    column_end = column_letter(column_count)
-    values = [pad_row(row, column_count) for row in rows]
-
-    data = [{
-        "range": f"{title}!A1:{column_end}{len(values)}",
-        "values": values,
-    }]
-
-    existing_row_count = len(read_tab_rows(service, spreadsheet_id, title))
-    if existing_row_count > len(values):
-        data.append({
-            "range": f"{title}!A{len(values) + 1}:{column_end}{existing_row_count}",
-            "values": [
-                [""] * column_count
-                for _ in range(existing_row_count - len(values))
-            ],
-        })
-
-    service.spreadsheets().values().batchUpdate(
-        spreadsheetId=spreadsheet_id,
-        body={"valueInputOption": "RAW", "data": data},
-    ).execute()
-    format_tab(service, spreadsheet_id, sheet_id, values)
-
-    return len(values) - 1
-
-
 def pad_row(
     row: Sequence[object],
     column_count: int,
@@ -1231,18 +1160,6 @@ def main() -> int:
                 rows=rows,
             )
             print(f"Updated/appended {changed_rows} changed rows in tab {title}")
-        elif base_name in ROLLING_TAB_NAMES:
-            written_rows = write_rolling_tab(
-                service=service,
-                spreadsheet_id=args.spreadsheet_id,
-                sheet_id=sheet_map[title],
-                title=title,
-                rows=rows,
-            )
-            print(
-                f"Rewrote {written_rows} rolling rows "
-                f"({HOURLY_RETENTION_DAYS}-day window) in tab {title}"
-            )
         else:
             write_tab(
                 service=service,
