@@ -1,5 +1,6 @@
 import {parseArgs} from 'node:util';
 import {readFile, writeFile, stat} from 'node:fs/promises';
+import {createRequire} from 'node:module';
 import {basename, parse, resolve} from 'node:path';
 import {
     ProtocolConstants,
@@ -28,6 +29,11 @@ const maxViews = 10;
 // Self-reported log marker mirroring the extension's ?src=ext. Not trustworthy
 // attribution — anyone can send it — so nothing may gate on it.
 const clientSource = 'cli';
+
+// package.json ships in the npm tarball even though it is not in "files".
+const {version: cliVersion} = createRequire(import.meta.url)('./package.json');
+// Self-reported, like ?src=cli — a readable log marker, never gated on.
+const userAgent = `1time-cli/${cliVersion}`;
 
 function apiUrl(origin, path) {
     return buildApiUrl(origin, `${path}?src=${clientSource}`);
@@ -152,6 +158,7 @@ async function postJson({origin, path, payload, fetchImpl}) {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
+            'User-Agent': userAgent,
         },
         body: JSON.stringify(payload),
     });
@@ -273,6 +280,9 @@ async function createFileLink({host, filePath, passphrase = '', expiresInSeconds
 
     const response = await fetchImpl(apiUrl(origin, 'saveFile'), {
         method: 'POST',
+        headers: {
+            'User-Agent': userAgent,
+        },
         body: formData,
     });
     if (!response.ok) {
@@ -309,6 +319,7 @@ async function readFileLink({host, link, passphrase = '', outPath, cwd = process
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
+            'User-Agent': userAgent,
         },
         body: JSON.stringify({
             id: parsedLink.id,

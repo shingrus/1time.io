@@ -427,15 +427,15 @@ test('run send rejects non-numeric --views values', async () => {
     assert.match(stderr.getOutput(), /"2\.5": use a whole number between 1 and 10/);
 });
 
-test('every api request carries the src=cli marker', async () => {
+test('every api request carries the src=cli marker and the 1time-cli User-Agent', async () => {
     const sourceDir = await mkdtemp(join(tmpdir(), '1time-cli-source-'));
     const outputDir = await mkdtemp(join(tmpdir(), '1time-cli-output-'));
     const sourcePath = join(sourceDir, 'report.txt');
     await writeFile(sourcePath, 'round-trip file');
 
     const requests = [];
-    const captureRequest = (url) => {
-        requests.push(url);
+    const captureRequest = (url, options) => {
+        requests.push({url, options});
     };
 
     const sendStdout = createWritableCapture();
@@ -501,15 +501,16 @@ test('every api request carries the src=cli marker', async () => {
         },
     });
 
-    assert.deepEqual(requests.map((url) => new URL(url).pathname), [
+    assert.deepEqual(requests.map(({url}) => new URL(url).pathname), [
         '/api/saveSecret',
         '/api/get',
         '/api/saveFile',
         '/api/getFile',
     ]);
 
-    for (const url of requests) {
+    for (const {url, options} of requests) {
         assert.equal(new URL(url).searchParams.get('src'), 'cli', `missing src=cli on ${url}`);
+        assert.match(options.headers['User-Agent'], /^1time-cli\/\d+\.\d+\.\d+$/, `missing 1time-cli User-Agent on ${url}`);
     }
 });
 
