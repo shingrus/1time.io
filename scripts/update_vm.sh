@@ -3,6 +3,7 @@
 # Deploy 1time.io to a Debian/Ubuntu host.
 #
 #   sudo env REDIS_PASS=... VAPID_PUBLIC_KEY=... VAPID_PRIVATE_KEY=... \
+#       CF_API_TOKEN=... CF_ZONE_ID=... \
 #       ./scripts/update_vm.sh --init       first time on a fresh box
 #   sudo ./scripts/update_vm.sh             every deploy after that
 #
@@ -17,6 +18,12 @@
 # --init additionally installs packages, creates the service user, and writes
 # /etc/1time/env from the environment. It refuses to overwrite an existing env
 # file; edit that file directly to change secrets.
+#
+# If CF_API_TOKEN and CF_ZONE_ID are set in /etc/1time/env, every run (init or
+# update) purges the whole Cloudflare cache once nginx has reloaded. The HTML
+# pages carry a long edge TTL (see configs/nginx/1time.conf) so this purge is
+# what keeps a deploy from serving stale HTML at the edge for up to a day.
+# The token needs only the zone's "Cache Purge" permission.
 
 set -euo pipefail
 
@@ -51,6 +58,8 @@ REDIS_PASS="${REDIS_PASS:-}"
 VAPID_PUBLIC_KEY="${VAPID_PUBLIC_KEY:-}"
 VAPID_PRIVATE_KEY="${VAPID_PRIVATE_KEY:-}"
 VAPID_SUBJECT="${VAPID_SUBJECT:-mailto:info@1time.io}"
+CF_API_TOKEN="${CF_API_TOKEN:-}"
+CF_ZONE_ID="${CF_ZONE_ID:-}"
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 BIN_SOURCE="${REPO_ROOT}/bin/1time-api"
@@ -107,7 +116,7 @@ fi
 if [[ "${INIT_MODE}" -eq 1 ]]; then
     export DEBIAN_FRONTEND=noninteractive
     apt-get update
-    apt-get install -y nginx redis-server rsync
+    apt-get install -y nginx redis-server rsync curl
 
     if ! id -u "${APP_USER}" >/dev/null 2>&1; then
         adduser --disabled-password --gecos "" "${APP_USER}"
@@ -134,6 +143,9 @@ FILE_STORAGE_DIR=${FILE_STORAGE_DIR}
 VAPID_PUBLIC_KEY=${VAPID_PUBLIC_KEY}
 VAPID_PRIVATE_KEY=${VAPID_PRIVATE_KEY}
 VAPID_SUBJECT=${VAPID_SUBJECT}
+# Optional: Cloudflare cache purge after every deploy. Leave blank to skip it.
+CF_API_TOKEN=${CF_API_TOKEN}
+CF_ZONE_ID=${CF_ZONE_ID}
 ENVEOF
         chown root:"${APP_GROUP}" "${ENV_FILE}"
         chmod 0640 "${ENV_FILE}"
@@ -200,5 +212,34 @@ if [[ "${INIT_MODE}" -eq 1 ]]; then
     systemctl enable --now nginx
 fi
 systemctl reload nginx
+
+# --- Cloudflare cache purge ------------------------------------------------
+# Read the persisted values, not the shell's: an update run is invoked with no
+# env at all (see the usage comment at the top), so CF_API_TOKEN/CF_ZONE_ID
+# here are almost always empty even when the env file has them.
+CF_API_TOKEN_PERSISTED=""
+CF_ZONE_ID_PERSISTED=""
+if [[ -f "${ENV_FILE}" ]]; then
+    CF_API_TOKEN_PERSISTED="$(sed -n 's/^CF_API_TOKEN=//p' "${ENV_FILE}")"
+    CF_ZONE_ID_PERSISTED="$(sed -n 's/^CF_ZONE_ID=//p' "${ENV_FILE}")"
+fi
+
+if [[ -n "${CF_API_TOKEN_PERSISTED}" && -n "${CF_ZONE_ID_PERSISTED}" ]]; then
+    echo "Purging Cloudflare cache for zone ${CF_ZONE_ID_PERSISTED}..."
+    cf_response="$(curl -s -o /dev/null -w '%{http_code}' \
+        -X POST "https://api.cloudflare.com/client/v4/zones/${CF_ZONE_ID_PERSISTED}/purge_cache" \
+        -H "Authorization: Bearer ${CF_API_TOKEN_PERSISTED}" \
+        -H "Content-Type: application/json" \
+        --data '{"purge_everything":true}')" || cf_response="curl failed"
+    if [[ "${cf_response}" != "200" ]]; then
+        # Best-effort: a purge failure should not fail an otherwise-good deploy,
+        # but it must be visible — the edge will keep serving the previous
+        # HTML for up to the s-maxage in configs/nginx/1time.conf until this
+        # is retried (rerun this script, or purge manually in the dashboard).
+        echo "WARNING: Cloudflare purge_cache returned ${cf_response}, not 200." >&2
+    fi
+else
+    echo "Skipping Cloudflare purge: CF_API_TOKEN/CF_ZONE_ID not set in ${ENV_FILE}."
+fi
 
 systemctl --no-pager --full status "${SERVICE_NAME}" || true
