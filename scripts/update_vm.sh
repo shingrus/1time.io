@@ -220,24 +220,41 @@ systemctl reload nginx
 CF_API_TOKEN_PERSISTED=""
 CF_ZONE_ID_PERSISTED=""
 if [[ -f "${ENV_FILE}" ]]; then
-    CF_API_TOKEN_PERSISTED="$(sed -n 's/^CF_API_TOKEN=//p' "${ENV_FILE}")"
-    CF_ZONE_ID_PERSISTED="$(sed -n 's/^CF_ZONE_ID=//p' "${ENV_FILE}")"
+    # tail -n1 (not sed -n .../p) so a duplicated key in the env file takes
+    # the last line, same "last assignment wins" semantics `source` gives it,
+    # instead of silently concatenating every match.
+    CF_API_TOKEN_PERSISTED="$(grep '^CF_API_TOKEN=' "${ENV_FILE}" | tail -n1 | cut -d= -f2-)"
+    CF_ZONE_ID_PERSISTED="$(grep '^CF_ZONE_ID=' "${ENV_FILE}" | tail -n1 | cut -d= -f2-)"
 fi
 
 if [[ -n "${CF_API_TOKEN_PERSISTED}" && -n "${CF_ZONE_ID_PERSISTED}" ]]; then
-    echo "Purging Cloudflare cache for zone ${CF_ZONE_ID_PERSISTED}..."
-    cf_response="$(curl -s -o /dev/null -w '%{http_code}' \
-        -X POST "https://api.cloudflare.com/client/v4/zones/${CF_ZONE_ID_PERSISTED}/purge_cache" \
-        -H "Authorization: Bearer ${CF_API_TOKEN_PERSISTED}" \
-        -H "Content-Type: application/json" \
-        --data '{"purge_everything":true}')" || cf_response="curl failed"
+    # Best-effort, with one retry: a purge failure should not fail an
+    # otherwise-good deploy, but it must be visible — the edge will keep
+    # serving the previous HTML for up to the s-maxage in
+    # configs/nginx/1time.conf until this is retried (rerun this script, or
+    # purge manually in the dashboard).
+    cf_err_file="$(mktemp)"
+    cf_response="curl failed"
+    for attempt in 1 2; do
+        echo "Purging Cloudflare cache for zone ${CF_ZONE_ID_PERSISTED} (attempt ${attempt})..."
+        # -sS: quiet on success, but -S still prints curl's own error text on
+        # failure (plain -s swallowed it, which is why an earlier failure here
+        # only ever showed as the uninformative "curl failed").
+        cf_response="$(curl -sS -o /dev/null -w '%{http_code}' --max-time 15 \
+            -X POST "https://api.cloudflare.com/client/v4/zones/${CF_ZONE_ID_PERSISTED}/purge_cache" \
+            -H "Authorization: Bearer ${CF_API_TOKEN_PERSISTED}" \
+            -H "Content-Type: application/json" \
+            --data '{"purge_everything":true}' 2>"${cf_err_file}")" || cf_response="curl failed"
+        [[ "${cf_response}" == "200" ]] && break
+        [[ "${attempt}" -eq 1 ]] && sleep 3
+    done
     if [[ "${cf_response}" != "200" ]]; then
-        # Best-effort: a purge failure should not fail an otherwise-good deploy,
-        # but it must be visible — the edge will keep serving the previous
-        # HTML for up to the s-maxage in configs/nginx/1time.conf until this
-        # is retried (rerun this script, or purge manually in the dashboard).
         echo "WARNING: Cloudflare purge_cache returned ${cf_response}, not 200." >&2
+        if [[ -s "${cf_err_file}" ]]; then
+            echo "curl error output: $(cat "${cf_err_file}")" >&2
+        fi
     fi
+    rm -f "${cf_err_file}"
 else
     echo "Skipping Cloudflare purge: CF_API_TOKEN/CF_ZONE_ID not set in ${ENV_FILE}."
 fi
