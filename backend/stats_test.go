@@ -6,31 +6,26 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
 )
 
-func TestGetStatPageIndex(t *testing.T) {
-	tests := []struct {
-		page   string
-		want   statPageIndex
-		wantOK bool
-	}{
-		{page: "home", want: statPageHome, wantOK: true},
-		{page: "blog", want: statPageBlog, wantOK: true},
-		{page: "password", want: statPagePassword, wantOK: true},
-		{page: "wrong", wantOK: false},
+func TestHashCounterAcceptsOnlyListedFields(t *testing.T) {
+	if !shareCounter.accepts("tap") {
+		t.Fatal("shareCounter rejects tap")
+	}
+	for _, field := range []string{"wrong", "", "Tap", "home"} {
+		if shareCounter.accepts(field) {
+			t.Fatalf("shareCounter accepts %q", field)
+		}
 	}
 
-	for _, tt := range tests {
-		got, ok := getStatPageIndex(tt.page)
-		if ok != tt.wantOK {
-			t.Fatalf("getStatPageIndex(%q) ok = %v, want %v", tt.page, ok, tt.wantOK)
-		}
-		if ok && got != tt.want {
-			t.Fatalf("getStatPageIndex(%q) = %v, want %v", tt.page, got, tt.want)
-		}
+	stats := NewStatsManager()
+	stats.Record(shareCounter, "wrong", "")
+	if _, ok := stats.snapshotPending(); ok {
+		t.Fatal("unlisted fields should not be recorded")
 	}
 }
 
@@ -77,39 +72,42 @@ func TestStatsKeyHelpers(t *testing.T) {
 	if got := getFileViewsDayKey(5, now); got != "stats:views:file:day:20260505:5" {
 		t.Fatalf("file views day key = %q", got)
 	}
-	if got := getPageHitDayKey(now); got != "stats:page:hits:day:20260505" {
-		t.Fatalf("page hit day key = %q", got)
+	if got := pushCounter.dayKey(now); got != "stats:push:day:20260505" {
+		t.Fatalf("push day key = %q", got)
+	}
+	if got := shareCounter.dayKey(now); got != "stats:share:day:20260505" {
+		t.Fatalf("share day key = %q", got)
 	}
 }
 
 func TestStatsManagerSnapshotAndMerge(t *testing.T) {
 	stats := NewStatsManager()
-	stats.RecordPageHit(statPageBlog)
-	stats.RecordPageHit(statPageBlog)
-	stats.RecordPageHit(statPagePassword)
+	stats.Record(shareCounter, "tap")
+	stats.Record(shareCounter, "tap")
+	stats.RecordPushSend(false)
 
 	snapshot, ok := stats.snapshotPending()
 	if !ok {
-		t.Fatal("snapshotPending() reported no hits")
+		t.Fatal("snapshotPending() reported no counts")
 	}
-	if snapshot.pageHits[statPageBlog] != 2 {
-		t.Fatalf("blog hits = %d, want 2", snapshot.pageHits[statPageBlog])
+	if got := snapshot[counterField{shareCounter, "tap"}]; got != 2 {
+		t.Fatalf("share taps = %d, want 2", got)
 	}
-	if snapshot.pageHits[statPagePassword] != 1 {
-		t.Fatalf("password hits = %d, want 1", snapshot.pageHits[statPagePassword])
+	if got := snapshot[counterField{pushCounter, "all"}]; got != 1 {
+		t.Fatalf("push sends = %d, want 1", got)
 	}
 
 	if _, ok := stats.snapshotPending(); ok {
-		t.Fatal("snapshotPending() should clear pending hits")
+		t.Fatal("snapshotPending() should clear pending counts")
 	}
 
 	stats.mergePending(snapshot)
 
 	merged, ok := stats.snapshotPending()
 	if !ok {
-		t.Fatal("snapshotPending() should see merged hits")
+		t.Fatal("snapshotPending() should see merged counts")
 	}
-	if merged != snapshot {
+	if !reflect.DeepEqual(merged, snapshot) {
 		t.Fatalf("merged snapshot = %#v, want %#v", merged, snapshot)
 	}
 }
@@ -124,24 +122,21 @@ func TestStatsManagerFlushCounters(t *testing.T) {
 	called := false
 	flushCountersFunc = func(pending pendingCounters, now time.Time) error {
 		called = true
-		if pending.pageHits[statPageHome] != 1 || pending.pageHits[statPageBlog] != 2 {
-			t.Fatalf("flushed hits = %#v, want 1 home and 2 blog", pending.pageHits)
+		if got := pending[counterField{shareCounter, "tap"}]; got != 2 {
+			t.Fatalf("flushed share taps = %d, want 2", got)
 		}
-		if pending.pushOutcomes[pushOutcomeAll] != 3 {
-			t.Fatalf("flushed push sends = %d, want 3", pending.pushOutcomes[pushOutcomeAll])
+		all, succeeded := pending[counterField{pushCounter, "all"}], pending[counterField{pushCounter, "succeeded"}]
+		if all != 3 {
+			t.Fatalf("flushed push sends = %d, want 3", all)
 		}
-		if pending.pushOutcomes[pushOutcomeSucceeded] != 1 {
-			t.Fatalf("flushed push successes = %d, want 1", pending.pushOutcomes[pushOutcomeSucceeded])
-		}
-		if pending.pushOutcomes[pushOutcomeSucceeded] > pending.pushOutcomes[pushOutcomeAll] {
-			t.Fatal("successes must never exceed attempts")
+		if succeeded != 1 {
+			t.Fatalf("flushed push successes = %d, want 1", succeeded)
 		}
 		return nil
 	}
 
-	stats.RecordPageHit(statPageHome)
-	stats.RecordPageHit(statPageBlog)
-	stats.RecordPageHit(statPageBlog)
+	stats.Record(shareCounter, "tap")
+	stats.Record(shareCounter, "tap")
 	stats.RecordPushSend(true)
 	stats.RecordPushSend(false)
 	stats.RecordPushSend(false)
@@ -153,7 +148,7 @@ func TestStatsManagerFlushCounters(t *testing.T) {
 		t.Fatal("flushCountersFunc was not called")
 	}
 	if _, ok := stats.snapshotPending(); ok {
-		t.Fatal("successful flush should clear pending hits")
+		t.Fatal("successful flush should clear pending counts")
 	}
 }
 
@@ -169,17 +164,17 @@ func TestStatsManagerFlushCountersMergesBackOnError(t *testing.T) {
 		return wantErr
 	}
 
-	stats.RecordPageHit(statPagePassword)
+	stats.Record(shareCounter, "tap")
 	stats.RecordPushSend(true)
 
 	if err := stats.FlushCounters(); !errors.Is(err, wantErr) {
 		t.Fatalf("FlushCounters() error = %v, want %v", err, wantErr)
 	}
 	snapshot, ok := stats.snapshotPending()
-	if !ok || snapshot.pageHits[statPagePassword] != 1 {
-		t.Fatalf("failed flush should restore pending hit, got %#v ok=%v", snapshot, ok)
+	if !ok || snapshot[counterField{shareCounter, "tap"}] != 1 {
+		t.Fatalf("failed flush should restore pending share tap, got %#v ok=%v", snapshot, ok)
 	}
-	if snapshot.pushOutcomes[pushOutcomeAll] != 1 || snapshot.pushOutcomes[pushOutcomeSucceeded] != 1 {
+	if snapshot[counterField{pushCounter, "all"}] != 1 || snapshot[counterField{pushCounter, "succeeded"}] != 1 {
 		t.Fatalf("failed flush should restore pending push send, got %#v", snapshot)
 	}
 }
@@ -319,14 +314,56 @@ func TestIncrementStoredFileCountersWritesBothFamilies(t *testing.T) {
 	}
 }
 
-func TestAPIStatReturnsNoContentAndRecordsOnlyAllowedPages(t *testing.T) {
+// The Sheets exporter reads these exact key and field names, and days already in
+// Redis must keep accumulating, so the layout is pinned here.
+func TestFlushCountersWritesTheSameRedisKeys(t *testing.T) {
+	client := startTestRedis(t)
+	now := time.Date(2026, time.July, 25, 12, 0, 0, 0, time.UTC)
+
+	stats := NewStatsManager()
+	stats.Record(shareCounter, "tap")
+	stats.Record(shareCounter, "tap")
+	stats.RecordPushSend(true)
+	stats.RecordPushSend(false)
+
+	pending, ok := stats.snapshotPending()
+	if !ok {
+		t.Fatal("nothing pending")
+	}
+	if err := flushCountersWithClient(client, pending, now); err != nil {
+		t.Fatalf("flushCountersWithClient() error = %v", err)
+	}
+
+	for key, want := range map[string]map[string]string{
+		"stats:share:day:20260725": {"tap": "2"},
+		"stats:push:day:20260725":  {"all": "2", "succeeded": "1"},
+	} {
+		got, err := client.HGetAll(key).Result()
+		if err != nil {
+			t.Fatalf("hgetall %s: %v", key, err)
+		}
+		if !reflect.DeepEqual(got, want) {
+			t.Fatalf("%s = %v, want %v", key, got, want)
+		}
+		if ttl, err := client.TTL(key).Result(); err != nil || ttl != statsHistoryTTL {
+			t.Fatalf("%s ttl = %s (err %v), want %s", key, ttl, err, statsHistoryTTL)
+		}
+	}
+
+	// Day keys only: nothing else is written.
+	if keys, err := client.Keys("*").Result(); err != nil || len(keys) != 2 {
+		t.Fatalf("keys after flush = %v (err %v), want only the two day keys", keys, err)
+	}
+}
+
+func TestAPIStatRecordsShareTapsAndIgnoresEverythingElse(t *testing.T) {
 	originalStats := appStats
 	appStats = NewStatsManager()
 	defer func() {
 		appStats = originalStats
 	}()
 
-	req := httptest.NewRequest(http.MethodPost, "/api/stat", strings.NewReader(`{"page":"blog"}`))
+	req := httptest.NewRequest(http.MethodPost, "/api/stat", strings.NewReader(`{"share":"tap"}`))
 	responseCode, response := apiStat(req)
 	if responseCode != http.StatusNoContent {
 		t.Fatalf("apiStat() code = %d, want %d", responseCode, http.StatusNoContent)
@@ -336,21 +373,22 @@ func TestAPIStatReturnsNoContentAndRecordsOnlyAllowedPages(t *testing.T) {
 	}
 
 	snapshot, ok := appStats.snapshotPending()
-	if !ok || snapshot.pageHits[statPageBlog] != 1 {
-		t.Fatalf("blog hits after valid request = %#v, want 1 blog hit", snapshot)
+	if !ok || len(snapshot) != 1 || snapshot[counterField{shareCounter, "tap"}] != 1 {
+		t.Fatalf("pending after share tap = %#v, want exactly 1 tap", snapshot)
 	}
 
-	req = httptest.NewRequest(http.MethodPost, "/api/stat", strings.NewReader(`{"page":"ignored"}`))
-	responseCode, response = apiStat(req)
-	if responseCode != http.StatusNoContent {
-		t.Fatalf("apiStat() code for ignored page = %d, want %d", responseCode, http.StatusNoContent)
-	}
-	if len(response) != 0 {
-		t.Fatalf("apiStat() body length for ignored page = %d, want 0", len(response))
+	// Page hits are no longer counted; cached pages that still send them, and
+	// anything else unknown, get the same empty 204.
+	for _, body := range []string{`{"page":"home"}`, `{"share":"ignored"}`, `not json`} {
+		req = httptest.NewRequest(http.MethodPost, "/api/stat", strings.NewReader(body))
+		responseCode, response = apiStat(req)
+		if responseCode != http.StatusNoContent || len(response) != 0 {
+			t.Fatalf("apiStat(%s) = %d with %d bytes, want an empty 204", body, responseCode, len(response))
+		}
 	}
 
-	if _, ok := appStats.snapshotPending(); ok {
-		t.Fatal("ignored page should not be recorded")
+	if pending, ok := appStats.snapshotPending(); ok {
+		t.Fatalf("ignored requests were recorded: %#v", pending)
 	}
 }
 
@@ -363,9 +401,6 @@ func TestAPIStatSnapshotReturnsBufferedStats(t *testing.T) {
 
 	appStats.AddStoredSecrets(7)
 	appStats.AddStoredFiles(3)
-	appStats.RecordPageHit(statPageHome)
-	appStats.RecordPageHit(statPagePassword)
-	appStats.RecordPageHit(statPagePassword)
 
 	responseCode, response := apiStatSnapshot()
 	if responseCode != http.StatusOK {
@@ -379,11 +414,8 @@ func TestAPIStatSnapshotReturnsBufferedStats(t *testing.T) {
 	if !strings.Contains(body, `"overallStoredFiles":3`) {
 		t.Fatalf("snapshot body = %s, missing overallStoredFiles", body)
 	}
-	if !strings.Contains(body, `"home":1`) {
-		t.Fatalf("snapshot body = %s, missing home count", body)
-	}
-	if !strings.Contains(body, `"password":2`) {
-		t.Fatalf("snapshot body = %s, missing password count", body)
+	if strings.Contains(body, "PageHits") {
+		t.Fatalf("snapshot body = %s, still carries page hits", body)
 	}
 }
 

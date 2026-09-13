@@ -6,10 +6,9 @@ import {PRESETS, buildJsonLd} from '../lib/generator-presets';
 
 interface Props {
     presetPath: string;
-    trackStats?: boolean;
 }
 
-const {presetPath, trackStats} = Astro.props;
+const {presetPath} = Astro.props;
 const preset = PRESETS[presetPath]!;
 const schemas = buildJsonLd(preset);
 ---
@@ -20,7 +19,6 @@ const schemas = buildJsonLd(preset);
     ogTitle={preset.meta.ogTitle}
     ogDescription={preset.meta.ogDescription}
     ogImageAlt={preset.meta.ogImageAlt}
-    trackStats={trackStats}
 >
     <InlineCss slot="head" name="generator" />
     <script slot="head" type="application/ld+json" set:html={JSON.stringify(schemas)} is:inline></script>

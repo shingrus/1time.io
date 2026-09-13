@@ -25,7 +25,6 @@ const jsonLd = {
     canonical="/"
     ogImage="/1time-og-main.png"
     ogImageAlt={`${siteHost} — One-time link to share passwords, API keys, and files`}
-    trackStats
 >
     <InlineCss slot="head" name="home" />
     <script slot="head" type="application/ld+json" set:html={JSON.stringify(jsonLd)} is:inline></script>

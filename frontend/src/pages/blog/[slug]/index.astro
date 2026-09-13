@@ -27,7 +27,6 @@ const canonical = `/blog/${post.slug}/`;
     ogDescription={post.ogDescription}
     ogImageAlt={post.ogImageAlt}
     ogType="article"
-    trackStats
 >
     <InlineCss slot="head" name="article" />
     <script slot="head" type="application/ld+json" set:html={JSON.stringify(post.schemas)} is:inline></script>

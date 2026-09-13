@@ -14,8 +14,6 @@ import (
 )
 
 const (
-	pageHitTotalKey         = "stats:page:hits:total"
-	pageHitDayKeyPrefix     = "stats:page:hits:day:"
 	storedTextTotalKey      = "stats:stored:text:total"
 	storedTextDayKeyPrefix  = "stats:stored:text:day:"
 	storedFileTotalKey      = "stats:stored:file:total"
@@ -24,65 +22,70 @@ const (
 	viewsDayKeyPrefix       = "stats:views:day:"
 	fileViewsTotalKeyPrefix = "stats:views:file:total:"
 	fileViewsDayKeyPrefix   = "stats:views:file:day:"
-	// stats:push:day:YYYYMMDD -> hash: outcome -> daily count. Day keys only.
-	pushOutcomeDayKeyPrefix = "stats:push:day:"
 	statsHistoryTTL         = time.Hour * 24 * 60
 	statsFlushInterval      = time.Second * 10
-	statPageCount           = 3
-	pushOutcomeCount        = 2
 )
 
-type statPageIndex int
 type storedCounterKind int
-type pushOutcomeIndex int
-
-const (
-	statPageHome statPageIndex = iota
-	statPageBlog
-	statPagePassword
-)
 
 const (
 	storedCounterText storedCounterKind = iota
 	storedCounterFile
 )
 
-const (
+// hashCounter is one family of buffered event counts, stored in Redis as one
+// hash of field -> count per UTC day under dayKeyPrefix. A new family is one
+// more value below.
+type hashCounter struct {
+	dayKeyPrefix string
+	// fields is an allowlist. Share taps arrive from an unauthenticated beacon,
+	// so anything unlisted is dropped rather than growing a hash without bound.
+	fields []string
+}
+
+var (
 	// Overlapping, not disjoint: succeeded is a subset of all, so the failure
-	// count is all-succeeded.
-	pushOutcomeAll pushOutcomeIndex = iota
-	pushOutcomeSucceeded
+	// count is all-succeeded. Day keys only.
+	pushCounter = &hashCounter{
+		dayKeyPrefix: "stats:push:day:",
+		fields:       []string{"all", "succeeded"},
+	}
+	// Presses of the share icon on the link-ready screen, which open the
+	// system share sheet. Whether a link was then sent is not tracked.
+	shareCounter = &hashCounter{
+		dayKeyPrefix: "stats:share:day:",
+		fields:       []string{"tap"},
+	}
 )
 
-var statPageNames = [statPageCount]string{
-	"home",
-	"blog",
-	"password",
+func (c *hashCounter) accepts(field string) bool {
+	for _, known := range c.fields {
+		if known == field {
+			return true
+		}
+	}
+
+	return false
 }
 
-var pushOutcomeNames = [pushOutcomeCount]string{
-	"all",
-	"succeeded",
+func (c *hashCounter) dayKey(now time.Time) string {
+	return c.dayKeyPrefix + getStatsDay(now)
 }
 
-type pageHitSnapshot [statPageCount]int64
-
-type pushOutcomeSnapshot [pushOutcomeCount]int64
+type counterField struct {
+	counter *hashCounter
+	field   string
+}
 
 // Buffered in memory, written to Redis by flushLoop.
-type pendingCounters struct {
-	pageHits     pageHitSnapshot
-	pushOutcomes pushOutcomeSnapshot
-}
+type pendingCounters map[counterField]int64
 
 type StatsSnapshot struct {
-	APIVersion           int              `json:"apiVersion"`
-	SaveSchemes          []int            `json:"saveSchemes"`
-	OverallStoredSecrets int64            `json:"overallStoredSecrets"`
-	OverallStoredFiles   int64            `json:"overallStoredFiles"`
-	PendingPageHits      map[string]int64 `json:"pendingPageHits"`
-	PendingPageHitsTotal int64            `json:"pendingPageHitsTotal"`
-	FlushIntervalSeconds int64            `json:"flushIntervalSeconds"`
+	APIVersion           int   `json:"apiVersion"`
+	SaveSchemes          []int `json:"saveSchemes"`
+	OverallStoredSecrets int64 `json:"overallStoredSecrets"`
+	OverallStoredFiles   int64 `json:"overallStoredFiles"`
+	FlushIntervalSeconds int64 `json:"flushIntervalSeconds"`
 }
 
 type StatsManager struct {
@@ -101,7 +104,7 @@ var (
 )
 
 func NewStatsManager() *StatsManager {
-	return &StatsManager{}
+	return &StatsManager{pending: pendingCounters{}}
 }
 
 func (s *StatsManager) Start() {
@@ -112,23 +115,30 @@ func (s *StatsManager) Start() {
 	go s.flushLoop()
 }
 
-func (s *StatsManager) RecordPageHit(page statPageIndex) {
+// Record counts one event in each named field. Fields recorded in one call move
+// under a single lock acquisition, so they always land in the same flush and
+// therefore the same day key. Fields the counter does not list are ignored.
+func (s *StatsManager) Record(counter *hashCounter, fields ...string) {
 	s.mu.Lock()
-	s.pending.pageHits[page]++
-	s.mu.Unlock()
+	defer s.mu.Unlock()
+
+	for _, field := range fields {
+		if counter.accepts(field) {
+			s.pending[counterField{counter, field}]++
+		}
+	}
 }
 
-// RecordPushSend counts one finished send attempt. Both counters move under a
-// single lock acquisition so they always land in the same flush, and therefore
-// the same day key — recorded separately, a send straddling midnight UTC could
-// put its attempt and its success on different days and report succeeded > all.
+// RecordPushSend counts one finished send attempt. Attempt and success are
+// recorded in one call: separately, a send straddling midnight UTC could put
+// them on different days and report succeeded > all.
 func (s *StatsManager) RecordPushSend(succeeded bool) {
-	s.mu.Lock()
-	s.pending.pushOutcomes[pushOutcomeAll]++
 	if succeeded {
-		s.pending.pushOutcomes[pushOutcomeSucceeded]++
+		s.Record(pushCounter, "all", "succeeded")
+		return
 	}
-	s.mu.Unlock()
+
+	s.Record(pushCounter, "all")
 }
 
 func (s *StatsManager) AddStoredSecrets(delta int64) {
@@ -148,26 +158,13 @@ func (s *StatsManager) GetOverallStoredFiles() int64 {
 }
 
 func (s *StatsManager) GetSnapshot() StatsSnapshot {
-	s.mu.Lock()
-	pendingPageHits := s.pending.pageHits
-	s.mu.Unlock()
-
-	snapshot := StatsSnapshot{
+	return StatsSnapshot{
 		APIVersion:           apiVersion,
 		SaveSchemes:          supportedSaveSchemes(),
 		OverallStoredSecrets: s.GetOverallStoredSecrets(),
 		OverallStoredFiles:   s.GetOverallStoredFiles(),
-		PendingPageHits:      make(map[string]int64, statPageCount),
 		FlushIntervalSeconds: int64(statsFlushInterval / time.Second),
 	}
-
-	for page, delta := range pendingPageHits {
-		pageName := statPageNames[page]
-		snapshot.PendingPageHits[pageName] = delta
-		snapshot.PendingPageHitsTotal += delta
-	}
-
-	return snapshot
 }
 
 func (s *StatsManager) loadOverallStoredCounters() error {
@@ -216,8 +213,8 @@ func (s *StatsManager) snapshotPending() (pendingCounters, bool) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	if s.pending.isEmpty() {
-		return pendingCounters{}, false
+	if len(s.pending) == 0 {
+		return nil, false
 	}
 
 	pending := s.pending
@@ -229,46 +226,8 @@ func (s *StatsManager) mergePending(pending pendingCounters) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	for page, delta := range pending.pageHits {
-		s.pending.pageHits[page] += delta
-	}
-	for outcome, delta := range pending.pushOutcomes {
-		s.pending.pushOutcomes[outcome] += delta
-	}
-}
-
-func (p pendingCounters) isEmpty() bool {
-	return p.pageHits.isEmpty() && p.pushOutcomes.isEmpty()
-}
-
-func (p pageHitSnapshot) isEmpty() bool {
-	return hasNoDeltas(p[:])
-}
-
-func (p pushOutcomeSnapshot) isEmpty() bool {
-	return hasNoDeltas(p[:])
-}
-
-func hasNoDeltas(deltas []int64) bool {
-	for _, delta := range deltas {
-		if delta != 0 {
-			return false
-		}
-	}
-
-	return true
-}
-
-func getStatPageIndex(page string) (statPageIndex, bool) {
-	switch page {
-	case "home":
-		return statPageHome, true
-	case "blog":
-		return statPageBlog, true
-	case "password":
-		return statPagePassword, true
-	default:
-		return 0, false
+	for key, delta := range pending {
+		s.pending[key] += delta
 	}
 }
 
@@ -296,14 +255,6 @@ func getStoredCounterTotalKey(kind storedCounterKind) string {
 	default:
 		return storedTextTotalKey
 	}
-}
-
-func getPageHitDayKey(now time.Time) string {
-	return pageHitDayKeyPrefix + getStatsDay(now)
-}
-
-func getPushOutcomeDayKey(now time.Time) string {
-	return pushOutcomeDayKeyPrefix + getStatsDay(now)
 }
 
 func getViewsTotalKey(views int) string {
@@ -383,35 +334,25 @@ func incrementStoredCountersWithClient(
 }
 
 func flushCounters(pending pendingCounters, now time.Time) error {
-	client := getRedisClient()
-	pageHitDayKey := getPageHitDayKey(now)
-	pushOutcomeDayKey := getPushOutcomeDayKey(now)
+	return flushCountersWithClient(getRedisClient(), pending, now)
+}
 
+func flushCountersWithClient(client *redis.Client, pending pendingCounters, now time.Time) error {
 	_, err := client.TxPipelined(func(pipe redis.Pipeliner) error {
-		// Each family guards its own Expire so a push-only flush leaves the
-		// page-hit day key alone, and vice versa.
-		if !pending.pageHits.isEmpty() {
-			for page, delta := range pending.pageHits {
-				if delta == 0 {
-					continue
-				}
-
-				pageName := statPageNames[page]
-				pipe.HIncrBy(pageHitTotalKey, pageName, delta)
-				pipe.HIncrBy(pageHitDayKey, pageName, delta)
+		// Each counter expires only a day key it wrote, so a push-only flush
+		// leaves the share day key alone, and vice versa.
+		written := make(map[*hashCounter]bool)
+		for key, delta := range pending {
+			if delta == 0 {
+				continue
 			}
-			pipe.Expire(pageHitDayKey, statsHistoryTTL)
+
+			pipe.HIncrBy(key.counter.dayKey(now), key.field, delta)
+			written[key.counter] = true
 		}
 
-		if !pending.pushOutcomes.isEmpty() {
-			for outcome, delta := range pending.pushOutcomes {
-				if delta == 0 {
-					continue
-				}
-
-				pipe.HIncrBy(pushOutcomeDayKey, pushOutcomeNames[outcome], delta)
-			}
-			pipe.Expire(pushOutcomeDayKey, statsHistoryTTL)
+		for counter := range written {
+			pipe.Expire(counter.dayKey(now), statsHistoryTTL)
 		}
 		return nil
 	})
@@ -435,16 +376,14 @@ func apiStat(r *http.Request) (responseCode int, response []byte) {
 	r.Body = http.MaxBytesReader(nil, r.Body, maxLookupBodyBytes)
 
 	var payload struct {
-		Page string `json:"page"`
+		Share string `json:"share"`
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil && err != io.EOF {
 		log.Println(err)
 	}
 
-	if page, ok := getStatPageIndex(payload.Page); ok {
-		appStats.RecordPageHit(page)
-	}
+	appStats.Record(shareCounter, payload.Share)
 
 	return
 }

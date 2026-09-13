@@ -16,6 +16,7 @@ const description = `Current in-memory stats snapshot for ${siteHost}.`;
     <div class="stats-page" id="stats-page">
         <div class="stats-header">
             <h1>In-Memory Stats</h1>
+            <span class="stats-status stats-status-loading" data-stat-status>loading</span>
         </div>
 
         <div class="stats-grid">
@@ -28,10 +29,6 @@ const description = `Current in-memory stats snapshot for ${siteHost}.`;
                 <strong class="stats-value" data-stat-files>0</strong>
             </section>
             <section class="stats-card">
-                <span class="stats-label">Buffered page hits</span>
-                <strong class="stats-value" data-stat-pending>0</strong>
-            </section>
-            <section class="stats-card">
                 <span class="stats-label">API version</span>
                 <strong class="stats-value" data-stat-apiversion>&mdash;</strong>
             </section>
@@ -40,15 +37,6 @@ const description = `Current in-memory stats snapshot for ${siteHost}.`;
                 <strong class="stats-value" data-stat-schemes>&mdash;</strong>
             </section>
         </div>
-
-        <section class="stats-table-card">
-            <div class="stats-table-header">
-                <h2>Pending page-hit buckets</h2>
-                <span class="stats-status stats-status-loading" data-stat-status>loading</span>
-            </div>
-            <p class="stats-empty" data-stat-empty>No buffered page hits at the moment.</p>
-            <div class="stats-table" data-stat-table hidden></div>
-        </section>
     </div>
 
     <script>

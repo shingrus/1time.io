@@ -2,7 +2,6 @@
 import InlineCss from '../components/InlineCss.astro';
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
-import PageStatsTracker from '../components/PageStatsTracker.astro';
 import {absoluteUrl, siteHost, siteUrl} from '../lib/siteConfig.js';
 
 interface Props {
@@ -16,7 +15,6 @@ interface Props {
     ogType?: string;
     ogUrl?: string;
     robots?: string;
-    trackStats?: boolean;
 }
 
 const {
@@ -30,7 +28,6 @@ const {
     ogType = 'website',
     ogUrl = canonical ?? '/',
     robots,
-    trackStats = false,
 } = Astro.props;
 
 const canonicalHref = canonical ? absoluteUrl(canonical) : undefined;
@@ -96,7 +93,6 @@ const websiteSchema = {
     </head>
     <body>
         <div class="app-layout">
-            {trackStats && <PageStatsTracker />}
             <Header />
             <main class="app-main">
                 <slot />

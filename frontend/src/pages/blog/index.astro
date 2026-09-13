@@ -13,7 +13,6 @@ const formatCardMeta = (meta: string) => meta.replace(/^By Igor Ermakov · /, ''
     ogTitle={blogIndex.ogTitle}
     ogDescription={blogIndex.ogDescription}
     ogImageAlt={blogIndex.ogImageAlt}
-    trackStats
 >
     <InlineCss slot="head" name="blog-index" />
     <script slot="head" type="application/ld+json" set:html={JSON.stringify(blogIndex.schemas)} is:inline></script>

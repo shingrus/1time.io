@@ -7,13 +7,12 @@ Expected Redis key layout from the Go app:
   - stats:stored:file:total                  -> total stored files
   - stats:stored:text:day:YYYYMMDD           -> per-day stored text secrets
   - stats:stored:file:day:YYYYMMDD           -> per-day stored files
-  - stats:page:hits:total                    -> hash: page -> total hits
-  - stats:page:hits:day:YYYYMMDD             -> hash: page -> daily hits
   - stats:views:total:VIEWS                  -> lifetime secrets created with VIEWS views
   - stats:views:day:YYYYMMDD:VIEWS           -> per-day secrets created with VIEWS views
   - stats:views:file:total:VIEWS             -> lifetime files created with VIEWS downloads
   - stats:views:file:day:YYYYMMDD:VIEWS      -> per-day files created with VIEWS downloads
   - stats:push:day:YYYYMMDD                  -> hash: outcome -> daily read-notification sends
+  - stats:share:day:YYYYMMDD                 -> hash: tap -> daily share-icon presses on the link-ready screen
 
 Nginx sender/receiver analytics:
   - Reads /var/log/nginx/1time.access.log plus every rotated sibling
@@ -118,8 +117,6 @@ STORED_TEXT_TOTAL_KEY = "stats:stored:text:total"
 STORED_FILE_TOTAL_KEY = "stats:stored:file:total"
 STORED_TEXT_DAY_KEY_PREFIX = "stats:stored:text:day:"
 STORED_FILE_DAY_KEY_PREFIX = "stats:stored:file:day:"
-PAGE_HIT_TOTAL_KEY = "stats:page:hits:total"
-PAGE_HIT_DAY_KEY_PREFIX = "stats:page:hits:day:"
 VIEWS_TOTAL_KEY_PREFIX = "stats:views:total:"
 VIEWS_DAY_KEY_PREFIX = "stats:views:day:"
 FILE_VIEWS_TOTAL_KEY_PREFIX = "stats:views:file:total:"
@@ -127,14 +124,15 @@ FILE_VIEWS_DAY_KEY_PREFIX = "stats:views:file:day:"
 PUSH_DAY_KEY_PREFIX = "stats:push:day:"
 # Pinned so a day with no successes still gets a succeeded column.
 PUSH_OUTCOMES = ("all", "succeeded")
+SHARE_DAY_KEY_PREFIX = "stats:share:day:"
+SHARE_FIELDS = ("tap",)
 
 SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
 TAB_NAMES = (
     "overview",
     "stored_daily",
-    "page_hits_total",
-    "page_hits_daily",
     "push_daily",
+    "share_daily",
     "views_total",
     "views_daily",
     "file_views_daily",
@@ -143,7 +141,7 @@ TAB_NAMES = (
 )
 # Tabs merged row-by-row on a key in column A, rather than cleared and rewritten.
 MERGED_TAB_NAMES = ("senders_receivers", "hourly_raw")
-LEGACY_TAB_NAMES = ("file_views_total",)
+LEGACY_TAB_NAMES = ("file_views_total", "page_hits_total", "page_hits_daily")
 # Every rotated sibling, not just .1 - the rotation window is the history.
 DEFAULT_NGINX_LOG_PATHS = (
     "/var/log/nginx/1time.access.log",
@@ -699,11 +697,6 @@ def collect_stats(
 
     total_stored_text = safe_int(client.get(STORED_TEXT_TOTAL_KEY))
     total_stored_files = safe_int(client.get(STORED_FILE_TOTAL_KEY))
-    page_hits_total_raw = client.hgetall(PAGE_HIT_TOTAL_KEY)
-    page_hits_total = sorted(
-        ((page, safe_int(value)) for page, value in page_hits_total_raw.items()),
-        key=lambda item: item[0],
-    )
 
     stored_text_daily = {
         key.removeprefix(STORED_TEXT_DAY_KEY_PREFIX): safe_int(client.get(key))
@@ -721,20 +714,18 @@ def collect_stats(
             stored_file_daily.get(day, 0),
         ])
 
-    page_hits_daily: Dict[str, Dict[str, int]] = {}
-    for key in scan_keys(client, f"{PAGE_HIT_DAY_KEY_PREFIX}*"):
-        day = key.removeprefix(PAGE_HIT_DAY_KEY_PREFIX)
-        fields = client.hgetall(key)
-        page_hits_daily[day] = {
-            page: safe_int(hits)
-            for page, hits in sorted(fields.items(), key=lambda item: item[0])
-        }
-
     push_daily: Dict[str, Dict[str, int]] = {}
     for key in scan_keys(client, f"{PUSH_DAY_KEY_PREFIX}*"):
         day = key.removeprefix(PUSH_DAY_KEY_PREFIX)
         push_daily[day] = {
             outcome: safe_int(count) for outcome, count in client.hgetall(key).items()
+        }
+
+    share_daily: Dict[str, Dict[str, int]] = {}
+    for key in scan_keys(client, f"{SHARE_DAY_KEY_PREFIX}*"):
+        day = key.removeprefix(SHARE_DAY_KEY_PREFIX)
+        share_daily[day] = {
+            field: safe_int(count) for field, count in client.hgetall(key).items()
         }
 
     # View-counter distribution: how many secrets were created per view bucket.
@@ -770,16 +761,11 @@ def collect_stats(
     views_total_sum = sum(views_total.values())
     file_views_total_sum = sum(file_views_total.values())
 
-    page_hits_daily_rows = build_daily_field_rows(
-        page_hits_daily,
-        known_fields=(page for page, _ in page_hits_total),
-    )
     push_daily_rows = build_daily_field_rows(push_daily, known_fields=PUSH_OUTCOMES)
     push_window_all = sum(day.get("all", 0) for day in push_daily.values())
     push_window_succeeded = sum(day.get("succeeded", 0) for day in push_daily.values())
-
-    page_hits_daily_day_count = max(len(page_hits_daily_rows) - 1, 0)
-    page_hits_daily_page_count = max(len(page_hits_daily_rows[0]) - 1, 0)
+    share_daily_rows = build_daily_field_rows(share_daily, known_fields=SHARE_FIELDS)
+    share_window_tap = sum(day.get("tap", 0) for day in share_daily.values())
 
     overview_rows: List[List[object]] = [
         ["metric", "value"],
@@ -787,27 +773,20 @@ def collect_stats(
         ["total_stored_secrets", total_stored_text],
         ["total_stored_files", total_stored_files],
         ["stored_daily_rows", max(len(stored_daily_rows) - 1, 0)],
-        ["page_hits_total_rows", len(page_hits_total)],
-        ["page_hits_daily_pages", page_hits_daily_page_count],
-        ["page_hits_daily_days", page_hits_daily_day_count],
         ["views_counted_secrets", views_total_sum],
         ["views_multi_view_secrets", views_total_sum - views_total.get("1", 0)],
         ["views_counted_files", file_views_total_sum],
         ["views_multi_download_files", file_views_total_sum - file_views_total.get("1", 0)],
         ["push_all_window", push_window_all],
         ["push_succeeded_window", push_window_succeeded],
+        ["share_tap_window", share_window_tap],
     ]
-
-    page_hits_total_rows: List[List[object]] = [["page", "hits"]]
-    for page, hits in page_hits_total:
-        page_hits_total_rows.append([page, hits])
 
     return {
         "overview": overview_rows,
         "stored_daily": stored_daily_rows,
-        "page_hits_total": page_hits_total_rows,
-        "page_hits_daily": page_hits_daily_rows,
         "push_daily": push_daily_rows,
+        "share_daily": share_daily_rows,
         "views_total": views_total_rows,
         "views_daily": views_daily_rows,
         "file_views_daily": file_views_daily_rows,

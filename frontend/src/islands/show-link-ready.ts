@@ -125,9 +125,11 @@ export async function showLinkReady(
         shareBtn.addEventListener('click', async () => {
             if (sheetOpen) return;
             sheetOpen = true;
+            // Called before anything else: share needs the click's transient activation.
+            const sharing = navigator.share({text: link});
+            navigator.sendBeacon('/api/stat', new Blob([JSON.stringify({share: 'tap'})], {type: 'application/json'}));
             try {
-                // Called directly in the handler: share needs the click's transient activation.
-                await navigator.share({text: link});
+                await sharing;
             } catch {
                 // Dismissing the sheet rejects with AbortError — a choice, not an error to show.
             } finally {

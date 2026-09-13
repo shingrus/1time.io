@@ -18,8 +18,7 @@
   margin-bottom: 20px;
 }
 
-.stats-card,
-.stats-table-card {
+.stats-card {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
@@ -47,22 +46,6 @@
   letter-spacing: -0.03em;
 }
 
-.stats-table-card {
-  padding: 18px;
-}
-
-.stats-table-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 14px;
-}
-
-.stats-table-header h2 {
-  font-size: 22px;
-}
-
 .stats-status {
   font-size: 13px;
   font-weight: 600;
@@ -73,47 +56,8 @@
   color: var(--danger);
 }
 
-.stats-empty {
-  color: var(--text-secondary);
-}
-
-.stats-table {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.stats-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 12px 14px;
-  background: var(--accent-light);
-  border-radius: var(--radius-sm);
-}
-
-.stats-row-key {
-  color: var(--text);
-  font-weight: 600;
-}
-
-.stats-row-value {
-  font-family: var(--font-display);
-  font-size: 22px;
-  letter-spacing: -0.02em;
-}
-
 @media (max-width: 640px) {
   .stats-grid {
     grid-template-columns: 1fr;
-  }
-
-  .stats-table-header {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .stats-row {
-    gap: 12px;
   }
 }
