@@ -110,6 +110,32 @@ export async function showLinkReady(
     copyBtn.addEventListener('click', handleCopy);
     input.addEventListener('click', handleCopy);
 
+    // Phones and tablets only: desktop browsers expose navigator.share too, but
+    // there Copy is already the short path. Text only, no title or url: some
+    // targets join the fields or put the title first, pushing the link off the
+    // start of the line and inviting the truncation /v/ has to catch.
+    const shareBtn = clone.querySelector<HTMLButtonElement>('[data-share]')!;
+    if ('share' in navigator && matchMedia('(pointer: coarse)').matches) {
+        let sheetOpen = false;
+        // Each platform's own share glyph. iPadOS reports a Mac user agent, and
+        // past the coarse-pointer check a Mac user agent means an iPad.
+        const apple = /iPhone|iPad|iPod|Macintosh/.test(navigator.userAgent);
+        shareBtn.querySelector(`[data-share-icon="${apple ? 'android' : 'apple'}"]`)!.remove();
+        shareBtn.hidden = false;
+        shareBtn.addEventListener('click', async () => {
+            if (sheetOpen) return;
+            sheetOpen = true;
+            try {
+                // Called directly in the handler: share needs the click's transient activation.
+                await navigator.share({text: link});
+            } catch {
+                // Dismissing the sheet rejects with AbortError — a choice, not an error to show.
+            } finally {
+                sheetOpen = false;
+            }
+        });
+    }
+
     const qrToggle = clone.querySelector<HTMLButtonElement>('[data-toggle-qr]')!;
     const qrLabel = clone.querySelector<HTMLElement>('[data-qr-label]')!;
     const qrPanel = clone.querySelector<HTMLElement>('[data-qr-panel]')!;

@@ -61,7 +61,7 @@
   border-radius: var(--radius);
   outline: none;
   font-family: 'SF Mono', 'Fira Code', 'Fira Mono', monospace;
-  font-size: 14px;
+  font-size: 16px;
   text-overflow: ellipsis;
   white-space: nowrap;
   cursor: pointer;
@@ -78,11 +78,18 @@
   box-shadow: 0 0 0 3px var(--border);
 }
 
+.link-copy-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+/* While Share is hidden, Copy takes the whole row. */
 .link-copy-button {
-  width: 100%;
+  flex: 1 1 auto;
   min-width: 0;
   min-height: 46px;
-  margin-top: 12px;
+  padding-inline: 12px;
   border-radius: var(--radius-sm);
   font-size: 16px;
   font-weight: 700;
@@ -96,6 +103,14 @@
 .link-copy-status::before {
   content: '·';
   margin-right: 6px;
+}
+
+.link-share-button {
+  flex: 0 0 48px;
+  padding: 0;
+  color: var(--text);
+  border-color: var(--text-muted);
+  border-radius: var(--radius-sm);
 }
 
 .link-secondary-actions {
