@@ -1,0 +1,193 @@
+/* /feedback/ page only. */
+.feedback {
+  padding-top: 16px;
+}
+
+.feedback-title {
+  font-size: 30px;
+  color: var(--text);
+}
+
+.feedback-lead {
+  margin-top: 10px;
+  color: var(--text-secondary);
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+.feedback-form {
+  margin-top: 24px;
+}
+
+.feedback-features {
+  border: 0;
+  display: grid;
+  gap: 10px;
+  margin-bottom: 24px;
+}
+
+.feedback-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 16px;
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: border-color var(--transition), background var(--transition);
+}
+
+.feedback-card:hover {
+  border-color: var(--text-muted);
+}
+
+.feedback-card:has(input:checked) {
+  border-color: var(--accent);
+  background: var(--accent-light);
+}
+
+.feedback-card-copy {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.feedback-card-title {
+  font-weight: 600;
+  color: var(--text);
+}
+
+.feedback-card-text {
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+
+/* A pill that reads "I want this" and fills in when checked. The real checkbox
+   stays in the pill for keyboard and screen readers. */
+.feedback-toggle {
+  position: relative;
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
+  border: 1.5px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text-secondary);
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.feedback-toggle input {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--accent);
+}
+
+.feedback-toggle:has(input:checked) {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.feedback-toggle:has(input:focus-visible) {
+  box-shadow: 0 0 0 3px var(--focus-ring);
+}
+
+.feedback-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 16px;
+}
+
+.feedback-optional {
+  color: var(--text-muted);
+  font-weight: 400;
+}
+
+/* Honeypot: off-screen rather than display:none, which some bots skip. */
+.feedback-hp {
+  position: absolute;
+  left: -10000px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+.feedback-note {
+  margin-bottom: 16px;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--text-muted);
+}
+
+.feedback-error {
+  margin-bottom: 12px;
+  font-size: 14px;
+  color: var(--danger);
+}
+
+.feedback-state {
+  display: none;
+  padding: 32px 20px;
+  text-align: center;
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  outline: none;
+}
+
+.feedback-state p {
+  margin: 8px auto 20px;
+  max-width: 440px;
+  color: var(--text-secondary);
+}
+
+.feedback-state-title {
+  font-size: 22px;
+  color: var(--text);
+}
+
+/* Thank-you and failure states: :target covers a form post without JS, the
+   is-sent class covers the island. */
+.feedback-thanks:target,
+.feedback-failed:target,
+.feedback.is-sent .feedback-thanks {
+  display: block;
+}
+
+.feedback:has(.feedback-thanks:target) .feedback-head,
+.feedback:has(.feedback-thanks:target) .feedback-form,
+.feedback.is-sent .feedback-head,
+.feedback.is-sent .feedback-form {
+  display: none;
+}
+
+@media (max-width: 480px) {
+  .feedback-title {
+    font-size: 24px;
+  }
+
+  .feedback-card {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .feedback-toggle {
+    align-self: flex-start;
+  }
+
+  .feedback-fields {
+    grid-template-columns: 1fr;
+  }
+
+  .feedback-submit {
+    width: 100%;
+  }
+}
