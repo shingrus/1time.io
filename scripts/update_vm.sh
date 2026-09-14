@@ -222,9 +222,12 @@ CF_ZONE_ID_PERSISTED=""
 if [[ -f "${ENV_FILE}" ]]; then
     # tail -n1 (not sed -n .../p) so a duplicated key in the env file takes
     # the last line, same "last assignment wins" semantics `source` gives it,
-    # instead of silently concatenating every match.
-    CF_API_TOKEN_PERSISTED="$(grep '^CF_API_TOKEN=' "${ENV_FILE}" | tail -n1 | cut -d= -f2-)"
-    CF_ZONE_ID_PERSISTED="$(grep '^CF_ZONE_ID=' "${ENV_FILE}" | tail -n1 | cut -d= -f2-)"
+    # instead of silently concatenating every match. The trailing sed strips
+    # a CRLF line ending and any stray trailing whitespace on the value: cut
+    # copies everything after '=' verbatim, and either one lands straight in
+    # the purge URL/header, where curl's parser rejects it outright.
+    CF_API_TOKEN_PERSISTED="$(grep '^CF_API_TOKEN=' "${ENV_FILE}" | tail -n1 | cut -d= -f2- | sed -e 's/\r$//' -e 's/[[:space:]]*$//')"
+    CF_ZONE_ID_PERSISTED="$(grep '^CF_ZONE_ID=' "${ENV_FILE}" | tail -n1 | cut -d= -f2- | sed -e 's/\r$//' -e 's/[[:space:]]*$//')"
 fi
 
 if [[ -n "${CF_API_TOKEN_PERSISTED}" && -n "${CF_ZONE_ID_PERSISTED}" ]]; then

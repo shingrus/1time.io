@@ -171,7 +171,7 @@ npm run build
 - The file download island reads the link key from the URL hash first; generated file links are hash-based. Successful binary responses expose remaining downloads and TTL in response headers. Missing headers mean a legacy one-download backend.
 - Frontend file size limit is `Constants.maxFileSizeBytes = 80 * 1024 * 1024` in `frontend/src/lib/util.js`; keep it aligned with the backend's `maxFileSize`. Both describe the **plaintext** file; the wire limit is `maxFileUploadBodyBytes` (81 MB), which allows for the AES-GCM IV/tag and multipart overhead and matches nginx's `81m`.
 - File metadata (`name`, `type`, `size`) is packed into the encrypted payload before upload; the web app server does not store that metadata separately.
-- Pages with `robots: 'noindex, nofollow'` in metadata: `/v/`, `/f/`.
+- Pages with `robots: 'noindex, nofollow'` in metadata: `/v/`, `/f/`, `/my-secrets/`, `/feedback/`. None of them is in the sitemap.
 - Outbox / "My Secrets": the `/my-secrets/` page + `frontend/src/islands/mySecrets.ts` keep a `localStorage` list of the secrets **this browser** created — id, kind, views and timestamps, and deliberately **not** the manage token, which subscribing takes straight from the save response and nothing reads back — and batch-check their read status via `POST /api/secretStatus` (non-consuming). Linked from the footer, and from the success screen when push is unavailable. localStorage is per-browser — no cross-device, no account.
 - Frontend validation is `npm run check` (types) and `npm test` (`node --test` over `frontend/test/`, currently the push service worker). There is no React/Vitest suite after the Astro migration; `npm test` adds no dependency.
 
@@ -188,6 +188,26 @@ npm run build
 - **Endpoint allowlist against SSRF.** The client supplies a URL the backend will POST to, and Redis listens on localhost parsing newline-delimited inline commands. `validatePushEndpoint` requires https and an allowlisted host, checked at write time so a hostile endpoint never reaches Redis.
 - **Cleanup is the TTL**, plus a delete on `404`/`410` from the push service so later reads of a multi-view secret stop POSTing to a dead endpoint. The subscription deliberately outlives its secret: it is read *after* the consume commits, which is what closes the subscribe race.
 - **A per-browser opt-out** lives in `localStorage` (`notificationsOptedOut` in `frontend/src/lib/mySecrets.js`), checked before the auto-subscribe path. Without it, turning one secret off would last only until the next link, since permission is already granted. The switch is on `/my-secrets/`.
+
+## Feedback (team-plan research)
+
+- **Purpose:** find out whether people would use team/business features before building any. Nothing on `/feedback/` exists yet, and the page says so.
+- **Nudge:** a small muted link on two screens only — the link-ready card (`LinkReadyTemplate.astro`, `src=ready`) and under the post-read CTA on `/v/` and `/f/` (`src=read`). `frontend/src/lib/feedbackNudge.js` picks one of three copy variants at random per display and links to `/feedback/?src=<src>&v=<1|2|3>`. It is reached only through a dynamic `import()` once that screen is shown, so no page pays for it on first load. **Never reword a variant in place** — add a new number (and allow it in `feedbackVariants`) so old and new text don't share a bucket.
+- **Clicks per variant** are counted from the access log (`GET /feedback/?src=...&v=...`). nginx serves `/feedback/` with `Cache-Control: no-store` so Cloudflare cannot answer those from the edge.
+- **Page:** `/feedback/` is a plain form posting `application/x-www-form-urlencoded` to `/api/feedback` and works without JS (`303` to `/feedback/#thanks` or `#failed`, shown with `:target`). `islands/feedback.ts` copies `src`/`v` from the query string and submits with `Accept: application/json` for an inline thank-you.
+- **Endpoint:** `apiFeedback` in `backend/feedback.go`. Strict validation: feature ids, team size, `src` (`ready`/`read`) and `v` (`1..3`) from fixed sets — both empty is stored as `src: "direct"`; email as a bare address ≤ 254 bytes; text ≤ 2,000 runes after CRLF→LF; at least one answer. A filled `website` honeypot gets the normal success response and stores nothing. Body capped at 32 KB. Query-string values are ignored (`PostForm`).
+- **Storage:** `RPUSH feedback:entries` of JSON `{at, src, v, features, teamSize, email, text}` — **no TTL, and no IP address or User-Agent**. The same `TxPipelined` bumps `stats:feedback:day:YYYYMMDD` (hash; `from:<src>:<v>` or `from:direct`, and `feature:<id>`) with `statsHistoryTTL`. The list is the source of truth; the day hashes are a convenience.
+- **Reading submissions** (add `-a "$REDISPASS"` if set):
+
+```bash
+redis-cli LLEN feedback:entries
+redis-cli --raw LRANGE feedback:entries -20 -1        # newest 20, oldest first
+redis-cli --raw LRANGE feedback:entries 0 -1 | jq -c 'select(.email != "")'
+redis-cli HGETALL stats:feedback:day:$(date -u +%Y%m%d)
+```
+
+- **Rate limit:** nginx zone `api_feedback` (6 r/m, burst 5) in both `configs/nginx/1time.conf` and `docker/nginx/default.conf.template`.
+- Adds `feedback` to the planned Cloudflare `/api/*` allowlist, taking it from 8 to 9.
 
 ## Frontend CSS Performance
 

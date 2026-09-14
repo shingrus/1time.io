@@ -191,6 +191,12 @@ export async function showLinkReady(
             .catch(() => {});
     }
 
+    // Copy variants live in feedbackNudge.js, loaded only now so the preloaded
+    // share-form chunk carries none of it.
+    void import('../lib/feedbackNudge.js')
+        .then(({showFeedbackNudge}) => showFeedbackNudge(clone, 'ready'))
+        .catch(() => {});
+
     resetBtn.addEventListener('click', () => {
         if (copyTimer) clearTimeout(copyTimer);
         clone.replaceWith(formEl);

@@ -180,6 +180,24 @@
   line-height: 1.5;
 }
 
+/* Quiet by design: muted, below everything the sender came here for. */
+.link-feedback {
+  margin-top: 14px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.link-feedback a {
+  color: var(--text-muted);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.link-feedback a:hover,
+.link-feedback a:focus-visible {
+  color: var(--text);
+}
+
 @media (max-width: 480px) {
   .link-display {
     padding: 18px 16px;
