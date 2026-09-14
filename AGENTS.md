@@ -123,7 +123,7 @@ npm pack --dry-run
 
 - `scripts/` holds operational analytics run against nginx logs / Redis — **not part of the served app**:
   - `retention.py` — sender cohort retention + conversion funnel from nginx logs.
-  - `export_redis_stats_to_gsheets.py` — exports Redis counters + nginx sender/receiver stats to a Google Sheet. The combined `views_total` tab shows text-secret and file counts/share percentages side by side by bucket; `views_daily` and `file_views_daily` remain separate. Buckets are sorted **numerically**, so `10` follows `5` rather than `1`.
+  - `export_redis_stats_to_gsheets.py` — exports Redis counters, feedback entries and nginx sender/receiver stats to a Google Sheet. The combined `views_total` tab shows text-secret and file counts/share percentages side by side by bucket; `views_daily` and `file_views_daily` remain separate. Buckets are sorted **numerically**, so `10` follows `5` rather than `1`.
   - `scripts/analytics/` — **gitignored on purpose**. Never force-add anything from this directory.
 - Owner/self traffic is identified by hits to `/ss` (the private stats page); analytics exclude it.
 
@@ -171,7 +171,7 @@ npm run build
 - The file download island reads the link key from the URL hash first; generated file links are hash-based. Successful binary responses expose remaining downloads and TTL in response headers. Missing headers mean a legacy one-download backend.
 - Frontend file size limit is `Constants.maxFileSizeBytes = 80 * 1024 * 1024` in `frontend/src/lib/util.js`; keep it aligned with the backend's `maxFileSize`. Both describe the **plaintext** file; the wire limit is `maxFileUploadBodyBytes` (81 MB), which allows for the AES-GCM IV/tag and multipart overhead and matches nginx's `81m`.
 - File metadata (`name`, `type`, `size`) is packed into the encrypted payload before upload; the web app server does not store that metadata separately.
-- Pages with `robots: 'noindex, nofollow'` in metadata: `/v/`, `/f/`.
+- Pages with `robots: 'noindex, nofollow'` in metadata: `/v/`, `/f/`, `/my-secrets/`, `/feedback/`. None of them is in the sitemap.
 - Outbox / "My Secrets": the `/my-secrets/` page + `frontend/src/islands/mySecrets.ts` keep a `localStorage` list of the secrets **this browser** created — id, kind, views and timestamps, and deliberately **not** the manage token, which subscribing takes straight from the save response and nothing reads back — and batch-check their read status via `POST /api/secretStatus` (non-consuming). Linked from the footer, and from the success screen when push is unavailable. localStorage is per-browser — no cross-device, no account.
 - Frontend validation is `npm run check` (types) and `npm test` (`node --test` over `frontend/test/`, currently the push service worker). There is no React/Vitest suite after the Astro migration; `npm test` adds no dependency.
 
@@ -188,6 +188,17 @@ npm run build
 - **Endpoint allowlist against SSRF.** The client supplies a URL the backend will POST to, and Redis listens on localhost parsing newline-delimited inline commands. `validatePushEndpoint` requires https and an allowlisted host, checked at write time so a hostile endpoint never reaches Redis.
 - **Cleanup is the TTL**, plus a delete on `404`/`410` from the push service so later reads of a multi-view secret stop POSTing to a dead endpoint. The subscription deliberately outlives its secret: it is read *after* the consume commits, which is what closes the subscribe race.
 - **A per-browser opt-out** lives in `localStorage` (`notificationsOptedOut` in `frontend/src/lib/mySecrets.js`), checked before the auto-subscribe path. Without it, turning one secret off would last only until the next link, since permission is already granted. The switch is on `/my-secrets/`.
+
+## Feedback
+
+- `/feedback/` (noindex, not in the sitemap) has one free-text field posting to `/api/feedback` (`backend/feedback.go`). It works without JS; `islands/feedback.ts` adds Cmd/Ctrl+Enter, an inline thank-you and an 8-second redirect home.
+- Banner: `frontend/src/lib/feedbackNudge.js` shows one of three texts at random on the link-ready card and after a read on `/v/` and `/f/`, linking to `/feedback/?src=ready|read&v=1|2|3`. It loads via dynamic `import()` on those screens only. Never reword a variant in place: add a new number, also in `feedbackVariants`.
+- Validation: only `src`, `v`, `text` and the `website` honeypot are accepted; text is required and at most 2,000 characters; the body is capped at 32 KB. A filled honeypot gets a normal success and stores nothing.
+- Storage: Redis list `feedback:entries` of JSON `{at, src, v, text}`, trimmed to the newest 100, no TTL, no IP address or User-Agent.
+- Reading: the `1time_feedback` tab from `scripts/export_redis_stats_to_gsheets.py`, which keeps entries after Redis drops them.
+- Clicks per variant come from the access log (`GET /feedback/?src=…&v=…`); nginx serves `/feedback/` with `no-store` so Cloudflare cannot hide them.
+- nginx `/api/feedback`: `client_max_body_size 32k`, then `api_feedback_all` (5 r/m for everyone) and `api_feedback` (1 r/m per visitor, burst 1). Keep the per-visitor zone last, or it allows no retry.
+- Add `feedback` to the planned Cloudflare `/api/*` allowlist (9 endpoints).
 
 ## Frontend CSS Performance
 

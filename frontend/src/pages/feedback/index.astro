@@ -1,0 +1,64 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import InlineCss from '../../components/InlineCss.astro';
+import {siteHost} from '../../lib/siteConfig.js';
+
+const title = `Feedback — ${siteHost}`;
+const description = 'Report a bug, suggest a feature, or share any feedback about 1time.io.';
+---
+<BaseLayout
+    title={title}
+    description={description}
+    canonical="/feedback/"
+    robots="noindex, nofollow"
+>
+    <InlineCss slot="head" name="feedback" />
+
+    <section class="feedback" data-feedback>
+        <header class="feedback-head">
+            <h1 class="feedback-title">Help us make 1time.io better</h1>
+        </header>
+
+        <form class="feedback-form" method="post" action="/api/feedback" data-feedback-form>
+            <input type="hidden" name="src" value="" data-feedback-src />
+            <input type="hidden" name="v" value="" data-feedback-v />
+
+            <div class="form-field">
+                <label class="form-label" for="feedback-text">Report a bug, suggest a feature, or share any feedback</label>
+                <textarea class="form-textarea" id="feedback-text" name="text" maxlength="2000" rows="4" required></textarea>
+            </div>
+
+            <div class="feedback-hp" aria-hidden="true">
+                <label>Leave this empty <input type="text" name="website" tabindex="-1" autocomplete="off" /></label>
+            </div>
+
+            <p class="feedback-note">
+                We don’t store your IP address or browser details with your message.
+            </p>
+
+            <p class="feedback-error" role="alert" data-feedback-error hidden></p>
+
+            <button class="btn btn-primary btn-lg feedback-submit" type="submit" data-feedback-submit>
+                <span data-feedback-label>Send</span>
+                <kbd class="btn-kbd" data-shortcut-hint aria-hidden="true" hidden></kbd>
+            </button>
+        </form>
+
+        <div class="feedback-state feedback-thanks" id="thanks" tabindex="-1">
+            <h2 class="feedback-state-title">Thank you</h2>
+            <p>We’ve received your message.</p>
+            <p data-feedback-countdown aria-live="polite" hidden></p>
+            <a class="btn btn-secondary" href="/">Back to 1time.io</a>
+        </div>
+
+        <div class="feedback-state feedback-failed" id="failed" tabindex="-1">
+            <h2 class="feedback-state-title">That didn’t go through</h2>
+            <p>Write a message, then send it again.</p>
+            <a class="btn btn-secondary" href="/feedback/">Back to the form</a>
+        </div>
+    </section>
+
+    <script>
+        import '../../islands/feedback.ts';
+    </script>
+</BaseLayout>

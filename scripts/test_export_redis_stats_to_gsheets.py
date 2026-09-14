@@ -100,5 +100,37 @@ class DeleteSheetsTest(unittest.TestCase):
         self.assertEqual(service.endpoint.calls, [])
 
 
+class BuildFeedbackRowsTest(unittest.TestCase):
+    def test_parses_entries_and_skips_unreadable_ones(self):
+        rows = exporter.build_feedback_rows([
+            '{"at":"2026-09-14T10:00:00Z","src":"ready","v":"2","text":"Larger files"}',
+            "not json",
+            '{"at":"2026-09-14T10:01:00Z","src":"direct","v":"","text":"=SUM(A1)"}',
+        ])
+
+        self.assertEqual(rows[0], exporter.FEEDBACK_COLUMNS)
+        self.assertEqual(
+            [row[1:] for row in rows[1:]],
+            [
+                ["2026-09-14T10:00:00Z", "ready", "2", "Larger files"],
+                ["2026-09-14T10:01:00Z", "direct", "", "=SUM(A1)"],
+            ],
+        )
+
+    def test_same_second_entries_get_distinct_stable_keys(self):
+        entries = [
+            '{"at":"2026-09-14T10:00:00Z","src":"read","v":"1","text":"a"}',
+            '{"at":"2026-09-14T10:00:00Z","src":"read","v":"1","text":"b"}',
+        ]
+        first = exporter.build_feedback_rows(entries)
+        second = exporter.build_feedback_rows(entries)
+
+        self.assertNotEqual(first[1][0], first[2][0])
+        self.assertEqual([row[0] for row in first], [row[0] for row in second])
+
+    def test_returns_only_headers_without_entries(self):
+        self.assertEqual(exporter.build_feedback_rows([]), [exporter.FEEDBACK_COLUMNS])
+
+
 if __name__ == "__main__":
     unittest.main()

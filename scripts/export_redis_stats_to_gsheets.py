@@ -13,6 +13,7 @@ Expected Redis key layout from the Go app:
   - stats:views:file:day:YYYYMMDD:VIEWS      -> per-day files created with VIEWS downloads
   - stats:push:day:YYYYMMDD                  -> hash: outcome -> daily read-notification sends
   - stats:share:day:YYYYMMDD                 -> hash: tap -> daily share-icon presses on the link-ready screen
+  - feedback:entries                         -> list: JSON {at, src, v, text}, newest 100; merged into the feedback tab, so entries dropped from Redis stay in the sheet
 
 Nginx sender/receiver analytics:
   - Reads /var/log/nginx/1time.access.log plus every rotated sibling
@@ -95,6 +96,8 @@ import argparse
 import datetime as dt
 import glob
 import gzip
+import hashlib
+import json
 import os
 import re
 import sys
@@ -126,6 +129,8 @@ PUSH_DAY_KEY_PREFIX = "stats:push:day:"
 PUSH_OUTCOMES = ("all", "succeeded")
 SHARE_DAY_KEY_PREFIX = "stats:share:day:"
 SHARE_FIELDS = ("tap",)
+FEEDBACK_ENTRIES_KEY = "feedback:entries"
+FEEDBACK_COLUMNS = ["key", "at", "src", "v", "text"]
 
 SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
 TAB_NAMES = (
@@ -138,9 +143,10 @@ TAB_NAMES = (
     "file_views_daily",
     "senders_receivers",
     "hourly_raw",
+    "feedback",
 )
 # Tabs merged row-by-row on a key in column A, rather than cleared and rewritten.
-MERGED_TAB_NAMES = ("senders_receivers", "hourly_raw")
+MERGED_TAB_NAMES = ("senders_receivers", "hourly_raw", "feedback")
 LEGACY_TAB_NAMES = ("file_views_total", "page_hits_total", "page_hits_daily")
 # Every rotated sibling, not just .1 - the rotation window is the history.
 DEFAULT_NGINX_LOG_PATHS = (
@@ -687,6 +693,22 @@ def build_hourly_rows(
     return rows
 
 
+def build_feedback_rows(raw_entries: Iterable[str]) -> List[List[object]]:
+    rows: List[List[object]] = [list(FEEDBACK_COLUMNS)]
+    for raw in raw_entries:
+        try:
+            entry = json.loads(raw)
+        except ValueError:
+            warn(f"Skipping unreadable feedback entry: {raw[:80]}")
+            continue
+
+        at, src, v, text = (str(entry.get(field, "")) for field in ("at", "src", "v", "text"))
+        digest = hashlib.sha256(f"{at}\n{src}\n{v}\n{text}".encode()).hexdigest()[:8]
+        rows.append([f"{at}#{digest}", at, src, v, text])
+
+    return rows
+
+
 def collect_stats(
     client: redis.Redis,
     nginx_log_paths: Sequence[str],
@@ -792,6 +814,7 @@ def collect_stats(
         "file_views_daily": file_views_daily_rows,
         "senders_receivers": build_sender_receiver_rows(nginx_day_buckets),
         "hourly_raw": build_hourly_rows(nginx_day_buckets),
+        "feedback": build_feedback_rows(client.lrange(FEEDBACK_ENTRIES_KEY, 0, -1)),
     }
 
 
@@ -959,7 +982,7 @@ def write_merged_tab(
     ]
     if not current_log_rows:
         warn(
-            f"No current nginx log rows found; leaving tab {title} unchanged."
+            f"No current rows found; leaving tab {title} unchanged."
         )
         return 0
 

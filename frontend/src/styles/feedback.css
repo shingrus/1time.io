@@ -1,0 +1,77 @@
+.feedback {
+  padding-top: 16px;
+}
+
+.feedback-title {
+  font-size: 30px;
+  color: var(--text);
+}
+
+.feedback-form {
+  margin-top: 24px;
+}
+
+.feedback-hp {
+  position: absolute;
+  left: -10000px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+.feedback-note {
+  margin-bottom: 16px;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--text-muted);
+}
+
+.feedback-error {
+  margin-bottom: 12px;
+  font-size: 14px;
+  color: var(--danger);
+}
+
+.feedback-state {
+  display: none;
+  padding: 32px 20px;
+  text-align: center;
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  outline: none;
+}
+
+.feedback-state p {
+  margin: 8px auto 20px;
+  max-width: 440px;
+  color: var(--text-secondary);
+}
+
+.feedback-state-title {
+  font-size: 22px;
+  color: var(--text);
+}
+
+.feedback-thanks:target,
+.feedback-failed:target,
+.feedback.is-sent .feedback-thanks {
+  display: block;
+}
+
+.feedback:has(.feedback-thanks:target) .feedback-head,
+.feedback:has(.feedback-thanks:target) .feedback-form,
+.feedback.is-sent .feedback-head,
+.feedback.is-sent .feedback-form {
+  display: none;
+}
+
+@media (max-width: 480px) {
+  .feedback-title {
+    font-size: 24px;
+  }
+
+  .feedback-submit {
+    width: 100%;
+  }
+}

@@ -1,6 +1,8 @@
 limit_req_zone $binary_remote_addr zone=api_write:10m rate=45r/m;
 limit_req_zone $binary_remote_addr zone=api_read:10m rate=60r/m;
 limit_req_zone $binary_remote_addr zone=api_stats:10m rate=240r/m;
+limit_req_zone $binary_remote_addr zone=api_feedback:10m rate=1r/m;
+limit_req_zone $server_name zone=api_feedback_all:1m rate=5r/m;
 limit_req_status 429;
 
 server {
@@ -87,6 +89,19 @@ server {
         limit_req zone=api_read burst=15 nodelay;
         send_timeout 10m;
         proxy_read_timeout 10m;
+        proxy_pass http://${BACKEND_UPSTREAM};
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-Host $host;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+
+    location = /api/feedback {
+        # Per-visitor zone must stay last, or it allows no retry.
+        limit_req zone=api_feedback_all burst=5 nodelay;
+        limit_req zone=api_feedback burst=1 nodelay;
+        client_max_body_size 32k;
         proxy_pass http://${BACKEND_UPSTREAM};
         proxy_http_version 1.1;
         proxy_set_header Host $host;
