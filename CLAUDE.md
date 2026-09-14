@@ -46,6 +46,12 @@ minutes. The same applies to whales and to any single-day record.
   and the access log. Verified working. Migration also solved the Hetzner-IP
   blocklist problem that made the site unreachable from some networks — a failure
   mode that was **invisible in logs**, since blocked users never reached nginx.
+- **HTML is edge-cached** since 2026-09-13 22:50 UTC (`s-maxage=86400`, full purge
+  on deploy in `scripts/update_vm.sh`), so most page requests never reach nginx.
+  Page analytics depend on the inline `/pv` beacon in `BaseLayout.astro` (nginx
+  answers 204, `no-store`); `analyze.py` switches to it at `PV_CUTOVER`. Anything
+  still read from HTML lines — reply CTA clicks, link-preview share platforms —
+  undercounts from that date.
 - `X-Forwarded-For` is set to `$remote_addr`, not `$proxy_add_x_forwarded_for`,
   to avoid duplicating the client IP behind the proxy.
 - **Open:** Cloudflare WAF rules for credential-path probes and an `/api/*`
