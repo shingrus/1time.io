@@ -230,23 +230,6 @@
   margin-bottom: 14px;
 }
 
-/* Feedback nudge under the post-read CTA: muted and last, never above the content. */
-.view-feedback {
-  padding-top: 16px;
-  text-align: center;
-  font-size: 13px;
-  line-height: 1.5;
-}
-
-.view-feedback a {
-  color: var(--text-muted);
-  text-underline-offset: 3px;
-}
-
-.view-feedback a:hover {
-  color: var(--text);
-}
-
 /* Powered-by footer */
 .view-powered-by {
   padding: 28px 0 8px;

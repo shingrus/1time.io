@@ -1,15 +1,14 @@
-// Enhances the /feedback/ form, which also works as a plain form post. The
-// island adds what static HTML cannot: carrying the banner's src/v from the
-// query string, and an inline thank-you instead of a redirect.
 const root = document.querySelector<HTMLElement>('[data-feedback]');
 const form = root?.querySelector<HTMLFormElement>('[data-feedback-form]');
 if (root && form) {
     const submitBtn = form.querySelector<HTMLButtonElement>('[data-feedback-submit]')!;
     const errorEl = form.querySelector<HTMLElement>('[data-feedback-error]')!;
     const thanks = root.querySelector<HTMLElement>('#thanks')!;
+    const countdown = thanks.querySelector<HTMLElement>('[data-feedback-countdown]')!;
+    const submitLabel = submitBtn.querySelector<HTMLElement>('[data-feedback-label]')!;
+    const kbdHint = submitBtn.querySelector<HTMLElement>('[data-shortcut-hint]')!;
+    const textarea = form.querySelector<HTMLTextAreaElement>('#feedback-text')!;
 
-    // Only values the backend accepts; anything else would reject the whole
-    // submission, and an answer without attribution is still worth having.
     const params = new URLSearchParams(window.location.search);
     const src = params.get('src');
     const v = params.get('v');
@@ -23,6 +22,22 @@ if (root && form) {
         errorEl.hidden = false;
     };
 
+    textarea.addEventListener('input', () => {
+        if (kbdHint.hidden && textarea.value.trim() && window.matchMedia('(pointer: fine)').matches) {
+            const isMac = /Mac|iPhone|iPad|iPod/.test(navigator.userAgent);
+            kbdHint.textContent = isMac ? '⌘↵' : 'Ctrl+↵';
+            kbdHint.hidden = false;
+            submitBtn.title = `${isMac ? '⌘' : 'Ctrl'}+Enter`;
+        }
+    });
+
+    form.addEventListener('keydown', (event) => {
+        if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
+            event.preventDefault();
+            if (!submitBtn.disabled) form.requestSubmit(submitBtn);
+        }
+    });
+
     form.addEventListener('submit', async (event) => {
         event.preventDefault();
         errorEl.hidden = true;
@@ -32,28 +47,43 @@ if (root && form) {
             if (typeof value === 'string') body.append(name, value);
         }
 
-        const hasAnswer = body.has('feature') ||
-            ['teamSize', 'email', 'text'].some((name) => (body.get(name) ?? '').trim() !== '');
-        if (!hasAnswer) {
-            showError('Pick at least one feature or write a note first.');
+        if (!(body.get('text') ?? '').trim()) {
+            showError('Write a message first.');
             return;
         }
 
         submitBtn.disabled = true;
-        submitBtn.textContent = 'Sending…';
+        submitLabel.textContent = 'Sending…';
+        let message = 'That didn’t go through. Please try again.';
         try {
             const response = await fetch('/api/feedback', {
                 method: 'POST',
                 headers: {Accept: 'application/json'},
                 body,
             });
-            if (!response.ok) throw new Error(String(response.status));
-            root.classList.add('is-sent');
-            thanks.focus();
-        } catch {
-            showError('That didn’t go through. Check your email address and try again.');
-            submitBtn.disabled = false;
-            submitBtn.textContent = 'Send';
-        }
+            if (response.ok) {
+                root.classList.add('is-sent');
+                thanks.focus();
+                let seconds = 8;
+                const tick = () => {
+                    if (seconds === 0) {
+                        window.location.assign('/');
+                        return;
+                    }
+                    countdown.textContent = `Taking you back to 1time.io in ${seconds}…`;
+                    seconds -= 1;
+                    setTimeout(tick, 1000);
+                };
+                countdown.hidden = false;
+                tick();
+                return;
+            }
+            if (response.status === 429) {
+                message = 'Too many attempts. Please wait a minute and try again.';
+            }
+        } catch {}
+        showError(message);
+        submitBtn.disabled = false;
+        submitLabel.textContent = 'Send';
     });
 }

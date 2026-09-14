@@ -123,7 +123,7 @@ npm pack --dry-run
 
 - `scripts/` holds operational analytics run against nginx logs / Redis — **not part of the served app**:
   - `retention.py` — sender cohort retention + conversion funnel from nginx logs.
-  - `export_redis_stats_to_gsheets.py` — exports Redis counters + nginx sender/receiver stats to a Google Sheet. The combined `views_total` tab shows text-secret and file counts/share percentages side by side by bucket; `views_daily` and `file_views_daily` remain separate. Buckets are sorted **numerically**, so `10` follows `5` rather than `1`.
+  - `export_redis_stats_to_gsheets.py` — exports Redis counters, feedback entries and nginx sender/receiver stats to a Google Sheet. The combined `views_total` tab shows text-secret and file counts/share percentages side by side by bucket; `views_daily` and `file_views_daily` remain separate. Buckets are sorted **numerically**, so `10` follows `5` rather than `1`.
   - `scripts/analytics/` — **gitignored on purpose**. Never force-add anything from this directory.
 - Owner/self traffic is identified by hits to `/ss` (the private stats page); analytics exclude it.
 
@@ -189,25 +189,16 @@ npm run build
 - **Cleanup is the TTL**, plus a delete on `404`/`410` from the push service so later reads of a multi-view secret stop POSTing to a dead endpoint. The subscription deliberately outlives its secret: it is read *after* the consume commits, which is what closes the subscribe race.
 - **A per-browser opt-out** lives in `localStorage` (`notificationsOptedOut` in `frontend/src/lib/mySecrets.js`), checked before the auto-subscribe path. Without it, turning one secret off would last only until the next link, since permission is already granted. The switch is on `/my-secrets/`.
 
-## Feedback (team-plan research)
+## Feedback
 
-- **Purpose:** find out whether people would use team/business features before building any. Nothing on `/feedback/` exists yet, and the page says so.
-- **Nudge:** a small muted link on two screens only — the link-ready card (`LinkReadyTemplate.astro`, `src=ready`) and under the post-read CTA on `/v/` and `/f/` (`src=read`). `frontend/src/lib/feedbackNudge.js` picks one of three copy variants at random per display and links to `/feedback/?src=<src>&v=<1|2|3>`. It is reached only through a dynamic `import()` once that screen is shown, so no page pays for it on first load. **Never reword a variant in place** — add a new number (and allow it in `feedbackVariants`) so old and new text don't share a bucket.
-- **Clicks per variant** are counted from the access log (`GET /feedback/?src=...&v=...`). nginx serves `/feedback/` with `Cache-Control: no-store` so Cloudflare cannot answer those from the edge.
-- **Page:** `/feedback/` is a plain form posting `application/x-www-form-urlencoded` to `/api/feedback` and works without JS (`303` to `/feedback/#thanks` or `#failed`, shown with `:target`). `islands/feedback.ts` copies `src`/`v` from the query string and submits with `Accept: application/json` for an inline thank-you.
-- **Endpoint:** `apiFeedback` in `backend/feedback.go`. Strict validation: feature ids, team size, `src` (`ready`/`read`) and `v` (`1..3`) from fixed sets — both empty is stored as `src: "direct"`; email as a bare address ≤ 254 bytes; text ≤ 2,000 runes after CRLF→LF; at least one answer. A filled `website` honeypot gets the normal success response and stores nothing. Body capped at 32 KB. Query-string values are ignored (`PostForm`).
-- **Storage:** `RPUSH feedback:entries` of JSON `{at, src, v, features, teamSize, email, text}` — **no TTL, and no IP address or User-Agent**. The same `TxPipelined` bumps `stats:feedback:day:YYYYMMDD` (hash; `from:<src>:<v>` or `from:direct`, and `feature:<id>`) with `statsHistoryTTL`. The list is the source of truth; the day hashes are a convenience.
-- **Reading submissions** (add `-a "$REDISPASS"` if set):
-
-```bash
-redis-cli LLEN feedback:entries
-redis-cli --raw LRANGE feedback:entries -20 -1        # newest 20, oldest first
-redis-cli --raw LRANGE feedback:entries 0 -1 | jq -c 'select(.email != "")'
-redis-cli HGETALL stats:feedback:day:$(date -u +%Y%m%d)
-```
-
-- **Rate limit:** nginx zone `api_feedback` (6 r/m, burst 5) in both `configs/nginx/1time.conf` and `docker/nginx/default.conf.template`.
-- Adds `feedback` to the planned Cloudflare `/api/*` allowlist, taking it from 8 to 9.
+- `/feedback/` (noindex, not in the sitemap) has one free-text field posting to `/api/feedback` (`backend/feedback.go`). It works without JS; `islands/feedback.ts` adds Cmd/Ctrl+Enter, an inline thank-you and an 8-second redirect home.
+- Banner: `frontend/src/lib/feedbackNudge.js` shows one of three texts at random on the link-ready card and after a read on `/v/` and `/f/`, linking to `/feedback/?src=ready|read&v=1|2|3`. It loads via dynamic `import()` on those screens only. Never reword a variant in place: add a new number, also in `feedbackVariants`.
+- Validation: only `src`, `v`, `text` and the `website` honeypot are accepted; text is required and at most 2,000 characters; the body is capped at 32 KB. A filled honeypot gets a normal success and stores nothing.
+- Storage: Redis list `feedback:entries` of JSON `{at, src, v, text}`, trimmed to the newest 100, no TTL, no IP address or User-Agent.
+- Reading: the `1time_feedback` tab from `scripts/export_redis_stats_to_gsheets.py`, which keeps entries after Redis drops them.
+- Clicks per variant come from the access log (`GET /feedback/?src=…&v=…`); nginx serves `/feedback/` with `no-store` so Cloudflare cannot hide them.
+- nginx `/api/feedback`: `client_max_body_size 32k`, then `api_feedback_all` (5 r/m for everyone) and `api_feedback` (1 r/m per visitor, burst 1). Keep the per-visitor zone last, or it allows no retry.
+- Add `feedback` to the planned Cloudflare `/api/*` allowlist (9 endpoints).
 
 ## Frontend CSS Performance
 

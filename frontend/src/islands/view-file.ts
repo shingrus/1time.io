@@ -142,9 +142,8 @@ if (form) {
                     : 'One-time delivery complete. The encrypted file has been deleted from our servers.';
                 setPhase('idle');
                 showOnly(downloadedSection);
-                // See view-secret.ts: loaded after the result is shown, rendered below it.
                 void import('../lib/feedbackNudge.js')
-                    .then(({showFeedbackNudge}) => showFeedbackNudge(downloadedSection, 'read'))
+                    .then(({showFeedbackNudge}) => showFeedbackNudge(document, 'read'))
                     .catch(() => {});
             } catch {
                 // Download succeeded (and was consumed) but decrypt failed — be honest.

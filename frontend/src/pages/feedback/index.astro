@@ -3,42 +3,8 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 import InlineCss from '../../components/InlineCss.astro';
 import {siteHost} from '../../lib/siteConfig.js';
 
-const title = `Help shape 1time.io for teams — ${siteHost}`;
-const description = 'Tell us which team features you would use. None of them exist yet.';
-
-// Ids must match feedbackFeatures in backend/feedback.go.
-const features = [
-    {
-        id: 'request-secret',
-        title: 'Request a secret from a client',
-        text: 'Send a link that asks someone for a password or key, encrypted so only you can read it.',
-    },
-    {
-        id: 'custom-domain',
-        title: 'Your own domain',
-        text: 'Links on secrets.yourcompany.com, so recipients know who sent them.',
-    },
-    {
-        id: 'audit-log',
-        title: 'Read receipts & audit log',
-        text: 'A team history of what was shared and when each link was opened.',
-    },
-    {
-        id: 'api-keys',
-        title: 'API keys & higher limits',
-        text: 'Authenticated API and CLI access with limits sized for automation.',
-    },
-    {
-        id: 'chat-integration',
-        title: 'Slack / Teams integration',
-        text: 'Create one-time links without leaving the chat.',
-    },
-    {
-        id: 'larger-files',
-        title: 'Larger files',
-        text: 'Share files beyond today’s 80 MB limit.',
-    },
-];
+const title = `Feedback — ${siteHost}`;
+const description = 'Report a bug, suggest a feature, or share any feedback about 1time.io.';
 ---
 <BaseLayout
     title={title}
@@ -50,54 +16,16 @@ const features = [
 
     <section class="feedback" data-feedback>
         <header class="feedback-head">
-            <h1 class="feedback-title">Help shape 1time.io for teams</h1>
-            <p class="feedback-lead">
-                We’re considering a plan for teams. Which of these would you use?
-                None of them exist yet — your answers decide what we build first.
-            </p>
+            <h1 class="feedback-title">Help us make 1time.io better</h1>
         </header>
 
         <form class="feedback-form" method="post" action="/api/feedback" data-feedback-form>
             <input type="hidden" name="src" value="" data-feedback-src />
             <input type="hidden" name="v" value="" data-feedback-v />
 
-            <fieldset class="feedback-features">
-                <legend class="form-label">Pick any you would use</legend>
-                {features.map((feature) => (
-                    <label class="feedback-card">
-                        <span class="feedback-card-copy">
-                            <span class="feedback-card-title">{feature.title}</span>
-                            <span class="feedback-card-text">{feature.text}</span>
-                        </span>
-                        <span class="feedback-toggle">
-                            <input type="checkbox" name="feature" value={feature.id} />
-                            <span class="feedback-toggle-label">I want this</span>
-                        </span>
-                    </label>
-                ))}
-            </fieldset>
-
-            <div class="feedback-fields">
-                <div class="form-field">
-                    <label class="form-label" for="feedback-email">Work email <span class="feedback-optional">optional</span></label>
-                    <input class="form-input" id="feedback-email" name="email" type="email" maxlength="254" autocomplete="email" placeholder="you@company.com" />
-                </div>
-                <div class="form-field">
-                    <label class="form-label" for="feedback-team">Team size <span class="feedback-optional">optional</span></label>
-                    <select class="form-select" id="feedback-team" name="teamSize">
-                        <option value="">Prefer not to say</option>
-                        <option value="1">Just me</option>
-                        <option value="2-10">2–10</option>
-                        <option value="11-50">11–50</option>
-                        <option value="51-200">51–200</option>
-                        <option value="201+">201+</option>
-                    </select>
-                </div>
-            </div>
-
             <div class="form-field">
-                <label class="form-label" for="feedback-text">What do you use 1time.io for? <span class="feedback-optional">optional</span></label>
-                <textarea class="form-textarea" id="feedback-text" name="text" maxlength="2000" rows="4"></textarea>
+                <label class="form-label" for="feedback-text">Report a bug, suggest a feature, or share any feedback</label>
+                <textarea class="form-textarea" id="feedback-text" name="text" maxlength="2000" rows="4" required></textarea>
             </div>
 
             <div class="feedback-hp" aria-hidden="true">
@@ -105,25 +33,27 @@ const features = [
             </div>
 
             <p class="feedback-note">
-                Everything is optional. We don’t store your IP address or browser
-                details with your answers, and we’ll only use your email to follow up on them.
+                We don’t store your IP address or browser details with your message.
             </p>
 
             <p class="feedback-error" role="alert" data-feedback-error hidden></p>
 
-            <button class="btn btn-primary btn-lg feedback-submit" type="submit" data-feedback-submit>Send</button>
+            <button class="btn btn-primary btn-lg feedback-submit" type="submit" data-feedback-submit>
+                <span data-feedback-label>Send</span>
+                <kbd class="btn-kbd" data-shortcut-hint aria-hidden="true" hidden></kbd>
+            </button>
         </form>
 
-        {/* Shown by :target after a form post without JS, or by the island. */}
         <div class="feedback-state feedback-thanks" id="thanks" tabindex="-1">
             <h2 class="feedback-state-title">Thank you</h2>
-            <p>Your answers are in. They go straight into deciding what we build next.</p>
+            <p>We’ve received your message.</p>
+            <p data-feedback-countdown aria-live="polite" hidden></p>
             <a class="btn btn-secondary" href="/">Back to 1time.io</a>
         </div>
 
         <div class="feedback-state feedback-failed" id="failed" tabindex="-1">
             <h2 class="feedback-state-title">That didn’t go through</h2>
-            <p>Pick at least one option or write a note, then send again.</p>
+            <p>Write a message, then send it again.</p>
             <a class="btn btn-secondary" href="/feedback/">Back to the form</a>
         </div>
     </section>

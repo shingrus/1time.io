@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"reflect"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -33,47 +34,37 @@ func postFeedback(form url.Values, acceptJSON bool) *httptest.ResponseRecorder {
 	return rec
 }
 
-func TestParseFeedbackAcceptsFeatureTogglesAlone(t *testing.T) {
+func TestParseFeedbackAcceptsTextAlone(t *testing.T) {
 	entry, spam, ok := parseFeedback(url.Values{
-		"src":     {"ready"},
-		"v":       {"2"},
-		"feature": {"custom-domain", "api-keys", "custom-domain"},
+		"src":  {"ready"},
+		"v":    {"2"},
+		"text": {"Sharing database credentials with contractors"},
 	})
 	if !ok || spam {
 		t.Fatalf("parseFeedback() ok=%v spam=%v, want ok and not spam", ok, spam)
 	}
 
-	want := feedbackEntry{Src: "ready", V: "2", Features: []string{"custom-domain", "api-keys"}}
+	want := feedbackEntry{Src: "ready", V: "2", Text: "Sharing database credentials with contractors"}
 	if !reflect.DeepEqual(entry, want) {
 		t.Fatalf("entry = %#v, want %#v", entry, want)
 	}
 }
 
-func TestParseFeedbackDirectVisitAndOptionalFields(t *testing.T) {
+func TestParseFeedbackDirectVisitTrimsText(t *testing.T) {
 	entry, _, ok := parseFeedback(url.Values{
-		"teamSize": {"11-50"},
-		"email":    {"  ops@example.com "},
-		"text":     {" Rotating vendor credentials\r\nevery quarter "},
+		"text": {" Rotating vendor credentials\r\nevery quarter "},
 	})
 	if !ok {
 		t.Fatal("parseFeedback() rejected a valid direct submission")
 	}
 
-	want := feedbackEntry{
-		Src:      "direct",
-		Features: []string{},
-		TeamSize: "11-50",
-		Email:    "ops@example.com",
-		Text:     "Rotating vendor credentials\nevery quarter",
-	}
+	want := feedbackEntry{Src: "direct", Text: "Rotating vendor credentials\nevery quarter"}
 	if !reflect.DeepEqual(entry, want) {
 		t.Fatalf("entry = %#v, want %#v", entry, want)
 	}
 }
 
 func TestParseFeedbackTextLimitCountsRunesAfterCRLF(t *testing.T) {
-	// 2,000 characters as the textarea counts them, with CRLF line breaks as
-	// the browser submits them.
 	atLimit := strings.Repeat("é\r\n", 999) + "éa"
 	if _, _, ok := parseFeedback(url.Values{"text": {atLimit}}); !ok {
 		t.Fatal("text at the limit was rejected")
@@ -87,7 +78,7 @@ func TestParseFeedbackTextLimitCountsRunesAfterCRLF(t *testing.T) {
 
 func TestParseFeedbackRejectsInvalidInput(t *testing.T) {
 	valid := func(overrides url.Values) url.Values {
-		form := url.Values{"src": {"read"}, "v": {"1"}, "feature": {"larger-files"}}
+		form := url.Values{"src": {"read"}, "v": {"1"}, "text": {"hello"}}
 		for key, values := range overrides {
 			form[key] = values
 		}
@@ -95,19 +86,16 @@ func TestParseFeedbackRejectsInvalidInput(t *testing.T) {
 	}
 
 	cases := map[string]url.Values{
-		"empty submission":      {"src": {"read"}, "v": {"1"}},
-		"unknown feature":       valid(url.Values{"feature": {"larger-files", "sso"}}),
-		"unknown source":        valid(url.Values{"src": {"home"}}),
-		"unknown variant":       valid(url.Values{"v": {"4"}}),
-		"source without v":      valid(url.Values{"v": nil}),
-		"variant without src":   valid(url.Values{"src": nil}),
-		"unknown team size":     valid(url.Values{"teamSize": {"1000"}}),
-		"email without at":      valid(url.Values{"email": {"ops.example.com"}}),
-		"email without dot":     valid(url.Values{"email": {"ops@localhost"}}),
-		"email display name":    valid(url.Values{"email": {"Ops <ops@example.com>"}}),
-		"email too long":        valid(url.Values{"email": {strings.Repeat("a", 250) + "@example.com"}}),
-		"repeated single field": valid(url.Values{"email": {"a@example.com", "b@example.com"}}),
-		"invalid utf8 text":     valid(url.Values{"text": {"\xff"}}),
+		"empty submission":     {"src": {"read"}, "v": {"1"}},
+		"whitespace-only text": valid(url.Values{"text": {" \r\n "}}),
+		"unknown field":        valid(url.Values{"feature": {"api-keys"}}),
+		"unknown source":       valid(url.Values{"src": {"home"}}),
+		"unknown variant":      valid(url.Values{"v": {"4"}}),
+		"source without v":     valid(url.Values{"v": nil}),
+		"variant without src":  valid(url.Values{"src": nil}),
+		"email field":          valid(url.Values{"email": {"a@example.com"}}),
+		"repeated field":       valid(url.Values{"text": {"a", "b"}}),
+		"invalid utf8 text":    valid(url.Values{"text": {"\xff"}}),
 	}
 
 	for name, form := range cases {
@@ -133,12 +121,12 @@ func TestAPIFeedbackStoresValidSubmission(t *testing.T) {
 		return nil
 	})
 
-	rec := postFeedback(url.Values{"src": {"read"}, "v": {"3"}, "feature": {"audit-log"}}, true)
+	rec := postFeedback(url.Values{"src": {"read"}, "v": {"3"}, "text": {"audit trail"}}, true)
 
 	if rec.Code != http.StatusOK || strings.TrimSpace(rec.Body.String()) != `{"status":"ok"}` {
 		t.Fatalf("response = %d %q", rec.Code, rec.Body.String())
 	}
-	if len(stored) != 1 || stored[0].Src != "read" || stored[0].V != "3" {
+	if len(stored) != 1 || stored[0].Src != "read" || stored[0].V != "3" || stored[0].Text != "audit trail" {
 		t.Fatalf("stored = %#v", stored)
 	}
 	if got := rec.Header().Get("Cache-Control"); got != "no-store" {
@@ -152,7 +140,7 @@ func TestAPIFeedbackHoneypotStoresNothing(t *testing.T) {
 		return nil
 	})
 
-	rec := postFeedback(url.Values{"feature": {"api-keys"}, "website": {"x"}}, true)
+	rec := postFeedback(url.Values{"text": {"hi"}, "website": {"x"}}, true)
 	if rec.Code != http.StatusOK || strings.TrimSpace(rec.Body.String()) != `{"status":"ok"}` {
 		t.Fatalf("response = %d %q, want a success indistinguishable from a real one", rec.Code, rec.Body.String())
 	}
@@ -164,7 +152,7 @@ func TestAPIFeedbackRejectsInvalidSubmission(t *testing.T) {
 		return nil
 	})
 
-	rec := postFeedback(url.Values{"feature": {"not-a-feature"}}, true)
+	rec := postFeedback(url.Values{"text": {"   "}}, true)
 	if rec.Code != http.StatusBadRequest || strings.TrimSpace(rec.Body.String()) != `{"status":"invalid"}` {
 		t.Fatalf("response = %d %q", rec.Code, rec.Body.String())
 	}
@@ -176,7 +164,7 @@ func TestAPIFeedbackIgnoresQueryStringFields(t *testing.T) {
 		return nil
 	})
 
-	req := httptest.NewRequest(http.MethodPost, "/api/feedback?feature=api-keys", strings.NewReader(""))
+	req := httptest.NewRequest(http.MethodPost, "/api/feedback?text=hi", strings.NewReader(""))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req.Header.Set("Accept", "application/json")
 	rec := httptest.NewRecorder()
@@ -204,7 +192,7 @@ func TestAPIFeedbackStorageErrorIsReported(t *testing.T) {
 		return errors.New("redis down")
 	})
 
-	rec := postFeedback(url.Values{"feature": {"api-keys"}}, true)
+	rec := postFeedback(url.Values{"text": {"hi"}}, true)
 	if rec.Code != http.StatusInternalServerError || strings.TrimSpace(rec.Body.String()) != `{"status":"error"}` {
 		t.Fatalf("response = %d %q", rec.Code, rec.Body.String())
 	}
@@ -218,7 +206,7 @@ func TestAPIFeedbackRedirectsPlainFormPosts(t *testing.T) {
 		form url.Values
 		want string
 	}{
-		{"success", url.Values{"feature": {"api-keys"}}, feedbackThanksURL},
+		{"success", url.Values{"text": {"hi"}}, feedbackThanksURL},
 		{"honeypot", url.Values{"website": {"x"}}, feedbackThanksURL},
 		{"invalid", url.Values{}, feedbackFailedURL},
 	}
@@ -236,14 +224,14 @@ func TestAPIFeedbackRedirectsPlainFormPosts(t *testing.T) {
 	}
 }
 
-func TestSaveFeedbackWritesEntryAndDayCounters(t *testing.T) {
+func TestSaveFeedbackWritesEntry(t *testing.T) {
 	client := startTestRedis(t)
 	now := time.Date(2026, time.September, 14, 23, 59, 30, 500, time.UTC)
 
 	entries := []feedbackEntry{
-		{Src: "ready", V: "1", Features: []string{"custom-domain", "api-keys"}, TeamSize: "2-10", Email: "a@example.com", Text: "hi"},
-		{Src: "ready", V: "1", Features: []string{"api-keys"}},
-		{Src: "direct", Features: []string{}, Text: "no toggles"},
+		{Src: "ready", V: "1", Text: "hi"},
+		{Src: "ready", V: "1", Text: "again"},
+		{Src: "direct", Text: "direct visit"},
 	}
 	for _, entry := range entries {
 		if err := saveFeedbackWithClient(client, entry, now); err != nil {
@@ -259,8 +247,6 @@ func TestSaveFeedbackWritesEntryAndDayCounters(t *testing.T) {
 		t.Fatalf("stored %d entries, want %d", len(stored), len(entries))
 	}
 
-	// The stored shape is the privacy promise: exactly these fields, and in
-	// particular no IP address or User-Agent.
 	var first map[string]any
 	if err := json.Unmarshal([]byte(stored[0]), &first); err != nil {
 		t.Fatalf("unmarshal stored entry: %v", err)
@@ -269,7 +255,7 @@ func TestSaveFeedbackWritesEntryAndDayCounters(t *testing.T) {
 	for key := range first {
 		keys = append(keys, key)
 	}
-	wantKeys := []string{"at", "email", "features", "src", "teamSize", "text", "v"}
+	wantKeys := []string{"at", "src", "text", "v"}
 	if !sameStrings(keys, wantKeys) {
 		t.Fatalf("stored fields = %v, want %v", keys, wantKeys)
 	}
@@ -280,23 +266,39 @@ func TestSaveFeedbackWritesEntryAndDayCounters(t *testing.T) {
 	if ttl := client.TTL(feedbackEntriesKey).Val(); ttl != -1*time.Second {
 		t.Fatalf("entries TTL = %v, want none", ttl)
 	}
+}
 
-	dayKey := "stats:feedback:day:20260914"
-	counts, err := client.HGetAll(dayKey).Result()
+func TestSaveFeedbackKeepsOnlyNewestEntries(t *testing.T) {
+	client := startTestRedis(t)
+	now := time.Date(2026, time.September, 14, 12, 0, 0, 0, time.UTC)
+
+	total := maxFeedbackEntries + 5
+	for i := 1; i <= total; i++ {
+		if err := saveFeedbackWithClient(client, feedbackEntry{Src: "direct", Text: strconv.Itoa(i)}, now); err != nil {
+			t.Fatalf("saveFeedbackWithClient() error = %v", err)
+		}
+	}
+
+	stored, err := client.LRange(feedbackEntriesKey, 0, -1).Result()
 	if err != nil {
-		t.Fatalf("HGETALL error = %v", err)
+		t.Fatalf("LRANGE error = %v", err)
 	}
-	wantCounts := map[string]string{
-		"from:ready:1":          "2",
-		"from:direct":           "1",
-		"feature:custom-domain": "1",
-		"feature:api-keys":      "2",
+	if len(stored) != maxFeedbackEntries {
+		t.Fatalf("stored %d entries, want %d", len(stored), maxFeedbackEntries)
 	}
-	if !reflect.DeepEqual(counts, wantCounts) {
-		t.Fatalf("day counters = %v, want %v", counts, wantCounts)
+
+	textAt := func(i int) string {
+		var entry feedbackEntry
+		if err := json.Unmarshal([]byte(stored[i]), &entry); err != nil {
+			t.Fatalf("unmarshal stored entry: %v", err)
+		}
+		return entry.Text
 	}
-	if ttl := client.TTL(dayKey).Val(); ttl <= 0 || ttl > statsHistoryTTL {
-		t.Fatalf("day key TTL = %v, want within statsHistoryTTL", ttl)
+	if got, want := textAt(0), strconv.Itoa(total-maxFeedbackEntries+1); got != want {
+		t.Fatalf("oldest kept entry = %q, want %q", got, want)
+	}
+	if got, want := textAt(len(stored)-1), strconv.Itoa(total); got != want {
+		t.Fatalf("newest entry = %q, want %q", got, want)
 	}
 }
 

@@ -163,9 +163,8 @@ if (form) {
                 postReadCta.toggleAttribute('hidden', false);
                 showOnly(decryptedSection);
                 setLoading(false);
-                // After the secret is on screen, and below it, so it never delays or moves it.
                 void import('../lib/feedbackNudge.js')
-                    .then(({showFeedbackNudge}) => showFeedbackNudge(postReadCta, 'read'))
+                    .then(({showFeedbackNudge}) => showFeedbackNudge(document, 'read'))
                     .catch(() => {});
                 return;
             }
