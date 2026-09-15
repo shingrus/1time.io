@@ -15,8 +15,7 @@ WorkingDirectory=/opt/1time
 # unit is.
 #
 # Written by scripts/update_vm.sh --init; edit it directly to change anything.
-# The leading '-' lets the service start when it is missing, which is how a
-# deployment with no Web Push keys simply runs without notifications.
+# The leading '-' lets the service start when it is missing.
 EnvironmentFile=-/etc/1time/env
 ExecStart=/opt/1time/bin/1time-api
 Restart=always

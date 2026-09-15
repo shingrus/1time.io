@@ -51,38 +51,6 @@ export function loadSecrets() {
     return live;
 }
 
-const NOTIFY_OPT_OUT_KEY = '1time.notifications.off.v1';
-
-/**
- * Whether the sender has switched read notifications off for this browser.
- *
- * Checked before the auto-subscribe path: once permission is granted every new secret
- * would otherwise subscribe itself, so turning one off would last exactly until the
- * next link.
- */
-export function notificationsOptedOut() {
-    try {
-        return localStorage.getItem(NOTIFY_OPT_OUT_KEY) === '1';
-    } catch {
-        return false;
-    }
-}
-
-/**
- * @param {boolean} optedOut
- */
-export function setNotificationsOptedOut(optedOut) {
-    try {
-        if (optedOut) {
-            localStorage.setItem(NOTIFY_OPT_OUT_KEY, '1');
-        } else {
-            localStorage.removeItem(NOTIFY_OPT_OUT_KEY);
-        }
-    } catch {
-        // Private mode or disabled storage — the preference is best-effort.
-    }
-}
-
 /**
  * Forget a single local record. Does not touch the server-side secret.
  *
@@ -95,12 +63,6 @@ export function removeSecret(id) {
 
 /**
  * Record a freshly created secret. Best-effort and never throws.
- *
- * The manage token is deliberately NOT kept here. Subscribing a notification takes it
- * straight from the save response while the link-ready screen is open, and
- * nothing reads it back afterwards — storing a capability no one uses only
- * widens what a stolen localStorage yields. Subscribing an older secret from My
- * Secrets would need it; that feature does not exist.
  *
  * @param {{id: string, kind?: 'message'|'file', durationSeconds?: number, views?: number}} params
  */

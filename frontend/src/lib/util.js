@@ -80,10 +80,6 @@ export async function createSecretLink(secretMessage, options = {}) {
         randomKey,
         newId: data.newId,
         link: buildSecretLink(randomKey, data.newId),
-        // Both absent unless the deployment has push configured. Passed straight
-        // through to the link-ready state, the only place that subscribes.
-        manageToken: data.manageToken,
-        vapidPublicKey: data.vapidPublicKey,
     };
 }
 

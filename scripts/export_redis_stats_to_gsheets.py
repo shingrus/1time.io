@@ -11,7 +11,6 @@ Expected Redis key layout from the Go app:
   - stats:views:day:YYYYMMDD:VIEWS           -> per-day secrets created with VIEWS views
   - stats:views:file:total:VIEWS             -> lifetime files created with VIEWS downloads
   - stats:views:file:day:YYYYMMDD:VIEWS      -> per-day files created with VIEWS downloads
-  - stats:push:day:YYYYMMDD                  -> hash: outcome -> daily read-notification sends
   - stats:share:day:YYYYMMDD                 -> hash: tap -> daily share-icon presses on the link-ready screen
   - feedback:entries                         -> list: JSON {at, src, v, text}, newest 100; merged into the feedback tab, so entries dropped from Redis stay in the sheet
 
@@ -124,9 +123,6 @@ VIEWS_TOTAL_KEY_PREFIX = "stats:views:total:"
 VIEWS_DAY_KEY_PREFIX = "stats:views:day:"
 FILE_VIEWS_TOTAL_KEY_PREFIX = "stats:views:file:total:"
 FILE_VIEWS_DAY_KEY_PREFIX = "stats:views:file:day:"
-PUSH_DAY_KEY_PREFIX = "stats:push:day:"
-# Pinned so a day with no successes still gets a succeeded column.
-PUSH_OUTCOMES = ("all", "succeeded")
 SHARE_DAY_KEY_PREFIX = "stats:share:day:"
 SHARE_FIELDS = ("tap",)
 FEEDBACK_ENTRIES_KEY = "feedback:entries"
@@ -136,7 +132,6 @@ SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
 TAB_NAMES = (
     "overview",
     "stored_daily",
-    "push_daily",
     "share_daily",
     "views_total",
     "views_daily",
@@ -736,13 +731,6 @@ def collect_stats(
             stored_file_daily.get(day, 0),
         ])
 
-    push_daily: Dict[str, Dict[str, int]] = {}
-    for key in scan_keys(client, f"{PUSH_DAY_KEY_PREFIX}*"):
-        day = key.removeprefix(PUSH_DAY_KEY_PREFIX)
-        push_daily[day] = {
-            outcome: safe_int(count) for outcome, count in client.hgetall(key).items()
-        }
-
     share_daily: Dict[str, Dict[str, int]] = {}
     for key in scan_keys(client, f"{SHARE_DAY_KEY_PREFIX}*"):
         day = key.removeprefix(SHARE_DAY_KEY_PREFIX)
@@ -783,9 +771,6 @@ def collect_stats(
     views_total_sum = sum(views_total.values())
     file_views_total_sum = sum(file_views_total.values())
 
-    push_daily_rows = build_daily_field_rows(push_daily, known_fields=PUSH_OUTCOMES)
-    push_window_all = sum(day.get("all", 0) for day in push_daily.values())
-    push_window_succeeded = sum(day.get("succeeded", 0) for day in push_daily.values())
     share_daily_rows = build_daily_field_rows(share_daily, known_fields=SHARE_FIELDS)
     share_window_tap = sum(day.get("tap", 0) for day in share_daily.values())
 
@@ -799,15 +784,12 @@ def collect_stats(
         ["views_multi_view_secrets", views_total_sum - views_total.get("1", 0)],
         ["views_counted_files", file_views_total_sum],
         ["views_multi_download_files", file_views_total_sum - file_views_total.get("1", 0)],
-        ["push_all_window", push_window_all],
-        ["push_succeeded_window", push_window_succeeded],
         ["share_tap_window", share_window_tap],
     ]
 
     return {
         "overview": overview_rows,
         "stored_daily": stored_daily_rows,
-        "push_daily": push_daily_rows,
         "share_daily": share_daily_rows,
         "views_total": views_total_rows,
         "views_daily": views_daily_rows,

@@ -2,7 +2,7 @@
 #
 # Deploy 1time.io to a Debian/Ubuntu host.
 #
-#   sudo env REDIS_PASS=... VAPID_PUBLIC_KEY=... VAPID_PRIVATE_KEY=... \
+#   sudo env REDIS_PASS=... \
 #       CF_API_TOKEN=... CF_ZONE_ID=... \
 #       ./scripts/update_vm.sh --init       first time on a fresh box
 #   sudo ./scripts/update_vm.sh             every deploy after that
@@ -55,9 +55,6 @@ STATIC_ROOT="${STATIC_ROOT:-/var/www/1time}"
 LISTEN_ADDR="${LISTEN_ADDR:-127.0.0.1:8080}"
 REDIS_HOST="${REDIS_HOST:-127.0.0.1:6379}"
 REDIS_PASS="${REDIS_PASS:-}"
-VAPID_PUBLIC_KEY="${VAPID_PUBLIC_KEY:-}"
-VAPID_PRIVATE_KEY="${VAPID_PRIVATE_KEY:-}"
-VAPID_SUBJECT="${VAPID_SUBJECT:-mailto:info@1time.io}"
 CF_API_TOKEN="${CF_API_TOKEN:-}"
 CF_ZONE_ID="${CF_ZONE_ID:-}"
 
@@ -137,12 +134,6 @@ LISTEN_ADDR=${LISTEN_ADDR}
 REDISHOST=${REDIS_HOST}
 REDISPASS=${REDIS_PASS}
 FILE_STORAGE_DIR=${FILE_STORAGE_DIR}
-# Web Push. All three must be set or notifications stay off; the service says
-# which are missing at startup. Generate a pair with:
-#   npx web-push generate-vapid-keys
-VAPID_PUBLIC_KEY=${VAPID_PUBLIC_KEY}
-VAPID_PRIVATE_KEY=${VAPID_PRIVATE_KEY}
-VAPID_SUBJECT=${VAPID_SUBJECT}
 # Optional: Cloudflare cache purge after every deploy. Leave blank to skip it.
 CF_API_TOKEN=${CF_API_TOKEN}
 CF_ZONE_ID=${CF_ZONE_ID}
