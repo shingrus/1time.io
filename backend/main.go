@@ -27,8 +27,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	logPushConfiguration()
-
 	appStats.Start()
 	startFileJanitor()
 	http.HandleFunc("/api/", apiHandler)

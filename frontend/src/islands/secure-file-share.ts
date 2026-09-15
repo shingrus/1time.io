@@ -193,13 +193,7 @@ if (form) {
                     durationSelect.value = String(Constants.defaultDurationSeconds);
                     viewsSelect.value = '1';
                     updateSubmit();
-                }, {
-                    uses: selectedViews,
-                    kind: 'file',
-                    durationSeconds,
-                    manageToken: data.manageToken,
-                    vapidPublicKey: data.vapidPublicKey,
-                });
+                }, {uses: selectedViews, kind: 'file', durationSeconds});
                 return;
             }
             setNote('Could not create the file link. Please try again.');

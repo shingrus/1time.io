@@ -72,9 +72,6 @@ func TestStatsKeyHelpers(t *testing.T) {
 	if got := getFileViewsDayKey(5, now); got != "stats:views:file:day:20260505:5" {
 		t.Fatalf("file views day key = %q", got)
 	}
-	if got := pushCounter.dayKey(now); got != "stats:push:day:20260505" {
-		t.Fatalf("push day key = %q", got)
-	}
 	if got := shareCounter.dayKey(now); got != "stats:share:day:20260505" {
 		t.Fatalf("share day key = %q", got)
 	}
@@ -84,7 +81,6 @@ func TestStatsManagerSnapshotAndMerge(t *testing.T) {
 	stats := NewStatsManager()
 	stats.Record(shareCounter, "tap")
 	stats.Record(shareCounter, "tap")
-	stats.RecordPushSend(false)
 
 	snapshot, ok := stats.snapshotPending()
 	if !ok {
@@ -92,9 +88,6 @@ func TestStatsManagerSnapshotAndMerge(t *testing.T) {
 	}
 	if got := snapshot[counterField{shareCounter, "tap"}]; got != 2 {
 		t.Fatalf("share taps = %d, want 2", got)
-	}
-	if got := snapshot[counterField{pushCounter, "all"}]; got != 1 {
-		t.Fatalf("push sends = %d, want 1", got)
 	}
 
 	if _, ok := stats.snapshotPending(); ok {
@@ -125,21 +118,11 @@ func TestStatsManagerFlushCounters(t *testing.T) {
 		if got := pending[counterField{shareCounter, "tap"}]; got != 2 {
 			t.Fatalf("flushed share taps = %d, want 2", got)
 		}
-		all, succeeded := pending[counterField{pushCounter, "all"}], pending[counterField{pushCounter, "succeeded"}]
-		if all != 3 {
-			t.Fatalf("flushed push sends = %d, want 3", all)
-		}
-		if succeeded != 1 {
-			t.Fatalf("flushed push successes = %d, want 1", succeeded)
-		}
 		return nil
 	}
 
 	stats.Record(shareCounter, "tap")
 	stats.Record(shareCounter, "tap")
-	stats.RecordPushSend(true)
-	stats.RecordPushSend(false)
-	stats.RecordPushSend(false)
 
 	if err := stats.FlushCounters(); err != nil {
 		t.Fatalf("FlushCounters() error = %v", err)
@@ -165,7 +148,6 @@ func TestStatsManagerFlushCountersMergesBackOnError(t *testing.T) {
 	}
 
 	stats.Record(shareCounter, "tap")
-	stats.RecordPushSend(true)
 
 	if err := stats.FlushCounters(); !errors.Is(err, wantErr) {
 		t.Fatalf("FlushCounters() error = %v, want %v", err, wantErr)
@@ -173,9 +155,6 @@ func TestStatsManagerFlushCountersMergesBackOnError(t *testing.T) {
 	snapshot, ok := stats.snapshotPending()
 	if !ok || snapshot[counterField{shareCounter, "tap"}] != 1 {
 		t.Fatalf("failed flush should restore pending share tap, got %#v ok=%v", snapshot, ok)
-	}
-	if snapshot[counterField{pushCounter, "all"}] != 1 || snapshot[counterField{pushCounter, "succeeded"}] != 1 {
-		t.Fatalf("failed flush should restore pending push send, got %#v", snapshot)
 	}
 }
 
@@ -323,8 +302,6 @@ func TestFlushCountersWritesTheSameRedisKeys(t *testing.T) {
 	stats := NewStatsManager()
 	stats.Record(shareCounter, "tap")
 	stats.Record(shareCounter, "tap")
-	stats.RecordPushSend(true)
-	stats.RecordPushSend(false)
 
 	pending, ok := stats.snapshotPending()
 	if !ok {
@@ -336,7 +313,6 @@ func TestFlushCountersWritesTheSameRedisKeys(t *testing.T) {
 
 	for key, want := range map[string]map[string]string{
 		"stats:share:day:20260725": {"tap": "2"},
-		"stats:push:day:20260725":  {"all": "2", "succeeded": "1"},
 	} {
 		got, err := client.HGetAll(key).Result()
 		if err != nil {
@@ -351,8 +327,8 @@ func TestFlushCountersWritesTheSameRedisKeys(t *testing.T) {
 	}
 
 	// Day keys only: nothing else is written.
-	if keys, err := client.Keys("*").Result(); err != nil || len(keys) != 2 {
-		t.Fatalf("keys after flush = %v (err %v), want only the two day keys", keys, err)
+	if keys, err := client.Keys("*").Result(); err != nil || len(keys) != 1 {
+		t.Fatalf("keys after flush = %v (err %v), want only the share day key", keys, err)
 	}
 }
 

@@ -44,12 +44,6 @@ type hashCounter struct {
 }
 
 var (
-	// Overlapping, not disjoint: succeeded is a subset of all, so the failure
-	// count is all-succeeded. Day keys only.
-	pushCounter = &hashCounter{
-		dayKeyPrefix: "stats:push:day:",
-		fields:       []string{"all", "succeeded"},
-	}
 	// Presses of the share icon on the link-ready screen, which open the
 	// system share sheet. Whether a link was then sent is not tracked.
 	shareCounter = &hashCounter{
@@ -127,18 +121,6 @@ func (s *StatsManager) Record(counter *hashCounter, fields ...string) {
 			s.pending[counterField{counter, field}]++
 		}
 	}
-}
-
-// RecordPushSend counts one finished send attempt. Attempt and success are
-// recorded in one call: separately, a send straddling midnight UTC could put
-// them on different days and report succeeded > all.
-func (s *StatsManager) RecordPushSend(succeeded bool) {
-	if succeeded {
-		s.Record(pushCounter, "all", "succeeded")
-		return
-	}
-
-	s.Record(pushCounter, "all")
 }
 
 func (s *StatsManager) AddStoredSecrets(delta int64) {
@@ -339,8 +321,7 @@ func flushCounters(pending pendingCounters, now time.Time) error {
 
 func flushCountersWithClient(client *redis.Client, pending pendingCounters, now time.Time) error {
 	_, err := client.TxPipelined(func(pipe redis.Pipeliner) error {
-		// Each counter expires only a day key it wrote, so a push-only flush
-		// leaves the share day key alone, and vice versa.
+		// Each counter expires only a day key it wrote.
 		written := make(map[*hashCounter]bool)
 		for key, delta := range pending {
 			if delta == 0 {
