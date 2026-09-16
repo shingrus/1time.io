@@ -119,6 +119,10 @@ printf 'postgres://user:pass@host/db' | 1time send
 
 Pipe-friendly, no browser needed. Works with self-hosted instances via `--host`. See [CLI docs](cli/README.md) for more.
 
+### Build your own client
+
+Want 1time links in your app, bot or script? The [developers page](https://1time.io/developers/) has the complete protocol spec, HTTP API, limits and test vectors, written so you can paste it straight into your coding agent. The same spec is available as [plain text](https://1time.io/developers/agent-spec.txt).
+
 ### Self-host with Docker Compose
 
 **Option 1: Pre-built images (recommended)**

@@ -1,0 +1,146 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import InlineCss from '../../components/InlineCss.astro';
+import agentSpec from '../../lib/agent-spec.md?raw';
+import {ProtocolConstants} from '../../lib/protocol.mjs';
+import {absoluteUrl, siteUrl} from '../../lib/siteConfig.js';
+
+const title = '1time for Developers — One-Time Secret API and Protocol Spec';
+const description = 'Build encrypted one-time secret and file links into your app. Zero-knowledge protocol spec, HTTP API, limits and test vectors. No API key, no signup.';
+const lastUpdated = '2026-09-16';
+const jsonLd = [
+    {
+        '@context': 'https://schema.org',
+        '@type': 'WebPage',
+        name: '1time for Developers',
+        description,
+        url: absoluteUrl('/developers/'),
+        isPartOf: absoluteUrl('/'),
+        dateModified: lastUpdated,
+    },
+    {
+        '@context': 'https://schema.org',
+        '@type': 'TechArticle',
+        headline: 'Build a 1time client: zero-knowledge one-time secret API',
+        description,
+        url: absoluteUrl('/developers/'),
+        dateModified: lastUpdated,
+        proficiencyLevel: 'Expert',
+        dependencies: 'HKDF-SHA256, AES-256-GCM',
+        keywords: 'one-time secret API, zero-knowledge encryption, self-destructing link API, secret sharing API, AES-256-GCM, HKDF-SHA256, ephemeral secret storage, self-hosted',
+        publisher: {'@id': `${siteUrl}#organization`},
+        about: [
+            {'@type': 'Thing', name: 'One-time secret sharing'},
+            {'@type': 'Thing', name: 'Zero-knowledge encryption'},
+            {'@type': 'Thing', name: 'HTTP API'},
+        ],
+    },
+    {
+        '@context': 'https://schema.org',
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+            {'@type': 'ListItem', position: 1, name: 'Home', item: absoluteUrl('/')},
+            {'@type': 'ListItem', position: 2, name: 'Developers', item: absoluteUrl('/developers/')},
+        ],
+    },
+];
+---
+<BaseLayout
+    title={title}
+    description={description}
+    canonical="/developers/"
+    ogImage="/1time-og-main.png"
+    ogImageAlt="1time for developers — build encrypted one-time links into your app"
+>
+    <InlineCss slot="head" name="home" />
+    <InlineCss slot="head" name="about" />
+    <InlineCss slot="head" name="developers" />
+    <script slot="head" type="application/ld+json" set:html={JSON.stringify(jsonLd)} is:inline></script>
+
+    <div class="about-page">
+        <h1>Build with 1time</h1>
+        <p class="subtitle">Zero-knowledge temporary storage for passing secrets between people and agents. Encrypted one-time links; the server holds nothing but ciphertext.</p>
+
+        <div class="dev-actions">
+            <button type="button" class="btn btn-primary btn-lg" data-copy-target="agent-spec">Copy the spec for your coding agent</button>
+        </div>
+        <p class="dev-meta">Save scheme v{ProtocolConstants.saveSchemeVersion} · Updated {lastUpdated}</p>
+
+        <section class="seo-section">
+            <h2>Give this to your coding agent</h2>
+            <div class="dev-code dev-code-tall">
+                <div class="dev-code-bar">
+                    <span>agent-spec.md</span>
+                    <button type="button" class="dev-code-copy" data-copy-target="agent-spec">Copy</button>
+                </div>
+                <pre><code id="agent-spec">{agentSpec}</code></pre>
+            </div>
+
+            <h2>Built with 1time</h2>
+            <div class="features-grid">
+                <a href="https://www.npmjs.com/package/@1time/cli" class="feature-card feature-card-link" target="_blank" rel="noopener noreferrer">
+                    <div class="feature-card-header">
+                        <div class="feature-card-icon" aria-hidden="true">&#x1f4bb;</div>
+                        <h2>CLI</h2>
+                    </div>
+                    <p>Share secrets from your terminal. <code style="font-size:0.85em">printf 'secret' | 1time send</code></p>
+                </a>
+                <a href="/chrome-extension/" class="feature-card feature-card-link">
+                    <div class="feature-card-header">
+                        <div class="feature-card-icon" aria-hidden="true">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block">
+                                <circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/><line x1="21.17" y1="8" x2="12" y2="8"/><line x1="3.95" y1="6.06" x2="8.54" y2="14"/><line x1="10.88" y1="21.94" x2="15.46" y2="14"/>
+                            </svg>
+                        </div>
+                        <h2>Browser Extension</h2>
+                    </div>
+                    <p>Select text on any page, right-click, and share it as an encrypted one-time link. For Chrome, Edge, and Brave.</p>
+                </a>
+                <a href="https://github.com/isontheline/pro.webssh.net" class="feature-card feature-card-link" target="_blank" rel="noopener noreferrer">
+                    <div class="feature-card-header">
+                        <div class="feature-card-icon" aria-hidden="true">&#x1f5a5;&#xfe0f;</div>
+                        <h2>WebSSH</h2>
+                    </div>
+                    <p>Third-party SSH client for iOS and macOS. Its Secret Share tool creates 1time.io links.</p>
+                </a>
+            </div>
+            <p>
+                Built something on 1time?
+                <a href="https://github.com/shingrus/1time/issues" target="_blank" rel="noopener noreferrer">Open an issue</a>
+                and we will add it here.
+            </p>
+
+            <h2>Learn more</h2>
+            <nav class="seo-nav">
+                <a href="/blog/share-secrets-from-terminal/">Share secrets from the terminal</a>
+                <a href="/blog/hkdf-key-derivation-explained/">HKDF key derivation explained</a>
+                <a href="/chrome-extension/">Chrome extension</a>
+                <a href="/about/">About 1time</a>
+            </nav>
+        </section>
+    </div>
+
+    <script is:inline>
+        document.addEventListener('click', function (event) {
+            var button = event.target.closest && event.target.closest('[data-copy-target]');
+            if (!button) return;
+            var source = document.getElementById(button.getAttribute('data-copy-target'));
+            if (!source) return;
+            if (!button.dataset.label) button.dataset.label = button.textContent;
+            function flash(text) {
+                button.textContent = text;
+                setTimeout(function () { button.textContent = button.dataset.label; }, 2500);
+            }
+            function selectSource() {
+                var range = document.createRange();
+                range.selectNodeContents(source);
+                var selection = getSelection();
+                selection.removeAllRanges();
+                selection.addRange(range);
+                flash('Selected, press ' + (/Mac|iPhone|iPad|iPod/.test(navigator.userAgent) ? '⌘C' : 'Ctrl+C'));
+            }
+            if (!navigator.clipboard) return selectSource();
+            navigator.clipboard.writeText(source.textContent).then(function () { flash('Copied'); }, selectSource);
+        });
+    </script>
+</BaseLayout>

@@ -13,6 +13,7 @@ import articleCss from '../styles/article.css?raw';
 import blogIndexCss from '../styles/blog-index.css?raw';
 import mySecretsCss from '../styles/mySecrets.css?raw';
 import feedbackCss from '../styles/feedback.css?raw';
+import developersCss from '../styles/developers.css?raw';
 
 const cssByName = {
     globals: globalsCss,
@@ -27,6 +28,7 @@ const cssByName = {
     'blog-index': blogIndexCss,
     'my-secrets': mySecretsCss,
     feedback: feedbackCss,
+    developers: developersCss,
 } as const;
 
 const minified = new Map<string, string>();

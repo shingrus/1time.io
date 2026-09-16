@@ -457,3 +457,11 @@ h1, h2, h3 {
     width: 100%;
   }
 }
+
+/* Below ~347px the nav no longer fits: font-size has hit its clamp floor, so
+   nothing shrinks further. The footer keeps this link reachable. */
+@media (max-width: 359px) {
+  .app-nav a[href="/developers/"] {
+    display: none;
+  }
+}

@@ -29,6 +29,7 @@ Key facts:
 - [Passphrase Generator](https://1time.io/passphrase-generator/): Generate memorable passphrases
 - [WiFi Password Generator](https://1time.io/wifi-password-generator/): Create secure WiFi passwords
 - [API Key Generator](https://1time.io/api-key-generator/): Generate random API keys
+- [Developers](https://1time.io/developers/): Build 1time links into an app, bot or script
 - [About](https://1time.io/about/): Architecture and security model
 - [Privacy Policy](https://1time.io/privacy/): How data is handled
 - [Blog](https://1time.io/blog/): Security guides
@@ -38,6 +39,23 @@ Key facts:
 - [Secure file sharing app](https://1time.io/secure-file-sharing/): Browser-side encryption before upload, optional passphrase for file links
 - One-time file link format: `https://1time.io/f/#...` (decryption key lives only in the URL fragment)
 - CLI support for encrypted file upload and download via `1time send-file` and `1time read-file`
+
+## For Developers
+
+- [Developer page](https://1time.io/developers/): Integration guide, protocol version, limits, and apps built with 1time
+- [Client spec for coding agents](https://1time.io/developers/agent-spec.txt): The complete protocol, HTTP API, limits and test vectors in plain text. Give it to a coding agent to build a 1time client in any language
+- [CLI on npm](https://www.npmjs.com/package/@1time/cli): First-party client implementing the same protocol
+
+Developer facts:
+- No API key, account, or signup is required to create or read links through the API
+- Encryption is client-side, so the API only ever receives ciphertext: AES-256-GCM with keys derived by HKDF-SHA256 (salt `onetimelink:v2`); the current save scheme is v3, which uploads only SHA-256 of the read token
+- Endpoints, all POST: `/api/saveSecret`, `/api/saveFile`, `/api/get`, `/api/getFile`, `/api/secretStatus` (non-consuming), `/api/ss` (supported schemes)
+- Limits: 1 to 10 views per link, expiry from 1 second to 30 days (default 1 day), files up to 80 MB, roughly 45 saves and 60 reads per minute per IP
+- Reads are destructive: `/api/get` and `/api/getFile` consume a view, and only HTTP 503 with body `{"status":"retry"}` is safe to retry
+- The hosted API sends no CORS headers, so browser JavaScript on another site cannot call it; use a native app, a server, a CLI, or a browser extension background script, or self-host
+- Any language with HKDF-SHA256 and AES-256-GCM can implement a client; published test vectors let an implementation be verified without contacting the server
+- Clients identify themselves with `?src=<app-short-name>` and a matching User-Agent; `cli`, `ext`, `zap` and `webssh` are in use today
+- Known third-party client: WebSSH, an SSH client for iOS and macOS, creates 1time.io links from its Secret Share tool
 
 ## Primary Use Cases
 
