@@ -1,0 +1,65 @@
+/* Developers page */
+.dev-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 20px;
+  margin: 20px 0 8px;
+}
+
+.dev-meta {
+  font-size: 0.85em;
+  color: var(--text-secondary);
+  margin-top: 4px;
+}
+
+.dev-code {
+  margin: 16px 0 24px;
+  background: #1E1E1E;
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.dev-code-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 12px 8px 16px;
+  border-bottom: 1px solid #333;
+  font-family: 'SF Mono', 'Fira Code', 'Fira Mono', monospace;
+  font-size: 12px;
+  color: #999;
+}
+
+.dev-code-copy {
+  font: inherit;
+  color: #ddd;
+  background: #2d2d2d;
+  border: 1px solid #444;
+  border-radius: var(--radius-sm);
+  padding: 4px 10px;
+  cursor: pointer;
+}
+
+.dev-code-copy:hover {
+  background: #3a3a3a;
+}
+
+.dev-code pre {
+  margin: 0;
+  padding: 16px;
+  overflow: auto;
+}
+
+.dev-code-tall pre {
+  max-height: 480px;
+}
+
+.dev-code code {
+  font-family: 'SF Mono', 'Fira Code', 'Fira Mono', monospace;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #D4D4D4;
+  white-space: pre;
+}

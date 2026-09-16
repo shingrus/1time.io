@@ -478,6 +478,15 @@ func apiSaveSecretFile(r *http.Request) (responseCode int, response []byte) {
 	return
 }
 
+// writeFileError answers with JSON rather than http.Error's text/plain: a
+// download response is binary, so clients tell success from failure by
+// Content-Type, and a text/plain error reads as neither.
+func writeFileError(w http.ResponseWriter, code int) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(code)
+	_, _ = w.Write([]byte(`{"status":"error"}`))
+}
+
 // apiGetFile writes directly to ResponseWriter (binary stream)
 func apiGetFile(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Cache-Control", "no-store")
@@ -492,12 +501,12 @@ func apiGetFile(w http.ResponseWriter, r *http.Request) {
 
 	dec := json.NewDecoder(r.Body)
 	if !dec.More() {
-		http.Error(w, `{"status":"error"}`, http.StatusBadRequest)
+		writeFileError(w, http.StatusBadRequest)
 		return
 	}
 	// Validate the fixed id/hashedKey shapes before they reach Redis key building.
 	if err := dec.Decode(&payload); err != nil || !isValidStorageID(payload.Id) || !isValidHashedKey(payload.HashedKey) {
-		http.Error(w, `{"status":"error"}`, http.StatusBadRequest)
+		writeFileError(w, http.StatusBadRequest)
 		return
 	}
 
@@ -514,7 +523,7 @@ func apiGetFile(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		log.Printf("reserveFileDownload error: %v", err)
-		http.Error(w, `{"status":"error"}`, http.StatusInternalServerError)
+		writeFileError(w, http.StatusInternalServerError)
 		return
 	}
 

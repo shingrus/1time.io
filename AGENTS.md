@@ -129,7 +129,7 @@ npm pack --dry-run
 - Runtime: Astro islands with small vanilla browser modules
 - Config: `frontend/astro.config.mjs` (`outDir: './build'`)
 - Root layout: `frontend/src/layouts/BaseLayout.astro`
-- Pages: `frontend/src/pages/**/index.astro` plus generated `robots.txt.ts` and `sitemap.xml.ts`
+- Pages: `frontend/src/pages/**/index.astro` plus generated `robots.txt.ts` and `sitemap.xml.ts`; `llms.txt` is a hand-written file in `frontend/public/`
 - Components: `frontend/src/components/*.astro`
 - Browser islands: `frontend/src/islands/*.ts`
 - Crypto: `frontend/src/lib/protocol.mjs` is the canonical shared client-side encryption (AES-256-GCM + HKDF-SHA256); it is the single source synced into the CLI and Zapier app. `frontend/src/lib/util.js` wraps it for the web (`createSecretLink`, API calls) and `frontend/src/lib/fileProtocol.js` handles file packing. **Do not fork the crypto — edit `protocol.mjs` and re-sync.**
@@ -168,6 +168,7 @@ npm run build
 - Frontend file size limit is `Constants.maxFileSizeBytes = 80 * 1024 * 1024` in `frontend/src/lib/util.js`; keep it aligned with the backend's `maxFileSize`. Both describe the **plaintext** file; the wire limit is `maxFileUploadBodyBytes` (81 MB), which allows for the AES-GCM IV/tag and multipart overhead and matches nginx's `81m`.
 - File metadata (`name`, `type`, `size`) is packed into the encrypted payload before upload; the web app server does not store that metadata separately.
 - Pages with `robots: 'noindex, nofollow'` in metadata: `/v/`, `/f/`, `/my-secrets/`, `/feedback/`. None of them is in the sitemap.
+- Developers: `/developers/` renders the integration spec from `frontend/src/lib/agent-spec.md`, and `/developers/agent-spec.txt` (`frontend/src/pages/developers/agent-spec.txt.ts`) serves the same file as plain text; `frontend/public/llms.txt` links to both. The spec's limits, rate limits, endpoint behaviour and test vectors are hand-written: update it whenever a backend limit, an API response, nginx rate limits or `protocol.mjs` change. Its V1 vector must stay equal to `TestInteropVectorFromProtocolMjs`.
 - Outbox / "My Secrets": the `/my-secrets/` page + `frontend/src/islands/mySecrets.ts` keep a `localStorage` list of the secrets **this browser** created — id, kind, views and timestamps — and batch-check their read status via `POST /api/secretStatus` (non-consuming). Linked from the footer and from the success screen. localStorage is per-browser — no cross-device, no account.
 - Frontend validation is `npm run check`; there is no React/Vitest suite after the Astro migration.
 
