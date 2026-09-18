@@ -11,7 +11,7 @@ server {
 
     root   /usr/share/nginx/html;
     index  index.html;
-    client_max_body_size 81m;
+    client_max_body_size 100m;
 
     gzip on;
     gzip_vary on;
