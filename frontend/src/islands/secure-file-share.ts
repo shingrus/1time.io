@@ -35,7 +35,7 @@ if (form) {
     let isUploading = false;
     let uploadProgress = 0;
 
-    const maxMb = Constants.maxFileSizeBytes / (1024 * 1024);
+    const maxMb = Math.round(Constants.maxFileSizeBytes / (1024 * 1024));
     // formatBytes always keeps one decimal; whole numbers read better without it.
     const sizeLabel = (bytes: number) => formatBytes(bytes).replace('.0 ', ' ');
 

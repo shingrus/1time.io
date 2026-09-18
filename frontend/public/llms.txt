@@ -10,7 +10,7 @@ Key facts:
 - Zero-knowledge: the server stores only encrypted ciphertext or encrypted file blobs, never the key
 - Client-side encryption: Web Crypto API, AES-GCM-256, HKDF key derivation
 - One-time access: secrets are deleted on first view, and file links are consumed on the first authorized fetch attempt
-- Encrypted file sharing: send files up to 99 MB with one-time download links
+- Encrypted file sharing: send files up to 100 MB with one-time download links
 - File metadata protection: filename, MIME type, and size stay inside the encrypted payload
 - Optional passphrase support for file links
 - No account required
@@ -23,7 +23,7 @@ Key facts:
 
 - [Homepage / Secret sharing tool](https://1time.io/): Encrypt and share a one-time secret in the browser
 - [Share Passwords Securely](https://1time.io/share-password-securely/): Send passwords through self-destructing links
-- [One-Time File Sharing](https://1time.io/secure-file-sharing/): Encrypted, one-time download links for files up to 99 MB
+- [One-Time File Sharing](https://1time.io/secure-file-sharing/): Encrypted, one-time download links for files up to 100 MB
 - [Share Passwords Safely in Microsoft Teams](https://1time.io/share-passwords-microsoft-teams/): Avoid Teams retention and eDiscovery exposure
 - [Password Generator](https://1time.io/password-generator/): Generate strong random passwords
 - [Passphrase Generator](https://1time.io/passphrase-generator/): Generate memorable passphrases
@@ -50,7 +50,7 @@ Developer facts:
 - No API key, account, or signup is required to create or read links through the API
 - Encryption is client-side, so the API only ever receives ciphertext: AES-256-GCM with keys derived by HKDF-SHA256 (salt `onetimelink:v2`); the current save scheme is v3, which uploads only SHA-256 of the read token
 - Endpoints, all POST: `/api/saveSecret`, `/api/saveFile`, `/api/get`, `/api/getFile`, `/api/secretStatus` (non-consuming), `/api/ss` (supported schemes)
-- Limits: 1 to 10 views per link, expiry from 1 second to 30 days (default 1 day), files up to 99 MB, roughly 45 saves and 60 reads per minute per IP
+- Limits: 1 to 10 views per link, expiry from 1 second to 30 days (default 1 day), files up to 100 MB, roughly 45 saves and 60 reads per minute per IP
 - Reads are destructive: `/api/get` and `/api/getFile` consume a view, and only HTTP 503 with body `{"status":"retry"}` is safe to retry
 - The hosted API sends no CORS headers, so browser JavaScript on another site cannot call it; use a native app, a server, a CLI, or a browser extension background script, or self-host
 - Any language with HKDF-SHA256 and AES-256-GCM can implement a client; published test vectors let an implementation be verified without contacting the server

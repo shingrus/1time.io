@@ -84,21 +84,17 @@ func resolveSaveScheme(legacyHashedKey, readTokenHash string, version int) (stor
 }
 
 const (
-	// maxFileSize is the advertised limit on the ORIGINAL plaintext file, matched
-	// by Constants.maxFileSizeBytes on the frontend. Nothing in the backend can
-	// check it directly — the server only ever sees ciphertext.
-	maxFileSize = 99 * 1024 * 1024
-	// fileUploadOverheadBytes covers what rides along with the ciphertext: the
-	// AES-GCM 12-byte IV and 16-byte tag, multipart boundaries, and the hashedKey,
-	// duration and views form fields.
-	fileUploadOverheadBytes = 1024 * 1024
-	// maxFileUploadBodyBytes is what MaxBytesReader actually enforces. Derived from
-	// maxFileSize so the two cannot silently diverge. Keep nginx's
-	// client_max_body_size equal to this (100m) so both reject at the same point.
-	// 99 MB, not 100: Cloudflare's Free plan drops request bodies over 100 MB at
-	// the edge, so the whole multipart body has to stay under that.
-	maxFileUploadBodyBytes = maxFileSize + fileUploadOverheadBytes
-	maxMultipartMemory     = 4 * 1024 * 1024
+	// Cloudflare's Free plan drops request bodies over 100 MiB at the edge, so the
+	// whole multipart body is pinned to that and the plaintext limit derived from
+	// it. Keep nginx's client_max_body_size equal to this (100m).
+	maxFileUploadBodyBytes = 100 * 1024 * 1024
+	// fileUploadOverheadBytes reserves room for the AES-GCM IV and tag, multipart
+	// boundaries and the form fields; the real overhead is under 1 KiB.
+	fileUploadOverheadBytes = 64 * 1024
+	// maxFileSize is the limit on the ORIGINAL plaintext file, matched by
+	// Constants.maxFileSizeBytes on the frontend. The server only sees ciphertext.
+	maxFileSize        = maxFileUploadBodyBytes - fileUploadOverheadBytes
+	maxMultipartMemory = 4 * 1024 * 1024
 )
 const maxFileViews = 10
 

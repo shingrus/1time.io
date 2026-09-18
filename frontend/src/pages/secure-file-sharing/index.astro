@@ -9,7 +9,7 @@ import {Constants} from '../../lib/util.js';
 
 const title = `One-Time File Sharing — Encrypted Self-Destructing Download Links`;
 const description = 'One-time file sharing through an encrypted, self-destructing download link. Zero-knowledge browser encryption, optional passphrase — free, no signup.';
-const maxMb = Constants.maxFileSizeBytes / (1024 * 1024);
+const maxMb = Math.round(Constants.maxFileSizeBytes / (1024 * 1024));
 
 const faqItems = [
     {
