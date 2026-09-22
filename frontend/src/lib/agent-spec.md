@@ -75,7 +75,7 @@ The wire value is raw bytes: `iv || ciphertext || tag`, with no base64 and no do
 
 ## 4. HTTP API
 
-Base URL: `https://1time.io/api/`, or any self-hosted origin. Every endpoint is `POST`; other methods answer `405`. Append `?src=<app-short-name>` to every request and set a matching `User-Agent`, e.g. `https://1time.io/api/saveSecret?src=webssh` with `User-Agent: WebSSH/32.8`. Use `?src=dev` until your client has a name (see section 6).
+Base URL: `https://1time.io/api/`, or any self-hosted origin. Every endpoint is `POST`; other methods answer `405`. Append `?src=<app-short-name>` to every request and set a matching `User-Agent`, e.g. `https://1time.io/api/saveSecret?src=webssh` with `User-Agent: WebSSH/32.8`. Use `?src=dev` until your client has a name, and include a contact URL in the `User-Agent` (see section 6).
 
 Most outcomes, including failures, return HTTP `200`: always check the `status` field.
 
@@ -149,7 +149,7 @@ Before saving, confirm `saveSchemes` contains `3`. If it does not, the host is t
 - Expiry: 1 second to 30 days, default 1 day
 - Views or downloads: 1 to 10, default 1
 - `saveSecret` request body: 25 MiB (about 18 MiB of plaintext after encryption and base64)
-- File size (plaintext): 80 MiB; self-hosted instances may set a different limit
+- File size (plaintext): just under 100 MiB. The upload body is capped at exactly 100 MiB, and 64 KiB of that is reserved for the IV, tag and multipart overhead
 - `get` and `getFile` request body: 1 KiB
 - `secretStatus`: 128 ids, 8 KiB
 - Rate limit, saves: about 45 per minute per IP, burst 10, then `429`
@@ -167,6 +167,7 @@ Self-reported and never used for access control. It lets us see your integration
 - Until your client has a name, send `?src=dev` with `User-Agent: 1time-dev-client/0.1`. Both mark a client written from this spec; replace them before you release.
 - Names already taken: `dev`, `cli`, `ext`, `zap`, `webssh`.
 - Always set your own User-Agent: generic library defaults (`python-requests`, `Go-http-client`, `node`) are indistinguishable from scripts and scanners.
+- Put a contact URL in the User-Agent comment, the way crawlers do: `User-Agent: MyApp/1.2 (+https://myapp.example)`. A homepage, a repository or a `mailto:` address all work. Nothing else in a request says who you are, so this is the only way we can reach you before a protocol change.
 - Built something? Tell us at https://github.com/shingrus/1time/issues and we will list it on https://1time.io/developers/
 
 ## 7. Test vectors
@@ -216,6 +217,7 @@ V5: link parsing
 - [ ] Reads retry only on `503` with `{"status":"retry"}`
 - [ ] `duration` and `views` are validated client-side
 - [ ] `?src=` and `User-Agent` are set: `?src=dev` and `1time-dev-client/0.1` while building, your app's short name before release
+- [ ] The released `User-Agent` carries a contact URL: `MyApp/1.2 (+https://myapp.example)`
 - [ ] No key, passphrase, readToken or link appears in logs, analytics or crash reports
 
 ## Versioning
