@@ -6,10 +6,19 @@ on:
       - 'v*'
   workflow_dispatch:
 
+# Image names are part of the public contract: docker-compose.yml and the
+# README tell self-hosters to pull these exact paths. They are spelled out
+# rather than derived from ${{ github.repository }}, which silently moved the
+# published images to 1time.io-{web,backend} when this repo was renamed from
+# 1time to 1time.io, leaving the documented packages frozen for six months.
 env:
   REGISTRY: ghcr.io
-  BACKEND_IMAGE: ghcr.io/${{ github.repository }}-backend
-  WEB_IMAGE: ghcr.io/${{ github.repository }}-web
+  BACKEND_IMAGE: ghcr.io/shingrus/1time-backend
+  WEB_IMAGE: ghcr.io/shingrus/1time-web
+  # Where the repo-slug name published from Mar-Sep 2026. Kept as a second
+  # target so anyone who pinned it during that window does not break.
+  BACKEND_IMAGE_ALT: ghcr.io/shingrus/1time.io-backend
+  WEB_IMAGE_ALT: ghcr.io/shingrus/1time.io-web
 
 jobs:
   build-and-push:
@@ -38,12 +47,12 @@ jobs:
           if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
             VERSION="${{ github.ref_name }}"
             echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
-            echo "tags_backend=${{ env.BACKEND_IMAGE }}:${VERSION},${{ env.BACKEND_IMAGE }}:latest" >> "$GITHUB_OUTPUT"
-            echo "tags_web=${{ env.WEB_IMAGE }}:${VERSION},${{ env.WEB_IMAGE }}:latest" >> "$GITHUB_OUTPUT"
+            echo "tags_backend=${{ env.BACKEND_IMAGE }}:${VERSION},${{ env.BACKEND_IMAGE }}:latest,${{ env.BACKEND_IMAGE_ALT }}:${VERSION},${{ env.BACKEND_IMAGE_ALT }}:latest" >> "$GITHUB_OUTPUT"
+            echo "tags_web=${{ env.WEB_IMAGE }}:${VERSION},${{ env.WEB_IMAGE }}:latest,${{ env.WEB_IMAGE_ALT }}:${VERSION},${{ env.WEB_IMAGE_ALT }}:latest" >> "$GITHUB_OUTPUT"
           else
             echo "version=latest" >> "$GITHUB_OUTPUT"
-            echo "tags_backend=${{ env.BACKEND_IMAGE }}:latest" >> "$GITHUB_OUTPUT"
-            echo "tags_web=${{ env.WEB_IMAGE }}:latest" >> "$GITHUB_OUTPUT"
+            echo "tags_backend=${{ env.BACKEND_IMAGE }}:latest,${{ env.BACKEND_IMAGE_ALT }}:latest" >> "$GITHUB_OUTPUT"
+            echo "tags_web=${{ env.WEB_IMAGE }}:latest,${{ env.WEB_IMAGE_ALT }}:latest" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Build and push backend
