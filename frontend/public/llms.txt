@@ -33,6 +33,7 @@ Key facts:
 - [About](https://1time.io/about/): Architecture and security model
 - [Privacy Policy](https://1time.io/privacy/): How data is handled
 - [Blog](https://1time.io/blog/): Security guides
+- [Full text](https://1time.io/llms-full.txt): every page linked in this file, in one plain-text file
 
 ## File Sharing
 
