@@ -4,7 +4,7 @@ import InlineCss from '../../components/InlineCss.astro';
 import NewMessageForm from '../../components/NewMessageForm.astro';
 import {absoluteUrl, siteHost} from '../../lib/siteConfig.js';
 
-const title = `Share Passwords Securely — Send a Password via Secret Link | ${siteHost}`;
+const title = 'Share or Send a Password Securely — Without Email or Slack';
 const description = 'Share a password securely and send it through an encrypted secret link that self-destructs after reading. Safe password sharing, end-to-end encrypted, free, no signup.';
 
 const faqItems = [
@@ -17,7 +17,7 @@ const faqItems = [
     {question: 'What is a secret link?', answer: 'A secret link (or one-time secret link) is a URL that reveals a password or secret once by default. After the recipient opens it, the encrypted data is permanently deleted and the link stops working. If a few people need the same secret, you can choose a small view limit; the data is then deleted after the final allowed view. It is the simplest way to share a password securely without leaving a copy behind on any server.'},
     {question: 'Is it safe to send passwords over email or Slack?', answer: 'No. Emails are stored indefinitely on mail servers, and Slack messages persist in searchable history that admins can export. Both channels leave your password exposed long after it was shared. One-time encrypted links solve this: the password is encrypted end-to-end and destroyed after a single view by default.'},
     {question: 'Can the server see my password?', answer: 'No. Your password is encrypted in the browser using AES-256-GCM before it reaches the server. The decryption key stays in the URL fragment, which is never sent to the server. This is called zero-knowledge architecture — we cannot read your secrets even if we wanted to.'},
-    {question: 'What happens after the recipient reads the password?', answer: 'On a default one-time link the encrypted data is permanently deleted from the server and the link stops working immediately, so nobody — including the sender — can retrieve the password again. If you allowed several views, the link keeps working until the last one is used and then is deleted the same way; the reader is always told how many views remain. If the link is never opened, it expires automatically after the set time period (1 hour to 30 days).'},
+    {question: 'What happens after the recipient reads the password?', answer: 'On a default one-time link the encrypted data is permanently deleted from the server and the link stops working immediately, so nobody — including the sender — can retrieve the password from it again. Deletion covers the link, not the recipient: whatever they copy, save or screenshot stays with them. If you allowed several views, the link keeps working until the last one is used and then is deleted the same way; the reader is always told how many views remain. If the link is never opened, it expires automatically after the set time period (1 hour to 30 days).'},
     {question: 'Can I add extra protection to the shared password?', answer: 'Yes. You can set an additional passphrase when creating the link. The recipient will need both the link and the passphrase to decrypt the password. This adds a second factor in case the link is intercepted.'},
     {question: 'Is this better than using a password manager for sharing?', answer: 'They serve different purposes. Password managers are best for ongoing shared access within a team. One-time links are better for one-off handoffs: onboarding a new team member, sending credentials to a client, sharing a WiFi password with a guest, or any situation where the recipient does not need permanent access.'},
 ];
@@ -88,28 +88,28 @@ const jsonLd = [
                 <div class="feature-card">
                     <div class="feature-card-header">
                         <div class="feature-card-icon" aria-hidden="true">&#x1f512;</div>
-                        <h2>End-to-end encrypted</h2>
+                        <h3>End-to-end encrypted</h3>
                     </div>
                     <p>Your password is encrypted in the browser. The server stores only ciphertext it cannot read.</p>
                 </div>
                 <div class="feature-card">
                     <div class="feature-card-header">
                         <div class="feature-card-icon" aria-hidden="true">&#x1f4a5;</div>
-                        <h2>Self-destructing link</h2>
+                        <h3>Self-destructing link</h3>
                     </div>
                     <p>The link burns after reading by default. Once its allowed views are used, the password is permanently deleted.</p>
                 </div>
                 <div class="feature-card">
                     <div class="feature-card-header">
                         <div class="feature-card-icon" aria-hidden="true">&#x1f6e1;&#xfe0f;</div>
-                        <h2>Zero-knowledge</h2>
+                        <h3>Zero-knowledge</h3>
                     </div>
                     <p>The decryption key stays in the URL fragment and never reaches the server. We cannot read your password.</p>
                 </div>
                 <div class="feature-card">
                     <div class="feature-card-header">
                         <div class="feature-card-icon" aria-hidden="true">&#x1f510;</div>
-                        <h2>Optional passphrase</h2>
+                        <h3>Optional passphrase</h3>
                     </div>
                     <p>Add a second factor so the link alone is not enough to decrypt the password.</p>
                 </div>
@@ -137,14 +137,15 @@ const jsonLd = [
             <h2>Every way to share a password, compared</h2>
             <table class="comparison-table">
                 <thead>
-                    <tr><th>Method</th><th>Setup</th><th>Works with anyone</th><th>Cost</th><th>Deletes itself</th></tr>
+                    <tr><th>Method</th><th>Who can open it</th><th>Removed after use</th><th>Where copies remain</th></tr>
                 </thead>
                 <tbody>
-                    <tr><td><strong>One-time encrypted link</strong></td><td>None</td><td><span class="check">✓</span></td><td>Free</td><td><span class="check">✓</span></td></tr>
-                    <tr><td><strong>Password manager shared vault</strong></td><td>Hours</td><td><span class="partial">~</span> both need accounts</td><td>$3–8/user/mo</td><td><span class="cross">✗</span></td></tr>
-                    <tr><td><strong>Secrets manager (Vault, etc.)</strong></td><td>Days</td><td><span class="cross">✗</span> internal only</td><td>Varies</td><td><span class="cross">✗</span></td></tr>
-                    <tr><td><strong>Encrypted email (PGP)</strong></td><td>Hours</td><td><span class="cross">✗</span> both need keys</td><td>Free</td><td><span class="cross">✗</span></td></tr>
-                    <tr><td><strong>Plain email / chat / SMS</strong></td><td>None</td><td><span class="check">✓</span></td><td>Free</td><td><span class="cross">✗</span> persists forever</td></tr>
+                    <tr><td><strong>One-time encrypted link</strong></td><td>Anyone with the link, no account</td><td><span class="check">✓</span> Deleted after the allowed views (one by default)</td><td>Only what the recipient saves; the server never had the plaintext</td></tr>
+                    <tr><td><strong>Password manager share link</strong> (1Password item sharing, Bitwarden Send)</td><td>Anyone with the link, no account</td><td><span class="check">✓</span> Expires after the time or view limit you set</td><td>The sender's vault, plus what the recipient saves</td></tr>
+                    <tr><td><strong>Password manager shared vault</strong></td><td>People you add; each needs an account</td><td><span class="cross">✗</span> Stays until removed, by design</td><td>The shared vault</td></tr>
+                    <tr><td><strong>Secrets manager</strong> (Vault, AWS Secrets Manager)</td><td>People and apps you grant access</td><td><span class="cross">✗</span> Kept and rotated, by design</td><td>The secrets manager, with an audit log</td></tr>
+                    <tr><td><strong>Encrypted email</strong> (PGP, S/MIME)</td><td>Recipients with keys or certificates set up</td><td><span class="cross">✗</span></td><td>Both mailboxes, encrypted</td></tr>
+                    <tr><td><strong>Plain email, chat or SMS</strong></td><td>Anyone who can see the conversation</td><td><span class="cross">✗</span></td><td>Both sides, their servers, backups and search</td></tr>
                 </tbody>
             </table>
             <p>
@@ -152,6 +153,11 @@ const jsonLd = [
                 credentials, a secrets manager for infrastructure, and <strong>one-time links for everything
                 else</strong> — especially handoffs to people outside the organization, where shared vaults
                 and PGP keys are impractical.
+            </p>
+            <p>
+                One limit applies to every method in this table: deleting the message does not delete what the
+                recipient does with it. If they paste the password into a note or take a screenshot, that copy is
+                theirs. For a temporary password, ask them to change it after first use.
             </p>
 
             <h2>How secure password sharing works</h2>
