@@ -6,6 +6,7 @@ Reads nginx access logs (plain + .gz, current + rotated), identifies
 "unique senders" by SHA256(IP + UserAgent), and prints cohort retention.
 
 A "sender" = anyone who did POST /api/saveSecret or POST /api/saveFile.
+A chunked file upload (?u=) counts once, on the 48-byte answer that completes it.
 
 Usage:
     python3 retention.py /path/to/nxinx/logs/access.log*
@@ -31,17 +32,19 @@ from collections import defaultdict
 from datetime import datetime, timedelta
 from glob import glob
 from pathlib import Path
+from urllib.parse import parse_qs, urlsplit
 
 # ---------- Config ----------
 DEFAULT_GLOB = "/var/log/nginx/1time.access.log*"
 SAVE_PATHS = ("/api/saveSecret", "/api/saveFile")
+CHUNKED_SAVE_DONE_BODY_SIZE = "48"
 READ_PATHS = ("/api/get",)  # /api/get and /api/getFile both start with this
 LOOKBACK_DAYS = 30
 RETENTION_OFFSETS = (0, 1, 3, 7, 14, 30)
 
 # Combined nginx log format: $remote_addr - $remote_user [$time_local] "$request" $status ...
 LINE_RE = re.compile(
-    r'^(?P<ip>\S+)\s+\S+\s+\S+\s+\[(?P<ts>[^\]]+)\]\s+"(?P<req>[^"]*)"\s+(?P<status>\d+)\s+\S+\s+"[^"]*"\s+"(?P<ua>[^"]*)"'
+    r'^(?P<ip>\S+)\s+\S+\s+\S+\s+\[(?P<ts>[^\]]+)\]\s+"(?P<req>[^"]*)"\s+(?P<status>\d+)\s+(?P<size>\S+)\s+"[^"]*"\s+"(?P<ua>[^"]*)"'
 )
 
 # Crawlers / preview-bots / scripts — excluded from the "visitor" count so the
@@ -68,11 +71,24 @@ def user_id(ip: str, ua: str) -> str:
     return h[:12]
 
 
+def counts_as_save(path: str, body_size: str, finished_uploads: set[str]) -> bool:
+    if not path.startswith("/api/saveFile"):
+        return True
+    upload = parse_qs(urlsplit(path).query).get("u", [""])[0]
+    if not upload:
+        return True
+    if body_size != CHUNKED_SAVE_DONE_BODY_SIZE or upload in finished_uploads:
+        return False
+    finished_uploads.add(upload)
+    return True
+
+
 def parse_logs(paths: list[Path]) -> dict[str, set[str]]:
     """Return: {user_id: {YYYY-MM-DD, ...}} — set of dates they SAVED on."""
     sender_days: dict[str, set[str]] = defaultdict(set)
     total_lines = 0
     saves_seen = 0
+    finished_uploads: set[str] = set()
 
     for p in paths:
         try:
@@ -96,6 +112,8 @@ def parse_logs(paths: list[Path]) -> dict[str, set[str]]:
                     try:
                         ts = datetime.strptime(m.group("ts"), TS_FMT)
                     except ValueError:
+                        continue
+                    if not counts_as_save(path, m.group("size"), finished_uploads):
                         continue
                     uid = user_id(m.group("ip"), m.group("ua"))
                     sender_days[uid].add(ts.strftime("%Y-%m-%d"))
@@ -198,6 +216,7 @@ def parse_funnel(paths: list[Path]):
     visitors: dict[str, set[str]] = defaultdict(set)
     savers: dict[str, set[str]] = defaultdict(set)
     recipients: dict[str, set[str]] = defaultdict(set)
+    finished_uploads: set[str] = set()
 
     for p in paths:
         try:
@@ -222,7 +241,8 @@ def parse_funnel(paths: list[Path]):
                         visitors[date].add(ip)
                     elif method == "POST":
                         if any(path.startswith(sp) for sp in SAVE_PATHS):
-                            savers[date].add(ip)
+                            if counts_as_save(path, m.group("size"), finished_uploads):
+                                savers[date].add(ip)
                         elif any(path.startswith(rp) for rp in READ_PATHS):
                             recipients[date].add(ip)
         except Exception as e:  # noqa: BLE001

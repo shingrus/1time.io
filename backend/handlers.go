@@ -1,8 +1,11 @@
 package main
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -10,6 +13,8 @@ import (
 	"path/filepath"
 	"strconv"
 	"time"
+
+	"github.com/go-redis/redis"
 )
 
 const FILE_STORAGE_DIR_VAR = "FILE_STORAGE_DIR"
@@ -95,6 +100,9 @@ const (
 	// Constants.maxFileSizeBytes on the frontend. The server only sees ciphertext.
 	maxFileSize        = maxFileUploadBodyBytes - fileUploadOverheadBytes
 	maxMultipartMemory = 4 * 1024 * 1024
+	// Slice i lands at i*fileChunkBytes; must equal CHUNK_BYTES (fileUpload.js) and fileChunkBytes (cli/lib.mjs).
+	fileChunkBytes = 4 * 1024 * 1024
+	maxFileChunks  = maxFileUploadBodyBytes / fileChunkBytes
 )
 const maxFileViews = 10
 
@@ -121,6 +129,8 @@ var (
 	}
 	incrementStoredFileCountersFunc = incrementStoredFileCounters
 	secretsExistFunc                = secretsExist
+	fileUploadRedisFunc             = getRedisClient
+	publishFileUploadFunc           = publishFileUpload
 )
 
 func apiSaveSecret(r *http.Request) (responseCode int, response []byte) {
@@ -317,7 +327,37 @@ func apiSecretStatus(r *http.Request) (responseCode int, response []byte) {
 	return
 }
 
+func parseFileLifetime(durationStr, viewsStr string) (duration int, views int) {
+	duration = defaultDuration
+	if d, err := strconv.Atoi(durationStr); err == nil && d > 0 && d <= maxDuration {
+		duration = d
+	}
+	views = 1
+	if parsedViews, err := strconv.Atoi(viewsStr); err == nil {
+		views = min(max(parsedViews, 1), maxFileViews)
+	}
+	return duration, views
+}
+
+func parseChunkLifetime(durationStr, viewsStr string) (duration int, views int, ok bool) {
+	duration, err := strconv.Atoi(durationStr)
+	if err != nil || duration < 1 || duration > maxDuration {
+		return 0, 0, false
+	}
+	views = 1
+	if viewsStr != "" {
+		if views, err = strconv.Atoi(viewsStr); err != nil || views < 1 || views > maxFileViews {
+			return 0, 0, false
+		}
+	}
+	return duration, views, true
+}
+
 func apiSaveSecretFile(r *http.Request) (responseCode int, response []byte) {
+	if r.URL.Query().Has("u") {
+		return apiSaveFileChunk(r)
+	}
+
 	responseCode = 200
 	jResponse := struct {
 		Status string `json:"status"`
@@ -365,17 +405,7 @@ func apiSaveSecretFile(r *http.Request) (responseCode int, response []byte) {
 		return
 	}
 
-	// Parse duration
-	duration := defaultDuration
-	if durationStr != "" {
-		if d, err := strconv.Atoi(durationStr); err == nil && d > 0 && d <= maxDuration {
-			duration = d
-		}
-	}
-	views := 1
-	if parsedViews, err := strconv.Atoi(viewsStr); err == nil {
-		views = min(max(parsedViews, 1), maxFileViews)
-	}
+	duration, views := parseFileLifetime(durationStr, viewsStr)
 
 	if DEBUG {
 		log.Printf("payload -> file storage: %v bytes, stored key: %v, scheme: %v, Duration: %v\n", fileHeader.Size, readTokenHash, scheme, duration)
@@ -474,6 +504,312 @@ func apiSaveSecretFile(r *http.Request) (responseCode int, response []byte) {
 	log.Printf("apiSaveSecretFile: failed to allocate unique storage id after %d attempts", maxStorageIDAttempts)
 	response, _ = json.Marshal(jResponse)
 	return
+}
+
+func apiSaveFileChunk(r *http.Request) (responseCode int, response []byte) {
+	jResponse := struct {
+		Status string `json:"status"`
+		NewId  string `json:"newId,omitempty"`
+	}{Status: "error"}
+	responseCode = http.StatusBadRequest
+	defer func() {
+		response, _ = json.Marshal(jResponse)
+	}()
+
+	query := r.URL.Query()
+	uploadID := query.Get("u")
+	index, indexErr := strconv.Atoi(query.Get("i"))
+	chunks, chunksErr := strconv.Atoi(query.Get("n"))
+	if !isValidStorageID(uploadID) || indexErr != nil || chunksErr != nil ||
+		chunks < 1 || chunks > maxFileChunks || index < 0 || index >= chunks {
+		return
+	}
+
+	r.Body = http.MaxBytesReader(nil, r.Body, fileChunkBytes+fileUploadOverheadBytes)
+	if err := r.ParseMultipartForm(fileChunkBytes + fileUploadOverheadBytes); err != nil {
+		log.Printf("apiSaveFileChunk: ParseMultipartForm: %v", err)
+		return
+	}
+	defer func() {
+		if err := r.MultipartForm.RemoveAll(); err != nil {
+			log.Printf("RemoveAll error: %v", err)
+		}
+	}()
+	chunk, chunkHeader, err := r.FormFile("file")
+	if err != nil {
+		return
+	}
+	defer chunk.Close()
+
+	version, _ := strconv.Atoi(r.FormValue("v"))
+	readTokenHash, scheme, schemeOK := resolveSaveScheme("", r.FormValue("readTokenHash"), version)
+	isLast := index == chunks-1
+	duration, views, lifetimeOK := parseChunkLifetime(r.FormValue("duration"), r.FormValue("views"))
+	if !schemeOK || !lifetimeOK || chunkHeader.Size <= 0 || chunkHeader.Size > fileChunkBytes ||
+		(!isLast && chunkHeader.Size != fileChunkBytes) {
+		return
+	}
+	want := FileUpload{Chunks: chunks, HashedKey: readTokenHash, Version: scheme, Duration: duration, Views: views}
+
+	hash := sha256.New()
+	_, err = io.Copy(hash, chunk)
+	if err == nil {
+		_, err = chunk.Seek(0, io.SeekStart)
+	}
+	if err != nil {
+		log.Printf("apiSaveFileChunk: hash chunk %d: %v", index, err)
+		responseCode = http.StatusInternalServerError
+		return
+	}
+	sum := hex.EncodeToString(hash.Sum(nil))
+
+	client := fileUploadRedisFunc()
+	answerIfPublished := func(upload FileUploadRecord) bool {
+		if upload.Published && upload.sameSettings(want) && upload.Hashes[strconv.Itoa(index)] == sum {
+			responseCode = http.StatusOK
+			jResponse.Status = "ok"
+			jResponse.NewId = upload.StoreKey
+		}
+		return upload.Published
+	}
+	answeredFromPublication := func() bool {
+		upload, _, err := loadFileUpload(client, uploadID)
+		if err != nil {
+			log.Printf("apiSaveFileChunk: publication check: %v", err)
+			responseCode = http.StatusInternalServerError
+			return true
+		}
+		return answerIfPublished(upload)
+	}
+
+	upload, found, err := loadFileUpload(client, uploadID)
+	if err == nil && !found {
+		upload, err = startFileUpload(client, uploadID, want)
+	}
+	if err != nil {
+		log.Printf("apiSaveFileChunk: start upload: %v", err)
+		responseCode = http.StatusInternalServerError
+		return
+	}
+	if answerIfPublished(upload) || !upload.sameSettings(want) {
+		return
+	}
+
+	writable, err := claimFileUploadChunk(client, uploadID, index, sum)
+	if err != nil {
+		log.Printf("apiSaveFileChunk: claim chunk %d: %v", index, err)
+		responseCode = http.StatusInternalServerError
+		return
+	}
+	if !writable {
+		log.Printf("apiSaveFileChunk: chunk %d/%d differs from the bytes already sent for it", index, chunks)
+		return
+	}
+	if answeredFromPublication() {
+		return
+	}
+
+	filePath := filepath.Join(fileStorageDir, upload.StoreKey+".enc")
+	if err := writeFileChunk(filePath, index, isLast, chunk, chunkHeader.Size); err != nil {
+		log.Printf("apiSaveFileChunk: chunk %d/%d: %v", index, chunks, err)
+		responseCode = http.StatusInternalServerError
+		return
+	}
+	if err := restoreFileExpiry(client, upload.StoreKey, filePath); err != nil {
+		log.Printf("apiSaveFileChunk: restore expiry: %v", err)
+		responseCode = http.StatusInternalServerError
+		return
+	}
+
+	received, err := recordFileUploadChunk(client, uploadID, upload.StoreKey, index)
+	if err != nil {
+		log.Printf("apiSaveFileChunk: record chunk: %v", err)
+		responseCode = http.StatusInternalServerError
+		return
+	}
+	if received < int64(chunks) {
+		if answeredFromPublication() {
+			return
+		}
+		responseCode = http.StatusOK
+		jResponse.Status = "ok"
+		return
+	}
+
+	newID, err := finishFileUpload(client, uploadID, upload.FileUpload, filePath)
+	if errors.Is(err, errFileUploadFinishing) {
+		responseCode = http.StatusServiceUnavailable
+		jResponse.Status = "retry"
+		return
+	}
+	if err != nil {
+		log.Printf("apiSaveFileChunk: finish upload: %v", err)
+		responseCode = http.StatusInternalServerError
+		return
+	}
+	responseCode = http.StatusOK
+	jResponse.Status = "ok"
+	jResponse.NewId = newID
+	return
+}
+
+func startFileUpload(client *redis.Client, uploadID string, want FileUpload) (FileUploadRecord, error) {
+	if err := os.MkdirAll(fileStorageDir, 0750); err != nil {
+		return FileUploadRecord{}, err
+	}
+
+	for attempt := 0; attempt < maxStorageIDAttempts; attempt++ {
+		storeKey, err := generateStorageID()
+		if err != nil {
+			return FileUploadRecord{}, err
+		}
+		filePath := filepath.Join(fileStorageDir, storeKey+".enc")
+		reserved, err := os.OpenFile(filePath, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0600)
+		if os.IsExist(err) {
+			continue
+		}
+		if err != nil {
+			return FileUploadRecord{}, err
+		}
+		_ = reserved.Close()
+		now := time.Now().UTC()
+		if err := os.Chtimes(filePath, now, now.Add(fileUploadTTL)); err != nil {
+			_ = os.Remove(filePath)
+			return FileUploadRecord{}, err
+		}
+
+		want.StoreKey = storeKey
+		upload, err := claimFileUpload(client, uploadID, want)
+		if err != nil || upload.StoreKey != storeKey {
+			_ = os.Remove(filePath)
+		}
+		return upload, err
+	}
+
+	return FileUploadRecord{}, errStorageIDCollision
+}
+
+func writeFileChunk(filePath string, index int, isLast bool, chunk io.Reader, size int64) error {
+	file, err := os.OpenFile(filePath, os.O_WRONLY, 0)
+	if err != nil {
+		return err
+	}
+
+	offset := int64(index) * fileChunkBytes
+	written, err := io.Copy(io.NewOffsetWriter(file, offset), chunk)
+	if err == nil && written != size {
+		err = io.ErrShortWrite
+	}
+	if err == nil && isLast {
+		err = file.Truncate(offset + written)
+	}
+	if closeErr := file.Close(); err == nil {
+		err = closeErr
+	}
+	if err != nil {
+		return err
+	}
+
+	// The mtime is the janitor's deadline, and the write just moved it to now.
+	now := time.Now().UTC()
+	return os.Chtimes(filePath, now, now.Add(fileUploadTTL))
+}
+
+// A duplicate chunk racing completion must not shorten a live file's mtime (finishFileUpload sets the record first).
+func restoreFileExpiry(client *redis.Client, storeKey, filePath string) error {
+	ttl, err := client.PTTL(getFileStoreKey(storeKey)).Result()
+	if err != nil || ttl <= 0 {
+		return err
+	}
+	now := time.Now().UTC()
+	if err := os.Chtimes(filePath, now, now.Add(ttl)); err != nil && !os.IsNotExist(err) {
+		return err
+	}
+	return nil
+}
+
+var errFileUploadFinishing = errors.New("another request is finishing this upload")
+
+func finishFileUpload(client *redis.Client, uploadID string, upload FileUpload, filePath string) (string, error) {
+	locked, err := lockFileUploadFinish(client, uploadID)
+	if err != nil {
+		return "", err
+	}
+	if !locked {
+		return "", errFileUploadFinishing
+	}
+	defer func() {
+		if err := unlockFileUploadFinish(client, uploadID); err != nil {
+			log.Printf("unlockFileUploadFinish error: %v", err)
+		}
+	}()
+
+	if current, _, err := loadFileUpload(client, uploadID); err != nil || current.Published {
+		return current.StoreKey, err
+	}
+	hashes, err := loadFileUploadHashes(client, uploadID)
+	if err == nil && len(hashes) != upload.Chunks {
+		err = fmt.Errorf("upload has %d chunk hashes, want %d", len(hashes), upload.Chunks)
+	}
+	if err != nil {
+		return "", err
+	}
+
+	record := StoredFile{
+		Encrypted: true,
+		FileUri:   filePath,
+		HashedKey: upload.HashedKey,
+		Version:   upload.Version,
+	}
+	if upload.Views != 1 {
+		record.Views = upload.Views
+	}
+	valueToStore, _ := json.Marshal(record)
+
+	now := time.Now().UTC()
+	ttl := time.Duration(upload.Duration) * time.Second
+	created, err := setFileRecordFunc(upload.StoreKey, valueToStore, ttl)
+	if err == nil && !created {
+		// A completion that died after creating the record left it for us.
+		err = adoptFileRecord(client, upload.StoreKey, filePath)
+	}
+	if err != nil {
+		return "", err
+	}
+	if created {
+		err = os.Chtimes(filePath, now, now.Add(ttl))
+	} else {
+		err = restoreFileExpiry(client, upload.StoreKey, filePath)
+	}
+	if err != nil {
+		if created {
+			_ = client.Del(getFileStoreKey(upload.StoreKey)).Err()
+		}
+		return "", err
+	}
+
+	if err := publishFileUploadFunc(client, uploadID, FileUploadRecord{FileUpload: upload, Hashes: hashes}); err != nil {
+		return "", err
+	}
+	if err := incrementStoredFileCountersFunc(upload.Views, now); err != nil {
+		log.Printf("incrementStoredFileCounters error: %v", err)
+	}
+	return upload.StoreKey, nil
+}
+
+func adoptFileRecord(client *redis.Client, storeKey, filePath string) error {
+	value, err := client.Get(getFileStoreKey(storeKey)).Result()
+	if err != nil {
+		return err
+	}
+	var existing StoredFile
+	if err := json.Unmarshal([]byte(value), &existing); err != nil {
+		return err
+	}
+	if existing.FileUri != filePath {
+		return errStorageIDCollision
+	}
+	return nil
 }
 
 // writeFileError answers with JSON rather than http.Error's text/plain: a

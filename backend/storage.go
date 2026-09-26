@@ -10,6 +10,7 @@ import (
 	"errors"
 	"log"
 	"os"
+	"strconv"
 	"sync"
 	"time"
 
@@ -248,6 +249,141 @@ func secretsExist(ids []string) (map[string]bool, error) {
 		result[id] = cmd.Val() > 0
 	}
 	return result, nil
+}
+
+// Also the partial blob's mtime deadline, so the janitor removes abandoned uploads.
+const fileUploadTTL = time.Hour
+const fileUploadFinishLockTTL = 30 * time.Second
+
+type FileUpload struct {
+	StoreKey  string `json:"storeKey"`
+	Chunks    int    `json:"n"`
+	HashedKey string `json:"hashedKey"`
+	Version   int    `json:"v"`
+	Duration  int    `json:"duration"`
+	Views     int    `json:"views"`
+}
+
+func (u FileUpload) sameSettings(other FileUpload) bool {
+	other.StoreKey = u.StoreKey
+	return u == other
+}
+
+// A published record is final: it answers resends, and nothing writes or publishes its upload again.
+type FileUploadRecord struct {
+	FileUpload
+	Published bool              `json:"published,omitempty"`
+	Hashes    map[string]string `json:"hashes,omitempty"`
+}
+
+func getFileUploadKey(uploadID string) string {
+	return "fileUpload:" + uploadID
+}
+
+// Keyed by the file too, so an upload restarted after its record was evicted counts from zero.
+func getFileUploadChunksKey(uploadID, storeKey string) string {
+	return "fileUploadChunks:" + uploadID + ":" + storeKey
+}
+
+func getFileUploadHashesKey(uploadID string) string {
+	return "fileUploadHashes:" + uploadID
+}
+
+func getFileUploadFinishingKey(uploadID string) string {
+	return "fileUploadFinishing:" + uploadID
+}
+
+func loadFileUpload(client *redis.Client, uploadID string) (FileUploadRecord, bool, error) {
+	value, err := client.Get(getFileUploadKey(uploadID)).Result()
+	if err == redis.Nil {
+		return FileUploadRecord{}, false, nil
+	}
+	if err != nil {
+		return FileUploadRecord{}, false, err
+	}
+
+	var upload FileUploadRecord
+	if err := json.Unmarshal([]byte(value), &upload); err != nil {
+		return FileUploadRecord{}, false, err
+	}
+	return upload, true, nil
+}
+
+func claimFileUpload(client *redis.Client, uploadID string, candidate FileUpload) (FileUploadRecord, error) {
+	value, _ := json.Marshal(FileUploadRecord{FileUpload: candidate})
+	ok, err := client.SetNX(getFileUploadKey(uploadID), value, fileUploadTTL).Result()
+	if err != nil {
+		return FileUploadRecord{}, err
+	}
+	if ok {
+		return FileUploadRecord{FileUpload: candidate}, nil
+	}
+
+	stored, found, err := loadFileUpload(client, uploadID)
+	if err == nil && !found {
+		err = errors.New("file upload vanished while being claimed")
+	}
+	return stored, err
+}
+
+// claimFileUploadChunk pins a chunk index to the first bytes sent for it and
+// reports whether these bytes may be written: only the same bytes ever may.
+func claimFileUploadChunk(client *redis.Client, uploadID string, index int, sum string) (bool, error) {
+	key := getFileUploadHashesKey(uploadID)
+	field := strconv.Itoa(index)
+	var claimed *redis.BoolCmd
+	var stored *redis.StringCmd
+	_, err := client.TxPipelined(func(pipe redis.Pipeliner) error {
+		claimed = pipe.HSetNX(key, field, sum)
+		pipe.Expire(key, fileUploadTTL)
+		stored = pipe.HGet(key, field)
+		return nil
+	})
+	if err != nil {
+		return false, err
+	}
+	return claimed.Val() || stored.Val() == sum, nil
+}
+
+func recordFileUploadChunk(client *redis.Client, uploadID, storeKey string, index int) (int64, error) {
+	chunksKey := getFileUploadChunksKey(uploadID, storeKey)
+	var received *redis.IntCmd
+	_, err := client.TxPipelined(func(pipe redis.Pipeliner) error {
+		pipe.SAdd(chunksKey, index)
+		pipe.Expire(chunksKey, fileUploadTTL)
+		pipe.Expire(getFileUploadKey(uploadID), fileUploadTTL)
+		pipe.Expire(getFileUploadHashesKey(uploadID), fileUploadTTL)
+		received = pipe.SCard(chunksKey)
+		return nil
+	})
+	if err != nil {
+		return 0, err
+	}
+	return received.Val(), nil
+}
+
+func loadFileUploadHashes(client *redis.Client, uploadID string) (map[string]string, error) {
+	return client.HGetAll(getFileUploadHashesKey(uploadID)).Result()
+}
+
+// Later chunk claims land in a fresh hash set, so writers must re-check Published after claiming.
+func publishFileUpload(client *redis.Client, uploadID string, published FileUploadRecord) error {
+	published.Published = true
+	value, _ := json.Marshal(published)
+	_, err := client.TxPipelined(func(pipe redis.Pipeliner) error {
+		pipe.Set(getFileUploadKey(uploadID), value, fileUploadTTL)
+		pipe.Del(getFileUploadChunksKey(uploadID, published.StoreKey), getFileUploadHashesKey(uploadID))
+		return nil
+	})
+	return err
+}
+
+func lockFileUploadFinish(client *redis.Client, uploadID string) (bool, error) {
+	return client.SetNX(getFileUploadFinishingKey(uploadID), 1, fileUploadFinishLockTTL).Result()
+}
+
+func unlockFileUploadFinish(client *redis.Client, uploadID string) error {
+	return client.Del(getFileUploadFinishingKey(uploadID)).Err()
 }
 
 type FileDownloadReservation struct {

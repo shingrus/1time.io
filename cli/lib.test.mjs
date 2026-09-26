@@ -4,9 +4,10 @@ import {join, basename, resolve} from 'node:path';
 import {Readable} from 'node:stream';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {createHash} from 'node:crypto';
+import {createHash, randomBytes} from 'node:crypto';
 
 import {createSecretLink, revealSecret, run} from './lib.mjs';
+const chunkBytes = 4 * 1024 * 1024;
 
 // v3 saves upload SHA-256(readToken); reads still send the token itself. These
 // tests therefore assert that the two are related by a hash, NOT that they are
@@ -27,6 +28,30 @@ function createWritableCapture() {
         },
         getOutput() {
             return output;
+        },
+    };
+}
+
+// Stands in for /api/saveFile's chunked path: answers {"status":"ok"} per
+// chunk and the id only for the last one, and keeps the stored ciphertext.
+// Fields come from the multipart body; u, i and n from the query.
+function createChunkServer(newId = 'serverFile123456789abc') {
+    const chunks = [];
+    const requests = [];
+    return {
+        requests,
+        encryptedBytes: () => new Uint8Array(Buffer.concat(chunks)),
+        fetchImpl: async (url, options) => {
+            const params = new URL(url).searchParams;
+            const index = Number(params.get('i'));
+            const form = options.body;
+            requests.push({url, params, form, headers: options.headers});
+            chunks[index] = Buffer.from(await form.get('file').arrayBuffer());
+            const isLast = index === Number(params.get('n')) - 1;
+            return new Response(JSON.stringify(isLast ? {status: 'ok', newId} : {status: 'ok'}), {
+                status: 200,
+                headers: {'Content-Type': 'application/json'},
+            });
         },
     };
 }
@@ -470,7 +495,7 @@ test('every api request carries the src=cli marker and the 1time-cli User-Agent'
     });
 
     const sendFileStdout = createWritableCapture();
-    let encryptedBytes = null;
+    const fileServer = createChunkServer();
     await run(['send-file', sourcePath], {
         stdin: createStdin('', true),
         stdout: sendFileStdout.stream,
@@ -478,11 +503,7 @@ test('every api request carries the src=cli marker and the 1time-cli User-Agent'
         env: {},
         fetchImpl: async (url, options) => {
             captureRequest(url, options);
-            encryptedBytes = new Uint8Array(await options.body.get('file').arrayBuffer());
-            return new Response(JSON.stringify({status: 'ok', newId: 'serverFile123456789abc'}), {
-                status: 200,
-                headers: {'Content-Type': 'application/json'},
-            });
+            return fileServer.fetchImpl(url, options);
         },
     });
 
@@ -494,7 +515,7 @@ test('every api request carries the src=cli marker and the 1time-cli User-Agent'
         cwd: outputDir,
         fetchImpl: async (url, options) => {
             captureRequest(url, options);
-            return new Response(encryptedBytes, {
+            return new Response(fileServer.encryptedBytes(), {
                 status: 200,
                 headers: {'Content-Type': 'application/octet-stream'},
             });
@@ -670,30 +691,27 @@ test('run send-file uploads a file and prints the created file link', async () =
 
     const stdout = createWritableCapture();
     const stderr = createWritableCapture();
-    let requestBody = null;
+    const server = createChunkServer('file123456789abcdefghi');
 
     const exitCode = await run(['send-file', '--host', '1time.example', sourcePath], {
         stdin: createStdin('', true),
         stdout: stdout.stream,
         stderr: stderr.stream,
         env: {},
-        fetchImpl: async (_url, options) => {
-            requestBody = options.body;
-            return new Response(JSON.stringify({
-                status: 'ok',
-                newId: 'file123456789abcdefghi',
-            }), {
-                status: 200,
-                headers: {'Content-Type': 'application/json'},
-            });
-        },
+        fetchImpl: server.fetchImpl,
     });
 
     assert.equal(exitCode, 0);
     assert.equal(stderr.getOutput(), '');
-    assert.equal(requestBody.get('duration'), '86400');
-    assert.equal(typeof requestBody.get('readTokenHash'), 'string');
-    assert.ok(requestBody.get('file') instanceof Blob);
+    assert.equal(server.requests.length, 1);
+    const [{params, form}] = server.requests;
+    assert.match(params.get('u'), /^[A-Za-z0-9_-]{22}$/);
+    assert.equal(params.get('i'), '0');
+    assert.equal(params.get('n'), '1');
+    assert.equal(form.get('v'), '3');
+    assert.equal(form.get('duration'), '86400');
+    assert.match(form.get('readTokenHash'), /^[0-9a-f]{64}$/);
+    assert.ok(form.get('file') instanceof Blob);
     assert.match(stdout.getOutput(), /^https:\/\/1time\.example\/f\/#/);
     assert.match(stdout.getOutput(), /file123/);
 });
@@ -705,28 +723,19 @@ test('run send-file accepts --expires-in', async () => {
 
     const stdout = createWritableCapture();
     const stderr = createWritableCapture();
-    let requestBody = null;
+    const server = createChunkServer('file123456789abcdefghi');
 
     const exitCode = await run(['send-file', '--expires-in', '23h', sourcePath], {
         stdin: createStdin('', true),
         stdout: stdout.stream,
         stderr: stderr.stream,
         env: {},
-        fetchImpl: async (_url, options) => {
-            requestBody = options.body;
-            return new Response(JSON.stringify({
-                status: 'ok',
-                newId: 'file123456789abcdefghi',
-            }), {
-                status: 200,
-                headers: {'Content-Type': 'application/json'},
-            });
-        },
+        fetchImpl: server.fetchImpl,
     });
 
     assert.equal(exitCode, 0);
     assert.equal(stderr.getOutput(), '');
-    assert.equal(requestBody.get('duration'), '82800');
+    assert.equal(server.requests[0].form.get('duration'), '82800');
     assert.match(stdout.getOutput(), /^https:\/\/1time\.io\/f\/#/);
 });
 
@@ -737,32 +746,22 @@ test('run send-file accepts --views and omits the field for single downloads', a
 
     const stdout = createWritableCapture();
     const stderr = createWritableCapture();
-    const requestBodies = [];
-    const fetchImpl = async (_url, options) => {
-        requestBodies.push(options.body);
-        return new Response(JSON.stringify({
-            status: 'ok',
-            newId: 'file123456789abcdefghi',
-        }), {
-            status: 200,
-            headers: {'Content-Type': 'application/json'},
-        });
-    };
+    const server = createChunkServer('file123456789abcdefghi');
 
     const io = {
         stdin: createStdin('', true),
         stdout: stdout.stream,
         stderr: stderr.stream,
         env: {},
-        fetchImpl,
+        fetchImpl: server.fetchImpl,
     };
 
     assert.equal(await run(['send-file', '--views', '5', sourcePath], io), 0);
     assert.equal(await run(['send-file', sourcePath], io), 0);
 
     assert.equal(stderr.getOutput(), '');
-    assert.equal(requestBodies[0].get('views'), '5');
-    assert.equal(requestBodies[1].get('views'), null);
+    assert.equal(server.requests[0].form.get('views'), '5');
+    assert.equal(server.requests[1].form.get('views'), null);
 });
 
 test('run send-file rejects --views below the minimum', async () => {
@@ -798,23 +797,14 @@ test('run read-file reports the remaining downloads on stderr', async () => {
     await writeFile(sourcePath, 'round-trip file');
 
     const sendStdout = createWritableCapture();
-    let encryptedBytes = null;
+    const server = createChunkServer();
 
     const sendExitCode = await run(['send-file', '--views', '3', sourcePath], {
         stdin: createStdin('', true),
         stdout: sendStdout.stream,
         stderr: createWritableCapture().stream,
         env: {},
-        fetchImpl: async (_url, options) => {
-            encryptedBytes = new Uint8Array(await options.body.get('file').arrayBuffer());
-            return new Response(JSON.stringify({
-                status: 'ok',
-                newId: 'serverFile123456789abc',
-            }), {
-                status: 200,
-                headers: {'Content-Type': 'application/json'},
-            });
-        },
+        fetchImpl: server.fetchImpl,
     });
 
     assert.equal(sendExitCode, 0);
@@ -827,7 +817,7 @@ test('run read-file reports the remaining downloads on stderr', async () => {
         stderr: readStderr.stream,
         env: {},
         cwd: outputDir,
-        fetchImpl: async () => new Response(encryptedBytes, {
+        fetchImpl: async () => new Response(server.encryptedBytes(), {
             status: 200,
             headers: {
                 'Content-Type': 'application/octet-stream',
@@ -848,27 +838,16 @@ test('run read-file downloads the decrypted file into the current directory', as
     await writeFile(sourcePath, 'round-trip file');
 
     const sendStdout = createWritableCapture();
-    let encryptedBytes = null;
-    let storedReadTokenHash = null;
+    const server = createChunkServer();
 
     const sendExitCode = await run(['send-file', '--passphrase', 'extra-passphrase', sourcePath], {
         stdin: createStdin('', true),
         stdout: sendStdout.stream,
         stderr: createWritableCapture().stream,
         env: {},
-        fetchImpl: async (_url, options) => {
-            const formData = options.body;
-            storedReadTokenHash = formData.get('readTokenHash');
-            encryptedBytes = new Uint8Array(await formData.get('file').arrayBuffer());
-            return new Response(JSON.stringify({
-                status: 'ok',
-                newId: 'serverFile123456789abc',
-            }), {
-                status: 200,
-                headers: {'Content-Type': 'application/json'},
-            });
-        },
+        fetchImpl: server.fetchImpl,
     });
+    const storedReadTokenHash = server.requests[0].form.get('readTokenHash');
 
     assert.equal(sendExitCode, 0);
     const createdLink = sendStdout.getOutput().trim();
@@ -886,7 +865,7 @@ test('run read-file downloads the decrypted file into the current directory', as
             assert.equal(requestBody.id, 'serverFile123456789abc');
             assert.equal(sha256Hex(requestBody.hashedKey), storedReadTokenHash);
 
-            return new Response(encryptedBytes, {
+            return new Response(server.encryptedBytes(), {
                 status: 200,
                 headers: {'Content-Type': 'application/octet-stream'},
             });
@@ -931,27 +910,16 @@ test('read-file picks a unique filename when the decrypted name already exists',
     await writeFile(existingPath, 'existing file');
 
     const sendStdout = createWritableCapture();
-    let encryptedBytes = null;
-    let storedReadTokenHash = null;
+    const server = createChunkServer();
 
     const sendExitCode = await run(['send-file', '--passphrase', 'extra-passphrase', sourcePath], {
         stdin: createStdin('', true),
         stdout: sendStdout.stream,
         stderr: createWritableCapture().stream,
         env: {},
-        fetchImpl: async (_url, options) => {
-            const formData = options.body;
-            storedReadTokenHash = formData.get('readTokenHash');
-            encryptedBytes = new Uint8Array(await formData.get('file').arrayBuffer());
-            return new Response(JSON.stringify({
-                status: 'ok',
-                newId: 'serverFile123456789abc',
-            }), {
-                status: 200,
-                headers: {'Content-Type': 'application/json'},
-            });
-        },
+        fetchImpl: server.fetchImpl,
     });
+    const storedReadTokenHash = server.requests[0].form.get('readTokenHash');
 
     assert.equal(sendExitCode, 0);
     const createdLink = sendStdout.getOutput().trim();
@@ -969,7 +937,7 @@ test('read-file picks a unique filename when the decrypted name already exists',
             assert.equal(requestBody.id, 'serverFile123456789abc');
             assert.equal(sha256Hex(requestBody.hashedKey), storedReadTokenHash);
 
-            return new Response(encryptedBytes, {
+            return new Response(server.encryptedBytes(), {
                 status: 200,
                 headers: {'Content-Type': 'application/octet-stream'},
             });
@@ -1019,3 +987,188 @@ function passphraseWarningLine() {
 function consumedLine() {
     return 'This link is now consumed and has been deleted from the server.\n';
 }
+
+test('send-file splits a large file into fixed-size chunks and read-file reassembles it', async () => {
+    const sourceDir = await mkdtemp(join(tmpdir(), '1time-cli-source-'));
+    const outputDir = await mkdtemp(join(tmpdir(), '1time-cli-output-'));
+    const sourcePath = join(sourceDir, 'large.bin');
+    const content = randomBytes(chunkBytes * 2 + 12345);
+    await writeFile(sourcePath, content);
+
+    const server = createChunkServer();
+    const sendStdout = createWritableCapture();
+    const io = {stdin: createStdin('', true), stderr: createWritableCapture().stream, env: {}, cwd: outputDir};
+    assert.equal(await run(['send-file', sourcePath], {...io, stdout: sendStdout.stream, fetchImpl: server.fetchImpl}), 0);
+
+    assert.deepEqual(server.requests.map(({params}) => [params.get('i'), params.get('n')]), [['0', '3'], ['1', '3'], ['2', '3']]);
+    assert.equal(new Set(server.requests.map(({params}) => params.get('u'))).size, 1);
+    const sizes = await Promise.all(server.requests.map(({form}) => form.get('file').size));
+    assert.deepEqual(sizes.slice(0, 2), [chunkBytes, chunkBytes]);
+    const encrypted = server.encryptedBytes();
+
+    const readStdout = createWritableCapture();
+    assert.equal(await run(['read-file', sendStdout.getOutput().trim()], {
+        ...io,
+        stdout: readStdout.stream,
+        fetchImpl: async () => new Response(encrypted, {status: 200, headers: {'Content-Type': 'application/octet-stream'}}),
+    }), 0);
+    assert.deepEqual(await readFile(readStdout.getOutput().trim()), content);
+});
+
+test('send-file resends only the chunk whose request failed', async () => {
+    const sourceDir = await mkdtemp(join(tmpdir(), '1time-cli-source-'));
+    const sourcePath = join(sourceDir, 'large.bin');
+    await writeFile(sourcePath, randomBytes(chunkBytes + 10));
+
+    const server = createChunkServer();
+    const failures = [new TypeError('fetch failed'), 502];
+    const sent = [];
+    const stdout = createWritableCapture();
+    const exitCode = await run(['send-file', sourcePath], {
+        stdin: createStdin('', true),
+        stdout: stdout.stream,
+        stderr: createWritableCapture().stream,
+        env: {},
+        retryDelaysMs: [0, 0, 0],
+        fetchImpl: async (url, options) => {
+            const index = new URL(url).searchParams.get('i');
+            sent.push(index);
+            if (index === '1' && failures.length > 0) {
+                const failure = failures.shift();
+                if (failure instanceof Error) {
+                    throw failure;
+                }
+                return new Response('', {status: failure});
+            }
+            return server.fetchImpl(url, options);
+        },
+    });
+
+    assert.equal(exitCode, 0);
+    assert.deepEqual(sent, ['0', '1', '1', '1']);
+    assert.match(stdout.getOutput(), /serverFile123456789abc/);
+});
+
+test('send-file gives up on a chunk the server rejects', async () => {
+    const sourceDir = await mkdtemp(join(tmpdir(), '1time-cli-source-'));
+    const sourcePath = join(sourceDir, 'small.txt');
+    await writeFile(sourcePath, 'rejected');
+
+    let calls = 0;
+    const stderr = createWritableCapture();
+    const exitCode = await run(['send-file', sourcePath], {
+        stdin: createStdin('', true),
+        stdout: createWritableCapture().stream,
+        stderr: stderr.stream,
+        env: {},
+        retryDelaysMs: [0, 0, 0],
+        fetchImpl: async () => {
+            calls++;
+            return new Response(JSON.stringify({status: 'error'}), {status: 400});
+        },
+    });
+
+    assert.equal(exitCode, 1);
+    assert.equal(calls, 1);
+    assert.match(stderr.getOutput(), /status 400/);
+});
+
+test('send-file falls back to one request when the server predates chunked uploads', async () => {
+    const sourceDir = await mkdtemp(join(tmpdir(), '1time-cli-source-'));
+    const outputDir = await mkdtemp(join(tmpdir(), '1time-cli-output-'));
+    const sourcePath = join(sourceDir, 'large.bin');
+    const content = randomBytes(chunkBytes + 500);
+    await writeFile(sourcePath, content);
+
+    // An old server ignores u/i/n and stores every request as a whole file.
+    const stored = new Map();
+    const requests = [];
+    const oldServer = async (url, options) => {
+        const id = `oldServerFile${String(stored.size).padStart(9, '0')}`;
+        requests.push(new URL(url).searchParams);
+        stored.set(id, new Uint8Array(await options.body.get('file').arrayBuffer()));
+        return new Response(JSON.stringify({status: 'ok', newId: id}), {status: 200, headers: {'Content-Type': 'application/json'}});
+    };
+
+    const sendStdout = createWritableCapture();
+    const io = {stdin: createStdin('', true), stderr: createWritableCapture().stream, env: {}, cwd: outputDir};
+    assert.equal(await run(['send-file', sourcePath], {...io, stdout: sendStdout.stream, fetchImpl: oldServer}), 0);
+
+    assert.deepEqual(requests.map((params) => params.get('i')), ['0', null]);
+    const link = sendStdout.getOutput().trim();
+    assert.match(link, /oldServerFile000000001$/);
+
+    const readStdout = createWritableCapture();
+    assert.equal(await run(['read-file', link], {
+        ...io,
+        stdout: readStdout.stream,
+        fetchImpl: async () => new Response(stored.get('oldServerFile000000001'), {status: 200, headers: {'Content-Type': 'application/octet-stream'}}),
+    }), 0);
+    assert.deepEqual(await readFile(readStdout.getOutput().trim()), content);
+});
+
+test('send-file retries a chunk on 429 or a Cloudflare 52x and fails once every attempt is used', async () => {
+    const sourceDir = await mkdtemp(join(tmpdir(), '1time-cli-source-'));
+    const sourcePath = join(sourceDir, 'small.txt');
+    await writeFile(sourcePath, 'throttled');
+
+    const server = createChunkServer();
+    const transient = [429, 524];
+    const recovered = await run(['send-file', sourcePath], {
+        stdin: createStdin('', true),
+        stdout: createWritableCapture().stream,
+        stderr: createWritableCapture().stream,
+        env: {},
+        retryDelaysMs: [0, 0],
+        fetchImpl: async (url, options) => {
+            if (transient.length > 0) {
+                return new Response('', {status: transient.shift()});
+            }
+            return server.fetchImpl(url, options);
+        },
+    });
+    assert.equal(recovered, 0);
+    assert.equal(transient.length, 0);
+
+    let calls = 0;
+    const stderr = createWritableCapture();
+    const exhausted = await run(['send-file', sourcePath], {
+        stdin: createStdin('', true),
+        stdout: createWritableCapture().stream,
+        stderr: stderr.stream,
+        env: {},
+        retryDelaysMs: [0, 0],
+        fetchImpl: async () => {
+            calls++;
+            throw new TypeError('fetch failed');
+        },
+    });
+    assert.equal(exhausted, 1);
+    assert.equal(calls, 3);
+    assert.match(stderr.getOutput(), /fetch failed/);
+});
+
+test('send-file fails on an error body or a finished upload without an id', async () => {
+    const sourceDir = await mkdtemp(join(tmpdir(), '1time-cli-source-'));
+    const sourcePath = join(sourceDir, 'small.txt');
+    await writeFile(sourcePath, 'rejected');
+
+    for (const body of [{status: 'error'}, {status: 'ok'}]) {
+        let calls = 0;
+        const stderr = createWritableCapture();
+        const exitCode = await run(['send-file', sourcePath], {
+            stdin: createStdin('', true),
+            stdout: createWritableCapture().stream,
+            stderr: stderr.stream,
+            env: {},
+            retryDelaysMs: [0, 0],
+            fetchImpl: async () => {
+                calls++;
+                return new Response(JSON.stringify(body), {status: 200, headers: {'Content-Type': 'application/json'}});
+            },
+        });
+        assert.equal(exitCode, 1, JSON.stringify(body));
+        assert.equal(calls, 1, JSON.stringify(body));
+        assert.match(stderr.getOutput(), /Failed to create file link/);
+    }
+});

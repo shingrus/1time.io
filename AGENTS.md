@@ -27,6 +27,7 @@ The server never sees plaintext or the decryption key. All crypto is client-side
 - HTTP handlers: `backend/handlers.go`
 - Redis access: `backend/storage.go`
 - File upload/download API endpoints live in `backend/handlers.go` as `/api/saveFile` and `/api/getFile`.
+- **Chunked uploads.** `/api/saveFile?u=<upload id>&i=<index>&n=<count>` is the same endpoint, so the Cloudflare `/api/*` allowlist is unchanged. Each request carries one 4 MiB slice of the unchanged encrypted blob, so the stored `.enc` is byte-identical and readers are unaffected. Only the request completing all `n` slices returns `newId`. A slice index accepts only the bytes first sent for it; resends are idempotent, and one arriving during completion gets `503 {"status":"retry"}`. Unfinished uploads expire 1 h after the last slice. Clients fall back to one request when an early slice returns `newId`.
 - `/api/secretStatus` (`apiSecretStatus` in `backend/handlers.go`) is a **non-consuming** batch existence check used by the Outbox / "My Secrets" page — it reads whether ids still exist and never deletes.
 - Backend file size limit is `100 MB` via `maxFileSize` in `backend/handlers.go`, derived as `maxFileUploadBodyBytes` (exactly 100 MiB, Cloudflare Free's request-body cap) minus a 64 KiB overhead reserve.
 - Every JSON endpoint caps its request body with `http.MaxBytesReader`: `maxSaveSecretBodyBytes` (25 MB — base64url adds ~4/3 over AES-GCM, so roughly 18 MB of plaintext), `maxStatusBodyBytes` (8 KB), and `maxLookupBodyBytes` (1 KB for `/api/get`, `/api/getFile`, `/api/stat`). `maxSaveSecretBodyBytes` is deliberately **decoupled** from `maxFileSize`: text secrets gain nothing from a larger cap, so it stays at 25 MB while the file limit is 100 MB. Keep `maxSaveSecretBodyBytes` under nginx's `client_max_body_size` (`100m`). There is **no client-side length guard**, so oversized text fails with a generic error.
@@ -74,6 +75,7 @@ make build
 - Prefer `stdin` for `send`; positional secrets leak through shell history and process listings.
 - `read` and `read-file` currently accept the full secret link as a positional argument only, which also exposes decryption material in shell history and process listings.
 - `send-file` and `read-file` support optional passphrases via `--passphrase` or `1TIME_PASSPHRASE`.
+- `send-file` uploads in 4 MiB slices with the same retry rules as the web app.
 - `send` and `send-file` accept `--views <N>` (default `1`, max `10`, matching the backend caps); `read` and `read-file` print the remaining views/downloads on `stderr` so `stdout` stays pipeable.
 - File links use the `/f/#<randomKey><id>` format.
 - `read-file --out <path>` refuses to start if the target path already exists.
@@ -163,7 +165,7 @@ npm run build
 - The `/v/` route reads the secret key from the URL hash (`#key`), which is client-side only.
 - File sharing UI lives on `/secure-file-sharing/` and uses `frontend/src/islands/secure-file-share.ts`.
 - File download UI lives on `/f/` and uses `frontend/src/islands/view-file.ts`.
-- The secure file sharing island encrypts the file in the browser, uploads with `XMLHttpRequest`, shows upload progress, and allows `1 / 2 / 3 / 5 / 10` downloads (one by default).
+- The secure file sharing island encrypts the file in the browser, uploads with `XMLHttpRequest`, shows upload progress, and allows `1 / 2 / 3 / 5 / 10` downloads (one by default). The encrypted blob is sent as sequential 4 MiB slices (`saveFile` in `frontend/src/lib/fileUpload.js`); a slice that fails on the network, stalls for 60 s, or gets `408`/`429`/`5xx` is resent with backoff, up to 6 attempts. Resuming after a tab close is impossible by design: the key lives only in page memory.
 - The file download island reads the link key from the URL hash first; generated file links are hash-based. Successful binary responses expose remaining downloads and TTL in response headers. Missing headers mean a legacy one-download backend.
 - Frontend file size limit is `Constants.maxFileSizeBytes = 100 * 1024 * 1024 - 64 * 1024` in `frontend/src/lib/util.js`; keep it equal to the backend's `maxFileSize`. Both describe the **plaintext** file; the wire limit is `maxFileUploadBodyBytes` (exactly 100 MiB), which matches nginx's `100m` and Cloudflare's edge cap. Pages show the limit rounded (`100 MB`).
 - File metadata (`name`, `type`, `size`) is packed into the encrypted payload before upload; the web app server does not store that metadata separately.
@@ -229,7 +231,8 @@ npm run build
 - Backend production binary from `make build`: `bin/1time-api`
 - Example nginx config: `configs/nginx/1time.conf`
 - nginx serves frontend statics and proxies `/api` to the Go app on `127.0.0.1:8080`.
-- nginx upload ceiling is `100m` in both `configs/nginx/1time.conf` and `docker/nginx/default.conf.template` equal to the backend's `maxFileUploadBodyBytes` and to Cloudflare Free's 100 MiB edge cap — none of the three may move alone. Upload/download timeouts on `/api/saveFile` and `/api/getFile` are `10m`; at 100 MB that needs roughly 1.4 Mbit/s sustained, so a very slow mobile uplink can time out.
+- nginx upload ceiling is `100m` in both `configs/nginx/1time.conf` and `docker/nginx/default.conf.template` equal to the backend's `maxFileUploadBodyBytes` and to Cloudflare Free's 100 MiB edge cap — none of the three may move alone. Upload/download timeouts on `/api/saveFile` and `/api/getFile` are `10m`. Chunked uploads make the upload side per 4 MiB request; the download side still needs roughly 1.4 Mbit/s sustained for 100 MB.
+- `/api/saveFile` has its own `api_upload` zone (120 r/m, burst 30) in both nginx configs: a 100 MB file is 25 chunk requests, which `api_write` (45 r/m, burst 10) would throttle.
 - Host nginx has an exact `/f/` location with the same sensitive-header treatment as `/v/`.
 - The nginx `try_files` directive includes `$uri/index.html` for static trailing-slash routes.
 
