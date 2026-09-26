@@ -538,23 +538,23 @@ export const blogPosts: BlogPost[] = [
     },
     {
         "slug": "onetimesecret-alternative",
-        "title": "OneTimeSecret Alternative — Free, Zero-Knowledge, Open Source",
-        "description": "Looking for a OneTimeSecret alternative? 1time.io encrypts in your browser, so the server never sees your secret. Free, open source, no signup — honest comparison.",
-        "ogTitle": "OneTimeSecret Alternative — Free, Zero-Knowledge, Open Source",
+        "title": "OneTimeSecret Alternative: Its Server Sees Your Secret First",
+        "description": "OneTimeSecret encrypts on its server, after your secret arrives in plaintext. 1time.io encrypts in your browser, so the server never sees it. Honest comparison.",
+        "ogTitle": "OneTimeSecret Alternative: Its Server Sees Your Secret First",
         "ogDescription": "A OneTimeSecret alternative that encrypts in your browser. Compare encryption, privacy, features, and pricing side by side.",
         "ogImageAlt": "1time.io vs OneTimeSecret",
         "tag": "Comparison",
-        "heading": "OneTimeSecret Alternative: An Honest 1time.io Comparison",
+        "heading": "OneTimeSecret Alternative: Is It Safe? An Honest Comparison",
         "excerpt": "OneTimeSecret is the most well-known one-time secret sharing tool. We built 1time.io to address what we see as gaps in its approach. Here is an honest comparison — where we are better, where we are similar, and where OneTimeSecret has the edge.",
-        "meta": "By Igor Ermakov · Updated Aug 1, 2026 · 5 min read",
+        "meta": "By Igor Ermakov · Updated Sep 26, 2026 · 5 min read",
         "schemas": [
             {
                 "@context": "https://schema.org",
                 "@type": "Article",
-                "headline": "OneTimeSecret Alternative: An Honest 1time.io Comparison",
-                "description": "Looking for a OneTimeSecret alternative? 1time.io encrypts in your browser, so the server never sees your secret. Free, open source, no signup — honest comparison.",
+                "headline": "OneTimeSecret Alternative: Is It Safe? An Honest Comparison",
+                "description": "OneTimeSecret encrypts on its server, after your secret arrives in plaintext. 1time.io encrypts in your browser, so the server never sees it. Honest comparison.",
                 "datePublished": "2025-12-15",
-                "dateModified": "2026-08-01",
+                "dateModified": "2026-09-26",
                 "author": {
                     "@type": "Person",
                     "name": "Igor Ermakov",
@@ -604,6 +604,14 @@ export const blogPosts: BlogPost[] = [
                 "@context": "https://schema.org",
                 "@type": "FAQPage",
                 "mainEntity": [
+                    {
+                        "@type": "Question",
+                        "name": "Is OneTimeSecret safe?",
+                        "acceptedAnswer": {
+                            "@type": "Answer",
+                            "text": "Safe enough for low-stakes secrets, but not zero-knowledge. OneTimeSecret is open source, has run for years, uses HTTPS and deletes a secret after one view. But your secret reaches its server in plaintext and is encrypted there, so the operator, anyone who breaches the server, or anyone who can legally compel the operator could read it. If you need a service that cannot read your secret even in principle, use end-to-end encryption. 1time.io encrypts in your browser and keeps the key in the part of the link that is never sent to the server."
+                        }
+                    },
                     {
                         "@type": "Question",
                         "name": "What is the difference between 1time.io and OneTimeSecret?",
