@@ -14,6 +14,8 @@ server {
     index  index.html;
     client_max_body_size 100m;
 
+    charset utf-8;
+
     gzip on;
     gzip_vary on;
     gzip_proxied any;
