@@ -1,6 +1,7 @@
 import {Constants} from '../lib/util.js';
 import {encryptFile} from '../lib/fileProtocol.js';
-import {formatBytes, saveFile} from '../lib/fileApi.js';
+import {formatBytes} from '../lib/fileApi.js';
+import {saveFile} from '../lib/fileUpload.js';
 import {showLinkReady} from './show-link-ready.js';
 
 const form = document.querySelector<HTMLFormElement>('#secure-file-form');

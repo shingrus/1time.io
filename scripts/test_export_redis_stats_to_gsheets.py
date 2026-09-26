@@ -130,6 +130,50 @@ class BuildFeedbackRowsTest(unittest.TestCase):
 
     def test_returns_only_headers_without_entries(self):
         self.assertEqual(exporter.build_feedback_rows([]), [exporter.FEEDBACK_COLUMNS])
+class ChunkedUploadCountingTest(unittest.TestCase):
+    UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/140.0"
+
+    def line(self, target, status, size, hour="10"):
+        return (
+            f'10.0.0.1 - - [25/Sep/2026:{hour}:00:00 +0000] "POST {target} HTTP/2.0" '
+            f'{status} {size} "-" "{self.UA}" host=1time.io'
+        )
+
+    def bucket_for(self, lines):
+        bucket = exporter.new_day_bucket()
+        for line in lines:
+            exporter.accumulate_nginx_entry(bucket, exporter.parse_nginx_access_line(line))
+        return bucket
+
+    def test_counts_a_chunked_upload_once_on_its_finishing_line(self):
+        chunk = "/api/saveFile?src=cli&u=AAAAAAAAAAAAAAAAAAAAAA&n=2&i="
+        bucket = self.bucket_for([
+            self.line(chunk + "0", 200, 15),
+            self.line(chunk + "1", 499, 0),
+            self.line(chunk + "1", 200, 48),
+            self.line(chunk + "1", 200, 48),
+        ])
+        self.assertEqual(len(bucket["file_senders"]), 1)
+        self.assertEqual(bucket["cli_saves"], 1)
+        self.assertEqual(bucket["hours"][10]["file_saves"], 1)
+
+    def test_an_unfinished_chunked_upload_is_not_a_send(self):
+        bucket = self.bucket_for([
+            self.line("/api/saveFile?u=BBBBBBBBBBBBBBBBBBBBBB&i=0&n=3", 200, 15),
+        ])
+        self.assertEqual(len(bucket["file_senders"]), 0)
+        self.assertEqual(bucket["hours"], {})
+
+    def test_single_request_uploads_count_as_before(self):
+        bucket = self.bucket_for([
+            self.line("/api/saveFile", 200, 48),
+            self.line("/api/saveFile", 200, 48, hour="11"),
+            self.line("/api/saveFile", 200, 30, hour="12"),
+        ])
+        self.assertEqual(len(bucket["file_senders"]), 1)
+        self.assertEqual(bucket["hours"][10]["file_saves"], 1)
+        self.assertEqual(bucket["hours"][11]["file_saves"], 1)
+        self.assertNotIn(12, bucket["hours"])
 
 
 if __name__ == "__main__":

@@ -25,7 +25,10 @@ Nginx sender/receiver analytics:
     error response body size.
   - Successful text reads are POST /api/get responses without the known
     "no message", "wrong key", or generic error response body sizes.
-  - File sends/reads are counted separately from text sends/reads.
+  - File sends/reads are counted separately from text sends/reads. A chunked
+    upload (POST /api/saveFile?u=<upload id>&i=&n=) logs one line per chunk
+    and counts as a send only on its {"status":"ok","newId":...} line, once
+    per upload id.
   - senders/receivers/dau are unions of those identity sets, so a person who
     sends both a text and a file counts once.
   - wau is the same union taken across the trailing 7 days, deduplicated - a
@@ -101,7 +104,7 @@ import os
 import re
 import sys
 from typing import Dict, Iterable, List, Sequence, Tuple
-from urllib.parse import urlsplit
+from urllib.parse import parse_qs, urlsplit
 
 try:
     import redis
@@ -212,6 +215,7 @@ NGINX_COMBINED_LOG_RE = re.compile(
 TEXT_READ_FAILURE_BODY_SIZES = {39, 43, 44, 67, 71, 72}
 FILE_READ_FAILURE_BODY_SIZES = {22, 23}
 SAVE_FAILURE_BODY_SIZES = {30}
+CHUNKED_SAVE_DONE_BODY_SIZE = 48
 
 
 def parse_args() -> argparse.Namespace:
@@ -468,6 +472,10 @@ def parse_nginx_access_line(line: str) -> Dict[str, object] | None:
     }
 
 
+def upload_id(entry: Dict[str, object]) -> str:
+    return parse_qs(urlsplit(str(entry["target"])).query).get("u", [""])[0]
+
+
 def successful_nginx_metric(entry: Dict[str, object]) -> str | None:
     if entry["method"] != "POST":
         return None
@@ -479,6 +487,8 @@ def successful_nginx_metric(entry: Dict[str, object]) -> str | None:
     if path == "/api/saveSecret":
         return None if body_size in SAVE_FAILURE_BODY_SIZES else "text_senders"
     if path == "/api/saveFile":
+        if upload_id(entry):
+            return "file_senders" if body_size == CHUNKED_SAVE_DONE_BODY_SIZE else None
         return None if body_size in SAVE_FAILURE_BODY_SIZES else "file_senders"
     if path == "/api/get":
         return None if body_size in TEXT_READ_FAILURE_BODY_SIZES else "text_receivers"
@@ -499,6 +509,7 @@ def new_day_bucket() -> Dict[str, object]:
     bucket["whales"] = set()
     bucket["ext_saves"] = 0
     bucket["cli_saves"] = 0
+    bucket["finished_uploads"] = set()
     bucket["hours"] = {}
     return bucket
 
@@ -507,6 +518,12 @@ def accumulate_nginx_entry(bucket: Dict[str, object], entry: Dict[str, object]) 
     metric = successful_nginx_metric(entry)
     if metric is None:
         return
+
+    if metric == "file_senders" and upload_id(entry):
+        finished: set[str] = bucket["finished_uploads"]  # type: ignore[assignment]
+        if upload_id(entry) in finished:
+            return
+        finished.add(upload_id(entry))
 
     if metric in ("text_senders", "file_senders"):
         target = str(entry["target"])

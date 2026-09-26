@@ -26,6 +26,10 @@ const maxExpiresInSeconds = 30 * secondsPerDay;
 const defaultExpiresInSeconds = ProtocolConstants.defaultDuration * secondsPerDay;
 const defaultViews = 1;
 const maxViews = 10;
+// Must equal fileChunkBytes in backend/handlers.go.
+const fileChunkBytes = 4 * 1024 * 1024;
+const chunkRetryDelaysMs = [1000, 2000, 4000, 8000, 15000];
+const isRetryableStatus = (status) => status === 408 || status === 429 || (status >= 500 && status <= 599);
 // Self-reported log marker mirroring the extension's ?src=ext. Not trustworthy
 // attribution — anyone can send it — so nothing may gate on it.
 const clientSource = 'cli';
@@ -256,7 +260,39 @@ async function writeFileToAvailablePath(targetPath, fileBytes) {
     throw new Error(`Failed to allocate output path for ${targetPath}`);
 }
 
-async function createFileLink({host, filePath, passphrase = '', expiresInSeconds = defaultExpiresInSeconds, views = defaultViews, fetchImpl}) {
+async function postFileChunk({url, buildBody, fetchImpl, retryDelaysMs}) {
+    let lastError;
+    for (let attempt = 0; attempt <= retryDelaysMs.length; attempt++) {
+        if (attempt > 0) {
+            await new Promise((resolveDelay) => setTimeout(resolveDelay, retryDelaysMs[attempt - 1]));
+        }
+
+        let response;
+        try {
+            response = await fetchImpl(url, {method: 'POST', headers: {'User-Agent': userAgent}, body: buildBody()});
+        } catch (error) {
+            lastError = error;
+            continue;
+        }
+
+        if (response.ok) {
+            const data = await response.json();
+            if (data.status !== 'ok') {
+                throw new Error('Failed to create file link');
+            }
+            return data;
+        }
+
+        lastError = new Error(`Request failed with status ${response.status}`);
+        if (!isRetryableStatus(response.status)) {
+            throw lastError;
+        }
+    }
+
+    throw lastError;
+}
+
+async function createFileLink({host, filePath, passphrase = '', expiresInSeconds = defaultExpiresInSeconds, views = defaultViews, fetchImpl, retryDelaysMs = chunkRetryDelaysMs}) {
     const origin = normalizeOrigin(host || ProtocolConstants.defaultHost);
     const fileBytes = await readFile(filePath);
     const meta = {
@@ -268,29 +304,44 @@ async function createFileLink({host, filePath, passphrase = '', expiresInSeconds
     const randomKey = getRandomString(ProtocolConstants.randomKeyLen);
     const fullSecretKey = `${passphrase}${randomKey}`;
     const {encryptedBytes, readTokenHash} = await encryptSecretBytes(packed, fullSecretKey);
+    const uploadId = getRandomString(ProtocolConstants.storageIdLen);
+    const chunkCount = Math.max(1, Math.ceil(encryptedBytes.length / fileChunkBytes));
 
-    const formData = new FormData();
-    formData.append('file', new Blob([encryptedBytes]), 'encrypted.bin');
-    formData.append('readTokenHash', readTokenHash);
-    formData.append('v', String(ProtocolConstants.saveSchemeVersion));
-    formData.append('duration', String(expiresInSeconds));
-    if (views !== 1) {
-        formData.append('views', String(views));
+    const buildForm = (bytes) => () => {
+        const formData = new FormData();
+        formData.append('readTokenHash', readTokenHash);
+        formData.append('v', String(ProtocolConstants.saveSchemeVersion));
+        formData.append('duration', String(expiresInSeconds));
+        if (views !== 1) {
+            formData.append('views', String(views));
+        }
+        formData.append('file', new Blob([bytes]), 'encrypted.bin');
+        return formData;
+    };
+
+    let data;
+    for (let index = 0; index < chunkCount; index++) {
+        const chunk = encryptedBytes.subarray(index * fileChunkBytes, (index + 1) * fileChunkBytes);
+        const params = new URLSearchParams({u: uploadId, i: String(index), n: String(chunkCount)});
+        data = await postFileChunk({
+            url: `${apiUrl(origin, 'saveFile')}&${params}`,
+            buildBody: buildForm(chunk),
+            fetchImpl,
+            retryDelaysMs,
+        });
+        if (data.newId && index < chunkCount - 1) {
+            // Only a pre-chunking server answers an early slice with an id.
+            data = await postFileChunk({
+                url: apiUrl(origin, 'saveFile'),
+                buildBody: buildForm(encryptedBytes),
+                fetchImpl,
+                retryDelaysMs,
+            });
+            break;
+        }
     }
 
-    const response = await fetchImpl(apiUrl(origin, 'saveFile'), {
-        method: 'POST',
-        headers: {
-            'User-Agent': userAgent,
-        },
-        body: formData,
-    });
-    if (!response.ok) {
-        throw new Error(`Request failed with status ${response.status}`);
-    }
-    const data = await response.json();
-
-    if (data.status !== 'ok' || !data.newId) {
+    if (!data.newId) {
         throw new Error('Failed to create file link');
     }
 
@@ -585,6 +636,7 @@ export async function run(argv = process.argv.slice(2), io = {}) {
                 expiresInSeconds,
                 views,
                 fetchImpl,
+                retryDelaysMs: io.retryDelaysMs,
             });
             write(stdout, `${link}\n`);
             return 0;

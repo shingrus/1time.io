@@ -3,14 +3,20 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
+	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
+
+	"github.com/go-redis/redis"
 )
 
 // Lookup fixtures in the shapes the handlers now enforce: ids are 22-char
@@ -32,9 +38,11 @@ func restoreHandlerHooks(t *testing.T) {
 	originalIncrementStoredFileCounters := incrementStoredFileCountersFunc
 	originalSecretsExist := secretsExistFunc
 	originalIncrementStoredSecretCounters := incrementStoredSecretCountersFunc
+	originalPublishFileUpload := publishFileUploadFunc
 
 	// Stats are a side effect of saving; stub them out so tests do not need Redis.
 	incrementStoredSecretCountersFunc = func(views int, now time.Time) error { return nil }
+	incrementStoredFileCountersFunc = func(views int, now time.Time) error { return nil }
 
 	t.Cleanup(func() {
 		saveToStorageFunc = originalSaveToStorage
@@ -44,6 +52,7 @@ func restoreHandlerHooks(t *testing.T) {
 		incrementStoredFileCountersFunc = originalIncrementStoredFileCounters
 		secretsExistFunc = originalSecretsExist
 		incrementStoredSecretCountersFunc = originalIncrementStoredSecretCounters
+		publishFileUploadFunc = originalPublishFileUpload
 	})
 }
 
@@ -979,5 +988,806 @@ func TestResolveSaveSchemeRejectsMalformedLegacyKey(t *testing.T) {
 		if _, _, ok := resolveSaveScheme(bad, "", 0); ok {
 			t.Fatalf("legacy key %q should be rejected", bad)
 		}
+	}
+}
+
+const testUploadID = "upload1CCCCCCCCCCCCCCC"
+
+func useChunkedUploadStorage(t *testing.T) *redis.Client {
+	t.Helper()
+	restoreHandlerHooks(t)
+	client := startTestRedis(t)
+	originalRedis := fileUploadRedisFunc
+	originalDir := fileStorageDir
+	fileUploadRedisFunc = func() *redis.Client { return client }
+	fileStorageDir = t.TempDir()
+	t.Cleanup(func() {
+		fileUploadRedisFunc = originalRedis
+		fileStorageDir = originalDir
+	})
+	return client
+}
+
+func chunkRequest(uploadID string, index, chunks int, views string, body []byte) *http.Request {
+	fields := map[string]string{"readTokenHash": testFileHash, "v": "3", "duration": "120"}
+	if views != "" {
+		fields["views"] = views
+	}
+	return chunkRequestWithFields(uploadID, index, chunks, fields, body)
+}
+
+func chunkRequestWithFields(uploadID string, index, chunks int, fields map[string]string, body []byte) *http.Request {
+	var form bytes.Buffer
+	writer := multipart.NewWriter(&form)
+	for name, value := range fields {
+		_ = writer.WriteField(name, value)
+	}
+	part, _ := writer.CreateFormFile("file", "encrypted.bin")
+	_, _ = part.Write(body)
+	_ = writer.Close()
+
+	target := "/api/saveFile?u=" + uploadID + "&i=" + strconv.Itoa(index) + "&n=" + strconv.Itoa(chunks)
+	req := httptest.NewRequest(http.MethodPost, target, &form)
+	req.Header.Set("Content-Type", writer.FormDataContentType())
+	return req
+}
+
+func chunkBodies(sizes ...int) [][]byte {
+	bodies := make([][]byte, len(sizes))
+	for i, size := range sizes {
+		bodies[i] = bytes.Repeat([]byte{byte('a' + i)}, size)
+	}
+	return bodies
+}
+
+func TestAPISaveFileChunkedStoresRecordOnlyAfterLastChunk(t *testing.T) {
+	useChunkedUploadStorage(t)
+
+	var record StoredFile
+	var recordKey string
+	var ttl time.Duration
+	setFileRecordFunc = func(storeKey string, value interface{}, duration time.Duration) (bool, error) {
+		recordKey, ttl = storeKey, duration
+		if err := json.Unmarshal(value.([]byte), &record); err != nil {
+			t.Fatalf("file record JSON error: %v", err)
+		}
+		return true, nil
+	}
+	counted := 0
+	incrementStoredFileCountersFunc = func(views int, now time.Time) error {
+		counted++
+		return nil
+	}
+
+	bodies := chunkBodies(fileChunkBytes, fileChunkBytes, 1234)
+	for i, body := range bodies[:2] {
+		code, response := apiSaveSecretFile(chunkRequest(testUploadID, i, 3, "3", body))
+		if code != http.StatusOK || string(response) != `{"status":"ok"}` {
+			t.Fatalf("chunk %d: code %d response %s, want 200 {\"status\":\"ok\"}", i, code, response)
+		}
+		if recordKey != "" {
+			t.Fatalf("file record created after chunk %d of 3", i)
+		}
+	}
+
+	code, response := apiSaveSecretFile(chunkRequest(testUploadID, 2, 3, "3", bodies[2]))
+	var final struct {
+		Status string `json:"status"`
+		NewId  string `json:"newId"`
+	}
+	if err := json.Unmarshal(response, &final); err != nil || code != http.StatusOK || final.Status != "ok" {
+		t.Fatalf("last chunk: code %d response %s", code, response)
+	}
+	if final.NewId != recordKey || !isValidStorageID(final.NewId) {
+		t.Fatalf("newId = %q, record key = %q", final.NewId, recordKey)
+	}
+	if record.HashedKey != testFileHash || record.Version != secretSchemeV3 || record.Views != 3 || ttl != 120*time.Second {
+		t.Fatalf("record = %#v ttl %s, want v3 hash, 3 views, 120s", record, ttl)
+	}
+	if counted != 1 {
+		t.Fatalf("stored-file counters incremented %d times, want 1", counted)
+	}
+
+	stored, err := os.ReadFile(record.FileUri)
+	if err != nil {
+		t.Fatalf("ReadFile: %v", err)
+	}
+	if !bytes.Equal(stored, bytes.Join(bodies, nil)) {
+		t.Fatalf("stored blob is %d bytes, want the %d chunk bytes in order", len(stored), fileChunkBytes*2+1234)
+	}
+	info, _ := os.Stat(record.FileUri)
+	if until := time.Until(info.ModTime()); until < 110*time.Second || until > 130*time.Second {
+		t.Fatalf("blob mtime is %s away, want the 120s expiry", until)
+	}
+}
+
+func TestAPISaveFileChunkedResendsAreIdempotent(t *testing.T) {
+	useChunkedUploadStorage(t)
+
+	records := 0
+	setFileRecordFunc = func(string, interface{}, time.Duration) (bool, error) {
+		records++
+		return true, nil
+	}
+	counted := 0
+	incrementStoredFileCountersFunc = func(int, time.Time) error {
+		counted++
+		return nil
+	}
+
+	bodies := chunkBodies(fileChunkBytes, 10)
+	for _, i := range []int{0, 0, 1} {
+		if code, response := apiSaveSecretFile(chunkRequest(testUploadID, i, 2, "", bodies[i])); code != http.StatusOK {
+			t.Fatalf("chunk %d: code %d response %s", i, code, response)
+		}
+	}
+	_, first := apiSaveSecretFile(chunkRequest(testUploadID, 1, 2, "", bodies[1]))
+	_, again := apiSaveSecretFile(chunkRequest(testUploadID, 0, 2, "", bodies[0]))
+	if !strings.Contains(string(first), `"newId"`) || string(first) != string(again) {
+		t.Fatalf("resent chunks answered %s and %s, want the same newId", first, again)
+	}
+	if records != 1 || counted != 1 {
+		t.Fatalf("records %d, counters %d, want 1 each", records, counted)
+	}
+
+	entries, _ := os.ReadDir(fileStorageDir)
+	if len(entries) != 1 {
+		t.Fatalf("storage dir has %d files, want 1", len(entries))
+	}
+}
+
+func TestAPISaveFileChunkedRejectsBadChunks(t *testing.T) {
+	client := useChunkedUploadStorage(t)
+	setFileRecordFunc = func(string, interface{}, time.Duration) (bool, error) {
+		t.Fatal("no record may be created")
+		return false, nil
+	}
+
+	if code, _ := apiSaveSecretFile(chunkRequest(testUploadID, 0, 2, "", chunkBodies(fileChunkBytes)[0])); code != http.StatusOK {
+		t.Fatalf("first chunk code = %d", code)
+	}
+
+	noHash := chunkRequestWithFields(testUploadID, 1, 2, map[string]string{"v": "3", "duration": "120"}, []byte("x"))
+	cases := map[string]*http.Request{
+		"short middle chunk":  chunkRequest("upload2CCCCCCCCCCCCCCC", 0, 2, "", []byte("short")),
+		"oversized chunk":     chunkRequest("upload3CCCCCCCCCCCCCCC", 0, 1, "", make([]byte, fileChunkBytes+1)),
+		"too many chunks":     chunkRequest("upload4CCCCCCCCCCCCCCC", 0, maxFileChunks+1, "", []byte("x")),
+		"index out of range":  chunkRequest(testUploadID, 2, 2, "", []byte("x")),
+		"changed views":       chunkRequest(testUploadID, 1, 2, "2", []byte("x")),
+		"changed chunk count": chunkRequest(testUploadID, 1, 3, "", []byte("x")),
+		"missing hash field":  noHash,
+		"malformed upload id": chunkRequest("short", 0, 1, "", []byte("x")),
+		"empty last chunk":    chunkRequest(testUploadID, 1, 2, "", nil),
+	}
+	for name, req := range cases {
+		code, response := apiSaveSecretFile(req)
+		if code != http.StatusBadRequest || string(response) != `{"status":"error"}` {
+			t.Errorf("%s: code %d response %s, want 400 error", name, code, response)
+		}
+	}
+
+	upload, _, _ := loadFileUpload(client, testUploadID)
+	if n, _ := client.SCard(getFileUploadChunksKey(testUploadID, upload.StoreKey)).Result(); n != 1 {
+		t.Fatalf("recorded chunks = %d, want only the first", n)
+	}
+}
+
+func TestAPISaveFileChunkedRejectsOutOfRangeLifetime(t *testing.T) {
+	useChunkedUploadStorage(t)
+	body := chunkBodies(fileChunkBytes)[0]
+
+	cases := []struct {
+		name, duration, views string
+		want                  int
+	}{
+		{"duration 0", "0", "", http.StatusBadRequest},
+		{"duration over max", "2592001", "", http.StatusBadRequest},
+		{"views over max", "86400", "11", http.StatusBadRequest},
+		{"views 0", "86400", "0", http.StatusBadRequest},
+		{"valid", "2592000", "10", http.StatusOK},
+	}
+	for i, tc := range cases {
+		fields := map[string]string{"readTokenHash": testFileHash, "v": "3", "duration": tc.duration}
+		if tc.views != "" {
+			fields["views"] = tc.views
+		}
+		uploadID := "lifetime" + strconv.Itoa(i) + "CCCCCCCCCCCCC"
+		code, response := apiSaveSecretFile(chunkRequestWithFields(uploadID, 0, 2, fields, body))
+		if code != tc.want {
+			t.Errorf("%s: code %d response %s, want %d", tc.name, code, response, tc.want)
+		}
+	}
+}
+
+func TestAPISaveFileChunkedAbandonedUploadIsCleanedUp(t *testing.T) {
+	client := useChunkedUploadStorage(t)
+
+	if code, _ := apiSaveSecretFile(chunkRequest(testUploadID, 0, 2, "", chunkBodies(fileChunkBytes)[0])); code != http.StatusOK {
+		t.Fatalf("first chunk code = %d", code)
+	}
+	if ttl, _ := client.TTL(getFileUploadKey(testUploadID)).Result(); ttl <= 0 || ttl > fileUploadTTL {
+		t.Fatalf("upload TTL = %s, want within %s", ttl, fileUploadTTL)
+	}
+
+	if err := cleanupExpiredFiles(time.Now().UTC()); err != nil {
+		t.Fatalf("cleanupExpiredFiles: %v", err)
+	}
+	if entries, _ := os.ReadDir(fileStorageDir); len(entries) != 1 {
+		t.Fatalf("janitor removed an upload in progress")
+	}
+	if err := cleanupExpiredFiles(time.Now().UTC().Add(fileUploadTTL + time.Minute)); err != nil {
+		t.Fatalf("cleanupExpiredFiles: %v", err)
+	}
+	if entries, _ := os.ReadDir(fileStorageDir); len(entries) != 0 {
+		t.Fatalf("janitor kept an abandoned upload")
+	}
+}
+
+func TestAPISaveFileChunkedConcurrentDuplicatesKeepTheFileExpiry(t *testing.T) {
+	client := useChunkedUploadStorage(t)
+	setFileRecordFunc = func(storeKey string, value interface{}, ttl time.Duration) (bool, error) {
+		return client.SetNX(getFileStoreKey(storeKey), value, ttl).Result()
+	}
+	var counted atomic.Int64
+	incrementStoredFileCountersFunc = func(int, time.Time) error {
+		counted.Add(1)
+		return nil
+	}
+
+	const uploads = 100
+	body := []byte("the only chunk")
+	for attempt := 0; attempt < uploads; attempt++ {
+		uploadID, _ := generateStorageID()
+		start := make(chan struct{})
+		var wg sync.WaitGroup
+		for range 2 {
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				<-start
+				fields := map[string]string{"readTokenHash": testFileHash, "v": "3", "duration": "86400"}
+				code, response := apiSaveSecretFile(chunkRequestWithFields(uploadID, 0, 1, fields, body))
+				for tries := 0; code == http.StatusServiceUnavailable && tries < 50; tries++ {
+					time.Sleep(time.Millisecond)
+					code, response = apiSaveSecretFile(chunkRequestWithFields(uploadID, 0, 1, fields, body))
+				}
+				var reply struct{ NewId string }
+				_ = json.Unmarshal(response, &reply)
+				if code != http.StatusOK || reply.NewId == "" {
+					t.Errorf("duplicate chunk: code %d response %s", code, response)
+				} else if exists, _ := client.Exists(getFileStoreKey(reply.NewId)).Result(); exists != 1 {
+					t.Errorf("newId %s returned without its record", reply.NewId)
+				}
+			}()
+		}
+		close(start)
+		wg.Wait()
+	}
+
+	if got := counted.Load(); got != uploads {
+		t.Fatalf("stored-file counters incremented %d times for %d uploads", got, uploads)
+	}
+	entries, _ := os.ReadDir(fileStorageDir)
+	if len(entries) != uploads {
+		t.Fatalf("storage dir has %d blobs for %d uploads", len(entries), uploads)
+	}
+	shortened := 0
+	for _, entry := range entries {
+		info, _ := entry.Info()
+		if time.Until(info.ModTime()) < 23*time.Hour {
+			shortened++
+		}
+	}
+	if shortened > 0 {
+		t.Fatalf("%d of %d one-day blobs now expire within a day", shortened, uploads)
+	}
+}
+
+func TestAPISaveFileChunkedNeverReturnsAnIDBeforeTheRecordExists(t *testing.T) {
+	client := useChunkedUploadStorage(t)
+	entered := make(chan struct{})
+	release := make(chan struct{})
+	failFirst := true
+	setFileRecordFunc = func(storeKey string, value interface{}, ttl time.Duration) (bool, error) {
+		if failFirst {
+			failFirst = false
+			close(entered)
+			<-release
+			return false, errors.New("redis went away")
+		}
+		return client.SetNX(getFileStoreKey(storeKey), value, ttl).Result()
+	}
+	var counted atomic.Int64
+	incrementStoredFileCountersFunc = func(int, time.Time) error {
+		counted.Add(1)
+		return nil
+	}
+
+	send := func() (int, string) {
+		code, response := apiSaveSecretFile(chunkRequest(testUploadID, 0, 1, "", []byte("the only chunk")))
+		return code, string(response)
+	}
+
+	firstDone := make(chan string)
+	go func() {
+		code, response := send()
+		firstDone <- strconv.Itoa(code) + " " + response
+	}()
+	<-entered
+
+	code, response := send()
+	if code != http.StatusServiceUnavailable || response != `{"status":"retry"}` {
+		t.Fatalf("duplicate during completion: %d %s, want 503 retry", code, response)
+	}
+	close(release)
+	if first := <-firstDone; first != `500 {"status":"error"}` {
+		t.Fatalf("failed completion answered %s, want 500 error", first)
+	}
+
+	code, response = send()
+	if code != http.StatusOK || !strings.Contains(response, `"newId"`) {
+		t.Fatalf("retry after the failure: %d %s", code, response)
+	}
+	var reply struct{ NewId string }
+	_ = json.Unmarshal([]byte(response), &reply)
+	if exists, _ := client.Exists(getFileStoreKey(reply.NewId)).Result(); exists != 1 {
+		t.Fatalf("newId %s returned without its record", reply.NewId)
+	}
+	if again, _ := send(); again != http.StatusOK || counted.Load() != 1 {
+		t.Fatalf("resend after publishing: code %d, counters %d", again, counted.Load())
+	}
+}
+
+func TestAPISaveFileChunkedAdoptsARecordFromAnInterruptedCompletion(t *testing.T) {
+	client := useChunkedUploadStorage(t)
+	setFileRecordFunc = func(storeKey string, value interface{}, ttl time.Duration) (bool, error) {
+		return client.SetNX(getFileStoreKey(storeKey), value, ttl).Result()
+	}
+	counted := 0
+	incrementStoredFileCountersFunc = func(int, time.Time) error {
+		counted++
+		return nil
+	}
+
+	body := chunkBodies(fileChunkBytes, 5)
+	if code, _ := apiSaveSecretFile(chunkRequest(testUploadID, 0, 2, "", body[0])); code != http.StatusOK {
+		t.Fatalf("first chunk code = %d", code)
+	}
+	upload, _, _ := loadFileUpload(client, testUploadID)
+	record, _ := json.Marshal(StoredFile{Encrypted: true, FileUri: filepath.Join(fileStorageDir, upload.StoreKey+".enc"), HashedKey: testFileHash, Version: secretSchemeV3})
+	if err := client.Set(getFileStoreKey(upload.StoreKey), record, time.Hour).Err(); err != nil {
+		t.Fatalf("seed record: %v", err)
+	}
+
+	code, response := apiSaveSecretFile(chunkRequest(testUploadID, 1, 2, "", body[1]))
+	if code != http.StatusOK || !strings.Contains(string(response), upload.StoreKey) {
+		t.Fatalf("last chunk after an interrupted completion: %d %s", code, response)
+	}
+	if counted != 1 {
+		t.Fatalf("counters incremented %d times for the adopted upload, want 1", counted)
+	}
+}
+
+func TestAPISaveFileChunkedRejectsDifferentBytesForAClaimedChunk(t *testing.T) {
+	client := useChunkedUploadStorage(t)
+	entered := make(chan struct{})
+	release := make(chan struct{})
+	var recordKey string
+	setFileRecordFunc = func(storeKey string, value interface{}, ttl time.Duration) (bool, error) {
+		recordKey = storeKey
+		ok, err := client.SetNX(getFileStoreKey(storeKey), value, ttl).Result()
+		close(entered)
+		<-release
+		return ok, err
+	}
+
+	original := []byte("the bytes the client encrypted")
+	firstDone := make(chan string)
+	go func() {
+		code, response := apiSaveSecretFile(chunkRequest(testUploadID, 0, 1, "", original))
+		firstDone <- strconv.Itoa(code) + " " + string(response)
+	}()
+	<-entered
+
+	code, response := apiSaveSecretFile(chunkRequest(testUploadID, 0, 1, "", []byte("different bytes, same length!!")))
+	if code != http.StatusBadRequest {
+		t.Fatalf("conflicting chunk during completion: %d %s, want 400", code, response)
+	}
+	close(release)
+	if first := <-firstDone; !strings.HasPrefix(first, "200 ") || !strings.Contains(first, recordKey) {
+		t.Fatalf("completion answered %s", first)
+	}
+
+	stored, _ := os.ReadFile(filepath.Join(fileStorageDir, recordKey+".enc"))
+	if !bytes.Equal(stored, original) {
+		t.Fatalf("published blob = %q, want the original chunk", stored)
+	}
+	if code, _ := apiSaveSecretFile(chunkRequest(testUploadID, 0, 1, "", original)); code != http.StatusOK {
+		t.Fatalf("identical resend after publishing: code %d, want 200", code)
+	}
+}
+
+func TestAPISaveFileChunkedResendAfterTheUploadRecordExpiredStartsANewUpload(t *testing.T) {
+	client := useChunkedUploadStorage(t)
+	setFileRecordFunc = func(storeKey string, value interface{}, ttl time.Duration) (bool, error) {
+		return client.SetNX(getFileStoreKey(storeKey), value, ttl).Result()
+	}
+
+	body := []byte("the only chunk")
+	_, first := apiSaveSecretFile(chunkRequest(testUploadID, 0, 1, "", body))
+	var published struct{ NewId string }
+	_ = json.Unmarshal(first, &published)
+
+	_, again := apiSaveSecretFile(chunkRequest(testUploadID, 0, 1, "", body))
+	if string(again) != string(first) || published.NewId == "" {
+		t.Fatalf("identical resend after completion answered %s, want %s", again, first)
+	}
+	if code, _ := apiSaveSecretFile(chunkRequest(testUploadID, 0, 1, "5", body)); code != http.StatusBadRequest {
+		t.Fatalf("resend with other settings after completion: code %d, want 400", code)
+	}
+	if code, response := apiSaveSecretFile(chunkRequest(testUploadID, 0, 1, "", []byte("other bytes, same size"))); code != http.StatusBadRequest {
+		t.Fatalf("resend with other bytes after completion: %d %s, want 400", code, response)
+	}
+	if exists, _ := client.Exists(getFileUploadHashesKey(testUploadID)).Result(); exists != 0 {
+		t.Fatal("a resend after completion claimed a chunk of a published upload")
+	}
+
+	if err := client.Del(getFileUploadKey(testUploadID), getFileStoreKey(published.NewId)).Err(); err != nil {
+		t.Fatalf("expire upload and file records: %v", err)
+	}
+	code, response := apiSaveSecretFile(chunkRequest(testUploadID, 0, 1, "", body))
+	var reply struct{ NewId string }
+	_ = json.Unmarshal(response, &reply)
+	if code != http.StatusOK || reply.NewId == "" || reply.NewId == published.NewId {
+		t.Fatalf("resend after the upload record expired: %d %s, want a new id", code, response)
+	}
+	if exists, _ := client.Exists(getFileStoreKey(published.NewId)).Result(); exists != 0 {
+		t.Fatalf("expired link %s came back to life", published.NewId)
+	}
+}
+
+func TestAPISaveFileChunkedExpiredLinkNeverComesBack(t *testing.T) {
+	client := useChunkedUploadStorage(t)
+	setFileRecordFunc = func(k string, v interface{}, ttl time.Duration) (bool, error) {
+		return client.SetNX(getFileStoreKey(k), v, ttl).Result()
+	}
+	counted := 0
+	incrementStoredFileCountersFunc = func(int, time.Time) error {
+		counted++
+		return nil
+	}
+	publishFileUploadFunc = func(*redis.Client, string, FileUploadRecord) error {
+		return errors.New("redis went away")
+	}
+
+	fields := map[string]string{"readTokenHash": testFileHash, "v": "3", "duration": "60"}
+	send := func() (int, string, string) {
+		code, response := apiSaveSecretFile(chunkRequestWithFields(testUploadID, 0, 1, fields, []byte("the only chunk")))
+		var reply struct{ NewId string }
+		_ = json.Unmarshal(response, &reply)
+		return code, string(response), reply.NewId
+	}
+
+	if code, response, _ := send(); code != http.StatusInternalServerError || response != `{"status":"error"}` {
+		t.Fatalf("failed publication answered %d %s, want 500 error", code, response)
+	}
+	upload, _, _ := loadFileUpload(client, testUploadID)
+	storeKey := upload.StoreKey
+	if exists, _ := client.Exists(getFileStoreKey(storeKey)).Result(); exists != 1 {
+		t.Fatalf("record %s missing after a failed publication", storeKey)
+	}
+	if counted != 0 {
+		t.Fatalf("counters incremented %d times for an unpublished upload", counted)
+	}
+
+	publishFileUploadFunc = publishFileUpload
+	if code, response, newID := send(); code != http.StatusOK || newID != storeKey {
+		t.Fatalf("retry after the failed publication: %d %s, want the id %s", code, response, storeKey)
+	}
+	if counted != 1 {
+		t.Fatalf("counters incremented %d times, want 1", counted)
+	}
+	if n, _ := client.Exists(getFileUploadChunksKey(testUploadID, storeKey), getFileUploadHashesKey(testUploadID)).Result(); n != 0 {
+		t.Fatalf("%d upload working-state keys survived publication", n)
+	}
+	if published, _, _ := loadFileUpload(client, testUploadID); !published.Published || published.StoreKey != storeKey {
+		t.Fatalf("upload record after publication = %#v, want published %s", published, storeKey)
+	}
+
+	if err := client.Del(getFileStoreKey(storeKey), getFileUploadKey(testUploadID)).Err(); err != nil {
+		t.Fatalf("expire file and upload records: %v", err)
+	}
+	code, response, newID := send()
+	if exists, _ := client.Exists(getFileStoreKey(storeKey)).Result(); exists != 0 {
+		t.Fatalf("expired link %s came back to life (%d %s)", storeKey, code, response)
+	}
+	if code == http.StatusOK && newID == storeKey {
+		t.Fatalf("resend after expiry answered the expired id %s", storeKey)
+	}
+}
+
+// publishThenRewind publishes a two-chunk upload, then routes requests to a straggler that read the upload record
+// just before publication; publication lands at its revealOn command.
+func publishThenRewind(t *testing.T, client *redis.Client, revealOn string) (bodies [][]byte, newID string) {
+	t.Helper()
+	bodies = chunkBodies(fileChunkBytes, 5)
+	if code, _ := apiSaveSecretFile(chunkRequest(testUploadID, 0, 2, "", bodies[0])); code != http.StatusOK {
+		t.Fatalf("first chunk code = %d", code)
+	}
+	uploadRecord, err := client.Get(getFileUploadKey(testUploadID)).Result()
+	if err != nil {
+		t.Fatalf("read upload record: %v", err)
+	}
+	_, response := apiSaveSecretFile(chunkRequest(testUploadID, 1, 2, "", bodies[1]))
+	var published struct{ NewId string }
+	_ = json.Unmarshal(response, &published)
+	if published.NewId == "" {
+		t.Fatalf("last chunk answered %s, want a newId", response)
+	}
+	publishedRecord, err := client.Get(getFileUploadKey(testUploadID)).Result()
+	if err != nil {
+		t.Fatalf("read published upload record: %v", err)
+	}
+
+	if err := client.Set(getFileUploadKey(testUploadID), uploadRecord, fileUploadTTL).Err(); err != nil {
+		t.Fatalf("hide publication: %v", err)
+	}
+	options := *client.Options()
+	straggler := redis.NewClient(&options)
+	t.Cleanup(func() { _ = straggler.Close() })
+	reveal := func(cmds ...redis.Cmder) {
+		for _, cmd := range cmds {
+			if cmd.Name() == revealOn {
+				_ = client.Set(getFileUploadKey(testUploadID), publishedRecord, fileUploadTTL).Err()
+			}
+		}
+	}
+	straggler.WrapProcess(func(process func(redis.Cmder) error) func(redis.Cmder) error {
+		return func(cmd redis.Cmder) error {
+			reveal(cmd)
+			return process(cmd)
+		}
+	})
+	straggler.WrapProcessPipeline(func(process func([]redis.Cmder) error) func([]redis.Cmder) error {
+		return func(cmds []redis.Cmder) error {
+			reveal(cmds...)
+			return process(cmds)
+		}
+	})
+	fileUploadRedisFunc = func() *redis.Client { return straggler }
+	return bodies, published.NewId
+}
+
+func TestAPISaveFileChunkedStragglerAfterPublicationGetsTheID(t *testing.T) {
+	client := useChunkedUploadStorage(t)
+	setFileRecordFunc = func(k string, v interface{}, ttl time.Duration) (bool, error) {
+		return client.SetNX(getFileStoreKey(k), v, ttl).Result()
+	}
+	counted := 0
+	incrementStoredFileCountersFunc = func(int, time.Time) error {
+		counted++
+		return nil
+	}
+
+	body, publishedID := publishThenRewind(t, client, "pttl")
+	code, response := apiSaveSecretFile(chunkRequest(testUploadID, 1, 2, "", body[1]))
+	var reply struct{ NewId string }
+	_ = json.Unmarshal(response, &reply)
+	if code != http.StatusOK || reply.NewId != publishedID {
+		t.Fatalf("straggler after publication: %d %s, want the published id %s", code, response, publishedID)
+	}
+	if counted != 1 {
+		t.Fatalf("counters incremented %d times, want 1", counted)
+	}
+
+	if code, response := apiSaveSecretFile(chunkRequest(testUploadID, 1, 2, "", bytes.Repeat([]byte("z"), 5))); code != http.StatusBadRequest {
+		t.Fatalf("resend with other bytes after publication: %d %s, want 400", code, response)
+	}
+}
+
+func TestAPISaveFileChunkedStragglerCannotAlterAPublishedBlob(t *testing.T) {
+	client := useChunkedUploadStorage(t)
+	setFileRecordFunc = func(k string, v interface{}, ttl time.Duration) (bool, error) {
+		return client.SetNX(getFileStoreKey(k), v, ttl).Result()
+	}
+
+	body, publishedID := publishThenRewind(t, client, "hsetnx")
+	if code, response := apiSaveSecretFile(chunkRequest(testUploadID, 1, 2, "", bytes.Repeat([]byte("z"), 5))); code != http.StatusBadRequest {
+		t.Fatalf("straggler with other bytes after publication: %d %s, want 400", code, response)
+	}
+	stored, err := os.ReadFile(filepath.Join(fileStorageDir, publishedID+".enc"))
+	if err != nil {
+		t.Fatalf("ReadFile: %v", err)
+	}
+	if !bytes.Equal(stored, bytes.Join(body, nil)) {
+		t.Fatal("a straggler rewrote the published blob")
+	}
+}
+
+func TestAPISaveFileChunkedDuplicateRacingPublicationGetsTheID(t *testing.T) {
+	client := useChunkedUploadStorage(t)
+
+	body := chunkBodies(fileChunkBytes, 5)
+	if code, _ := apiSaveSecretFile(chunkRequest(testUploadID, 0, 2, "", body[0])); code != http.StatusOK {
+		t.Fatalf("first chunk code = %d", code)
+	}
+	upload, _, _ := loadFileUpload(client, testUploadID)
+	upload.Hashes, _ = loadFileUploadHashes(client, testUploadID)
+
+	var publishOnce sync.Once
+	publishAfterClaim := func(cmds ...redis.Cmder) {
+		for _, cmd := range cmds {
+			if cmd.Name() == "hsetnx" {
+				publishOnce.Do(func() {
+					if err := publishFileUpload(client, testUploadID, upload); err != nil {
+						t.Errorf("publish: %v", err)
+					}
+				})
+			}
+		}
+	}
+	options := *client.Options()
+	duplicate := redis.NewClient(&options)
+	t.Cleanup(func() { _ = duplicate.Close() })
+	duplicate.WrapProcess(func(process func(redis.Cmder) error) func(redis.Cmder) error {
+		return func(cmd redis.Cmder) error {
+			err := process(cmd)
+			publishAfterClaim(cmd)
+			return err
+		}
+	})
+	duplicate.WrapProcessPipeline(func(process func([]redis.Cmder) error) func([]redis.Cmder) error {
+		return func(cmds []redis.Cmder) error {
+			err := process(cmds)
+			publishAfterClaim(cmds...)
+			return err
+		}
+	})
+	fileUploadRedisFunc = func() *redis.Client { return duplicate }
+
+	code, response := apiSaveSecretFile(chunkRequest(testUploadID, 0, 2, "", body[0]))
+	var reply struct{ NewId string }
+	_ = json.Unmarshal(response, &reply)
+	if code != http.StatusOK || reply.NewId != upload.StoreKey {
+		t.Fatalf("duplicate racing publication: %d %s, want the published id %s", code, response, upload.StoreKey)
+	}
+}
+
+func TestAPISaveFileChunkedDuplicateLoadingDuringPublicationGetsTheID(t *testing.T) {
+	for _, publishBeforeLoad := range []bool{true, false} {
+		t.Run("publish before load "+strconv.FormatBool(publishBeforeLoad), func(t *testing.T) {
+			client := useChunkedUploadStorage(t)
+
+			body := chunkBodies(fileChunkBytes, 5)
+			if code, _ := apiSaveSecretFile(chunkRequest(testUploadID, 0, 2, "", body[0])); code != http.StatusOK {
+				t.Fatalf("first chunk code = %d", code)
+			}
+			upload, _, _ := loadFileUpload(client, testUploadID)
+			upload.Hashes, _ = loadFileUploadHashes(client, testUploadID)
+
+			var publishOnce sync.Once
+			publish := func() {
+				publishOnce.Do(func() {
+					if err := publishFileUpload(client, testUploadID, upload); err != nil {
+						t.Errorf("publish: %v", err)
+					}
+				})
+			}
+			options := *client.Options()
+			duplicate := redis.NewClient(&options)
+			t.Cleanup(func() { _ = duplicate.Close() })
+			duplicate.WrapProcess(func(process func(redis.Cmder) error) func(redis.Cmder) error {
+				return func(cmd redis.Cmder) error {
+					args := cmd.Args()
+					loadsUpload := cmd.Name() == "get" && len(args) > 1 && args[1] == getFileUploadKey(testUploadID)
+					if loadsUpload && publishBeforeLoad {
+						publish()
+					}
+					err := process(cmd)
+					if loadsUpload {
+						publish()
+					}
+					return err
+				}
+			})
+			fileUploadRedisFunc = func() *redis.Client { return duplicate }
+
+			code, response := apiSaveSecretFile(chunkRequest(testUploadID, 0, 2, "", body[0]))
+			var reply struct{ NewId string }
+			_ = json.Unmarshal(response, &reply)
+			if code != http.StatusOK || reply.NewId != upload.StoreKey {
+				t.Fatalf("duplicate loading during publication: %d %s, want the published id %s", code, response, upload.StoreKey)
+			}
+			if entries, _ := os.ReadDir(fileStorageDir); len(entries) != 1 {
+				t.Fatalf("storage dir has %d blobs, want only the published one", len(entries))
+			}
+		})
+	}
+}
+
+func TestAPISaveFileChunkedNeverPublishesAFileWhoseRecordVanished(t *testing.T) {
+	client := useChunkedUploadStorage(t)
+	setFileRecordFunc = func(k string, v interface{}, ttl time.Duration) (bool, error) {
+		return client.SetNX(getFileStoreKey(k), v, ttl).Result()
+	}
+
+	body := chunkBodies(fileChunkBytes, 5)
+	if code, _ := apiSaveSecretFile(chunkRequest(testUploadID, 0, 2, "", body[0])); code != http.StatusOK {
+		t.Fatalf("first chunk code = %d", code)
+	}
+	if err := client.Del(getFileUploadKey(testUploadID)).Err(); err != nil {
+		t.Fatalf("evict upload record: %v", err)
+	}
+
+	code, response := apiSaveSecretFile(chunkRequest(testUploadID, 1, 2, "", body[1]))
+	if code != http.StatusOK || string(response) != `{"status":"ok"}` {
+		t.Fatalf("chunk 1 after the upload record vanished: %d %s, want 200 without newId", code, response)
+	}
+	records, _ := client.Keys(getFileStoreKey("*")).Result()
+	for _, key := range records {
+		var record StoredFile
+		value, _ := client.Get(key).Bytes()
+		_ = json.Unmarshal(value, &record)
+		if stored, _ := os.ReadFile(record.FileUri); !bytes.Equal(stored, bytes.Join(body, nil)) {
+			t.Fatalf("published blob %s differs from the chunks sent", record.FileUri)
+		}
+	}
+	if len(records) != 0 {
+		t.Fatalf("file records %v published for an upload that lost its record", records)
+	}
+
+	code, response = apiSaveSecretFile(chunkRequest("fresh1CCCCCCCCCCCCCCCC", 0, 1, "", []byte("the only chunk")))
+	if code != http.StatusOK || !strings.Contains(string(response), `"newId"`) {
+		t.Fatalf("fresh upload after an evicted one: %d %s", code, response)
+	}
+}
+
+func TestAPISaveFileChunkedParallelSliceStartingTheUploadIsNotDeclined(t *testing.T) {
+	client := useChunkedUploadStorage(t)
+	setFileRecordFunc = func(k string, v interface{}, ttl time.Duration) (bool, error) {
+		return client.SetNX(getFileStoreKey(k), v, ttl).Result()
+	}
+
+	body := chunkBodies(fileChunkBytes, 5)
+	parallelSent := false
+	options := *client.Options()
+	first := redis.NewClient(&options)
+	t.Cleanup(func() { _ = first.Close() })
+	first.WrapProcess(func(process func(redis.Cmder) error) func(redis.Cmder) error {
+		return func(cmd redis.Cmder) error {
+			err := process(cmd)
+			args := cmd.Args()
+			if !parallelSent && err == redis.Nil && cmd.Name() == "get" && len(args) > 1 && args[1] == getFileUploadKey(testUploadID) {
+				parallelSent = true
+				if code, response := apiSaveSecretFile(chunkRequest(testUploadID, 1, 2, "", body[1])); code != http.StatusOK {
+					t.Errorf("parallel slice: %d %s", code, response)
+				}
+			}
+			return err
+		}
+	})
+	fileUploadRedisFunc = func() *redis.Client { return first }
+
+	code, response := apiSaveSecretFile(chunkRequest(testUploadID, 0, 2, "", body[0]))
+	if !parallelSent {
+		t.Fatal("the parallel slice never ran")
+	}
+	if code != http.StatusOK {
+		t.Fatalf("first slice racing a parallel one: %d %s, want 200", code, response)
+	}
+	var reply struct{ NewId string }
+	if _ = json.Unmarshal(response, &reply); reply.NewId == "" {
+		_, response = apiSaveSecretFile(chunkRequest(testUploadID, 1, 2, "", body[1]))
+		_ = json.Unmarshal(response, &reply)
+	}
+	if reply.NewId == "" {
+		t.Fatalf("upload never completed: %s", response)
+	}
+	stored, _ := os.ReadFile(filepath.Join(fileStorageDir, reply.NewId+".enc"))
+	if !bytes.Equal(stored, bytes.Join(body, nil)) {
+		t.Fatalf("published blob is %d bytes, want the %d bytes sent", len(stored), fileChunkBytes+5)
+	}
+	if entries, _ := os.ReadDir(fileStorageDir); len(entries) != 1 {
+		t.Fatalf("storage dir has %d blobs, want only the published one", len(entries))
 	}
 }
