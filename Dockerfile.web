@@ -10,6 +10,8 @@ WORKDIR /src/frontend
 ARG SHOW_BLOG=true
 
 ENV PUBLIC_SHOW_BLOG=${SHOW_BLOG}
+# The public site's access-log beacon is not needed in self-hosted images.
+ENV PUBLIC_PAGEVIEW_BEACON=false
 
 RUN npm install -g npm@${NPM_VERSION}
 
@@ -25,9 +27,11 @@ ARG APP_HOSTNAME=1time.io
 
 ENV APP_HOSTNAME=${APP_HOSTNAME}
 ENV NGINX_PORT=8080
+ENV NGINX_PROXY_PROTOCOL=
 ENV BACKEND_UPSTREAM=backend:8080
 
 COPY docker/nginx/default.conf.template /etc/nginx/templates/default.conf.template
+COPY docker/nginx/security-headers.conf /etc/nginx/snippets/1time-security-headers.conf
 COPY docker/nginx/40-rewrite-site-host.sh /docker-entrypoint.d/40-rewrite-site-host.sh
 COPY --from=builder /src/frontend/build /usr/share/nginx/html
 
