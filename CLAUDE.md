@@ -59,6 +59,12 @@ minutes. The same applies to whales and to any single-day record.
   origin firewall restricting 80/443 to Cloudflare's 22 ranges. Do **not** enable
   Bot Fight Mode on the Free plan — it has no path exemptions and would break the
   CLI and Zapier app.
+- **Browser Integrity Check** (Cloudflare default) answers `Python-urllib` with
+  403 / error 1010 at the edge, including `/api/*` — invisible in nginx logs, and
+  it breaks Python stdlib clients built from `/developers`. A WAF custom rule
+  (Skip → Browser Integrity Check) exempts `/api/*`, `/llms.txt`, `/llms-full.txt`
+  and `/developers/agent-spec.txt`. Re-test with `curl -A "Python-urllib/3.14"`
+  after any Cloudflare security change.
 
 ## Working notes
 
