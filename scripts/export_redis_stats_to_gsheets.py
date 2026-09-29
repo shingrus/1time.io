@@ -153,8 +153,8 @@ DEFAULT_NGINX_LOG_PATHS = (
 )
 
 # Kept in sync with .claude/skills/log-analysis/analyze.py.
-WHALE_IP_PREFIXES = ("31.217.", "46.188.", "212.15.178.", "95.168.")  # Zagreb pair
-WHALE_IP_EXACT = {"195.23.138.189"}  # Lisbon B2B distributor
+WHALE_IP_PREFIXES = ()  
+WHALE_IP_EXACT = {}  # 
 CLI_USER_AGENT_RE = re.compile(r"node|undici|curl|python|go-http|okhttp", re.I)
 
 SENDER_RECEIVER_COLUMNS = [
