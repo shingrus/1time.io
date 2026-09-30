@@ -6,13 +6,27 @@ limit_req_zone $binary_remote_addr zone=api_feedback:10m rate=1r/m;
 limit_req_zone $server_name zone=api_feedback_all:1m rate=5r/m;
 limit_req_status 429;
 
+map $uri $one_time_referrer_policy {
+    default "strict-origin-when-cross-origin";
+    ~^/(v|f)(/|$) "no-referrer";
+}
+
 server {
-    listen       ${NGINX_PORT};
+    listen       ${NGINX_PORT}${NGINX_PROXY_PROTOCOL};
+    listen       127.0.0.1:8081;
     server_name  _;
 
     root   /usr/share/nginx/html;
     index  index.html;
     client_max_body_size 100m;
+    server_tokens off;
+
+    # Only the HTTPS override enables PROXY protocol, and it never publishes this port.
+    set_real_ip_from 0.0.0.0/0;
+    set_real_ip_from ::/0;
+    real_ip_header proxy_protocol;
+
+    include /etc/nginx/snippets/1time-security-headers.conf;
 
     charset utf-8;
 
@@ -46,6 +60,7 @@ server {
     location ^~ /_astro/ {
         expires 1y;
         add_header Cache-Control "public, max-age=31536000, immutable";
+        include /etc/nginx/snippets/1time-security-headers.conf;
         access_log off;
         try_files $uri =404;
     }
@@ -53,6 +68,7 @@ server {
     location ~* \.(?:woff2|woff|ttf|otf|eot)$ {
         expires 30d;
         add_header Cache-Control "public, max-age=2592000";
+        include /etc/nginx/snippets/1time-security-headers.conf;
         access_log off;
         try_files $uri =404;
     }
@@ -61,6 +77,8 @@ server {
         limit_req zone=api_write burst=10 nodelay;
         proxy_pass http://${BACKEND_UPSTREAM};
         proxy_http_version 1.1;
+        add_header Cache-Control "no-store" always;
+        include /etc/nginx/snippets/1time-security-headers.conf;
         proxy_set_header Host $host;
         proxy_set_header X-Forwarded-Host $host;
         proxy_set_header X-Forwarded-Proto $scheme;
@@ -71,6 +89,8 @@ server {
         limit_req zone=api_read burst=15 nodelay;
         proxy_pass http://${BACKEND_UPSTREAM};
         proxy_http_version 1.1;
+        add_header Cache-Control "no-store" always;
+        include /etc/nginx/snippets/1time-security-headers.conf;
         proxy_set_header Host $host;
         proxy_set_header X-Forwarded-Host $host;
         proxy_set_header X-Forwarded-Proto $scheme;
@@ -83,6 +103,8 @@ server {
         client_body_timeout 10m;
         proxy_pass http://${BACKEND_UPSTREAM};
         proxy_http_version 1.1;
+        add_header Cache-Control "no-store" always;
+        include /etc/nginx/snippets/1time-security-headers.conf;
         proxy_set_header Host $host;
         proxy_set_header X-Forwarded-Host $host;
         proxy_set_header X-Forwarded-Proto $scheme;
@@ -95,6 +117,8 @@ server {
         proxy_read_timeout 10m;
         proxy_pass http://${BACKEND_UPSTREAM};
         proxy_http_version 1.1;
+        add_header Cache-Control "no-store" always;
+        include /etc/nginx/snippets/1time-security-headers.conf;
         proxy_set_header Host $host;
         proxy_set_header X-Forwarded-Host $host;
         proxy_set_header X-Forwarded-Proto $scheme;
@@ -108,6 +132,8 @@ server {
         client_max_body_size 32k;
         proxy_pass http://${BACKEND_UPSTREAM};
         proxy_http_version 1.1;
+        add_header Cache-Control "no-store" always;
+        include /etc/nginx/snippets/1time-security-headers.conf;
         proxy_set_header Host $host;
         proxy_set_header X-Forwarded-Host $host;
         proxy_set_header X-Forwarded-Proto $scheme;
@@ -118,23 +144,40 @@ server {
         limit_req zone=api_stats burst=30 nodelay;
         proxy_pass http://${BACKEND_UPSTREAM};
         proxy_http_version 1.1;
+        add_header Cache-Control "no-store" always;
+        include /etc/nginx/snippets/1time-security-headers.conf;
         proxy_set_header Host $host;
         proxy_set_header X-Forwarded-Host $host;
         proxy_set_header X-Forwarded-Proto $scheme;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
     }
 
-    location /api/ {
+    location ^~ /api/ {
         limit_req zone=api_read burst=15 nodelay;
         proxy_pass http://${BACKEND_UPSTREAM};
         proxy_http_version 1.1;
+        add_header Cache-Control "no-store" always;
+        include /etc/nginx/snippets/1time-security-headers.conf;
         proxy_set_header Host $host;
         proxy_set_header X-Forwarded-Host $host;
         proxy_set_header X-Forwarded-Proto $scheme;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
     }
 
+    location = /feedback/ {
+        add_header Cache-Control "no-store" always;
+        include /etc/nginx/snippets/1time-security-headers.conf;
+        try_files /feedback/index.html =404;
+    }
+
+    location = /pv {
+        add_header Cache-Control "no-store" always;
+        include /etc/nginx/snippets/1time-security-headers.conf;
+        return 204;
+    }
+
     location / {
+        include /etc/nginx/snippets/1time-security-headers.conf;
         try_files $uri $uri/ $uri/index.html =404;
     }
 }

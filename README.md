@@ -131,7 +131,6 @@ Want 1time links in your app, bot or script? The [developers page](https://1time
 curl -O https://raw.githubusercontent.com/shingrus/1time/master/docker-compose.yml
 curl -O https://raw.githubusercontent.com/shingrus/1time/master/.env.example
 cp .env.example .env
-# Edit .env: set APP_HOSTNAME to your domain
 docker compose up -d
 ```
 
@@ -141,23 +140,41 @@ docker compose up -d
 git clone https://github.com/shingrus/1time.git
 cd 1time
 cp .env.example .env
-# Edit .env: set APP_HOSTNAME to your domain
 docker compose -f docker-compose.dev.yml up -d --build
 ```
 
 Both options start on `http://localhost:8080` with Redis persistence, encrypted file storage under `DATA_DIR/files`, the Go API, and nginx serving the frontend. Multi-arch images (amd64 + arm64) are available.
 
+### Public HTTPS with Caddy
+
+Add the HTTPS override if this server will accept public traffic (Docker Compose 2.24+). Point your domain's DNS at the server, open ports 80 and 443, and set `APP_HOSTNAME` in `.env` to that domain (without a scheme or port). Caddy obtains and renews the certificate and redirects HTTP to HTTPS. Only Caddy publishes ports; nginx, the API, and Redis stay on Docker networks.
+
+Download the override beside `docker-compose.yml` and `.env` (a source checkout already has it):
+
+```bash
+curl -O https://raw.githubusercontent.com/shingrus/1time/master/docker-compose.https.yml
+# Edit .env: set APP_HOSTNAME to your public domain
+echo 'COMPOSE_FILE=docker-compose.yml:docker-compose.https.yml' >> .env
+docker compose up -d
+```
+
+With `COMPOSE_FILE` in `.env`, plain `docker compose` commands (`ps`, `logs caddy`, `pull`) include the override. Existing installs can switch from the same directory and `DATA_DIR`; Redis and encrypted files remain in place. Keep the same hostname so existing links still point to this server. Skip the override if you already have an HTTPS reverse proxy.
+
+Caddy keeps certificates in the `caddy_data` Docker volume. For local testing, use the plain setup with `APP_HOSTNAME=localhost`.
+
+To upgrade, download the new `docker-compose.yml` (it pins the image version), then run `docker compose pull && docker compose up -d`.
+
 ### Configuration
 
 | Variable | Default | Description |
 |---|---|---|
-| `APP_HOSTNAME` | `1time.io` | Public hostname for links and metadata |
-| `APP_PORT` | `8080` | External HTTP port |
+| `APP_HOSTNAME` | `localhost` in `.env.example` | Hostname for metadata and Caddy's certificate (without `https://` or a port); change it to your domain before making the instance public |
+| `APP_PORT` | `8080` | External HTTP port (unused with the HTTPS override) |
 | `DATA_DIR` | `./data` | Host path for Redis persistence and encrypted file storage |
 | `BACKEND_UPSTREAM` | `backend:8080` | Backend upstream (`host:port`) nginx proxies `/api/` requests to |
 | `SHOW_BLOG` | `true` | Build-time flag for source-built web images |
 
-Put your own reverse proxy (Caddy, Traefik, nginx) in front for HTTPS/TLS termination.
+The example configuration works locally at `http://localhost:8080`. Before making the instance public, set `APP_HOSTNAME` to your domain and use the Caddy setup above or your own HTTPS reverse proxy.
 
 > **Note:** The frontend image is generic — changing `APP_HOSTNAME` does not require rebuilding. The hostname is injected at container startup.
 

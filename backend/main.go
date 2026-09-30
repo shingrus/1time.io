@@ -29,6 +29,44 @@ func main() {
 
 	appStats.Start()
 	startFileJanitor()
+	http.HandleFunc("/healthz", healthHandler)
 	http.HandleFunc("/api/", apiHandler)
 	log.Fatal(http.ListenAndServe(listenAddr, nil))
+}
+
+// healthHandler checks the dependencies needed to create and read secrets.
+// The Docker web container does not proxy this path to the public site.
+func healthHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Cache-Control", "no-store")
+	if r.Method != http.MethodGet {
+		w.Header().Set("Allow", http.MethodGet)
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	if err := getRedisClient().Ping().Err(); err != nil {
+		log.Printf("healthz: Redis: %v", err)
+		http.Error(w, "unavailable", http.StatusServiceUnavailable)
+		return
+	}
+	if err := os.MkdirAll(fileStorageDir, 0750); err != nil {
+		log.Printf("healthz: file storage: %v", err)
+		http.Error(w, "unavailable", http.StatusServiceUnavailable)
+		return
+	}
+	probe, err := os.CreateTemp(fileStorageDir, ".health-*")
+	if err != nil {
+		log.Printf("healthz: file storage: %v", err)
+		http.Error(w, "unavailable", http.StatusServiceUnavailable)
+		return
+	}
+	name := probe.Name()
+	closeErr := probe.Close()
+	removeErr := os.Remove(name)
+	if closeErr != nil || removeErr != nil {
+		log.Printf("healthz: file storage: close=%v remove=%v", closeErr, removeErr)
+		http.Error(w, "unavailable", http.StatusServiceUnavailable)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
 }

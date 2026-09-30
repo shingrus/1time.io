@@ -19,6 +19,13 @@ services:
       - dump.rdb
     volumes:
       - ${DATA_DIR:-./data}:/data
+    healthcheck:
+      test: ["CMD-SHELL", "[ \"$$(redis-cli ping)\" = PONG ]"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+      start_interval: 1s
 
   backend:
     build:
@@ -33,21 +40,37 @@ services:
     volumes:
       - ${DATA_DIR:-./data}:/data
     depends_on:
-      - redis
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8080/healthz"]
+      interval: 10s
+      timeout: 15s
+      retries: 3
+      start_period: 30s
+      start_interval: 1s
 
   web:
     build:
       context: .
       dockerfile: Dockerfile.web
       args:
-        APP_HOSTNAME: ${APP_HOSTNAME:-1time.io}
+        APP_HOSTNAME: ${APP_HOSTNAME:?Set APP_HOSTNAME in .env}
         SHOW_BLOG: ${SHOW_BLOG:-false}
     restart: unless-stopped
     environment:
-      APP_HOSTNAME: ${APP_HOSTNAME:-1time.io}
+      APP_HOSTNAME: ${APP_HOSTNAME:?Set APP_HOSTNAME in .env}
       NGINX_PORT: 8080
       BACKEND_UPSTREAM: ${BACKEND_UPSTREAM:-backend:8080}
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8081/"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+      start_interval: 1s
     ports:
       - "${APP_PORT:-8080}:8080"
