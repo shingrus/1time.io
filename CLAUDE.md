@@ -65,6 +65,11 @@ minutes. The same applies to whales and to any single-day record.
   (Skip → Browser Integrity Check) exempts `/api/*`, `/llms.txt`, `/llms-full.txt`
   and `/developers/agent-spec.txt`. Re-test with `curl -A "Python-urllib/3.14"`
   after any Cloudflare security change.
+- **Scanners spoof AI-assistant user agents.** From late 2026-09 a scanner on
+  rotating Google Cloud IPs probes credential paths (`/manage/env`,
+  `/proc/self/cmdline`, `/google-services.json`) as `MistralAI-User`, `Claude-User`,
+  `ChatGPT-User` and `Perplexity-User`. Never allow or exempt "AI bots" at Cloudflare
+  by user agent alone; write WAF rules on the path.
 
 ## Working notes
 
