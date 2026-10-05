@@ -9,15 +9,15 @@ interface RouteEntry {
 }
 
 const coreRoutes: RouteEntry[] = [
-    {path: '/', priority: 1.0, changefreq: 'weekly', lastmod: '2026-08-01'},
-    {path: '/secure-file-sharing/', priority: 0.9, changefreq: 'weekly', lastmod: '2026-08-09'},
+    {path: '/', priority: 1.0, changefreq: 'weekly', lastmod: '2026-10-05'},
+    {path: '/secure-file-sharing/', priority: 0.9, changefreq: 'weekly', lastmod: '2026-10-05'},
     {path: '/chrome-extension/', priority: 0.8, changefreq: 'weekly', lastmod: '2026-07-23'},
     {path: '/developers/', priority: 0.8, changefreq: 'weekly', lastmod: '2026-09-16'},
     {path: '/password-generator/', priority: 0.9, changefreq: 'weekly', lastmod: '2026-03-23'},
     {path: '/passphrase-generator/', priority: 0.8, changefreq: 'weekly', lastmod: '2026-08-05'},
     {path: '/password-generator-12-characters/', priority: 0.7, changefreq: 'monthly', lastmod: '2026-03-22'},
     {path: '/password-generator-14-characters/', priority: 0.7, changefreq: 'monthly', lastmod: '2026-03-21'},
-    {path: '/password-generator-15-characters/', priority: 0.7, changefreq: 'monthly', lastmod: '2026-09-26'},
+    {path: '/password-generator-15-characters/', priority: 0.7, changefreq: 'monthly', lastmod: '2026-10-05'},
     {path: '/password-generator-16-characters/', priority: 0.7, changefreq: 'monthly', lastmod: '2026-09-26'},
     {path: '/wifi-password-generator/', priority: 0.8, changefreq: 'weekly', lastmod: '2026-07-15'},
     {path: '/api-key-generator/', priority: 0.8, changefreq: 'weekly', lastmod: '2026-09-26'},

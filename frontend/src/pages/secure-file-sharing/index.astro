@@ -26,7 +26,15 @@ const faqItems = [
     },
     {
         question: 'What files can I send securely?',
-        answer: `Any file up to ${maxMb} MB, including PDFs, text files, archives, certificates, configuration exports, screenshots, and private documents.`,
+        answer: `Any file up to ${maxMb} MB: PDFs, photos and scans of a passport or ID card, contracts, certificates, archives, configuration exports and screenshots.`,
+    },
+    {
+        question: 'Is WhatsApp or email safe for sending ID documents?',
+        answer: 'WhatsApp encrypts messages end to end and email usually travels encrypted, so interception is not the main risk. What stays behind is: the document remains in both chats or mailboxes, in backups, and it can be forwarded. Send a one-time link instead, and the conversation holds only a link that no longer works.',
+    },
+    {
+        question: 'What if the wrong person opens the link?',
+        answer: 'By default the link works once. If your recipient tells you it no longer opens, someone else got there first and you know straight away. To prevent that, add a passphrase when you create the link and give it to the recipient by a different channel, for example by phone.',
     },
 ];
 
@@ -38,7 +46,7 @@ const jsonLd = [
         description: 'Send a one-time file through an encrypted self-destructing download link. Browser-side zero-knowledge encryption, optional passphrase, and no signup.',
         url: absoluteUrl('/secure-file-sharing/'),
         isPartOf: absoluteUrl('/'),
-        dateModified: '2026-07-26',
+        dateModified: '2026-10-05',
     },
     {
         '@context': 'https://schema.org',
@@ -195,6 +203,32 @@ const jsonLd = [
                 This page is best for one-off handoffs: configuration exports, client certificates,
                 NDA PDFs, database backups, screenshots with sensitive data, support bundles, and internal
                 documents that should not live forever in Slack, email, or a shared drive.
+            </p>
+
+            <h2>Sending ID documents: passport, ID card, PAN or Aadhaar</h2>
+            <p>
+                A copy of a passport, national ID or tax card is enough to open accounts and pass identity
+                checks in your name. Sent by email or chat, it stays in your Sent folder, the recipient's
+                inbox, phone galleries, backups and forwarded messages for years. <a href="#secure-file-form">Send it here instead</a>:
+                the recipient downloads it once, the encrypted copy is deleted, and the conversation is
+                left with a link that no longer opens. A one-time link cannot control what the recipient
+                does with the file after downloading it, so send identity documents only when they are
+                genuinely required.
+            </p>
+            <p>
+                Before you send any ID: share only the pages that were asked for, cover numbers the
+                recipient does not need, and write the purpose and date across the copy, for example
+                "For flat rental, 5 Oct 2026", so it is harder to reuse.
+            </p>
+            <p>
+                <strong>In India.</strong> UIDAI says you can use Aadhaar freely to prove your identity,
+                with the same care you give your bank account or passport details, and that you should not
+                post it on public platforms. Where the full number is not required, share a
+                <em>masked Aadhaar</em>, which shows only the last four digits; you can download it from
+                the official Aadhaar site. For online verification you can give a 16-digit Virtual ID
+                instead of the number, and you can lock your biometrics. Never share an Aadhaar OTP.
+                Share your PAN card only where it is genuinely required, such as banks, employers and
+                tax filings.
             </p>
 
             <h2>How the encrypted file flow works</h2>
