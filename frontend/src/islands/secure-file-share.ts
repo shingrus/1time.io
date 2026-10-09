@@ -161,13 +161,13 @@ if (form) {
         renderProgress();
         updateSubmit();
         try {
-            const {encryptedBlob, readTokenHash, randomKey} = await encryptFile(selectedFile, passphrase);
+            const {encryptedBytes, readTokenHash, randomKey} = await encryptFile(selectedFile, passphrase);
             isEncrypting = false;
             isUploading = true;
             renderProgress();
             updateSubmit();
             const data = await saveFile(
-                encryptedBlob,
+                encryptedBytes,
                 readTokenHash,
                 durationSeconds,
                 selectedViews,

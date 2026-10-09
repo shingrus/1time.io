@@ -16,10 +16,9 @@ const textEncoder = new TextEncoder();
 const textDecoder = new TextDecoder();
 
 /**
- * Pack file + metadata into a single ArrayBuffer
+ * Pack file + metadata into a single Uint8Array
  */
-export function packFile(file, fileBytes) {
-    const rawBytes = fileBytes instanceof Uint8Array ? fileBytes : new Uint8Array(fileBytes);
+export async function packFile(file) {
     const meta = JSON.stringify({
         name: file.name,
         type: file.type || 'application/octet-stream',
@@ -27,15 +26,30 @@ export function packFile(file, fileBytes) {
     });
     const metaBytes = textEncoder.encode(meta);
     const metaLen = metaBytes.length;
+    const contentStart = 4 + metaLen;
 
-    const packed = new Uint8Array(4 + metaLen + rawBytes.length);
+    const packed = new Uint8Array(contentStart + file.size);
     // 4-byte big-endian length prefix
     packed[0] = (metaLen >> 24) & 0xff;
     packed[1] = (metaLen >> 16) & 0xff;
     packed[2] = (metaLen >> 8) & 0xff;
     packed[3] = metaLen & 0xff;
     packed.set(metaBytes, 4);
-    packed.set(rawBytes, 4 + metaLen);
+
+    let offset = contentStart;
+    const reader = file.stream().getReader();
+    for (;;) {
+        const {done, value} = await reader.read();
+        if (done) break;
+        if (offset + value.length > packed.length) {
+            throw new Error('File changed while it was being read');
+        }
+        packed.set(value, offset);
+        offset += value.length;
+    }
+    if (offset !== packed.length) {
+        throw new Error('File changed while it was being read');
+    }
 
     return packed;
 }
@@ -73,24 +87,19 @@ export function unpackFile(decryptedBuffer) {
 /**
  * Encrypt a file: pack metadata + content, then AES-256-GCM encrypt.
  *
- * Returns { encryptedBlob: Blob, readTokenHash: string, randomKey: string }.
+ * Returns { encryptedBytes: Uint8Array, readTokenHash: string, randomKey: string }.
  * Deliberately does NOT return the read token: uploads carry only its SHA-256,
  * so nothing that observes a save request can read or destroy the file. The
  * recipient re-derives the token from the link when downloading.
  */
 export async function encryptFile(file, secretKey) {
-    const fileBytes = new Uint8Array(await file.arrayBuffer());
-    const packed = packFile(file, fileBytes);
+    const packed = await packFile(file);
 
     const randomKey = getRandomString(Constants.randomKeyLen);
     const fullSecretKey = (secretKey || '') + randomKey;
     const {encryptedBytes, readTokenHash} = await encryptSecretBytes(packed, fullSecretKey);
 
-    return {
-        encryptedBlob: new Blob([encryptedBytes]),
-        readTokenHash,
-        randomKey,
-    };
+    return {encryptedBytes, readTokenHash, randomKey};
 }
 
 /**

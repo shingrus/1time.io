@@ -93,17 +93,20 @@ async function sendChunkWithRetries(url, formData, onProgress) {
 }
 
 /**
- * Upload an encrypted file blob in CHUNK_BYTES slices, with transparent retries
+ * Upload encrypted file bytes in CHUNK_BYTES slices, with transparent retries
  * of a failed slice. Only the last slice's response carries newId; the link
  * cannot exist before every slice is stored. Returns { status, newId }.
  *
+ * One Blob per slice: a whole-file Blob is a second full copy.
+ *
  * Takes readTokenHash (SHA-256 of the read token), never the token itself.
  */
-export async function saveFile(encryptedBlob, readTokenHash, durationSeconds, views, onProgress) {
-    const chunkCount = Math.max(1, Math.ceil(encryptedBlob.size / CHUNK_BYTES));
+export async function saveFile(encryptedBytes, readTokenHash, durationSeconds, views, onProgress) {
+    const totalBytes = encryptedBytes.byteLength;
+    const chunkCount = Math.max(1, Math.ceil(totalBytes / CHUNK_BYTES));
     const uploadId = getRandomString(Constants.storageIdLen);
     const report = typeof onProgress === 'function' ? onProgress : () => {};
-    const buildForm = (file) => {
+    const buildForm = (bytes) => {
         const formData = new FormData();
         formData.append('readTokenHash', readTokenHash);
         formData.append('v', String(Constants.saveSchemeVersion));
@@ -111,23 +114,23 @@ export async function saveFile(encryptedBlob, readTokenHash, durationSeconds, vi
         if (views !== 1) {
             formData.append('views', String(views));
         }
-        formData.append('file', file, 'encrypted.bin');
+        formData.append('file', new Blob([bytes]), 'encrypted.bin');
         return formData;
     };
     let data;
 
     for (let index = 0; index < chunkCount; index += 1) {
         const start = index * CHUNK_BYTES;
-        const chunk = encryptedBlob.slice(start, start + CHUNK_BYTES);
+        const chunk = encryptedBytes.subarray(start, start + CHUNK_BYTES);
         const params = new URLSearchParams({u: uploadId, i: String(index), n: String(chunkCount)});
         data = await sendChunkWithRetries(
             `${Constants.apiBaseUrl}saveFile?${params}`,
             buildForm(chunk),
-            (fraction) => report((start + fraction * chunk.size) / encryptedBlob.size),
+            (fraction) => report((start + fraction * chunk.byteLength) / totalBytes),
         );
         if (data.newId && index < chunkCount - 1) {
             // Only a pre-chunking server answers an early slice with an id.
-            data = await sendChunkWithRetries(`${Constants.apiBaseUrl}saveFile`, buildForm(encryptedBlob), report);
+            data = await sendChunkWithRetries(`${Constants.apiBaseUrl}saveFile`, buildForm(encryptedBytes), report);
             break;
         }
     }
