@@ -163,9 +163,6 @@ if (form) {
                 postReadCta.toggleAttribute('hidden', false);
                 showOnly(decryptedSection);
                 setLoading(false);
-                void import('../lib/feedbackNudge.js')
-                    .then(({showFeedbackNudge}) => showFeedbackNudge(document, 'read'))
-                    .catch(() => {});
                 return;
             }
 

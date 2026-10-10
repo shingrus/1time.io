@@ -173,10 +173,6 @@ export async function showLinkReady(
         qrLabel.textContent = 'Hide QR code';
     });
 
-    void import('../lib/feedbackNudge.js')
-        .then(({showFeedbackNudge}) => showFeedbackNudge(clone, 'ready'))
-        .catch(() => {});
-
     resetBtn.addEventListener('click', () => {
         if (copyTimer) clearTimeout(copyTimer);
         clone.replaceWith(formEl);

@@ -142,9 +142,6 @@ if (form) {
                     : 'One-time delivery complete. The encrypted file has been deleted from our servers.';
                 setPhase('idle');
                 showOnly(downloadedSection);
-                void import('../lib/feedbackNudge.js')
-                    .then(({showFeedbackNudge}) => showFeedbackNudge(document, 'read'))
-                    .catch(() => {});
             } catch {
                 // Download succeeded (and was consumed) but decrypt failed — be honest.
                 setPhase('idle');

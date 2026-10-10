@@ -940,9 +940,6 @@ func apiHandler(w http.ResponseWriter, r *http.Request) {
 	case "getFile":
 		apiGetFile(w, r)
 		return
-	case "feedback":
-		apiFeedback(w, r)
-		return
 	case "stat":
 		responseCode, response = apiStat(r)
 	case "ss":
