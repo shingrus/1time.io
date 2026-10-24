@@ -4,15 +4,15 @@ import InlineCss from '../components/InlineCss.astro';
 import NewMessageForm from '../components/NewMessageForm.astro';
 import {siteHost, siteUrl} from '../lib/siteConfig.js';
 
-const title = `One-Time Link: Share a One-Time Secret, Password or File`;
-const description = 'Create a one-time link for any secret — passwords, API keys, files. Self-destructing, end-to-end encrypted in your browser. Free, open source, no signup.';
+const title = `One-Time Link: Share a One-Time Secret Our Server Can't Read`;
+const description = 'Create a one-time link for a password, API key or file up to 250 MB. Encrypted in your browser; the key stays in the link and never reaches our server.';
 
 const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'WebApplication',
     name: siteHost,
     url: siteUrl,
-    description: 'Create a one-time link to share passwords, API keys, and files. Self-destructing, end-to-end encrypted in your browser. Free, open source, no signup.',
+    description: 'Create a one-time link for a password, API key or file up to 250 MB. Encrypted in your browser; the key stays in the link and never reaches our server.',
     applicationCategory: 'SecurityApplication',
     operatingSystem: 'Any',
     offers: {'@type': 'Offer', price: '0', priceCurrency: 'USD'},
@@ -169,13 +169,10 @@ const jsonLd = {
 
             <h2>From the blog</h2>
             <nav class="seo-nav">
-                <a href="/blog/stop-sending-passwords-over-slack/">Stop Sending Passwords Over Slack</a>
                 <a href="/blog/firefox-send-alternative/">Firefox Send Alternative</a>
                 <a href="/blog/is-slack-safe-for-passwords/">Is Slack Safe for Passwords?</a>
                 <a href="/blog/onetimesecret-alternative/">Is OneTimeSecret Safe?</a>
                 <a href="/blog/privnote-alternative/">1time.io vs Privnote</a>
-                <a href="/blog/team-password-sharing/">Team Password Sharing</a>
-                <a href="/blog/how-to-send-passwords-over-email/">How to Send Passwords Over Email</a>
             </nav>
         </section>
     </div>

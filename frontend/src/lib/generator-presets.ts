@@ -414,7 +414,6 @@ export const PRODUCT_LINKS: CrossLink[] = [
 const DEFAULT_GUIDES: CrossLink[] = [
     {path: '/share-password-securely', label: 'How to Share Passwords Securely', desc: 'Best practices for sending credentials safely'},
     {path: '/blog/strong-email-password', label: 'Creating a Strong Email Password', desc: 'Protect your most important account'},
-    {path: '/blog/team-password-sharing', label: 'Team Password Sharing', desc: 'How teams can share credentials safely'},
 ];
 
 export const RELATED_GUIDES: Record<string, CrossLink[]> = {

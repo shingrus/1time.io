@@ -2,7 +2,6 @@ import bitwarden_send_alternativeHtml from '../content/blog/bitwarden-send-alter
 import database_password_securityHtml from '../content/blog/database-password-security.html?raw';
 import firefox_send_alternativeHtml from '../content/blog/firefox-send-alternative.html?raw';
 import hkdf_key_derivation_explainedHtml from '../content/blog/hkdf-key-derivation-explained.html?raw';
-import how_to_send_passwords_over_emailHtml from '../content/blog/how-to-send-passwords-over-email.html?raw';
 import how_to_share_api_keysHtml from '../content/blog/how-to-share-api-keys.html?raw';
 import is_slack_safe_for_passwordsHtml from '../content/blog/is-slack-safe-for-passwords.html?raw';
 import onetimesecret_alternativeHtml from '../content/blog/onetimesecret-alternative.html?raw';
@@ -13,9 +12,7 @@ import quantum_safe_password_sharingHtml from '../content/blog/quantum-safe-pass
 import secure_home_wifi_setupHtml from '../content/blog/secure-home-wifi-setup.html?raw';
 import self_destructing_messages_explainedHtml from '../content/blog/self-destructing-messages-explained.html?raw';
 import share_secrets_from_terminalHtml from '../content/blog/share-secrets-from-terminal.html?raw';
-import stop_sending_passwords_over_slackHtml from '../content/blog/stop-sending-passwords-over-slack.html?raw';
 import strong_email_passwordHtml from '../content/blog/strong-email-password.html?raw';
-import team_password_sharingHtml from '../content/blog/team-password-sharing.html?raw';
 
 export interface BlogPost {
     slug: string;
@@ -336,73 +333,6 @@ export const blogPosts: BlogPost[] = [
         "html": hkdf_key_derivation_explainedHtml
     },
     {
-        "slug": "how-to-send-passwords-over-email",
-        "title": "How to Send Passwords Securely Over Email — 1time.io",
-        "description": "Learn why emailing passwords is dangerous and discover safe alternatives. Use encrypted one-time links to share passwords over email without exposing them.",
-        "ogTitle": "How to Send Passwords Securely Over Email",
-        "ogDescription": "Email stores messages forever. Here is how to share passwords over email without the risk.",
-        "ogImageAlt": "How to Send Passwords Over Email",
-        "tag": "Guide",
-        "heading": "How to Send Passwords Securely Over Email",
-        "excerpt": "Email is the most common way people share passwords. It is also one of the worst. Here is why, and what to do instead.",
-        "meta": "By Igor Ermakov · Dec 22, 2025 · 6 min read",
-        "schemas": [
-            {
-                "@context": "https://schema.org",
-                "@type": "Article",
-                "headline": "How to Send Passwords Securely Over Email",
-                "description": "Learn why emailing passwords is dangerous and discover safe alternatives. Use encrypted one-time links to share passwords over email without exposing them.",
-                "datePublished": "2025-12-22",
-                "dateModified": "2026-03-19",
-                "author": {
-                    "@type": "Person",
-                    "name": "Igor Ermakov",
-                    "url": "https://1time.io/about/"
-                },
-                "publisher": {
-                    "@type": "Organization",
-                    "name": "1time.io",
-                    "url": "https://1time.io",
-                    "logo": {
-                        "@type": "ImageObject",
-                        "url": "https://1time.io/logo-512.png",
-                        "width": 512,
-                        "height": 512
-                    }
-                },
-                "mainEntityOfPage": "https://1time.io/blog/how-to-send-passwords-over-email/",
-                "image": [
-                    "https://1time.io/1time-og-main.png"
-                ]
-            },
-            {
-                "@context": "https://schema.org",
-                "@type": "BreadcrumbList",
-                "itemListElement": [
-                    {
-                        "@type": "ListItem",
-                        "position": 1,
-                        "name": "Home",
-                        "item": "https://1time.io/"
-                    },
-                    {
-                        "@type": "ListItem",
-                        "position": 2,
-                        "name": "Blog",
-                        "item": "https://1time.io/blog/"
-                    },
-                    {
-                        "@type": "ListItem",
-                        "position": 3,
-                        "name": "How to Send Passwords Over Email",
-                        "item": "https://1time.io/blog/how-to-send-passwords-over-email/"
-                    }
-                ]
-            }
-        ],
-        "html": how_to_send_passwords_over_emailHtml
-    },
-    {
         "slug": "how-to-share-api-keys",
         "title": "How to Share API Keys Securely with Your Team — 1time.io",
         "description": "Learn how to share API keys, tokens, and secrets with developers safely. Stop pasting credentials in Slack and use encrypted one-time links instead.",
@@ -479,7 +409,7 @@ export const blogPosts: BlogPost[] = [
         "tag": "Security",
         "heading": "Is Slack Safe for Sharing Passwords? What Admins Can Actually See",
         "excerpt": "You probably share passwords over Slack DMs. So does everyone else. Here is why that is a serious security risk and what to do instead.",
-        "meta": "By Igor Ermakov · Updated Aug 1, 2026 · 6 min read",
+        "meta": "By Igor Ermakov · Updated Oct 24, 2026 · 6 min read",
         "schemas": [
             {
                 "@context": "https://schema.org",
@@ -487,7 +417,7 @@ export const blogPosts: BlogPost[] = [
                 "headline": "Is Slack Safe for Sharing Passwords? What Admins Can Actually See",
                 "description": "Slack DMs are not private, and deleting a message may not remove it. See what admins, retention, and eDiscovery can still recover — and the safer way.",
                 "datePublished": "2025-12-29",
-                "dateModified": "2026-08-01",
+                "dateModified": "2026-10-24",
                 "author": {
                     "@type": "Person",
                     "name": "Igor Ermakov",
@@ -1281,73 +1211,6 @@ export const blogPosts: BlogPost[] = [
         "html": share_secrets_from_terminalHtml
     },
     {
-        "slug": "stop-sending-passwords-over-slack",
-        "title": "Stop Sending Passwords Over Slack: Here's What I Built Instead — 1time.io",
-        "description": "I caught plaintext credentials sitting in our Slack history for months. So I built an open-source zero-knowledge secret sharing tool. Here's the full story.",
-        "ogTitle": "Stop Sending Passwords Over Slack: Here's What I Built Instead",
-        "ogDescription": "I caught plaintext credentials sitting in our Slack history for months. So I built an open-source secret sharing tool with real zero-knowledge encryption.",
-        "ogImageAlt": "Stop Sending Passwords Over Slack",
-        "tag": "DevOps",
-        "heading": "Stop Sending Passwords Over Slack: Here's What I Built Instead",
-        "excerpt": "I caught plaintext credentials sitting in our Slack history for months. So I built an open-source tool that encrypts secrets in the browser and destroys them after one read.",
-        "meta": "By Igor Ermakov · Mar 31, 2026 · 8 min read",
-        "schemas": [
-            {
-                "@context": "https://schema.org",
-                "@type": "Article",
-                "headline": "Stop Sending Passwords Over Slack: Here's What I Built Instead",
-                "description": "I caught plaintext credentials sitting in our Slack history for months. So I built an open-source zero-knowledge secret sharing tool. Here's the full story.",
-                "datePublished": "2026-03-31",
-                "dateModified": "2026-03-31",
-                "author": {
-                    "@type": "Person",
-                    "name": "Igor Ermakov",
-                    "url": "https://1time.io/about/"
-                },
-                "publisher": {
-                    "@type": "Organization",
-                    "name": "1time.io",
-                    "url": "https://1time.io",
-                    "logo": {
-                        "@type": "ImageObject",
-                        "url": "https://1time.io/logo-512.png",
-                        "width": 512,
-                        "height": 512
-                    }
-                },
-                "mainEntityOfPage": "https://1time.io/blog/stop-sending-passwords-over-slack/",
-                "image": [
-                    "https://1time.io/1time-og-main.png"
-                ]
-            },
-            {
-                "@context": "https://schema.org",
-                "@type": "BreadcrumbList",
-                "itemListElement": [
-                    {
-                        "@type": "ListItem",
-                        "position": 1,
-                        "name": "Home",
-                        "item": "https://1time.io/"
-                    },
-                    {
-                        "@type": "ListItem",
-                        "position": 2,
-                        "name": "Blog",
-                        "item": "https://1time.io/blog/"
-                    },
-                    {
-                        "@type": "ListItem",
-                        "position": 3,
-                        "name": "Stop Sending Passwords Over Slack",
-                        "item": "https://1time.io/blog/stop-sending-passwords-over-slack/"
-                    }
-                ]
-            }
-        ],
-        "html": stop_sending_passwords_over_slackHtml
-    },
-    {
         "slug": "strong-email-password",
         "title": "How to Create a Strong Email Password — 1time.io",
         "description": "Your email password is the master key to your digital life. Learn how to create one that cannot be cracked and why it matters more than any other password you have.",
@@ -1413,127 +1276,6 @@ export const blogPosts: BlogPost[] = [
             }
         ],
         "html": strong_email_passwordHtml
-    },
-    {
-        "slug": "team-password-sharing",
-        "title": "Team Password Sharing Without a Password Manager — 1time.io",
-        "description": "Practical approaches to sharing passwords within a team when you do not have a password manager. Covers one-time links, secure workflows, and when to upgrade.",
-        "ogTitle": "Team Password Sharing Without a Password Manager",
-        "ogDescription": "How to share team credentials securely when you do not have a password manager.",
-        "ogImageAlt": "Team Password Sharing",
-        "tag": "Teams",
-        "heading": "Team Password Sharing Without a Password Manager",
-        "excerpt": "Not every team has a password manager. Not every situation justifies one. Here is how to share credentials securely with your team using tools that require zero setup.",
-        "meta": "By Igor Ermakov · Updated Apr 17, 2026 · 7 min read",
-        "schemas": [
-            {
-                "@context": "https://schema.org",
-                "@type": "Article",
-                "headline": "Team Password Sharing Without a Password Manager",
-                "description": "Practical approaches to sharing passwords within a team when you do not have a password manager.",
-                "datePublished": "2026-01-21",
-                "dateModified": "2026-04-17",
-                "author": {
-                    "@type": "Person",
-                    "name": "Igor Ermakov",
-                    "url": "https://1time.io/about/"
-                },
-                "publisher": {
-                    "@type": "Organization",
-                    "name": "1time.io",
-                    "url": "https://1time.io",
-                    "logo": {
-                        "@type": "ImageObject",
-                        "url": "https://1time.io/logo-512.png",
-                        "width": 512,
-                        "height": 512
-                    }
-                },
-                "mainEntityOfPage": "https://1time.io/blog/team-password-sharing/",
-                "image": [
-                    "https://1time.io/1time-og-main.png"
-                ]
-            },
-            {
-                "@context": "https://schema.org",
-                "@type": "BreadcrumbList",
-                "itemListElement": [
-                    {
-                        "@type": "ListItem",
-                        "position": 1,
-                        "name": "Home",
-                        "item": "https://1time.io/"
-                    },
-                    {
-                        "@type": "ListItem",
-                        "position": 2,
-                        "name": "Blog",
-                        "item": "https://1time.io/blog/"
-                    },
-                    {
-                        "@type": "ListItem",
-                        "position": 3,
-                        "name": "Team Password Sharing",
-                        "item": "https://1time.io/blog/team-password-sharing/"
-                    }
-                ]
-            },
-            {
-                "@context": "https://schema.org",
-                "@type": "FAQPage",
-                "mainEntity": [
-                    {
-                        "@type": "Question",
-                        "name": "What is the safest way to share a password with a team?",
-                        "acceptedAnswer": {
-                            "@type": "Answer",
-                            "text": "The safest way to share a password with a team is via an end-to-end encrypted one-time link. The password is encrypted in your browser before it leaves your device, and the link self-destructs after the recipient opens it — so it never sits in a chat log, email thread, or inbox. 1time.io generates these links for free with no signup required."
-                        }
-                    },
-                    {
-                        "@type": "Question",
-                        "name": "How do you share passwords securely without a password manager?",
-                        "acceptedAnswer": {
-                            "@type": "Answer",
-                            "text": "Without a password manager, use encrypted one-time links. Paste the password into 1time.io, generate a self-destructing link, and send it over Slack, email, or any channel. The recipient gets one chance to read it, then it is permanently deleted from the server. No account, no install, and the recipient does not need to know what tool you used."
-                        }
-                    },
-                    {
-                        "@type": "Question",
-                        "name": "Is it safe to send passwords over Slack or email?",
-                        "acceptedAnswer": {
-                            "@type": "Answer",
-                            "text": "No. Slack and email store messages indefinitely — a password sent over these channels stays exposed in logs, search history, and backups long after it was needed. If either account is ever breached, those credentials are compromised. The alternative is an encrypted one-time link that self-destructs after one read and leaves no trace in any message history."
-                        }
-                    },
-                    {
-                        "@type": "Question",
-                        "name": "How do you share credentials with contractors who are not in your password manager?",
-                        "acceptedAnswer": {
-                            "@type": "Answer",
-                            "text": "Encrypted one-time links are the right tool for contractors and external collaborators. They do not need an account or access to your internal systems — they just click the link, copy the credential, and the link is permanently destroyed. 1time.io supports this workflow with zero setup for either party."
-                        }
-                    },
-                    {
-                        "@type": "Question",
-                        "name": "What should I do when onboarding a new team member who needs credentials?",
-                        "acceptedAnswer": {
-                            "@type": "Answer",
-                            "text": "Generate each credential as a separate encrypted one-time link and send it the moment the new team member is ready to receive it. With 1time.io you can generate a strong password and create a shareable link in one step — no waiting, no plaintext in email drafts."
-                        }
-                    },
-                    {
-                        "@type": "Question",
-                        "name": "What happens if a one-time link is never opened?",
-                        "acceptedAnswer": {
-                            "@type": "Answer",
-                            "text": "Unread links auto-expire after a configurable window. On 1time.io the default is 1 day, with options from 1 hour to 30 days. If the recipient never opens the link, the encrypted data is automatically deleted from the server when the expiry is reached — nothing persists indefinitely."
-                        }
-                    }
-                ]
-            }
-        ],
-        "html": team_password_sharingHtml
     },
 ];
 

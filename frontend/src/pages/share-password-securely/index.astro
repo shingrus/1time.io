@@ -16,7 +16,7 @@ const faqItems = [
     {question: 'Can I share a password without a password manager?', answer: 'Yes. A one-time encrypted link requires no accounts on either side: paste the password, send the link, and the recipient opens it once in any browser. It is the simplest secure option when one or both people do not use a password manager.'},
     {question: 'What is a secret link?', answer: 'A secret link (or one-time secret link) is a URL that reveals a password or secret once by default. After the recipient opens it, the encrypted data is permanently deleted and the link stops working. If a few people need the same secret, you can choose a small view limit; the data is then deleted after the final allowed view. It is the simplest way to share a password securely without leaving a copy behind on any server.'},
     {question: 'Is it safe to send passwords over email or Slack?', answer: 'No. Emails are stored indefinitely on mail servers, and Slack messages persist in searchable history that admins can export. Both channels leave your password exposed long after it was shared. One-time encrypted links solve this: the password is encrypted end-to-end and destroyed after a single view by default.'},
-    {question: 'Can the server see my password?', answer: 'No. Your password is encrypted in the browser using AES-256-GCM before it reaches the server. The decryption key stays in the URL fragment, which is never sent to the server. This is called zero-knowledge architecture — we cannot read your secrets even if we wanted to.'},
+    {question: 'Can the server see my password?', answer: 'No. Your password is encrypted in the browser with AES-256-GCM, using a key derived with HKDF-SHA256, before it reaches the server. The decryption key stays in the URL fragment, which is never sent to the server. This is called zero-knowledge architecture — we cannot read your secrets even if we wanted to.'},
     {question: 'What happens after the recipient reads the password?', answer: 'On a default one-time link the encrypted data is permanently deleted from the server and the link stops working immediately, so nobody — including the sender — can retrieve the password from it again. Deletion covers the link, not the recipient: whatever they copy, save or screenshot stays with them. If you allowed several views, the link keeps working until the last one is used and then is deleted the same way; the reader is always told how many views remain. If the link is never opened, it expires automatically after the set time period (1 hour to 30 days).'},
     {question: 'Can I add extra protection to the shared password?', answer: 'Yes. You can set an additional passphrase when creating the link. The recipient will need both the link and the passphrase to decrypt the password. This adds a second factor in case the link is intercepted.'},
     {question: 'Is this better than using a password manager for sharing?', answer: 'They serve different purposes. Password managers are best for ongoing shared access within a team. One-time links are better for one-off handoffs: onboarding a new team member, sending credentials to a client, sharing a WiFi password with a guest, or any situation where the recipient does not need permanent access.'},
@@ -33,7 +33,7 @@ const jsonLd = [
         operatingSystem: 'Any',
         offers: {'@type': 'Offer', price: '0', priceCurrency: 'USD'},
         featureList: 'End-to-end encryption, One-time access, Optional passphrase, Auto-expiry, Zero-knowledge architecture',
-        dateModified: '2026-07-26',
+        dateModified: '2026-10-24',
     },
     {
         '@context': 'https://schema.org',
@@ -77,11 +77,15 @@ const jsonLd = [
         <section class="seo-section">
             <h1>Share Passwords Securely with Encrypted One-Time Links</h1>
             <p>
-                Stop pasting passwords into Slack messages, emails, and spreadsheets where they sit indefinitely.{' '}
-                {siteHost} lets you share a password securely through an encrypted <strong>secret link</strong> that
-                self-destructs after the recipient reads it. Send a password, API key, or any secret — it is
-                encrypted in your browser using AES-256-GCM before it ever touches the server. No signup,
-                no account, completely free.
+                To share a password securely, send a one-time link instead of the password itself. {siteHost}
+                encrypts the password in your browser with AES-256-GCM, using a key derived with HKDF-SHA256,
+                and that key stays in the URL fragment, which never reaches the server. The recipient opens the
+                link once by default, and the encrypted copy is then permanently deleted.
+            </p>
+            <p>
+                Email, Slack, Teams or SMS can carry the link, because after it is opened it reveals nothing.
+                The same works for <a href="/secure-file-sharing/">files up to 250 MB</a>. No signup, no
+                account, free.
             </p>
 
             <div class="features-grid">
@@ -213,6 +217,32 @@ const jsonLd = [
                 then neither channel alone is enough to reveal anything.
             </p>
 
+            <h2>How to send a password by email</h2>
+            <p>
+                A password typed into an email exists in at least four places: your sent folder, your mail
+                server, the recipient's mail server and their inbox, plus every synced device and backup.
+                Send a one-time link in its place:
+            </p>
+            <ol class="seo-list">
+                <li><strong>Create the link.</strong> Paste the password above, pick the shortest expiry that works (1 hour is the minimum), and optionally add a passphrase.</li>
+                <li><strong>Copy it.</strong> The key is part of the link; the server only receives ciphertext.</li>
+                <li><strong>Paste the link into the email</strong> where the password would go. Do not say what it unlocks — "Here is the access you asked for" is enough.</li>
+                <li><strong>Give the context on another channel.</strong> A call or chat message saying which account it is for, and the passphrase if you set one. Neither channel alone is useful.</li>
+            </ol>
+            <p>
+                <strong>"My email uses TLS."</strong> TLS protects the message while it travels between
+                servers, not while it sits in mailboxes and backups. A compromised account still exposes it.
+            </p>
+            <p>
+                <strong>"I will delete the email afterwards."</strong> Deleting removes your copy from view,
+                not the recipient's copy, server backups or compliance archives.
+            </p>
+            <p>
+                <strong>Password-protected ZIP files</strong> are better than plain text, but the attachment
+                stays in both mailboxes forever and older ZIP encryption is weak. To send an actual file, use a{' '}
+                <a href="/secure-file-sharing/">one-time file link</a> instead.
+            </p>
+
             <h2>Password sharing best practices</h2>
             <ul class="seo-list">
                 <li><strong>Never send the password itself through a persistent channel.</strong> Send a one-time link; let the channel keep a dead URL, not a live credential.</li>
@@ -237,6 +267,17 @@ const jsonLd = [
                 <li><strong>Handing off API keys</strong> to a developer on another team.</li>
                 <li><strong>Any one-time handoff</strong> where the recipient does not need permanent access.</li>
             </ul>
+            <p>
+                One-time links solve sharing, not storage. A team needs a password manager once it has
+                logins several people use every day, more shared accounts than anyone can track, compliance
+                requirements such as SOC 2 or HIPAA that call for an audit trail, or regular turnover.
+            </p>
+
+            <h3>A team workflow without a password manager</h3>
+            <ol class="seo-list">
+                <li><strong>Share through one-time links only.</strong> Make it a team rule: no passwords in chat, email or text. It takes the same effort as pasting the password.</li>
+                <li><strong>Track who has access to what.</strong> Keep a list of services and people — never the passwords — so you know what to rotate when someone leaves.</li>
+            </ol>
 
             <h2>Key terms, briefly defined</h2>
             <dl class="glossary">
@@ -267,9 +308,7 @@ const jsonLd = [
                 <a href="/password-generator/">Generate a strong password</a>
                 <a href="/wifi-password-generator/">WiFi password generator</a>
                 <a href="/api-key-generator/">API key generator</a>
-                <a href="/blog/team-password-sharing/">Guide: Team password sharing</a>
                 <a href="/blog/is-slack-safe-for-passwords/">Is Slack safe for passwords?</a>
-                <a href="/blog/how-to-send-passwords-over-email/">How to send passwords over email</a>
             </nav>
         </section>
     </div>

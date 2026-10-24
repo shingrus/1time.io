@@ -10,8 +10,8 @@ const description = 'Stop pasting passwords into Teams chat. Send a one-time enc
 const faqItems = [
     {question: 'Is it safe to send passwords in Microsoft Teams chat?', answer: 'No. Teams messages are retained according to your tenant\'s retention policy (often years), indexed by Microsoft Purview, and discoverable through eDiscovery. Global admins and compliance officers can read the plaintext. Even after you delete a message, copies persist in compliance archives and backups. A password pasted into Teams chat is effectively a long-lived credential leak.'},
     {question: 'How does a one-time link fix the Teams retention problem?', answer: 'The Teams message only contains a URL — not the password itself. Retention captures the wrapper, not the secret. After the recipient opens the link once, the encrypted payload is permanently deleted from 1time.io servers. Anyone reading the retained Teams message later (auditors, admins, attackers who compromise the tenant) just sees a dead link.'},
-    {question: 'Does the Teams link preview burn my one-time secret?', answer: 'No. Microsoft Teams fetches link previews, but 1time.io shows an explicit "Read and consume" button on the recipient page. The preview bot sees the landing page, not the decrypted secret. The secret is only revealed when a human clicks the button, so Teams unfurls are safe.'},
-    {question: 'Can my Teams admin or IT see the password I share through 1time.io?', answer: 'No. The password is encrypted in the sender\'s browser with AES-256-GCM before it leaves the device. The decryption key lives in the URL fragment (the part after #), which browsers never send to servers. Your Teams admin sees the link in chat history but cannot decrypt the content.'},
+    {question: 'Does the Teams link preview burn my one-time secret?', answer: 'No. Microsoft Teams fetches link previews, but 1time.io shows an explicit "Reveal the secret" button on the recipient page. The preview bot sees the landing page, not the decrypted secret. The secret is only revealed when a human clicks the button, so Teams unfurls are safe.'},
+    {question: 'Can my Teams admin or IT see the password I share through 1time.io?', answer: 'No. The password is encrypted in the sender\'s browser with AES-256-GCM before it leaves the device, using a key derived with HKDF-SHA256. The decryption key lives in the URL fragment (the part after #), which browsers never send to servers. Your Teams admin sees the link in chat history but cannot decrypt the content.'},
     {question: 'Can this help with GDPR, SOC 2, and ISO 27001 controls?', answer: 'One-time links can support data-minimisation and secret-handling controls under frameworks such as GDPR, SOC 2, and ISO 27001 because the secret is encrypted in the browser, shared as a link, and deleted after one read. Whether your organisation is compliant still depends on your broader policies, retention settings, access controls, and legal review.'},
     {question: 'Can I add an extra passphrase on top of the Teams link?', answer: 'Yes. When you create the link, set an optional passphrase and send it through a different channel (voice call, SMS, another Teams chat). The recipient needs both the link and the passphrase to decrypt. This defeats anyone who only has access to the Teams message.'},
     {question: 'What about sharing API keys, certificates, or config files through Teams?', answer: 'The same workflow works for any text secret (API keys, tokens, connection strings) via the text sharing form, and for files up to 250 MB (certificates, .env files, kubeconfig, PDFs) via secure file sharing. Drop the one-time link in Teams chat instead of pasting or attaching the raw content.'},
@@ -26,7 +26,7 @@ const jsonLd = [
         url: absoluteUrl('/share-passwords-microsoft-teams/'),
         isPartOf: absoluteUrl('/'),
         datePublished: '2026-04-20',
-        dateModified: '2026-06-12',
+        dateModified: '2026-10-24',
     },
     {
         '@context': 'https://schema.org',
@@ -71,12 +71,16 @@ const jsonLd = [
         <section class="seo-section">
             <h1>Share Passwords Safely in Microsoft Teams</h1>
             <p>
-                Pasting a password into Microsoft Teams chat looks harmless, but the message sticks
-                around: retention policies keep it for months or years, Microsoft Purview indexes it,
-                and eDiscovery makes it searchable by compliance officers. Every credential pasted in
-                Teams is a long-lived secret waiting to leak. {siteHost} solves this by turning any
-                password, API key, or file into a one-time encrypted link you can safely drop into
-                any Teams chat, channel, or meeting.
+                To share a password in Microsoft Teams, paste a one-time link into the chat instead of the
+                password. {siteHost} encrypts it in your browser with AES-256-GCM, using a key derived with
+                HKDF-SHA256, and the key stays in the URL fragment, which never reaches the server. Teams
+                retention, Purview and eDiscovery then keep only a link that is dead after one read.
+            </p>
+            <p>
+                A password pasted into Teams chat looks harmless, but retention policies keep it for months
+                or years, Microsoft Purview indexes it, and eDiscovery makes it searchable by compliance
+                officers. The same one-time link works for API keys and for files up to 250 MB, in any
+                Teams chat, channel or meeting.
             </p>
 
             <div class="features-grid">
@@ -99,7 +103,7 @@ const jsonLd = [
                         <div class="feature-card-icon" aria-hidden="true">&#x1f6e1;&#xfe0f;</div>
                         <h2>Preview-safe</h2>
                     </div>
-                    <p>The Teams link unfurl hits a landing page with an explicit "Read and consume" button. Preview bots do not burn the secret.</p>
+                    <p>The Teams link unfurl hits a landing page with an explicit "Reveal the secret" button. Preview bots do not burn the secret.</p>
                 </div>
                 <div class="feature-card">
                     <div class="feature-card-header">
@@ -134,7 +138,7 @@ const jsonLd = [
             <ol class="seo-list">
                 <li><strong>Paste the password</strong> into the form above and click "Create secret link". Encryption happens in your browser with AES-256-GCM before anything leaves your device.</li>
                 <li><strong>Copy the link</strong> and drop it into any Teams chat, channel post, or meeting chat.</li>
-                <li><strong>Teams renders a preview</strong> with a "Read and consume" call to action — no secret is revealed to the preview bot.</li>
+                <li><strong>Teams renders a preview</strong> with a "Reveal the secret" call to action — no secret is revealed to the preview bot.</li>
                 <li><strong>The recipient clicks through</strong>, confirms they want to read, and the secret is shown exactly once.</li>
                 <li><strong>The server deletes the encrypted payload.</strong> The retained Teams message now points to a link that will never work again.</li>
             </ol>
@@ -187,10 +191,7 @@ const jsonLd = [
             <nav class="seo-nav">
                 <a href="/share-password-securely/">Share passwords securely</a>
                 <a href="/secure-file-sharing/">Send encrypted files</a>
-                <a href="/blog/team-password-sharing/">Team password sharing guide</a>
                 <a href="/blog/is-slack-safe-for-passwords/">Is Slack safe for passwords?</a>
-                <a href="/blog/stop-sending-passwords-over-slack/">Stop sending passwords over Slack</a>
-                <a href="/blog/how-to-send-passwords-over-email/">How to send passwords over email</a>
                 <a href="/blog/how-to-share-api-keys/">How to share API keys securely</a>
                 <a href="/password-generator/">Generate a strong password</a>
             </nav>
