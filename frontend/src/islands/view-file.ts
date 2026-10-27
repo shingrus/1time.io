@@ -3,6 +3,14 @@ import {hashSecretKey, isValidLinkToken} from '../lib/protocol.mjs';
 import {formatBytes, getFile} from '../lib/fileApi.js';
 import {createFileUrl, decryptFile, saveFileUrl} from '../lib/fileProtocol.js';
 
+const programExtensions = new Set(['exe', 'msi', 'scr', 'bat', 'cmd', 'ps1', 'vbs', 'apk']);
+
+// Windows drops trailing dots and spaces on save, so "setup.exe." is an .exe.
+const isProgramFile = (name: unknown) => {
+    const ext = /\.([^.]*)$/.exec(String(name).replace(/[.\s]+$/, ''));
+    return ext !== null && programExtensions.has(ext[1].toLowerCase());
+};
+
 const form = document.querySelector<HTMLFormElement>('#view-file-form');
 if (form) {
     const passphraseSection = form.querySelector<HTMLElement>('[data-state="passphrase"]')!;
@@ -13,6 +21,9 @@ if (form) {
     const noMessageSection = form.querySelector<HTMLElement>('[data-state="no-message"]')!;
     const brokenLinkSection = form.querySelector<HTMLElement>('[data-state="broken-link"]')!;
     const errorSection = form.querySelector<HTMLElement>('[data-state="error"]')!;
+    const programSection = form.querySelector<HTMLElement>('[data-state="program"]')!;
+    const programName = form.querySelector<HTMLElement>('[data-program-name]')!;
+    const saveProgramBtn = form.querySelector<HTMLButtonElement>('[data-save-program]')!;
     const downloadBtn = form.querySelector<HTMLButtonElement>('[data-download]')!;
     const downloadLabel = form.querySelector<HTMLElement>('[data-download-label]')!;
     const progress = form.querySelector<HTMLElement>('[data-progress]')!;
@@ -27,7 +38,7 @@ if (form) {
 
     // Terminal states are mutually exclusive; the passphrase field overlays pre-read.
     const showOnly = (visible: HTMLElement) => {
-        for (const el of [preReadSection, passphraseSection, downloadedSection, noMessageSection, errorSection, brokenLinkSection]) {
+        for (const el of [preReadSection, passphraseSection, downloadedSection, programSection, noMessageSection, errorSection, brokenLinkSection]) {
             el.toggleAttribute('hidden', el !== visible);
         }
     };
@@ -43,6 +54,15 @@ if (form) {
         if (savedFile) {
             saveFileUrl(savedFile.url, savedFile.name);
         }
+    });
+    let saveConfirmedProgram: (() => void) | null = null;
+    saveProgramBtn.addEventListener('click', () => {
+        try {
+            saveConfirmedProgram?.();
+        } catch {
+            showOnly(errorSection);
+        }
+        saveConfirmedProgram = null;
     });
     window.addEventListener('pagehide', (e) => {
         if (savedFile && !e.persisted) {
@@ -157,18 +177,27 @@ if (form) {
             try {
                 setPhase('decrypting');
                 const {meta, fileBytes} = await decryptFile(result.data, fullSecretKey);
-                savedFile = {url: createFileUrl(meta, fileBytes), name: meta.name};
                 setPhase('idle');
-                saveFileUrl(savedFile.url, savedFile.name);
                 // Older backends omit the header and only support one download.
                 const viewsLeft = typeof result.viewsLeft === 'number' ? result.viewsLeft : 0;
                 const expiresIn = typeof result.expiresIn === 'number' ? result.expiresIn : 0;
-                const expiryClause = expiresIn > 0 ? ` It expires in ${formatRemaining(expiresIn)}.` : '';
-                downloadState.textContent = viewsLeft > 0
-                    ? `This 1time link has ${viewsLeft} ${viewsLeft === 1 ? 'download' : 'downloads'} remaining and will self-destruct after the last.${expiryClause}`
-                    : 'One-time delivery complete. The encrypted file has been deleted from our servers.';
-                saveAgainHint.toggleAttribute('hidden', viewsLeft > 0);
-                showOnly(downloadedSection);
+                const save = () => {
+                    savedFile = {url: createFileUrl(meta, fileBytes), name: meta.name};
+                    saveFileUrl(savedFile.url, savedFile.name);
+                    const expiryClause = expiresIn > 0 ? ` It expires in ${formatRemaining(expiresIn)}.` : '';
+                    downloadState.textContent = viewsLeft > 0
+                        ? `This 1time link has ${viewsLeft} ${viewsLeft === 1 ? 'download' : 'downloads'} remaining and will self-destruct after the last.${expiryClause}`
+                        : 'One-time delivery complete. The encrypted file has been deleted from our servers.';
+                    saveAgainHint.toggleAttribute('hidden', viewsLeft > 0);
+                    showOnly(downloadedSection);
+                };
+                if (isProgramFile(meta.name)) {
+                    programName.textContent = meta.name;
+                    saveConfirmedProgram = save;
+                    showOnly(programSection);
+                } else {
+                    save();
+                }
             } catch {
                 // Download succeeded (and was consumed) but decrypt failed — be honest.
                 setPhase('idle');

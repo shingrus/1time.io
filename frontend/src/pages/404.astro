@@ -1,6 +1,5 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
-import InlineCss from '../components/InlineCss.astro';
 import {siteHost} from '../lib/siteConfig.js';
 
 const title = `Page not found — ${siteHost}`;
@@ -13,11 +12,27 @@ const description = 'This page does not exist on 1time.io.';
     robots="noindex, nofollow"
     pageview={false}
 >
-    <InlineCss slot="head" name="view" />
-
     <div class="error-page">
         <h2>404</h2>
         <p>This page doesn't exist.</p>
         <a class="btn btn-primary" href="/">Go home</a>
     </div>
 </BaseLayout>
+
+<style>
+    .error-page {
+        text-align: center;
+        padding: 60px 0;
+    }
+
+    .error-page h2 {
+        font-size: 72px;
+        color: var(--text-muted);
+        margin-bottom: 8px;
+    }
+
+    .error-page p {
+        color: var(--text-muted);
+        margin-bottom: 24px;
+    }
+</style>
