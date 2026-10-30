@@ -1,5 +1,6 @@
 FROM golang:1.25-alpine AS builder
 
+RUN apk add --no-cache ca-certificates && mkdir -p /var/lib/1time/files
 WORKDIR /src
 
 COPY go.mod go.sum ./
@@ -8,15 +9,22 @@ RUN go mod download
 COPY backend ./backend
 RUN CGO_ENABLED=0 GOOS=linux go build -ldflags "-w -s" -o /out/1time-api ./backend
 
-FROM alpine:3.21
+FROM debian AS certificate
 
-RUN apk add --no-cache ca-certificates && mkdir -p /var/lib/1time/files
+RUN apt update -qqq && \
+    apt install -yqqq ca-certificates && \
+    update-ca-certificates
 
-COPY --from=builder /out/1time-api /usr/local/bin/1time-api
+
+FROM gcr.io/distroless/static-debian13:nonroot
+
+COPY --from=certificate /etc/ssl/certs /etc/ssl/certs
+COPY --from=builder /out/1time-api /bin/1time-api
 
 ENV LISTEN_ADDR=0.0.0.0:8080
 ENV FILE_STORAGE_DIR=/var/lib/1time/files
+ENV MAX_FILE_SIZE_MB=256
 
 EXPOSE 8080
 
-CMD ["1time-api"]
+CMD ["/bin/1time-api"]

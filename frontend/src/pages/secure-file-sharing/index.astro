@@ -4,12 +4,13 @@ import EncryptionNote from '../../components/EncryptionNote.astro';
 import InlineCss from '../../components/InlineCss.astro';
 import LinkReadyTemplate from '../../components/LinkReadyTemplate.astro';
 import ShareOptions from '../../components/ShareOptions.astro';
-import {absoluteUrl, siteHost} from '../../lib/siteConfig.js';
-import {Constants} from '../../lib/util.js';
+import {absoluteUrl, siteHost, isContentEnabled, getMaxFileSizeBytes} from '../../lib/siteConfig.js';
 
+const showContent = isContentEnabled();
 const title = `One-Time File Sharing — Encrypted Self-Destructing Download Links`;
 const description = 'One-time file sharing through an encrypted, self-destructing download link. Zero-knowledge browser encryption, optional passphrase — free, no signup.';
-const maxMb = Math.round(Constants.maxFileSizeBytes / (1024 * 1024));
+const maxBytes = await getMaxFileSizeBytes();
+const maxMb = Math.round(maxBytes / (1024 * 1024));
 
 const faqItems = [
     {
@@ -95,7 +96,7 @@ const jsonLd = [
             <a href="/secure-file-sharing/" class="share-mode-link share-mode-link-active">One-time file</a>
         </nav>
 
-        <form id="secure-file-form" autocomplete="off">
+        <form id="secure-file-form" data-max-mb={maxMb} data-max-bytes={maxBytes} autocomplete="off">
             <div class="share-card">
                 <h1 class="share-title">Send a one-time file download link</h1>
 
@@ -149,7 +150,7 @@ const jsonLd = [
         </form>
 
         <LinkReadyTemplate />
-
+{showContent && (
         <section class="seo-section">
             <h2>What is a one-time file?</h2>
             <p>
@@ -280,6 +281,7 @@ const jsonLd = [
                 <a href="/about/">About 1time.io</a>
             </nav>
         </section>
+)}        
     </div>
 
     <script>

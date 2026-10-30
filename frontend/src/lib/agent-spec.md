@@ -75,7 +75,7 @@ The wire value is raw bytes: `iv || ciphertext || tag`, with no base64 and no do
 
 ## 4. HTTP API
 
-Base URL: `https://1time.io/api/`, or any self-hosted origin. Every endpoint is `POST`; other methods answer `405`. Append `?src=<app-short-name>` to every request and set a matching `User-Agent`, e.g. `https://1time.io/api/saveSecret?src=webssh` with `User-Agent: WebSSH/32.8`. Use `?src=dev` until your client has a name, and include a contact URL in the `User-Agent` (see section 6).
+Base URL: `https://{host}/api/`, or any self-hosted origin. Every endpoint is `POST`; other methods answer `405`. Append `?src=<app-short-name>` to every request and set a matching `User-Agent`, e.g. `https://{host}/api/saveSecret?src=webssh` with `User-Agent: WebSSH/32.8`. Use `?src=dev` until your client has a name, and include a contact URL in the `User-Agent` (see section 6).
 
 Most outcomes, including failures, return HTTP `200`: always check the `status` field.
 
@@ -223,8 +223,8 @@ V5: link parsing
 
 - [ ] V1 to V5 pass as unit tests
 - [ ] Saves send `v: 3` and `readTokenHash`, never `hashedKey`
-- [ ] Live round trip on https://1time.io: a text link and a file link created by your client open correctly in a browser
-- [ ] Links created in the 1time.io web app, with and without a passphrase, open in your client
+- [ ] Live round trip on https://{host}: a text link and a file link created by your client open correctly in a browser
+- [ ] Links created in the {host} web app, with and without a passphrase, open in your client
 - [ ] A second read returns `no message`
 - [ ] A wrong passphrase returns `wrong key`, and the correct one still works afterwards
 - [ ] Reads retry only on `503` with `{"status":"retry"}`

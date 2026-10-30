@@ -12,6 +12,7 @@
     },
     "background": {
         "service_worker": "background.js",
+        "scripts": ["background.js"],
         "type": "module"
     },
     "action": {
@@ -27,8 +28,7 @@
         "scripting",
         "activeTab",
         "clipboardWrite",
-        "contextMenus",
-        "offscreen"
+        "contextMenus"
     ],
     "host_permissions": [
         "https://1time.io/*"
@@ -36,7 +36,9 @@
     "optional_host_permissions": [
         "https://*/*",
         "http://127.0.0.1/*",
-        "http://localhost/*"
+        "http://localhost/*",
+         "http://127.0.0.1:3001/*",
+        "http://localhost:3001/*"
     ],
     "commands": {
         "share-selection": {

@@ -3,8 +3,9 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 import InlineCss from '../../components/InlineCss.astro';
 import agentSpec from '../../lib/agent-spec.md?raw';
 import {ProtocolConstants} from '../../lib/protocol.mjs';
-import {absoluteUrl, siteUrl} from '../../lib/siteConfig.js';
+import {absoluteUrl, siteUrl, isBlogEnabled} from '../../lib/siteConfig.js';
 
+const showBlog = isBlogEnabled();
 const title = '1time for Developers — One-Time Secret API and Protocol Spec';
 const description = 'Build encrypted one-time secret and file links into your app. Zero-knowledge protocol spec, HTTP API, limits and test vectors. No API key, no signup.';
 const lastUpdated = '2026-09-16';
@@ -110,6 +111,7 @@ const jsonLd = [
                 and we will add it here.
             </p>
 
+{showBlog && (
             <h2>Learn more</h2>
             <nav class="seo-nav">
                 <a href="/blog/share-secrets-from-terminal/">Share secrets from the terminal</a>
@@ -117,7 +119,8 @@ const jsonLd = [
                 <a href="/chrome-extension/">Chrome extension</a>
                 <a href="/about/">About 1time</a>
             </nav>
-        </section>
+)}            
+        </section>   
     </div>
 
     <script is:inline>

@@ -77,5 +77,6 @@ jobs:
           build-args: |
             APP_HOSTNAME=1time.io
             SHOW_BLOG=false
+            SHOW_CONTENT=false
           cache-from: type=gha,scope=web
           cache-to: type=gha,mode=max,scope=web

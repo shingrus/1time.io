@@ -1,12 +1,12 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import InlineCss from '../../components/InlineCss.astro';
-import {absoluteUrl, siteHost, chromeStoreUrl} from '../../lib/siteConfig.js';
+import {absoluteUrl, siteHost, chromeStoreUrl, isContentEnabled} from '../../lib/siteConfig.js';
 
 const title = `1time Chrome Extension — Share a One-Time Secret Link from Your Browser`;
 const description = 'Free Chrome extension for one-time secret sharing. Select text, right-click, and get an encrypted self-destructing link. Zero-knowledge, works with 1time.io or a self-hosted server.';
 const lastUpdated = '2026-07-23';
-
+const showContent = isContentEnabled();
 const faqItems = [
     {
         question: 'What does the 1time Chrome extension do?',
@@ -113,7 +113,7 @@ const jsonLd = [
                 style="width:100%;height:auto;border-radius:10px;border:1px solid var(--border, #2a2d34)"
             />
         </p>
-
+{showContent && (
         <section class="seo-section">
             <h2>A one-time secret link without leaving the page</h2>
             <p>
@@ -215,6 +215,7 @@ const jsonLd = [
                 <a href="/about/">About {siteHost}</a>
             </nav>
         </section>
+)}        
     </div>
 
     <!-- Floating CTA: keeps "Add to Chrome" visible on every screen while scrolling. -->
