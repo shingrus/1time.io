@@ -11,7 +11,8 @@
   },
   "dependencies": {
     "astro": "^7.1.0",
-    "qrcode-generator": "^2.0.4"
+    "qrcode-generator": "^2.0.4",
+    "undici": "^8.12.3"
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.9",
