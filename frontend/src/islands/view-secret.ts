@@ -127,17 +127,18 @@ if (form) {
     // phones reload or reopen the link after an app switch. Expired copies are swept on every load.
     const keptPrefix = '1time:kept:';
     const keptForMs = 10 * 60 * 1000;
-    const isFresh = (raw: string | null) => {
+    const freshCopy = (raw: string | null): string | undefined => {
         try {
-            const age = Date.now() - JSON.parse(raw ?? 'null').t;
-            return age >= 0 && age < keptForMs;
+            const {c, t} = JSON.parse(raw ?? 'null');
+            const age = Date.now() - t;
+            return age >= 0 && age < keptForMs ? c : undefined;
         } catch {
-            return false;
+            return undefined;
         }
     };
     try {
         for (const key of Object.keys(localStorage)) {
-            if (key.startsWith(keptPrefix) && !isFresh(localStorage.getItem(key))) localStorage.removeItem(key);
+            if (key.startsWith(keptPrefix) && !freshCopy(localStorage.getItem(key))) localStorage.removeItem(key);
         }
     } catch {
         // Storage may be unavailable.
@@ -161,18 +162,16 @@ if (form) {
         const fullSecretKey = secretKeyInput.value + randomKey;
 
         const keptKey = keptPrefix + id;
-        let keptMessage: string | undefined;
         try {
-            const kept = localStorage.getItem(keptKey);
+            const copy = freshCopy(localStorage.getItem(keptKey));
             localStorage.removeItem(keptKey);
-            if (isFresh(kept)) keptMessage = await decryptSecretMessage(JSON.parse(kept!).c, fullSecretKey);
+            if (copy) {
+                showDecrypted(await decryptSecretMessage(copy, fullSecretKey), 0, 0);
+                setLoading(false);
+                return;
+            }
         } catch {
             // A missing, stale or damaged copy falls through to the server.
-        }
-        if (keptMessage !== undefined) {
-            showDecrypted(keptMessage, 0, 0);
-            setLoading(false);
-            return;
         }
 
         try {
@@ -204,7 +203,10 @@ if (form) {
                 showDecrypted(message, viewsLeft, expiresIn);
                 if (viewsLeft === 0 && !secretKeyInput.value && matchMedia('(pointer: coarse)').matches) {
                     try {
-                        localStorage.setItem(keptKey, JSON.stringify({c: data.cryptedMessage, t: Date.now()}));
+                        // A sender opening their own link (listed by lib/mySecrets.js) is testing that it burns.
+                        if (!localStorage.getItem('1time.secretsList.v1')?.includes(`"id":"${id}"`)) {
+                            localStorage.setItem(keptKey, JSON.stringify({c: data.cryptedMessage, t: Date.now()}));
+                        }
                     } catch {
                         // Storage may be unavailable; the read itself already succeeded.
                     }
