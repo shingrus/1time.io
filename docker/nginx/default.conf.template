@@ -14,6 +14,10 @@ server {
 
     charset utf-8;
 
+    # Applies to every location without its own add_header; those that have
+    # one include the snippet again.
+    include /etc/nginx/snippets/1time/security-headers.conf;
+
     gzip on;
     gzip_vary on;
     gzip_proxied any;
@@ -44,6 +48,7 @@ server {
     location ^~ /_astro/ {
         expires 1y;
         add_header Cache-Control "public, max-age=31536000, immutable";
+        include /etc/nginx/snippets/1time/security-headers.conf;
         access_log off;
         try_files $uri =404;
     }
@@ -51,6 +56,7 @@ server {
     location ~* \.(?:woff2|woff|ttf|otf|eot)$ {
         expires 30d;
         add_header Cache-Control "public, max-age=2592000";
+        include /etc/nginx/snippets/1time/security-headers.conf;
         access_log off;
         try_files $uri =404;
     }
@@ -117,6 +123,20 @@ server {
         proxy_set_header X-Forwarded-Host $host;
         proxy_set_header X-Forwarded-Proto $scheme;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+
+    # One-time secret and file views send no Referer at all. try_files names
+    # the file: `$uri/` would hand the request to the index module, whose
+    # internal redirect to /v/index.html lands in `location /` and drops these
+    # headers.
+    location = /v/ {
+        include /etc/nginx/snippets/1time/security-headers-sensitive.conf;
+        try_files /v/index.html =404;
+    }
+
+    location = /f/ {
+        include /etc/nginx/snippets/1time/security-headers-sensitive.conf;
+        try_files /f/index.html =404;
     }
 
     location / {

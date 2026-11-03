@@ -27,6 +27,7 @@ ENV NGINX_PORT=8080
 ENV BACKEND_UPSTREAM=backend:8080
 
 COPY docker/nginx/default.conf.template /etc/nginx/templates/default.conf.template
+COPY docker/nginx/snippets/ /etc/nginx/snippets/1time/
 COPY --from=builder /src/frontend/build /usr/share/nginx/html
 
 EXPOSE 8080
