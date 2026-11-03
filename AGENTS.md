@@ -174,6 +174,17 @@ npm run build
 - Outbox / "My Secrets": the `/my-secrets/` page + `frontend/src/islands/mySecrets.ts` keep a `localStorage` list of the secrets **this browser** created — id, kind, views and timestamps — and batch-check their read status via `POST /api/secretStatus` (non-consuming). Linked from the footer and from the success screen. localStorage is per-browser — no cross-device, no account.
 - Frontend validation is `npm run check`; there is no React/Vitest suite after the Astro migration.
 
+## Editions (full site vs self-hosted)
+
+The frontend builds in two editions from the same source.
+
+- **Full** (`npm run build`, `make build`, the production deploy): the 1time.io site with every page.
+- **Self-hosted** (`SELF_HOSTED=true npm run build`; the default in `Dockerfile.web`, so GHCR images and `docker-compose.dev.yml`): the tool only. The header has the logo, Password Generator and GitHub. The pages are `/` and `/secure-file-sharing/` (the forms), `/password-generator/` (the widget only), `/v/`, `/f/`, `/my-secrets/` and `404`, and the footer is `© 2026 1time.io` linking to https://1time.io. There's no SEO copy, FAQ, JSON-LD, canonical, `og:url`/`og:image`, sitemap, `llms.txt` or `/pv` beacon. Every page shares one title (`selfHostedTitle`). Link previews stay text-only.
+- Gate anything that's for 1time.io alone with `isSelfHosted()` from `frontend/src/lib/siteConfig.js`. `astro.config.mjs` maps `SELF_HOSTED` onto `PUBLIC_SELF_HOSTED` for it.
+- `frontend/scripts/prune-selfhosted.mjs` deletes everything in `build/` that isn't on its allowlist. A new page is therefore excluded from self-hosted by default. Add it to the allowlist only if a self-hosted instance needs it.
+- `frontend/scripts/check-links.mjs` ends every build and fails when a page links to a same-origin path missing from `build/`. `.github/workflows/frontend.yml` builds both editions on each PR. A shared component that gains a link to a full-only page must hide that link with `isSelfHosted()`.
+- "1time.io" is the brand on self-hosted instances too. Nothing rewrites it at startup, since links are built from `window.location.origin`.
+
 ## Retired Read Notifications
 
 - Web Push "your secret was read" notifications shipped 2026-09-03 and were removed 2026-09-15 for lack of use. The code is in git history (aebb67f, cbce11c, b50acf5).
@@ -223,6 +234,8 @@ npm run build
 - nginx upload ceiling is `100m` in both `configs/nginx/1time.conf` and `docker/nginx/default.conf.template` equal to the backend's `maxFileUploadBodyBytes` and to Cloudflare Free's 100 MiB edge cap — none of the three may move alone. Upload/download timeouts on `/api/saveFile` and `/api/getFile` are `10m`. Chunked uploads make the upload side per 4 MiB request; the download side still needs roughly 3.4 Mbit/s sustained for 250 MB.
 - `/api/saveFile` has its own `api_upload` zone (120 r/m, burst 63) in both nginx configs: a 250 MB file is 63 chunk requests, which `api_write` (45 r/m, burst 10) would throttle. Keep the burst at least `maxFileChunks`.
 - Host nginx has an exact `/f/` location with the same sensitive-header treatment as `/v/`.
+- The docker nginx (`docker/nginx/`) sends the production security headers from `docker/nginx/snippets/`, without HSTS: TLS is the self-hoster's reverse proxy's job. Its `/v/` and `/f/` use `try_files /v/index.html =404`. `$uri/` would make the directory index redirect internally into `location /`, which drops the no-referrer headers.
+- `docker/nginx/30-1time-config.sh` writes the docker real-IP config and the rate-limit zones at container start from `TRUSTED_PROXIES`, `REAL_IP_HEADER`, `RATE_LIMIT`, `RATE_LIMIT_WRITE`, `RATE_LIMIT_UPLOAD` and `RATE_LIMIT_READ`. Its defaults match the rates above. Bursts are fixed in the script.
 - The nginx `try_files` directive includes `$uri/index.html` for static trailing-slash routes.
 
 ## Important Behavior

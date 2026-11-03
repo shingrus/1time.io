@@ -131,7 +131,6 @@ Want 1time links in your app, bot or script? The [developers page](https://1time
 curl -O https://raw.githubusercontent.com/shingrus/1time/master/docker-compose.yml
 curl -O https://raw.githubusercontent.com/shingrus/1time/master/.env.example
 cp .env.example .env
-# Edit .env: set APP_HOSTNAME to your domain
 docker compose up -d
 ```
 
@@ -141,25 +140,33 @@ docker compose up -d
 git clone https://github.com/shingrus/1time.git
 cd 1time
 cp .env.example .env
-# Edit .env: set APP_HOSTNAME to your domain
 docker compose -f docker-compose.dev.yml up -d --build
 ```
 
 Both options start on `http://localhost:8080` with Redis persistence, encrypted file storage under `DATA_DIR/files`, the Go API, and nginx serving the frontend. Multi-arch images (amd64 + arm64) are available.
 
+The self-hosted edition is just the tool: text and file sharing, the password generator, and My Secrets. It has no blog, marketing pages or analytics beacon. Links are built from the address your users open, so no hostname needs to be configured.
+
 ### Configuration
 
 | Variable | Default | Description |
 |---|---|---|
-| `APP_HOSTNAME` | `1time.io` | Public hostname for links and metadata |
 | `APP_PORT` | `8080` | External HTTP port |
 | `DATA_DIR` | `./data` | Host path for Redis persistence and encrypted file storage |
 | `BACKEND_UPSTREAM` | `backend:8080` | Backend upstream (`host:port`) nginx proxies `/api/` requests to |
-| `SHOW_BLOG` | `true` | Build-time flag for source-built web images |
+| `TRUSTED_PROXIES` | private ranges + loopback | Addresses or CIDRs (comma-separated) of your reverse proxy. Rate limits use the visitor IP these report. `none` trusts nobody |
+| `REAL_IP_HEADER` | `X-Forwarded-For` | Header your proxy puts the visitor IP in (`CF-Connecting-IP` behind Cloudflare) |
+| `RATE_LIMIT` | `on` | `off` disables all API rate limits |
+| `RATE_LIMIT_WRITE` | `45r/m` | Text secrets created per visitor IP |
+| `RATE_LIMIT_UPLOAD` | `120r/m` | File chunks uploaded per visitor IP (a 250 MB file is 63 chunks) |
+| `RATE_LIMIT_READ` | `60r/m` | Secrets and files opened per visitor IP |
+| `SELF_HOSTED` | `true` | Build-time, source builds only: `false` builds the full 1time.io site |
 
-Put your own reverse proxy (Caddy, Traefik, nginx) in front for HTTPS/TLS termination.
+Put your own reverse proxy (Caddy, Traefik, nginx) in front for HTTPS/TLS termination. The web container sends the security headers (CSP, `X-Frame-Options`, `Referrer-Policy`) but not HSTS; set that on your proxy.
 
-> **Note:** The frontend image is generic — changing `APP_HOSTNAME` does not require rebuilding. The hostname is injected at container startup.
+> **Rate limits behind a proxy:** a proxy on a private network (the usual Docker setup) is trusted by default, so each visitor gets their own limit. With rootless Docker or Docker Desktop, nginx can see every client as the Docker gateway, and that address is inside the default range. If such an instance is reachable without a proxy, set `TRUSTED_PROXIES` to only your proxy's address so visitors can't fake theirs.
+
+> **Upgrading:** `APP_HOSTNAME` and `SHOW_BLOG` are no longer read and can be removed from `.env`.
 
 ---
 

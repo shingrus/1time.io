@@ -1,7 +1,6 @@
 ## Deploy with pre-built images from GHCR (no build required)
 ## Usage:
 ##   cp .env.example .env
-##   # Edit .env: set APP_HOSTNAME to your domain
 ##   docker compose up -d
 
 services:
