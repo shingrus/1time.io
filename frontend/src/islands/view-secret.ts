@@ -111,6 +111,39 @@ if (form) {
         void copyMessage();
     });
 
+    const showDecrypted = (message: string, viewsLeft: number, expiresIn: number) => {
+        decryptedBody.textContent = message;
+        const expiryClause = expiresIn > 0 ? ` It expires in ${formatRemaining(expiresIn)}.` : '';
+        viewsLeftNote.textContent = viewsLeft > 0
+            ? `This link can be opened ${viewsLeft} more ${viewsLeft === 1 ? 'time' : 'times'}.${expiryClause}`
+            : 'This message is burned.';
+        viewsLeftNote.toggleAttribute('hidden', false);
+        qrAction.toggleAttribute('hidden', true);
+        postReadCta.toggleAttribute('hidden', false);
+        showOnly(decryptedSection);
+    };
+
+    // The last view leaves the ciphertext (never the key) on this device for one more open:
+    // phones reload or reopen the link after an app switch. Expired copies are swept on every load.
+    const keptPrefix = '1time:kept:';
+    const keptForMs = 10 * 60 * 1000;
+    const freshCopy = (raw: string | null): string | undefined => {
+        try {
+            const {c, t} = JSON.parse(raw ?? 'null');
+            const age = Date.now() - t;
+            return age >= 0 && age < keptForMs ? c : undefined;
+        } catch {
+            return undefined;
+        }
+    };
+    try {
+        for (const key of Object.keys(localStorage)) {
+            if (key.startsWith(keptPrefix) && !freshCopy(localStorage.getItem(key))) localStorage.removeItem(key);
+        }
+    } catch {
+        // Storage may be unavailable.
+    }
+
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
         wrongKeyAlert.toggleAttribute('hidden', true);
@@ -127,6 +160,19 @@ if (form) {
         const randomKey = linkKey.slice(0, Constants.randomKeyLen);
         const id = linkKey.slice(Constants.randomKeyLen);
         const fullSecretKey = secretKeyInput.value + randomKey;
+
+        const keptKey = keptPrefix + id;
+        try {
+            const copy = freshCopy(localStorage.getItem(keptKey));
+            localStorage.removeItem(keptKey);
+            if (copy) {
+                showDecrypted(await decryptSecretMessage(copy, fullSecretKey), 0, 0);
+                setLoading(false);
+                return;
+            }
+        } catch {
+            // A missing, stale or damaged copy falls through to the server.
+        }
 
         try {
             const hashedKey = await hashSecretKey(fullSecretKey);
@@ -150,18 +196,21 @@ if (form) {
             }
 
             if (data.status === 'ok' && typeof data.cryptedMessage === 'string' && data.cryptedMessage.length > 0) {
-                decryptedBody.textContent = await decryptSecretMessage(data.cryptedMessage, fullSecretKey);
+                const message = await decryptSecretMessage(data.cryptedMessage, fullSecretKey);
                 // Older backends omit viewsLeft; treat that as the consumed one-time case.
                 const viewsLeft = typeof data.viewsLeft === 'number' ? data.viewsLeft : 0;
                 const expiresIn = typeof data.expiresIn === 'number' ? data.expiresIn : 0;
-                const expiryClause = expiresIn > 0 ? ` It expires in ${formatRemaining(expiresIn)}.` : '';
-                viewsLeftNote.textContent = viewsLeft > 0
-                    ? `This link can be opened ${viewsLeft} more ${viewsLeft === 1 ? 'time' : 'times'}.${expiryClause}`
-                    : 'This message is burned.';
-                viewsLeftNote.toggleAttribute('hidden', false);
-                qrAction.toggleAttribute('hidden', true);
-                postReadCta.toggleAttribute('hidden', false);
-                showOnly(decryptedSection);
+                showDecrypted(message, viewsLeft, expiresIn);
+                if (viewsLeft === 0 && !secretKeyInput.value && matchMedia('(pointer: coarse)').matches) {
+                    try {
+                        // A sender opening their own link (listed by lib/mySecrets.js) is testing that it burns.
+                        if (!localStorage.getItem('1time.secretsList.v1')?.includes(`"id":"${id}"`)) {
+                            localStorage.setItem(keptKey, JSON.stringify({c: data.cryptedMessage, t: Date.now()}));
+                        }
+                    } catch {
+                        // Storage may be unavailable; the read itself already succeeded.
+                    }
+                }
                 setLoading(false);
                 return;
             }
