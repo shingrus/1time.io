@@ -99,11 +99,9 @@ const (
 	// maxFileSize is the limit on the ORIGINAL plaintext file, matched by
 	// Constants.maxFileSizeBytes on the frontend. The server only sees ciphertext.
 	// Chunked uploads are not bound by the single-request cap above.
-	maxFileSize        = 250*1024*1024 - fileUploadOverheadBytes
 	maxMultipartMemory = 4 * 1024 * 1024
 	// Slice i lands at i*fileChunkBytes; must equal CHUNK_BYTES (fileUpload.js) and fileChunkBytes (cli/lib.mjs).
 	fileChunkBytes = 4 * 1024 * 1024
-	maxFileChunks  = (maxFileSize + fileUploadOverheadBytes + fileChunkBytes - 1) / fileChunkBytes
 )
 const maxFileViews = 10
 
@@ -119,7 +117,34 @@ const maxSaveSecretBodyBytes = 25 * 1024 * 1024
 // maxLookupBodyBytes caps the small JSON bodies of the lookup endpoints
 const maxLookupBodyBytes = 1024
 
-var fileStorageDir = os.Getenv("FILE_STORAGE_DIR")
+func getStrEnv(key, fallback string) string {
+	if value, ok := os.LookupEnv(key); ok {
+		return value
+	}
+	return fallback
+}
+
+func getEnv[T int | string](key string, fallback T) T {
+	value, ok := os.LookupEnv(key)
+	if !ok {
+		return fallback
+	}
+
+	switch any(fallback).(type) {
+	case string:
+		return any(value).(T)
+	case int:
+		parsed, err := strconv.Atoi(value)
+		if err == nil {
+			return any(parsed).(T)
+		}
+	}
+
+	return fallback
+}
+
+var fileStorageDir = getEnv("FILE_STORAGE_DIR", "/var/lib/1time/files")
+var maxSizeMB = getEnv("MAX_FILE_SIZE_MB", 256)
 
 var (
 	saveToStorageFunc             = saveToStorage
@@ -132,9 +157,27 @@ var (
 	secretsExistFunc                = secretsExist
 	fileUploadRedisFunc             = getRedisClient
 	publishFileUploadFunc           = publishFileUpload
+	maxFileSize                     = maxSizeMB*1024*1024 - fileUploadOverheadBytes
+	maxFileChunks                   = (maxFileSize + fileUploadOverheadBytes + fileChunkBytes - 1) / fileChunkBytes
 )
 
+func handleOnlyPost(r *http.Request) (ok bool, response []byte) {
+	if r.Method != http.MethodPost {
+		responseCode := http.StatusMethodNotAllowed
+		jResponse := struct {
+			Code        int    `json:"code"`
+			Description string `json:"description"`
+		}{responseCode, "Only POST is allowed for API endpoints"}
+		response, _ = json.Marshal(jResponse)
+		return false, response
+	}
+	return true, nil
+}
+
 func apiSaveSecret(r *http.Request) (responseCode int, response []byte) {
+	if ok, resp := handleOnlyPost(r); !ok {
+		return http.StatusMethodNotAllowed, resp
+	}
 	responseCode = 200
 
 	jResponse := struct {
@@ -182,7 +225,7 @@ func apiSaveSecret(r *http.Request) (responseCode int, response []byte) {
 					payload.Duration = defaultDuration
 				}
 
-				if DEBUG {
+				if DEBUG == "true" {
 					log.Printf("payload -> storage: %v, stored key: %v, scheme: %v, Duration: %v\n", payload.SecretMessage, readTokenHash, scheme, payload.Duration)
 				}
 				valueToStore, _ := json.Marshal(newMessage)
@@ -213,6 +256,9 @@ func apiGetRandomPass(r *http.Request) (responseCode int, response []byte) {
 }
 */
 func apiGetMessage(r *http.Request) (responseCode int, response []byte) {
+	if ok, resp := handleOnlyPost(r); !ok {
+		return http.StatusMethodNotAllowed, resp
+	}
 	responseCode = 200
 
 	jResponse := struct {
@@ -246,7 +292,7 @@ func apiGetMessage(r *http.Request) (responseCode int, response []byte) {
 			} else if !isValidHashedKey(payload.HashedKey) {
 				jResponse.Status = "wrong key"
 			} else {
-				if DEBUG {
+				if DEBUG == "true" {
 					log.Printf("payload <- storage: %v, %v\n", payload.Id, payload.HashedKey)
 				}
 				storedMessage, viewsLeft, expiresIn, status, err := consumeMessageFromStorageFunc(payload.Id, payload.HashedKey)
@@ -282,6 +328,9 @@ func apiGetMessage(r *http.Request) (responseCode int, response []byte) {
 // no hashedKey, and returns only existence. A secret that was consumed or
 // expired is already gone from Redis, so it reports false.
 func apiSecretStatus(r *http.Request) (responseCode int, response []byte) {
+	if ok, resp := handleOnlyPost(r); !ok {
+		return http.StatusMethodNotAllowed, resp
+	}
 	responseCode = 200
 
 	jResponse := struct {
@@ -354,7 +403,35 @@ func parseChunkLifetime(durationStr, viewsStr string) (duration int, views int, 
 	return duration, views, true
 }
 
+func apiStatus() (responseCode int, response []byte) {
+	client := getRedisClient()
+	storageStatus := true
+	if result, err := client.Ping().Result(); err != nil {
+		storageStatus = false
+	} else {
+		if result != "PONG" {
+			storageStatus = false
+		}
+	}
+	jResponse := struct {
+		StorageStatus    bool `json:"storageStatus"`
+		MaxFileSizeBytes int  `json:"maxFileSizeBytes"`
+	}{
+		StorageStatus:    storageStatus,
+		MaxFileSizeBytes: maxFileSize,
+	}
+
+	response, _ = json.Marshal(jResponse)
+	if storageStatus {
+		return http.StatusOK, response
+	}
+	return http.StatusInternalServerError, response
+}
+
 func apiSaveSecretFile(r *http.Request) (responseCode int, response []byte) {
+	if ok, resp := handleOnlyPost(r); !ok {
+		return http.StatusMethodNotAllowed, resp
+	}
 	if r.URL.Query().Has("u") {
 		return apiSaveFileChunk(r)
 	}
@@ -408,7 +485,7 @@ func apiSaveSecretFile(r *http.Request) (responseCode int, response []byte) {
 
 	duration, views := parseFileLifetime(durationStr, viewsStr)
 
-	if DEBUG {
+	if DEBUG == "true" {
 		log.Printf("payload -> file storage: %v bytes, stored key: %v, scheme: %v, Duration: %v\n", fileHeader.Size, readTokenHash, scheme, duration)
 	}
 
@@ -824,6 +901,10 @@ func writeFileError(w http.ResponseWriter, code int) {
 
 // apiGetFile writes directly to ResponseWriter (binary stream)
 func apiGetFile(w http.ResponseWriter, r *http.Request) {
+	if ok, _ := handleOnlyPost(r); !ok {
+		writeFileError(w, http.StatusBadRequest)
+		return
+	}
 	w.Header().Set("Cache-Control", "no-store")
 	w.Header().Set("Access-Control-Expose-Headers", "X-1Time-Views-Left, X-1Time-Expires-In")
 
@@ -845,7 +926,7 @@ func apiGetFile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if DEBUG {
+	if DEBUG == "true" {
 		log.Printf("payload <- file storage: %v, %v\n", payload.Id, payload.HashedKey)
 	}
 
@@ -906,29 +987,8 @@ func apiHandler(w http.ResponseWriter, r *http.Request) {
 	responseCode := 400
 	var response []byte
 	w.Header().Set("Content-Type", "application/json")
-
-	if DEBUG {
-		w.Header().Set("Access-Control-Allow-Origin", "*")
-		w.Header().Set("Access-Control-Allow-Headers", "	content-type, accept")
-	}
-
-	if r.Method != http.MethodPost {
-		w.Header().Set("Allow", http.MethodPost)
-		responseCode = http.StatusMethodNotAllowed
-		jResponse := struct {
-			Code        int    `json:"code"`
-			Description string `json:"description"`
-		}{responseCode, "Only POST is allowed for API endpoints"}
-		response, _ = json.Marshal(jResponse)
-		w.WriteHeader(responseCode)
-		_, err := w.Write(response)
-		if err != nil {
-			log.Println(err)
-		}
-		return
-	}
-
 	apiCall := r.URL.Path[len("/api/"):]
+
 	switch apiCall {
 	case "saveSecret":
 		responseCode, response = apiSaveSecret(r)
@@ -945,6 +1005,8 @@ func apiHandler(w http.ResponseWriter, r *http.Request) {
 		responseCode, response = apiStat(r)
 	case "ss":
 		responseCode, response = apiStatSnapshot()
+	case "status":
+		responseCode, response = apiStatus()
 	default:
 		jResponse := struct {
 			Code        int    `json:"code"`
@@ -953,6 +1015,12 @@ func apiHandler(w http.ResponseWriter, r *http.Request) {
 		response, _ = json.Marshal(jResponse)
 	}
 	w.WriteHeader(responseCode)
+
+	if DEBUG == "true" {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Headers", "	content-type, accept")
+		log.Printf("[%s] %s: %d", r.Method, r.URL.Path, responseCode)
+	}
 	if responseCode == http.StatusNoContent || len(response) == 0 {
 		return
 	}

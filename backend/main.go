@@ -14,7 +14,7 @@ const maxDuration = 86400 * 30 // keep for 1 month
 //const secretKeyFieldName = "secretKey"
 //const secretMessageMaxLen = 64 * 1024
 
-var _, DEBUG = os.LookupEnv("DEBUG")
+var DEBUG, _ = os.LookupEnv("DEBUG")
 
 func main() {
 	listenAddr := os.Getenv("LISTEN_ADDR")
@@ -30,5 +30,6 @@ func main() {
 	appStats.Start()
 	startFileJanitor()
 	http.HandleFunc("/api/", apiHandler)
+	log.Printf("Listening on %s", listenAddr)
 	log.Fatal(http.ListenAndServe(listenAddr, nil))
 }

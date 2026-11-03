@@ -30,6 +30,8 @@ services:
       REDISHOST: redis:6379
       REDISPASS: ""
       FILE_STORAGE_DIR: /data/files
+      MAX_FILE_SIZE_MB: ${MAX_FILE_SIZE_MB:-256}
+      DEBUG: ${DEBUG:-false}
     volumes:
       - ${DATA_DIR:-./data}:/data
     depends_on:
@@ -42,11 +44,14 @@ services:
       args:
         APP_HOSTNAME: ${APP_HOSTNAME:-1time.io}
         SHOW_BLOG: ${SHOW_BLOG:-false}
+        SHOW_CONTENT: ${SHOW_CONTENT:-false}        
     restart: unless-stopped
     environment:
       APP_HOSTNAME: ${APP_HOSTNAME:-1time.io}
       NGINX_PORT: 8080
       BACKEND_UPSTREAM: ${BACKEND_UPSTREAM:-backend:8080}
+      MAX_FILE_SIZE_MB: ${MAX_FILE_SIZE_MB:-256}
+      DEBUG: ${DEBUG:-false}
     depends_on:
       - backend
     ports:

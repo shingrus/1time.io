@@ -1,5 +1,5 @@
 import type {APIRoute} from 'astro';
-import {absoluteUrl, isBlogEnabled} from '../lib/siteConfig.js';
+import {absoluteUrl, isBlogEnabled, isContentEnabled} from '../lib/siteConfig.js';
 
 interface RouteEntry {
     path: string;
@@ -21,12 +21,17 @@ const coreRoutes: RouteEntry[] = [
     {path: '/password-generator-16-characters/', priority: 0.7, changefreq: 'monthly', lastmod: '2026-09-26'},
     {path: '/wifi-password-generator/', priority: 0.8, changefreq: 'weekly', lastmod: '2026-07-15'},
     {path: '/api-key-generator/', priority: 0.8, changefreq: 'weekly', lastmod: '2026-09-26'},
+];
+
+const contentRoutes: RouteEntry[] = [
+    {path: '/share-passwords-microsoft-teams/', priority: 0.8, changefreq: 'weekly', lastmod: '2026-06-12'},
     {path: '/share-password-securely/', priority: 0.9, changefreq: 'weekly', lastmod: '2026-10-24'},
     {path: '/share-passwords-with-qr-code/', priority: 0.7, changefreq: 'weekly', lastmod: '2026-03-31'},
     {path: '/share-passwords-microsoft-teams/', priority: 0.8, changefreq: 'weekly', lastmod: '2026-10-24'},
     {path: '/about/', priority: 0.5, changefreq: 'monthly', lastmod: '2026-05-23'},
     {path: '/no-cookie-banner/', priority: 0.6, changefreq: 'monthly', lastmod: '2026-08-27'},
-    {path: '/privacy/', priority: 0.4, changefreq: 'monthly', lastmod: '2026-10-11'},
+    {path: '/privacy/', priority: 0.4, changefreq: 'monthly', lastmod: '2026-10-11'},    
+    {path: '/share-passwords-with-qr-code/', priority: 0.7, changefreq: 'weekly', lastmod: '2026-03-31'},    
 ];
 
 const blogRoutes: RouteEntry[] = [
@@ -49,7 +54,9 @@ const blogRoutes: RouteEntry[] = [
 ];
 
 export const GET: APIRoute = () => {
-    const routes = isBlogEnabled() ? [...coreRoutes, ...blogRoutes] : coreRoutes;
+    let routes = isBlogEnabled() ? [...coreRoutes, ...blogRoutes] : coreRoutes;
+    routes = isContentEnabled() ? [...routes, ...contentRoutes] : routes;
+    console.log(routes);
     const urls = routes.map((r) => (
         `  <url>\n` +
         `    <loc>${absoluteUrl(r.path)}</loc>\n` +

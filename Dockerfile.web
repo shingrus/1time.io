@@ -1,15 +1,20 @@
 ARG NODE_VERSION=26.1.0
 ARG ALPINE_VERSION=3.23
 
+
 FROM --platform=$BUILDPLATFORM node:${NODE_VERSION}-alpine${ALPINE_VERSION} AS builder
 
 ARG NPM_VERSION=11.12.1
+ARG MAX_FILE_SIZE_MB=256
 
 WORKDIR /src/frontend
 
 ARG SHOW_BLOG=true
+ARG SHOW_CONTENT=true
 
 ENV PUBLIC_SHOW_BLOG=${SHOW_BLOG}
+ENV PUBLIC_SHOW_CONTENT=${SHOW_CONTENT}
+ENV PUBLIC_MAX_FILE_SIZE_MB=${MAX_FILE_SIZE_MB}
 
 RUN npm install -g npm@${NPM_VERSION}
 
@@ -19,18 +24,20 @@ RUN npm ci
 COPY frontend/ ./
 RUN npm run build
 
-FROM nginx:alpine
+FROM nginx/nginx-unprivileged:1.31-alpine3.24
 
 ARG APP_HOSTNAME=1time.io
 
 ENV APP_HOSTNAME=${APP_HOSTNAME}
 ENV NGINX_PORT=8080
 ENV BACKEND_UPSTREAM=backend:8080
+ENV MAX_FILE_SIZE_MB=${MAX_FILE_SIZE_MB}
 
 COPY docker/nginx/default.conf.template /etc/nginx/templates/default.conf.template
+COPY docker/nginx/05-setup-env.envsh /docker-entrypoint.d/05-setup-env.envsh
 COPY docker/nginx/40-rewrite-site-host.sh /docker-entrypoint.d/40-rewrite-site-host.sh
-COPY --from=builder /src/frontend/build /usr/share/nginx/html
+COPY docker/nginx/99-debug.sh /docker-entrypoint.d/99-debug.sh
 
-RUN chmod +x /docker-entrypoint.d/40-rewrite-site-host.sh
+COPY --from=builder /src/frontend/build /usr/share/nginx/html
 
 EXPOSE 8080

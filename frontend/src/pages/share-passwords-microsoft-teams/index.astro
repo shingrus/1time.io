@@ -2,8 +2,9 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import InlineCss from '../../components/InlineCss.astro';
 import NewMessageForm from '../../components/NewMessageForm.astro';
-import {absoluteUrl, siteHost} from '../../lib/siteConfig.js';
+import {absoluteUrl, siteHost, isContentEnabled} from '../../lib/siteConfig.js';
 
+const showContent = isContentEnabled();
 const title = `Share Passwords in Microsoft Teams — Secure One-Time Links`;
 const description = 'Stop pasting passwords into Teams chat. Send a one-time encrypted link instead — survives retention policies, eDiscovery, and Purview. Free, no signup.';
 
@@ -67,7 +68,7 @@ const jsonLd = [
         </nav>
 
         <NewMessageForm />
-
+{showContent && (
         <section class="seo-section">
             <h1>Share Passwords Safely in Microsoft Teams</h1>
             <p>
@@ -196,5 +197,6 @@ const jsonLd = [
                 <a href="/password-generator/">Generate a strong password</a>
             </nav>
         </section>
+)}        
     </div>
 </BaseLayout>

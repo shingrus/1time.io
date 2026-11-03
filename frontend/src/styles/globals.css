@@ -114,6 +114,12 @@ body {
   color: var(--text);
 }
 
+.app-logo > svg{
+  width: 28px;
+  height: auto;
+}
+
+
 .app-logo-text {
   font-family: var(--font-display);
   font-weight: 800;

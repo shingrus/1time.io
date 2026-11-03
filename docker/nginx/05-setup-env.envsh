@@ -1,0 +1,5 @@
+#!/bin/sh
+
+export SITE_ROOT="${SITE_ROOT:-/usr/share/nginx/html}"
+export APP_HOSTNAME="${APP_HOSTNAME:-1time.io}"
+export BURST_SIZE="$(( ${MAX_FILE_SIZE_MB:-256} / 4 + 1 ))"

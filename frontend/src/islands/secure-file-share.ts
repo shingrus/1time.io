@@ -4,10 +4,31 @@ import {formatBytes} from '../lib/fileApi.js';
 import {saveFile} from '../lib/fileUpload.js';
 import {showLinkReady} from './show-link-ready.js';
 
+async function fetchSize(): Promise<number> {    
+    return new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open('GET', `${Constants.apiBaseUrl}status`);
+        xhr.onerror = () => reject("Unable to contact backend api");
+        xhr.onload = () => {
+            if (xhr.status < 200 || xhr.status >= 300) {
+                reject("Unable to contact backend api");
+                return;
+            }
+            try {
+                resolve(JSON.parse(xhr.responseText).maxFileSizeBytes);
+            } catch (error) {
+                reject("Invalid JSON response");
+            }
+        };
+        xhr.send();
+    });
+}
+
 const form = document.querySelector<HTMLFormElement>('#secure-file-form');
 if (form) {
     const dropTarget = form.querySelector<HTMLElement>('.share-card')!;
     const dropZone = form.querySelector<HTMLElement>('[data-drop-zone]')!;
+    const fileDropHint = form.querySelector<HTMLElement>('.file-drop-hint')!;
     const fileInput = form.querySelector<HTMLInputElement>('[data-file-input]')!;
     const selectedEl = form.querySelector<HTMLElement>('[data-file-selected]')!;
     const selectedName = form.querySelector<HTMLElement>('[data-file-name]')!;
@@ -36,7 +57,15 @@ if (form) {
     let isUploading = false;
     let uploadProgress = 0;
 
-    const maxMb = Math.round(Constants.maxFileSizeBytes / (1024 * 1024));
+    const setMaxSize = (maxBytes: number) => {
+        form.dataset.maxBytes = maxBytes.toString();
+        const maxMb = Math.round(maxBytes / (1024*1024));
+        fileDropHint.textContent = `Any file type, up to ${maxMb} MB`;
+        return maxMb;
+    };
+
+    const maxBytes = await fetchSize();
+    const maxMb = setMaxSize(maxBytes);
     // formatBytes always keeps one decimal; whole numbers read better without it.
     const sizeLabel = (bytes: number) => formatBytes(bytes).replace('.0 ', ' ');
 
@@ -99,7 +128,7 @@ if (form) {
 
     const selectFile = (file: File | undefined | null) => {
         if (!file) return;
-        if (file.size > Constants.maxFileSizeBytes) {
+        if (file.size > maxBytes) {
             selectedFile = null;
             fileInput.value = '';
             errorTitle.textContent = `File exceeds the ${maxMb} MB limit`;

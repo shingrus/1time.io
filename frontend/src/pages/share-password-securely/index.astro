@@ -2,11 +2,11 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import InlineCss from '../../components/InlineCss.astro';
 import NewMessageForm from '../../components/NewMessageForm.astro';
-import {absoluteUrl, siteHost} from '../../lib/siteConfig.js';
+import {absoluteUrl, siteHost, isContentEnabled} from '../../lib/siteConfig.js';
 
 const title = `Share Passwords Securely — Send a Password via Secret Link | ${siteHost}`;
 const description = 'Share a password securely and send it through an encrypted secret link that self-destructs after reading. Safe password sharing, end-to-end encrypted, free, no signup.';
-
+const showContent = isContentEnabled();
 const faqItems = [
     {question: 'How do I share a password securely?', answer: 'Paste the password above, click "Create secret link", and send the link to the recipient. The password is encrypted in your browser before being stored. The recipient opens the link, sees the password once, and the data is permanently deleted from the server. That burn-after-reading behaviour is the default; for text you can also allow 3, 5, or 10 views.'},
     {question: 'What is the safest way to send a password to someone?', answer: 'The safest way to send a password is an encrypted one-time link instead of typing it into email, chat, or SMS. Create a secret link here, share the link, and it works once by default — the password is encrypted in your browser, never stored in plaintext, and deleted after the recipient reads it, so it never lingers in any inbox or message history.'},
@@ -74,6 +74,7 @@ const jsonLd = [
 
         <NewMessageForm />
 
+{showContent && (
         <section class="seo-section">
             <h1>Share Passwords Securely with Encrypted One-Time Links</h1>
             <p>
@@ -311,6 +312,7 @@ const jsonLd = [
                 <a href="/blog/is-slack-safe-for-passwords/">Is Slack safe for passwords?</a>
             </nav>
         </section>
+)}        
     </div>
 </BaseLayout>
 

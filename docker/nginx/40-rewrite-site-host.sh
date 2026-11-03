@@ -1,9 +1,6 @@
 #!/bin/sh
 set -eu
 
-SITE_ROOT="${SITE_ROOT:-/usr/share/nginx/html}"
-APP_HOSTNAME="${APP_HOSTNAME:-1time.io}"
-
 if [ "${APP_HOSTNAME}" = "1time.io" ]; then
     exit 0
 fi

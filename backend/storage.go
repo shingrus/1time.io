@@ -147,7 +147,7 @@ func saveToStorage(value interface{}, duration time.Duration, views int) (newKey
 			return "", setErr
 		}
 		if ok {
-			if DEBUG {
+			if DEBUG == "true" {
 				log.Printf("Got new key storage: %v", newKey)
 			}
 			// Stats are best-effort: never fail a secret we already stored.
