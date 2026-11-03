@@ -45,6 +45,13 @@ services:
     environment:
       NGINX_PORT: 8080
       BACKEND_UPSTREAM: ${BACKEND_UPSTREAM:-backend:8080}
+      # Empty values fall back to the defaults in docker/nginx/30-1time-config.sh.
+      TRUSTED_PROXIES: ${TRUSTED_PROXIES:-}
+      REAL_IP_HEADER: ${REAL_IP_HEADER:-}
+      RATE_LIMIT: ${RATE_LIMIT:-}
+      RATE_LIMIT_WRITE: ${RATE_LIMIT_WRITE:-}
+      RATE_LIMIT_UPLOAD: ${RATE_LIMIT_UPLOAD:-}
+      RATE_LIMIT_READ: ${RATE_LIMIT_READ:-}
     depends_on:
       - backend
     ports:

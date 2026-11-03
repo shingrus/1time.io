@@ -28,6 +28,9 @@ ENV BACKEND_UPSTREAM=backend:8080
 
 COPY docker/nginx/default.conf.template /etc/nginx/templates/default.conf.template
 COPY docker/nginx/snippets/ /etc/nginx/snippets/1time/
+COPY docker/nginx/30-1time-config.sh /docker-entrypoint.d/30-1time-config.sh
 COPY --from=builder /src/frontend/build /usr/share/nginx/html
+
+RUN chmod +x /docker-entrypoint.d/30-1time-config.sh
 
 EXPOSE 8080
