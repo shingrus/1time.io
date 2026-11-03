@@ -124,9 +124,24 @@ if (form) {
     };
 
     // The last view leaves the ciphertext (never the key) on this device for one more open:
-    // phones reload a tab after an app switch. sessionStorage dies with the tab.
+    // phones reload or reopen the link after an app switch. Expired copies are swept on every load.
     const keptPrefix = '1time:kept:';
     const keptForMs = 10 * 60 * 1000;
+    const isFresh = (raw: string | null) => {
+        try {
+            const age = Date.now() - JSON.parse(raw ?? 'null').t;
+            return age >= 0 && age < keptForMs;
+        } catch {
+            return false;
+        }
+    };
+    try {
+        for (const key of Object.keys(localStorage)) {
+            if (key.startsWith(keptPrefix) && !isFresh(localStorage.getItem(key))) localStorage.removeItem(key);
+        }
+    } catch {
+        // Storage may be unavailable.
+    }
 
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -148,9 +163,9 @@ if (form) {
         const keptKey = keptPrefix + id;
         let keptMessage: string | undefined;
         try {
-            const kept = JSON.parse(sessionStorage.getItem(keptKey) ?? 'null');
-            sessionStorage.removeItem(keptKey);
-            if (kept && Date.now() - kept.t < keptForMs) keptMessage = await decryptSecretMessage(kept.c, fullSecretKey);
+            const kept = localStorage.getItem(keptKey);
+            localStorage.removeItem(keptKey);
+            if (isFresh(kept)) keptMessage = await decryptSecretMessage(JSON.parse(kept!).c, fullSecretKey);
         } catch {
             // A missing, stale or damaged copy falls through to the server.
         }
@@ -189,7 +204,7 @@ if (form) {
                 showDecrypted(message, viewsLeft, expiresIn);
                 if (viewsLeft === 0 && !secretKeyInput.value && matchMedia('(pointer: coarse)').matches) {
                     try {
-                        sessionStorage.setItem(keptKey, JSON.stringify({c: data.cryptedMessage, t: Date.now()}));
+                        localStorage.setItem(keptKey, JSON.stringify({c: data.cryptedMessage, t: Date.now()}));
                     } catch {
                         // Storage may be unavailable; the read itself already succeeded.
                     }
