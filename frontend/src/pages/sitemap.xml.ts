@@ -1,5 +1,5 @@
 import type {APIRoute} from 'astro';
-import {absoluteUrl, isBlogEnabled} from '../lib/siteConfig.js';
+import {absoluteUrl} from '../lib/siteConfig.js';
 
 interface RouteEntry {
     path: string;
@@ -49,7 +49,7 @@ const blogRoutes: RouteEntry[] = [
 ];
 
 export const GET: APIRoute = () => {
-    const routes = isBlogEnabled() ? [...coreRoutes, ...blogRoutes] : coreRoutes;
+    const routes = [...coreRoutes, ...blogRoutes];
     const urls = routes.map((r) => (
         `  <url>\n` +
         `    <loc>${absoluteUrl(r.path)}</loc>\n` +

@@ -3,6 +3,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import InlineCss from './InlineCss.astro';
 import PasswordGenerator from './PasswordGenerator.astro';
 import {PRESETS, buildJsonLd} from '../lib/generator-presets';
+import {isSelfHosted} from '../lib/siteConfig.js';
 
 interface Props {
     presetPath: string;
@@ -11,6 +12,7 @@ interface Props {
 const {presetPath} = Astro.props;
 const preset = PRESETS[presetPath]!;
 const schemas = buildJsonLd(preset);
+const selfHosted = isSelfHosted();
 ---
 <BaseLayout
     title={preset.meta.title}
@@ -21,7 +23,7 @@ const schemas = buildJsonLd(preset);
     ogImageAlt={preset.meta.ogImageAlt}
 >
     <InlineCss slot="head" name="generator" />
-    <script slot="head" type="application/ld+json" set:html={JSON.stringify(schemas)} is:inline></script>
+    {!selfHosted && <script slot="head" type="application/ld+json" set:html={JSON.stringify(schemas)} is:inline></script>}
 
     <PasswordGenerator presetPath={presetPath} />
 

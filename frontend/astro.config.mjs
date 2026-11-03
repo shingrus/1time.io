@@ -2,6 +2,13 @@ import {defineConfig} from 'astro/config';
 
 const PROXY_TARGET = process.env.API_PROXY_TARGET || 'http://127.0.0.1:8080';
 
+// `SELF_HOSTED=true` selects the self-hosted edition (see isSelfHosted() in
+// src/lib/siteConfig.js). Vite only exposes PUBLIC_-prefixed variables to
+// import.meta.env, so the build-facing name is mapped onto one here.
+if (process.env.SELF_HOSTED !== undefined) {
+    process.env.PUBLIC_SELF_HOSTED = process.env.SELF_HOSTED;
+}
+
 // Headers managed by the runtime — must NOT be forwarded as-is, or the upstream
 // gets a wrong Content-Length / Host / mismatched Connection state.
 const STRIPPED_REQUEST_HEADERS = new Set([
