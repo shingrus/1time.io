@@ -30,6 +30,7 @@ Key facts:
 - [WiFi Password Generator](https://1time.io/wifi-password-generator/): Create secure WiFi passwords
 - [API Key Generator](https://1time.io/api-key-generator/): Generate random API keys
 - [Developers](https://1time.io/developers/): Build 1time links into an app, bot or script
+- [Self-Hosted](https://1time.io/self-hosted/): Run your own zero-knowledge one-time secret server for a team with Docker Compose
 - [About](https://1time.io/about/): Architecture and security model
 - [Privacy Policy](https://1time.io/privacy/): How data is handled
 - [Blog](https://1time.io/blog/): Security guides

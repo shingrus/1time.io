@@ -1,0 +1,246 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import InlineCss from '../../components/InlineCss.astro';
+import {absoluteUrl, siteHost} from '../../lib/siteConfig.js';
+
+// Full edition only: not on the allowlist in scripts/prune-selfhosted.mjs.
+const title = 'Self-Hosted One-Time Secret Sharing for Teams — Docker, Zero-Knowledge';
+const description = 'Run your own one-time secret and file sharing server with Docker Compose. Zero-knowledge, open source (MIT), files up to 250 MB, CLI and browser extension. Free.';
+const lastUpdated = '2026-11-04';
+
+const faqItems = [
+    {
+        question: 'Can the people who run our server read the secrets?',
+        answer: 'No. Secrets and files are encrypted in the sender\'s browser (or in the CLI) with AES-256-GCM before they are uploaded. The decryption key travels only in the link fragment, which browsers never send to the server. The server stores ciphertext and a SHA-256 hash of the read token, so neither a server admin nor a database dump can read or consume a link.',
+    },
+    {
+        question: 'Does a self-hosted instance send anything to 1time.io?',
+        answer: 'No. The self-hosted pages load nothing from any other host: no analytics, no fonts or images from a CDN, no tracking beacon. The footer and the view page carry ordinary links to 1time.io, and the header links to GitHub; nothing is fetched unless someone clicks them.',
+    },
+    {
+        question: 'What do we need to run it?',
+        answer: 'Docker with Docker Compose. The stack is three containers: Redis, the Go API and nginx serving the static frontend. Images are published for amd64 and arm64. Put your own reverse proxy (Caddy, Traefik or nginx) in front for HTTPS.',
+    },
+    {
+        question: 'Which domain do the links use?',
+        answer: 'Your own. Links are built from the address your users open the instance at, so a secret created on secrets.example.com is a secrets.example.com link. There is no hostname to configure.',
+    },
+    {
+        question: 'Can we turn the rate limits off for an internal instance?',
+        answer: 'Yes. Set RATE_LIMIT=off in .env and restart. You can also change each limit (RATE_LIMIT_WRITE, RATE_LIMIT_UPLOAD, RATE_LIMIT_READ) instead of disabling them.',
+    },
+    {
+        question: 'Is it free?',
+        answer: 'Yes. 1time is open source under the MIT license, including the encryption protocol. There is no paid tier and no license key.',
+    },
+];
+
+const jsonLd = [
+    {
+        '@context': 'https://schema.org',
+        '@type': 'WebPage',
+        name: 'Self-Hosted One-Time Secret Sharing',
+        description,
+        url: absoluteUrl('/self-hosted/'),
+        isPartOf: absoluteUrl('/'),
+        dateModified: lastUpdated,
+    },
+    {
+        '@context': 'https://schema.org',
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+            {'@type': 'ListItem', position: 1, name: 'Home', item: absoluteUrl('/')},
+            {'@type': 'ListItem', position: 2, name: 'Self-Hosted', item: absoluteUrl('/self-hosted/')},
+        ],
+    },
+    {
+        '@context': 'https://schema.org',
+        '@type': 'SoftwareApplication',
+        name: '1time (self-hosted)',
+        url: absoluteUrl('/self-hosted/'),
+        downloadUrl: 'https://github.com/shingrus/1time',
+        description: 'Self-hosted, zero-knowledge one-time secret and file sharing server, deployed with Docker Compose.',
+        applicationCategory: 'SecurityApplication',
+        operatingSystem: 'Linux, Docker (amd64, arm64)',
+        license: 'https://opensource.org/licenses/MIT',
+        offers: {'@type': 'Offer', price: '0', priceCurrency: 'USD'},
+        featureList: 'Docker Compose deployment, Zero-knowledge AES-256-GCM encryption, One-time text secrets, Encrypted files up to 250 MB, Password generator, CLI and browser extension support, Configurable rate limits',
+    },
+    {
+        '@context': 'https://schema.org',
+        '@type': 'FAQPage',
+        mainEntity: faqItems.map((item) => ({
+            '@type': 'Question',
+            name: item.question,
+            acceptedAnswer: {'@type': 'Answer', text: item.answer},
+        })),
+    },
+];
+---
+<BaseLayout
+    title={title}
+    description={description}
+    canonical="/self-hosted/"
+    ogImage="/1time-og-main.png"
+    ogImageAlt="Self-hosted one-time secret sharing for teams with 1time"
+>
+    <InlineCss slot="head" name="article" />
+    <script slot="head" type="application/ld+json" set:html={JSON.stringify(jsonLd)} is:inline></script>
+
+    <article class="article">
+        <div class="article-header">
+            <span class="article-tag">Self-Hosted</span>
+            <h1>Self-Hosted One-Time Secret Sharing for Teams</h1>
+            <p class="article-subtitle">
+                Run your own one-time link server for passwords, API keys and files, on your own domain and
+                your own infrastructure. It takes two commands with Docker Compose, and even your own server can't
+                read what your team shares.
+            </p>
+            <div class="article-meta">Updated Nov 4, 2026 · 5 min read</div>
+        </div>
+
+        <div class="article-body">
+            <h2>Why teams self-host one-time secrets</h2>
+            <p>
+                Teams hand each other credentials all day: a database password for a new contractor, an API key
+                for a deploy, the Wi-Fi password for a visitor. Pasted into Slack, Teams or email, those secrets stay
+                in chat history, backups and search indexes for years. A one-time link fixes that: the recipient
+                opens it once, then it is gone.
+            </p>
+            <p>
+                Many teams want that tool on their own infrastructure. The link lives on their own domain, the
+                encrypted data sits on their own server, and a security review only has to cover software they run.
+                1time is built for this: the code that runs {siteHost} is the code you deploy, open source under MIT.
+            </p>
+
+            <h2>Zero-knowledge, even on your own server</h2>
+            <p>
+                Self-hosting does not mean trusting whoever runs the box. Every secret and file is encrypted in the
+                sender's browser with AES-256-GCM, using a key derived with HKDF-SHA256, before anything is uploaded.
+                The key travels only in the link fragment (the part after <code>#</code>), which browsers never send
+                to the server.
+            </p>
+            <p>
+                The server stores ciphertext and a SHA-256 hash of the read token, never the token itself. So a
+                server admin, a stolen backup or a database dump can neither read a secret nor use up a link. That
+                matters for a team tool, because the people who run the server are often the same people the
+                secrets are kept from.
+            </p>
+
+            <h2>What your team gets</h2>
+            <ul>
+                <li><strong>Text secrets</strong> that open once by default, or 2, 3, 5 or 10 times, and expire after 1 hour to 30 days.</li>
+                <li><strong>Encrypted file sharing up to 250 MB</strong>, with the filename and type encrypted too, uploaded in 4 MiB chunks so a dropped connection doesn't restart the upload.</li>
+                <li><strong>An optional passphrase</strong>, sent by a second channel, for links that must not work on their own.</li>
+                <li><strong>A password generator</strong> that shares what it generates as a one-time link.</li>
+                <li><strong>My Secrets</strong>, which shows the sender whether a link has been opened yet.</li>
+                <li><strong>A clean interface</strong>: the self-hosted build is just the tool, with no blog, marketing pages or analytics.</li>
+            </ul>
+
+            <h2>Deploy it with Docker Compose</h2>
+            <p>
+                The stack is three containers: Redis, the Go API and nginx serving the static frontend. Images are
+                published for amd64 and arm64. On any machine with Docker:
+            </p>
+            <pre><code>curl -O https://raw.githubusercontent.com/shingrus/1time/master/docker-compose.yml
+curl -O https://raw.githubusercontent.com/shingrus/1time/master/.env.example
+cp .env.example .env
+docker compose up -d</code></pre>
+            <p>
+                The instance answers on <code>http://localhost:8080</code>. There is no hostname to configure: links
+                are built from whatever address your users open it at.
+            </p>
+
+            <h2>Put HTTPS in front</h2>
+            <p>
+                Run your usual reverse proxy for TLS. With Caddy on the same host, this is the whole configuration:
+            </p>
+            <pre><code>secrets.example.com &#123;
+    reverse_proxy localhost:8080
+&#125;</code></pre>
+            <p>
+                The web container already sends a Content Security Policy, <code>X-Frame-Options</code> and a strict
+                <code>Referrer-Policy</code>, and the secret and file pages send no referrer at all. Turn on HSTS at
+                your proxy; the container leaves it out so it can't pin HTTPS onto your other subdomains.
+            </p>
+
+            <h2>Rate limits that work behind your proxy</h2>
+            <p>
+                The API is rate-limited per visitor. By default the container trusts the visitor address that a proxy
+                reports only when the proxy is on the container's own Docker network, which covers a proxy container in
+                the same compose setup and a proxy on the host. Users on your internal network can't fake their address
+                to get around the limits. Everything is set in <code>.env</code>, with no rebuild:
+            </p>
+            <div style="overflow-x:auto">
+                <table class="comparison-table">
+                    <thead>
+                        <tr><th>Variable</th><th>Default</th><th>What it does</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code>TRUSTED_PROXIES</code></td><td>container network</td><td>Your proxy's address or CIDR, when it runs on another machine</td></tr>
+                        <tr><td><code>REAL_IP_HEADER</code></td><td><code>X-Forwarded-For</code></td><td>Use <code>CF-Connecting-IP</code> behind Cloudflare</td></tr>
+                        <tr><td><code>RATE_LIMIT</code></td><td><code>on</code></td><td><code>off</code> disables all limits, e.g. for a small internal instance</td></tr>
+                        <tr><td><code>RATE_LIMIT_WRITE</code></td><td><code>45r/m</code></td><td>Text secrets created per visitor</td></tr>
+                        <tr><td><code>RATE_LIMIT_UPLOAD</code></td><td><code>120r/m</code></td><td>File chunks per visitor (a 250 MB file is 63)</td></tr>
+                        <tr><td><code>RATE_LIMIT_READ</code></td><td><code>60r/m</code></td><td>Secrets and files opened per visitor</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h2>Use the CLI and browser extension with your instance</h2>
+            <p>
+                The <a href="/blog/share-secrets-from-terminal/">1time CLI</a> encrypts locally and works against any
+                instance with <code>--host</code>, so scripts and CI jobs can hand out one-time links from your own
+                server:
+            </p>
+            <pre><code>printf '%s' "$DB_PASSWORD" | npx @1time/cli send --host https://secrets.example.com</code></pre>
+            <p>
+                The <a href="/chrome-extension/">browser extension</a> takes your instance as its target server in its
+                options: select text on any page, right-click, and the link comes from your domain.
+            </p>
+
+            <h2>How 1time compares with other self-hosted tools</h2>
+            <p>
+                OneTimeSecret, Yopass, PrivateBin and Password Pusher can all be self-hosted with Docker too. The
+                differences are in the encryption model and in what comes with it:
+            </p>
+            <div style="overflow-x:auto">
+                <table class="comparison-table">
+                    <thead>
+                        <tr><th>Feature</th><th>1time</th><th>OneTimeSecret</th><th>Yopass</th><th>PrivateBin</th><th>Password Pusher</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>Zero-knowledge (E2E encrypted)</td><td class="check">Yes</td><td class="cross">No</td><td class="check">Yes</td><td class="check">Yes</td><td class="cross">No</td></tr>
+                        <tr><td>Self-destructs after first read</td><td class="check">Yes</td><td class="check">Yes</td><td class="check">Yes</td><td class="partial">Optional</td><td class="partial">Optional</td></tr>
+                        <tr><td>Self-hosted with Docker Compose</td><td class="check">Yes</td><td class="check">Yes</td><td class="check">Yes</td><td class="check">Yes</td><td class="check">Yes</td></tr>
+                        <tr><td>First-party CLI</td><td class="check">Yes</td><td class="cross">No</td><td class="check">Yes</td><td class="cross">No</td><td class="check">Yes</td></tr>
+                        <tr><td>Built-in password generator</td><td class="check">Yes</td><td class="cross">No</td><td class="cross">No</td><td class="cross">No</td><td class="cross">No</td></tr>
+                        <tr><td>Stack</td><td>Go + static HTML</td><td>Ruby</td><td>Go</td><td>PHP</td><td>Ruby</td></tr>
+                        <tr><td>License</td><td>MIT</td><td>MIT</td><td>Apache-2.0</td><td>zlib</td><td>Apache-2.0</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <p>
+                For more on the hosted alternatives, see the comparisons with
+                <a href="/blog/onetimesecret-alternative/">OneTimeSecret</a> and
+                <a href="/blog/password-pusher-alternative/">Password Pusher</a>.
+            </p>
+
+            <h2>Frequently asked questions</h2>
+            {faqItems.map((item) => (
+                <Fragment>
+                    <h3>{item.question}</h3>
+                    <p>{item.answer}</p>
+                </Fragment>
+            ))}
+
+            <h2>Get started</h2>
+            <p>
+                The source, the Docker Compose file and the full configuration reference are on
+                <a href="https://github.com/shingrus/1time" target="_blank" rel="noopener noreferrer">GitHub</a>.
+                To try it before you deploy, <a href="/">create a one-time secret on {siteHost}</a>; the self-hosted
+                instance works the same way.
+            </p>
+        </div>
+    </article>
+</BaseLayout>

@@ -13,6 +13,7 @@ const coreRoutes: RouteEntry[] = [
     {path: '/secure-file-sharing/', priority: 0.9, changefreq: 'weekly', lastmod: '2026-10-14'},
     {path: '/chrome-extension/', priority: 0.8, changefreq: 'weekly', lastmod: '2026-07-23'},
     {path: '/developers/', priority: 0.8, changefreq: 'weekly', lastmod: '2026-09-16'},
+    {path: '/self-hosted/', priority: 0.8, changefreq: 'monthly', lastmod: '2026-11-04'},
     {path: '/password-generator/', priority: 0.9, changefreq: 'weekly', lastmod: '2026-03-23'},
     {path: '/passphrase-generator/', priority: 0.8, changefreq: 'weekly', lastmod: '2026-08-05'},
     {path: '/password-generator-12-characters/', priority: 0.7, changefreq: 'monthly', lastmod: '2026-03-22'},

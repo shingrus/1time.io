@@ -125,6 +125,8 @@ Want 1time links in your app, bot or script? The [developers page](https://1time
 
 ### Self-host with Docker Compose
 
+A one-page overview for teams — the security model, HTTPS, rate limits, and how it compares with other self-hosted tools — is at [1time.io/self-hosted](https://1time.io/self-hosted/).
+
 **Option 1: Pre-built images (recommended)**
 
 ```bash
