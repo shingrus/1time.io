@@ -1,11 +1,4 @@
-/**
- * Post-build, self-hosted edition only (SELF_HOSTED=true): delete everything in
- * build/ that is not on the allowlist below.
- *
- * It is an allowlist on purpose. A new marketing page, blog post or public asset
- * stays out of self-hosted instances without anyone remembering to gate it, and
- * check-links.mjs fails the build if a kept page still links to something removed.
- */
+// Self-hosted edition: delete everything in build/ not on the allowlist, so new pages stay out by default.
 import {readdir, rm} from 'node:fs/promises';
 import path from 'node:path';
 

@@ -4,15 +4,11 @@ import InlineCss from '../../components/InlineCss.astro';
 import {absoluteUrl, siteHost} from '../../lib/siteConfig.js';
 
 // Full edition only: not on the allowlist in scripts/prune-selfhosted.mjs.
-const title = 'Self-Hosted One-Time Secret Sharing for Teams — Docker, Zero-Knowledge';
-const description = 'Run your own one-time secret and file sharing server with Docker Compose. The server can\'t read what it stores. Open source (MIT), files up to 250 MB, CLI included.';
+const title = 'Self-Hosted One-Time Secret Sharing for Teams (Docker)';
+const description = 'Run your own one-time secret and file sharing server with Docker Compose. The server can\'t read what it stores. Open source (MIT), files up to 250 MB.';
 const lastUpdated = '2026-11-04';
 
 const faqItems = [
-    {
-        question: 'Can the people who run our server read the secrets?',
-        answer: 'No. Everything is encrypted in the sender\'s browser, or in the CLI, before it\'s uploaded. The key is in the part of the link after the #, and browsers never send that part to the server. The server only has ciphertext and a SHA-256 hash of the read token, so an admin or a database dump can\'t open a secret or use one up.',
-    },
     {
         question: 'Does a self-hosted instance send anything to 1time.io?',
         answer: 'No. The pages load nothing from other hosts. No analytics, no CDN fonts or images, no tracking pixel. There are plain links to 1time.io in the footer and on the view page, and to GitHub in the header, but nothing is fetched unless someone clicks one.',
@@ -121,10 +117,10 @@ const jsonLd = [
             </p>
             <p>
                 What the server keeps is the ciphertext and a SHA-256 hash of a read token. It never sees the
-                token itself. So someone poking around in Redis can't open a secret, and neither can a leaked
-                backup or a database dump. They can't burn one either. For an internal tool this is the whole
-                point, since the people with root on the server are often the very people a secret is meant to
-                skip.
+                token itself. Stored data is useless without the link: someone poking around in Redis can't
+                open a secret, and neither can a leaked backup or a database dump. The admin does control the
+                code the server sends, so run it on infrastructure you trust, from the published images or
+                source you've reviewed.
             </p>
 
             <h2>What's in it</h2>
@@ -206,7 +202,7 @@ docker compose up -d</code></pre>
                 your instance, and when you select text and right-click, the link it copies is on your domain.
             </p>
 
-            <h2>Compared with other self-hosted tools</h2>
+            <h2>Self-hosted alternatives: OneTimeSecret, Yopass, PrivateBin, Password Pusher</h2>
             <p>
                 OneTimeSecret, Yopass, PrivateBin and Password Pusher all run in Docker too. Where they differ is
                 whether the server can see your data, and what else comes with it.
@@ -220,8 +216,8 @@ docker compose up -d</code></pre>
                         <tr><td>Zero-knowledge (E2E encrypted)</td><td class="check">Yes</td><td class="cross">No</td><td class="check">Yes</td><td class="check">Yes</td><td class="cross">No</td></tr>
                         <tr><td>Self-destructs after first read</td><td class="check">Yes</td><td class="check">Yes</td><td class="check">Yes</td><td class="partial">Optional</td><td class="partial">Optional</td></tr>
                         <tr><td>Self-hosted with Docker Compose</td><td class="check">Yes</td><td class="check">Yes</td><td class="check">Yes</td><td class="check">Yes</td><td class="check">Yes</td></tr>
-                        <tr><td>First-party CLI</td><td class="check">Yes</td><td class="cross">No</td><td class="check">Yes</td><td class="cross">No</td><td class="check">Yes</td></tr>
-                        <tr><td>Built-in password generator</td><td class="check">Yes</td><td class="cross">No</td><td class="cross">No</td><td class="cross">No</td><td class="cross">No</td></tr>
+                        <tr><td>First-party CLI</td><td class="check">Yes</td><td class="check">Yes</td><td class="check">Yes</td><td class="cross">No</td><td class="check">Yes</td></tr>
+                        <tr><td>Built-in password generator</td><td class="check">Yes</td><td class="check">Yes</td><td class="cross">No</td><td class="cross">No</td><td class="check">Yes</td></tr>
                         <tr><td>Stack</td><td>Go + static HTML</td><td>Ruby</td><td>Go</td><td>PHP</td><td>Ruby</td></tr>
                         <tr><td>License</td><td>MIT</td><td>MIT</td><td>Apache-2.0</td><td>zlib</td><td>Apache-2.0</td></tr>
                     </tbody>

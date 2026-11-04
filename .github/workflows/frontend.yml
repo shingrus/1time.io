@@ -1,11 +1,5 @@
 name: Frontend
 
-# Builds both editions on every PR. `npm run build` ends with
-# scripts/check-links.mjs, so a page that links to something its edition does
-# not ship fails here instead of in a release. The self-hosted edition is an
-# allowlist of pages (scripts/prune-selfhosted.mjs); without this job it was
-# only ever built by docker-publish.yml, on a release tag.
-
 on:
   pull_request:
     paths:

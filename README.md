@@ -98,29 +98,13 @@ Everything goes in `.env`. Change it and restart, there's nothing to rebuild.
 | `RATE_LIMIT_WRITE` / `_UPLOAD` / `_READ` | `45r/m` / `120r/m` / `60r/m` | Per visitor: secrets created / file chunks (a 250 MB file is 63) / secrets and files opened |
 | `BACKEND_UPSTREAM` | `backend:8080` | Where nginx sends `/api/` |
 
-### Rate limits behind a proxy
-
-Limits apply per visitor, which only works if nginx knows the real visitor address. By default it takes that address from a proxy only when the proxy is on the container's own Docker network. A proxy container in the same compose file counts, and so does a proxy on the host. If your proxy runs on another machine, add its address to `TRUSTED_PROXIES`. Until you do, everyone shares the proxy's limit.
-
-Please don't trust a whole private range like `10.0.0.0/8`. On an internal network your users have private addresses too, and any of them could then fake an IP to get around the limits. One more case to watch is rootless Docker or Docker Desktop, where nginx may see every client as the Docker gateway. If an instance like that is reachable without a proxy, set `TRUSTED_PROXIES` to your proxy's address and nothing else.
+If your proxy runs on another machine, add its address to `TRUSTED_PROXIES`, and never a whole private range like `10.0.0.0/8`: users on an internal network could then fake their IP to get around the limits.
 
 ### Upgrading
 
 `APP_HOSTNAME` and `SHOW_BLOG` aren't used anymore. You can delete them from an old `.env`.
 
-### Compared with other self-hosted tools
-
-| | 1time | OneTimeSecret | Yopass | PrivateBin | Password Pusher |
-|---|:---:|:---:|:---:|:---:|:---:|
-| Zero-knowledge (E2E encrypted) | Yes | No | Yes | Yes | No |
-| Self-destructs after first read | Yes | Yes | Yes | Optional | Optional |
-| Self-hosted with Docker Compose | Yes | Yes | Yes | Yes | Yes |
-| First-party CLI | Yes | No | Yes | No | Yes |
-| Built-in password generator | Yes | No | No | No | No |
-| Stack | Go + static HTML | Ruby | Go | PHP | Ruby |
-| License | MIT | MIT | Apache-2.0 | zlib | Apache-2.0 |
-
-If you're evaluating it for a team, [1time.io/self-hosted](https://1time.io/self-hosted/) goes into more detail.
+More detail: [1time.io/self-hosted](https://1time.io/self-hosted/).
 
 ## CLI
 

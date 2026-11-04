@@ -34,10 +34,6 @@ const {
     pageview = true,
 } = Astro.props;
 
-// The self-hosted edition keeps a text-only link preview (title, description)
-// and drops everything that points at a host: canonical, og:url and og:image
-// would all name 1time.io, telling search engines every public instance is a
-// duplicate of it and making each pasted link fetch an image from 1time.io.
 const title = selfHosted ? selfHostedTitle : pageTitle;
 const ogTitle = selfHosted ? selfHostedTitle : (pageOgTitle ?? pageTitle);
 

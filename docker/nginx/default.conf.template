@@ -1,6 +1,4 @@
-# Visitor IP behind a reverse proxy, and the rate-limit zones: written at
-# container start from TRUSTED_PROXIES, REAL_IP_HEADER and RATE_LIMIT* by
-# /docker-entrypoint.d/30-1time-config.sh.
+# Written at container start by /docker-entrypoint.d/30-1time-config.sh.
 include /etc/nginx/1time/real-ip.conf;
 include /etc/nginx/1time/limit-zones.conf;
 
@@ -124,10 +122,7 @@ server {
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
     }
 
-    # One-time secret and file views send no Referer at all. try_files names
-    # the file: `$uri/` would hand the request to the index module, whose
-    # internal redirect to /v/index.html lands in `location /` and drops these
-    # headers.
+    # Name the file: `$uri/` redirects internally into `location /`, which drops these headers.
     location = /v/ {
         include /etc/nginx/snippets/1time/security-headers-sensitive.conf;
         try_files /v/index.html =404;

@@ -1,31 +1,11 @@
 #!/bin/sh
-# Writes the parts of the nginx config that come from environment variables
-# into /etc/nginx/1time/, which default.conf.template includes. Runs from the
-# nginx image's /docker-entrypoint.d/ before nginx starts; an invalid value
-# stops the container with a message instead of starting it misconfigured.
-#
-#   TRUSTED_PROXIES    Addresses or CIDRs whose REAL_IP_HEADER is believed, so
-#                      rate limits apply per visitor rather than to the reverse
-#                      proxy in front. Comma or space separated. Empty: the
-#                      container's own Docker network(s), which covers a proxy
-#                      container on the same network and a proxy on the host
-#                      (it arrives from the bridge gateway). "none": trust nobody.
-#                      Never trust whole private ranges: on an internal network
-#                      every user has a private address and could then fake any
-#                      IP in REAL_IP_HEADER, dodging the limits.
-#   REAL_IP_HEADER     Header carrying the visitor IP. Default X-Forwarded-For;
-#                      CF-Connecting-IP behind Cloudflare.
-#   RATE_LIMIT         on (default) or off.
-#   RATE_LIMIT_WRITE   saveSecret, default 45r/m per IP.
-#   RATE_LIMIT_UPLOAD  saveFile chunks, default 120r/m per IP.
-#   RATE_LIMIT_READ    get, getFile and other /api/ calls, default 60r/m per IP.
-#
-# Bursts are fixed: they follow the protocol (a 250 MB file is 63 chunks).
+# Writes the env-driven nginx config (visitor IP, rate limits) into /etc/nginx/1time/
+# at container start. The variables are documented in README.md and .env.example.
 set -eu
 
-OUT_DIR="${ONETIME_NGINX_DIR:-/etc/nginx/1time}"
-# Subnets this container is directly attached to (on-link routes and global
-# IPv6 prefixes), printed as CIDRs. Reads /proc, so it needs only sh and awk.
+OUT_DIR=/etc/nginx/1time
+
+# The default trust list. Never all private ranges: internal users could then fake their IP.
 # No `^` in the awk: busybox builds without math support reject it.
 own_networks() {
     [ -r /proc/net/route ] && awk 'function hex(s,  i, n) { n = 0; for (i = 1; i <= length(s); i++) n = n * 16 + index("0123456789ABCDEF", toupper(substr(s, i, 1))) - 1; return n }
@@ -34,8 +14,7 @@ own_networks() {
              while (m > 0) { bits += m % 2; m = int(m / 2) }
              printf "%d.%d.%d.%d/%d\n", hex(substr(d, 7, 2)), hex(substr(d, 5, 2)), hex(substr(d, 3, 2)), hex(substr(d, 1, 2)), bits
          }' /proc/net/route
-    # if_inet6: address (32 hex digits), ifindex, prefix length, scope, flags, name.
-    # Scope 00 is global; the host bits are cleared so nginx gets a clean prefix.
+    # if_inet6 fields: address, ifindex, prefix length, scope (00 = global), flags, name.
     [ -r /proc/net/if_inet6 ] && awk 'function hex(s,  i, n) { n = 0; for (i = 1; i <= length(s); i++) n = n * 16 + index("0123456789ABCDEF", toupper(substr(s, i, 1))) - 1; return n }
          $6 != "lo" && $4 == "00" {
              len = hex($3); out = ""
@@ -57,7 +36,6 @@ fail() {
 }
 
 rate() {
-    # $1 variable name, $2 default
     eval "value=\${$1:-$2}"
     printf '%s' "$value" | grep -Eq '^[1-9][0-9]*r/[sm]$' \
         || fail "$1='$value' is not a rate like 45r/m or 2r/s"
@@ -66,7 +44,6 @@ rate() {
 
 mkdir -p "$OUT_DIR"
 
-# --- visitor IP behind a reverse proxy -------------------------------------
 real_ip_header="${REAL_IP_HEADER:-X-Forwarded-For}"
 printf '%s' "$real_ip_header" | grep -Eq '^[A-Za-z0-9-]+$' \
     || fail "REAL_IP_HEADER='$real_ip_header' is not a header name"
@@ -74,8 +51,6 @@ printf '%s' "$real_ip_header" | grep -Eq '^[A-Za-z0-9-]+$' \
 trusted="${TRUSTED_PROXIES:-}"
 if [ -z "$trusted" ]; then
     trusted=$(own_networks | sort -u | tr '\n' ' ' | sed 's/ $//')
-    # No network found (unusual): trusting nobody is the safe failure. Every
-    # visitor then shares the proxy's limit until TRUSTED_PROXIES is set.
     [ -n "$trusted" ] || trusted="none"
 fi
 {
@@ -91,9 +66,7 @@ fi
     fi
 } > "$OUT_DIR/real-ip.conf"
 
-# --- rate limits ------------------------------------------------------------
 limit_file() {
-    # $1 file name, $2 limit_req directive (written only when limits are on)
     if [ "$rate_limit" = "on" ]; then
         echo "$2" > "$OUT_DIR/$1"
     else
@@ -107,8 +80,7 @@ case "$rate_limit" in
     *) fail "RATE_LIMIT='$rate_limit' must be on or off" ;;
 esac
 
-# Validated here, as assignments: a failing $(...) inside echo would not stop
-# the script, and the zone would be written with an empty rate.
+# Assignments, not inline in echo: only then does a failing $(...) stop the script.
 write_rate=$(rate RATE_LIMIT_WRITE 45r/m)
 upload_rate=$(rate RATE_LIMIT_UPLOAD 120r/m)
 read_rate=$(rate RATE_LIMIT_READ 60r/m)
