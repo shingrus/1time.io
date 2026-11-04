@@ -8,7 +8,7 @@ If you discover a security vulnerability in 1time.io, please report it responsib
 
 Instead, please email security concerns to the repository maintainer via GitHub's private vulnerability reporting feature:
 
-1. Go to the [Security tab](https://github.com/shingrus/1time/security) of this repository
+1. Go to the [Security tab](https://github.com/shingrus/1time.io/security) of this repository
 2. Click "Report a vulnerability"
 3. Provide a detailed description of the vulnerability
 

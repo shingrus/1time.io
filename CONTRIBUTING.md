@@ -5,7 +5,7 @@ Thanks for your interest in contributing! 1time.io is an open-source, zero-knowl
 ## Getting Started
 
 1. Fork the repository
-2. Clone your fork: `git clone https://github.com/YOUR_USERNAME/1time.git`
+2. Clone your fork: `git clone https://github.com/YOUR_USERNAME/1time.io.git`
 3. Set up the development environment (see below)
 4. Create a feature branch: `git checkout -b feature/your-feature`
 5. Make your changes
@@ -16,8 +16,8 @@ Thanks for your interest in contributing! 1time.io is an open-source, zero-knowl
 
 ### Prerequisites
 
-- Go 1.22+
-- Node.js 20+
+- Go 1.25+
+- Node.js 22.23+ (the frontend's Astro needs it; the CLI alone runs on 20+)
 - Redis 7+
 - Docker & Docker Compose (optional)
 
@@ -55,8 +55,7 @@ npm test
 
 ```bash
 cp .env.example .env
-# Edit .env with your settings
-docker compose -f docker-compose.dev.yml up
+docker compose -f docker-compose.dev.yml up --build
 ```
 
 ## What to Contribute
