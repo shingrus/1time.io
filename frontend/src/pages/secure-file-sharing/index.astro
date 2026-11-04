@@ -4,11 +4,12 @@ import EncryptionNote from '../../components/EncryptionNote.astro';
 import InlineCss from '../../components/InlineCss.astro';
 import LinkReadyTemplate from '../../components/LinkReadyTemplate.astro';
 import ShareOptions from '../../components/ShareOptions.astro';
-import {absoluteUrl, siteHost} from '../../lib/siteConfig.js';
+import {absoluteUrl, isSelfHosted, siteHost} from '../../lib/siteConfig.js';
 import {Constants} from '../../lib/util.js';
 
 const title = `One-Time File Sharing — Encrypted Self-Destructing Download Links`;
 const description = 'One-time file sharing through an encrypted, self-destructing download link. Zero-knowledge browser encryption, optional passphrase — free, no signup.';
+const selfHosted = isSelfHosted();
 const maxMb = Math.round(Constants.maxFileSizeBytes / (1024 * 1024));
 
 const faqItems = [
@@ -87,11 +88,11 @@ const jsonLd = [
 >
     <InlineCss slot="head" name="home" />
     <InlineCss slot="head" name="file-sharing" />
-    <script slot="head" type="application/ld+json" set:html={JSON.stringify(jsonLd)} is:inline></script>
+    {!selfHosted && <script slot="head" type="application/ld+json" set:html={JSON.stringify(jsonLd)} is:inline></script>}
 
     <div class="share-flow-page">
         <nav class="share-mode-nav" aria-label="Choose sharing mode">
-            <a href="/share-password-securely/" class="share-mode-link">Text secret</a>
+            <a href={selfHosted ? '/' : '/share-password-securely/'} class="share-mode-link">Text secret</a>
             <a href="/secure-file-sharing/" class="share-mode-link share-mode-link-active">One-time file</a>
         </nav>
 
@@ -150,6 +151,7 @@ const jsonLd = [
 
         <LinkReadyTemplate />
 
+        {!selfHosted && (
         <section class="seo-section">
             <h2>What is a one-time file?</h2>
             <p>
@@ -280,6 +282,7 @@ const jsonLd = [
                 <a href="/about/">About 1time.io</a>
             </nav>
         </section>
+        )}
     </div>
 
     <script>

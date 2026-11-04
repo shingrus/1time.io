@@ -1,7 +1,12 @@
 ---
-import {isBlogEnabled} from '../lib/siteConfig.js';
-const showBlog = isBlogEnabled();
+import {isSelfHosted} from '../lib/siteConfig.js';
+const selfHosted = isSelfHosted();
 ---
+{selfHosted ? (
+<footer class="app-footer">
+    <p class="app-footer-text">&copy; 2026 <a href="https://1time.io" rel="noreferrer">1time.io</a></p>
+</footer>
+) : (
 <footer class="app-footer">
     <nav class="app-footer-tools">
         <a href="/secure-file-sharing/">One-Time File Sharing</a>
@@ -15,7 +20,8 @@ const showBlog = isBlogEnabled();
         <a href="/my-secrets/">My Secrets</a>
         <a href="/chrome-extension/">Chrome Extension</a>
         <a href="/developers/">Developers</a>
-        {showBlog && <a href="/blog/">Blog</a>}
+        <a href="/self-hosted/">Self-Hosted</a>
+        <a href="/blog/">Blog</a>
         <a href="/about/">About</a>
         <a href="/privacy/">Privacy</a>
         <a href="mailto:info@1time.io">Contact</a>
@@ -24,9 +30,8 @@ const showBlog = isBlogEnabled();
     </nav>
     <p class="app-footer-text">
         Zero-knowledge &middot;
-        {showBlog
-            ? <a href="/blog/quantum-safe-password-sharing/">Quantum-safe encryption</a>
-            : <Fragment>Quantum-safe encryption</Fragment>}
+        <a href="/blog/quantum-safe-password-sharing/">Quantum-safe encryption</a>
         &middot; &copy; 2026 1time.io
     </p>
 </footer>
+)}

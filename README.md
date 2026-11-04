@@ -5,304 +5,153 @@
 </p>
 
 <p align="center">
-  <strong>Zero-knowledge one-time secret sharing with end-to-end encryption</strong><br>
-  Share passwords, API keys, sensitive text, and encrypted files through self-destructing links.
+  <strong>One-time links for passwords, API keys and files.</strong><br>
+  Encrypted in your browser, opened once, then deleted. Use <a href="https://1time.io">1time.io</a> or run your own.
 </p>
 
 <p align="center">
   <a href="https://1time.io"><img src="https://img.shields.io/badge/Try_it_live-1time.io-E8552D?style=for-the-badge" alt="Try it live"></a>
   &nbsp;
-  <a href="https://www.npmjs.com/package/@1time/cli"><img src="https://img.shields.io/badge/CLI-npm_install_@1time/cli-CB3837?style=for-the-badge&logo=npm" alt="CLI"></a>
-  &nbsp;
-  <a href="https://chromewebstore.google.com/detail/1time-%E2%80%94-one-time-secret-l/oclenaeccacnolionlpiefekmmbppgkb"><img src="https://img.shields.io/badge/Chrome-Add_to_Chrome-4285F4?style=for-the-badge&logo=googlechrome&logoColor=white" alt="Chrome extension"></a>
+  <a href="#self-hosting"><img src="https://img.shields.io/badge/Self--host-Docker_Compose-2496ED?style=for-the-badge&logo=docker&logoColor=white" alt="Self-host with Docker Compose"></a>
 </p>
 
 <p align="center">
-  <a href="https://github.com/shingrus/1time/blob/master/LICENSE"><img src="https://img.shields.io/github/license/shingrus/1time?style=flat-square" alt="License"></a>
-  <a href="https://github.com/shingrus/1time/releases"><img src="https://img.shields.io/github/v/release/shingrus/1time?style=flat-square" alt="Release"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/github/license/shingrus/1time.io?style=flat-square" alt="License"></a>
+  <a href="https://github.com/shingrus/1time.io/releases"><img src="https://img.shields.io/github/v/release/shingrus/1time.io?style=flat-square" alt="Release"></a>
   <a href="https://www.npmjs.com/package/@1time/cli"><img src="https://img.shields.io/npm/v/@1time/cli?style=flat-square&label=cli" alt="npm"></a>
-  <a href="https://github.com/shingrus/1time/stargazers"><img src="https://img.shields.io/github/stars/shingrus/1time?style=flat-square" alt="Stars"></a>
-  <a href="https://github.com/shingrus/1time"><img src="https://img.shields.io/github/last-commit/shingrus/1time?style=flat-square" alt="Last commit"></a>
 </p>
 
----
-
 <p align="center">
-  <img src="docs/screenshot-create.png" alt="Create a one-time secret" width="45%">
+  <img src="docs/screenshot-create.png" alt="Paste a secret and create a one-time link" width="45%">
   &nbsp;&nbsp;
-  <img src="docs/screenshot-reveal.png" alt="Reveal a one-time secret" width="45%">
+  <img src="docs/screenshot-link-ready.png" alt="The one-time link is ready to copy" width="45%">
 </p>
-
 <p align="center">
+  <img src="docs/screenshot-reveal.png" alt="The recipient reveals the secret once" width="45%">
+  &nbsp;&nbsp;
   <img src="docs/screenshot-file-sharing.png" alt="Send an encrypted file with a one-time download link" width="45%">
-  &nbsp;&nbsp;
-  <img src="docs/screenshot-password-generator.png" alt="Generate a strong password" width="45%">
 </p>
 
-## Why 1time?
+## What it does
 
-| | Feature | Details |
+You paste a secret, or pick a file, and get a link. The recipient opens it once and it's deleted. You can allow up to 10 views if a few people need it, and every link expires on its own after anywhere from an hour to 30 days, opened or not. Files can be up to 250 MB, and you can add a passphrase for links that shouldn't open on their own.
+
+The encryption happens in the browser before anything is uploaded, so the server only ever holds ciphertext. There are no accounts. A CLI and a browser extension speak the same protocol, and both work with 1time.io or your own instance. The whole thing is Go, Redis and static HTML, MIT licensed.
+
+## How it works
+
+```
+Sender's browser                Server                     Recipient's browser
+  encrypt with a random key ──► stores ciphertext only
+  link = …/v/#<key>                (can't decrypt)
+          └────────── share the link ───────────────────────► opens the link
+                                 ◄── proves it holds the link
+                                 sends ciphertext, deletes it ─► decrypts with #<key>
+```
+
+The key is in the part of the link after the `#`, which browsers never send to the server. From that key the browser derives two things with HKDF-SHA256: an AES-256-GCM key and a read token. The sender uploads only a SHA-256 hash of the token. When the recipient opens the link, their browser sends the token, the server checks it against the hash, hands over the ciphertext and deletes it. That means the server, whoever runs it and its database can't read a secret. A database dump can't be used to open one or burn one either.
+
+Files go through the same steps. The browser encrypts the file together with its name and type, then uploads it in 4 MiB pieces, so if the connection drops you only resend one piece. The full protocol, the HTTP API and test vectors are on the [developers page](https://1time.io/developers/).
+
+## Self-hosting
+
+You can run your own instance for your team, on your own domain. The self-hosted build is only the tool itself, meaning text and file sharing, the password generator and My Secrets. There's no blog, no marketing pages and no analytics, and it doesn't load anything from other hosts. Links are built from whatever address people open it at, so there's no hostname to set.
+
+```bash
+curl -O https://raw.githubusercontent.com/shingrus/1time.io/master/docker-compose.yml
+curl -O https://raw.githubusercontent.com/shingrus/1time.io/master/.env.example
+cp .env.example .env
+docker compose up -d
+```
+
+That gives you three containers on `http://localhost:8080`: Redis, the Go API, and nginx serving the frontend. Data goes under `DATA_DIR`, and the images are built for amd64 and arm64. If you'd rather build from source:
+
+```bash
+git clone https://github.com/shingrus/1time.io.git && cd 1time.io
+cp .env.example .env
+docker compose -f docker-compose.dev.yml up -d --build
+```
+
+### HTTPS
+
+Put whatever reverse proxy you already use in front. With Caddy on the same host, this is all it takes:
+
+```
+secrets.example.com {
+    reverse_proxy localhost:8080
+}
+```
+
+The container already sends a CSP, `X-Frame-Options` and a strict `Referrer-Policy`, and the secret and file pages send no referrer at all. It leaves HSTS out on purpose, so set that on your proxy.
+
+### Configuration
+
+Everything goes in `.env`. Change it and restart, there's nothing to rebuild.
+
+| Variable | Default | |
 |---|---|---|
-| **🔐** | **Zero-knowledge encryption** | Secrets are encrypted in your browser with AES-GCM. The server never sees plaintext. |
-| **🔥** | **Self-destructing links** | Links burn after reading by default; text secrets can optionally allow a few views. Either way the data is permanently deleted once the last view is used. |
-| **📁** | **Encrypted file sharing** | Send files with one-time download links by default, or choose a small fixed download limit. File contents and metadata stay inside the encrypted payload. |
-| **🏠** | **Self-hosted** | Run your own instance with Docker Compose in under 2 minutes. |
-| **👤** | **No signup required** | Paste a secret, get a link, share it. No accounts, no tracking. |
-| **🔑** | **Built-in generators** | Password, passphrase, API key, and WiFi password generators included. |
-| **💻** | **First-party CLI** | `npm i -g @1time/cli` — pipe secrets from your terminal, perfect for DevOps workflows. |
-| **⚡** | **Lightweight stack** | Go + Redis backend, static Astro frontend. Minimal resource usage. |
+| `APP_PORT` | `8080` | Port on the host |
+| `DATA_DIR` | `./data` | Redis data and encrypted files |
+| `TRUSTED_PROXIES` | the container's Docker network | Proxy addresses or CIDRs whose forwarded visitor IP is believed; `none` trusts nobody |
+| `REAL_IP_HEADER` | `X-Forwarded-For` | `CF-Connecting-IP` behind Cloudflare |
+| `RATE_LIMIT` | `on` | `off` disables API rate limits |
+| `RATE_LIMIT_WRITE` / `_UPLOAD` / `_READ` | `45r/m` / `120r/m` / `60r/m` | Per visitor: secrets created / file chunks (a 250 MB file is 63) / secrets and files opened |
+| `BACKEND_UPSTREAM` | `backend:8080` | Where nginx sends `/api/` |
 
----
+If your proxy runs on another machine, add its address to `TRUSTED_PROXIES`, and never a whole private range like `10.0.0.0/8`: users on an internal network could then fake their IP to get around the limits.
 
-## Browser Extension
+### Upgrading
 
-Share the text you just selected as an encrypted one-time link, straight from the right-click menu (or `Alt+Shift+S`) — [**Add to Chrome**](https://chromewebstore.google.com/detail/1time-%E2%80%94-one-time-secret-l/oclenaeccacnolionlpiefekmmbppgkb). Encryption happens in the browser, and the extension works against [1time.io](https://1time.io) or your own self-hosted instance (set the host in the extension options). Source lives in [`extension/`](extension/).
+`APP_HOSTNAME` and `SHOW_BLOG` aren't used anymore. You can delete them from an old `.env`.
 
----
+More detail: [1time.io/self-hosted](https://1time.io/self-hosted/).
 
-## How It Works
-
-```
-You                          Server                        Recipient
- │                             │                              │
- │  1. Type secret             │                              │
- │  2. Browser encrypts        │                              │
- │     with AES-GCM            │                              │
- │  3. Send encrypted blob ──► │  Stores encrypted blob       │
- │  4. Get link with key       │  (cannot decrypt it)         │
- │     in URL fragment (#)     │                              │
- │                             │                              │
- │  5. Share link ─────────────┼──────────────────────────►   │
- │                             │                              │
- │                             │  ◄── 6. Fetch encrypted blob │
- │                             │  7. Delete blob permanently  │
- │                             │  8. Send blob ──────────►    │
- │                             │                              │
- │                             │     9. Browser decrypts      │
- │                             │        with key from #       │
-```
-
-The encryption key stays in the URL fragment (`#`), which is **never sent to the server**. Even with full database access, secrets cannot be read — and since the server stores only a hash of the read token, database access cannot consume or destroy them either.
-
-The same zero-knowledge model also powers encrypted file sharing: the browser encrypts the file and its metadata before upload, and the server stores only encrypted bytes until the one default download—or the last explicitly allowed download—is reserved.
-
-**Cryptographic details:** Keys are derived using HKDF-SHA256 with a fixed salt. Two separate keys are produced — one for AES-256-GCM encryption and one read token (hash-based proof-of-knowledge). The sender uploads only **SHA-256 of the read token**, never the token itself, so the stored record cannot be used to read or destroy a secret. The recipient presents the token, the server hashes it and compares constant-time before releasing the encrypted blob, then permanently deletes it.
-
----
-
-## Quick Start
-
-### Use the hosted version
-
-**[1time.io](https://1time.io)** — free, no signup, ready to use.
-
-Use the web app to share both text secrets and encrypted files with one-time links. File links allow one download by default and can optionally permit up to 10.
-
-### CLI
+## CLI
 
 ```bash
 npm install -g @1time/cli
 
-# Send a secret
-printf 'postgres://user:pass@host/db' | 1time send
-# → https://1time.io/v/#...
-
-# Read a secret
-1time read 'https://1time.io/v/#...'
-
-# Send an encrypted file
+printf '%s' "$DB_PASSWORD" | 1time send          # → https://1time.io/v/#…
+1time read 'https://1time.io/v/#…'
 1time send-file ./backup-codes.txt
+1time read-file 'https://1time.io/f/#…'
 
-# Read an encrypted file
-1time read-file 'https://1time.io/f/#...'
+printf '%s' "$TOKEN" | 1time send --host https://secrets.example.com   # your instance
 ```
 
-Pipe-friendly, no browser needed. Works with self-hosted instances via `--host`. See [CLI docs](cli/README.md) for more.
+It encrypts locally, so the plaintext never leaves your machine. You need Node.js 20 or newer. The [CLI docs](cli/README.md) have the rest.
 
-### Build your own client
+## Build your own client
 
-Want 1time links in your app, bot or script? The [developers page](https://1time.io/developers/) has the complete protocol spec, HTTP API, limits and test vectors, written so you can paste it straight into your coding agent. The same spec is available as [plain text](https://1time.io/developers/agent-spec.txt).
-
-### Self-host with Docker Compose
-
-**Option 1: Pre-built images (recommended)**
-
-```bash
-curl -O https://raw.githubusercontent.com/shingrus/1time/master/docker-compose.yml
-curl -O https://raw.githubusercontent.com/shingrus/1time/master/.env.example
-cp .env.example .env
-# Edit .env: set APP_HOSTNAME to your domain
-docker compose up -d
-```
-
-**Option 2: Build from source**
-
-```bash
-git clone https://github.com/shingrus/1time.git
-cd 1time
-cp .env.example .env
-# Edit .env: set APP_HOSTNAME to your domain
-docker compose -f docker-compose.dev.yml up -d --build
-```
-
-Both options start on `http://localhost:8080` with Redis persistence, encrypted file storage under `DATA_DIR/files`, the Go API, and nginx serving the frontend. Multi-arch images (amd64 + arm64) are available.
-
-### Configuration
-
-| Variable | Default | Description |
-|---|---|---|
-| `APP_HOSTNAME` | `1time.io` | Public hostname for links and metadata |
-| `APP_PORT` | `8080` | External HTTP port |
-| `DATA_DIR` | `./data` | Host path for Redis persistence and encrypted file storage |
-| `BACKEND_UPSTREAM` | `backend:8080` | Backend upstream (`host:port`) nginx proxies `/api/` requests to |
-| `SHOW_BLOG` | `true` | Build-time flag for source-built web images |
-
-Put your own reverse proxy (Caddy, Traefik, nginx) in front for HTTPS/TLS termination.
-
-> **Note:** The frontend image is generic — changing `APP_HOSTNAME` does not require rebuilding. The hostname is injected at container startup.
-
----
-
-## Comparison with Alternatives
-
-| Feature | **1time** | OneTimeSecret | Yopass | PrivateBin | Password Pusher |
-|---|:---:|:---:|:---:|:---:|:---:|
-| Zero-knowledge (E2E encrypted) | **Yes** | No | Yes | Yes | No |
-| Self-destructing after first read | **Yes** | Yes | Yes | Optional | Optional |
-| No signup required | **Yes** | Yes | Yes | Yes | Yes |
-| Self-hosted Docker Compose | **Yes** | Yes | Yes | Yes | Yes |
-| First-party CLI | **Yes** | No | Yes | No | Yes |
-| Built-in password generators | **Yes** | No | No | No | No |
-| Lightweight (Go + static HTML) | **Yes** | No (Ruby) | Yes (Go) | No (PHP) | No (Ruby) |
-| Open source | **MIT** | MIT | Apache-2.0 | zlib | Apache-2.0 |
-
----
-
-## Free Tools
-
-- [Secure File Sharing](https://1time.io/secure-file-sharing) — send encrypted files with one-time links and controlled download limits
-- [Password Generator](https://1time.io/password-generator) — strong random passwords
-- [Passphrase Generator](https://1time.io/passphrase-generator) — memorable multi-word passphrases
-- [API Key Generator](https://1time.io/api-key-generator) — random tokens for developers
-- [WiFi Password Generator](https://1time.io/wifi-password-generator) — easy-to-type network passwords
-- [Share Passwords with QR Code](https://1time.io/share-passwords-with-qr-code) — hand off secrets across devices and in person
-
----
-
-## Tech Stack
-
-| Layer | Technology |
-|---|---|
-| Backend | Go (stdlib, no frameworks) |
-| Storage | Redis plus encrypted file blobs on disk |
-| Frontend | Astro static build |
-| CLI | Node.js ([`@1time/cli`](https://www.npmjs.com/package/@1time/cli)) |
-| Encryption | Web Crypto API (AES-256-GCM, HKDF-SHA256) |
-| Deployment | Docker Compose + nginx |
-
----
+Everything you need to write your own is on the [developers page](https://1time.io/developers/), including the protocol, the HTTP API, limits and test vectors. It's written so you can paste it into a coding agent as is, and there's a [plain text](https://1time.io/developers/agent-spec.txt) version.
 
 ## Development
 
-### Requirements
-
-- Go 1.22+
-- Redis 7+
-- Node.js 20+ and npm
-
-### Backend
+You'll need Go 1.25+, Redis 7+ and Node.js 22.23+.
 
 ```bash
-# Start Redis locally
+# Backend on http://127.0.0.1:8080 (expects Redis on 127.0.0.1:6379)
 mkdir -p /tmp/1time-files
-export FILE_STORAGE_DIR=/tmp/1time-files
-export REDISHOST=127.0.0.1:6379
-export REDISPASS=
+FILE_STORAGE_DIR=/tmp/1time-files REDISHOST=127.0.0.1:6379 REDISPASS= go run ./backend
 
-# Run the backend
-go run ./backend
-# Listening on http://127.0.0.1:8080
-
-# Tests
-GOCACHE=/tmp/go-cache go test ./backend/...
+# Frontend on http://127.0.0.1:3001, proxying /api to the backend
+cd frontend && npm install && npm run dev
 ```
 
-### Frontend
+The frontend comes in two versions. `npm run build` gives you the full 1time.io site, and `SELF_HOSTED=true npm run build` gives you the self-hosted tool, which is what Docker builds by default. Each build finishes by checking links, and it fails if a page points somewhere that version doesn't have.
 
-```bash
-cd frontend
-npm install
-npm run dev
-# Dev server on http://127.0.0.1:3001, proxies /api to Go backend
+To run the tests, use `go test ./backend/...`, `cd frontend && npm run check` and `cd cli && npm test`. `make build` produces `bin/1time-api` and `frontend/build/`. The architecture and conventions are in [AGENTS.md](AGENTS.md), and [docs/vm-deployment.md](docs/vm-deployment.md) explains how 1time.io itself is deployed without Docker.
 
-# Production build
-npm run build
+## Browser extension
 
-# Type/content check
-npm run check
-```
-
-### CLI
-
-```bash
-cd cli
-npm install
-npm test
-
-# Run locally against dev backend
-printf 'hello' | node index.mjs send --host http://127.0.0.1:8080
-```
-
-### Full build
-
-```bash
-make build
-# Produces: bin/1time-api (backend) + frontend/build/ (static assets)
-```
-
-### VM deployment (Ubuntu/Debian)
-
-```bash
-make build
-
-# First time on a fresh host. Note `sudo env` — a plain `sudo VAR=... ./script`
-# is refused by the default sudoers, and the install would silently end up with
-# empty values.
-sudo env REDIS_PASS=... ./scripts/update_vm.sh --init
-
-# Every deploy after that. Configuration is never touched.
-sudo ./scripts/update_vm.sh
-```
-
-`--init` installs nginx and Redis, creates the service user, and writes
-`/etc/1time/env`. It will **not** overwrite that file on a later run, so if the
-first attempt captured the wrong values, edit `/etc/1time/env` directly and
-`sudo systemctl restart 1time`.
-
-Later deploys install the binary, the static site, the nginx config and the unit,
-then restart. They never read or write `/etc/1time/env`, so a deploy cannot clear
-a secret by forgetting to pass it.
-
----
+Select some text on a page, right-click, or press `Alt+Shift+S`, and a one-time link for it lands on your clipboard. It works in Chrome, Edge, Brave and the other Chromium browsers. By default it uses 1time.io, and you can point it at your own instance in its options. You can [add it to Chrome](https://chromewebstore.google.com/detail/1time-%E2%80%94-one-time-secret-l/oclenaeccacnolionlpiefekmmbppgkb), and the source is in [`extension/`](extension/).
 
 ## Contributing
 
-Contributions are welcome! Please open an issue first to discuss what you'd like to change.
+Pull requests are welcome. For anything bigger than a small fix, please open an issue first so we can talk it through. [CONTRIBUTING.md](CONTRIBUTING.md) has the setup.
 
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes
-4. Push to the branch
-5. Open a Pull Request
-
----
-
-## Security
-
-The encryption model is designed so that **the server operator cannot read secrets**, even with full database and infrastructure access. If you find a security vulnerability, please email the maintainer directly instead of opening a public issue.
-
----
+If you find a security problem, please don't open a public issue. [SECURITY.md](SECURITY.md) explains how to report it privately.
 
 ## License
 
-[MIT](LICENSE) — Copyright (c) 2018-2026 1time.io
+[MIT](LICENSE). Copyright (c) 2018-2026 1time.io

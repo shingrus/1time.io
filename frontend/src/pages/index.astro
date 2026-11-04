@@ -2,7 +2,9 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import InlineCss from '../components/InlineCss.astro';
 import NewMessageForm from '../components/NewMessageForm.astro';
-import {siteHost, siteUrl} from '../lib/siteConfig.js';
+import {isSelfHosted, siteHost, siteUrl} from '../lib/siteConfig.js';
+
+const selfHosted = isSelfHosted();
 
 const title = `One-Time Link: Share a One-Time Secret Our Server Can't Read`;
 const description = 'Create a one-time link for a password, API key or file up to 250 MB. Encrypted in your browser; the key stays in the link and never reaches our server.';
@@ -27,7 +29,7 @@ const jsonLd = {
     ogImageAlt={`${siteHost} — One-time link to share passwords, API keys, and files`}
 >
     <InlineCss slot="head" name="home" />
-    <script slot="head" type="application/ld+json" set:html={JSON.stringify(jsonLd)} is:inline></script>
+    {!selfHosted && <script slot="head" type="application/ld+json" set:html={JSON.stringify(jsonLd)} is:inline></script>}
 
     <div class="share-flow-page">
         <nav class="share-mode-nav" aria-label="Choose sharing mode">
@@ -37,6 +39,7 @@ const jsonLd = {
 
         <NewMessageForm />
 
+        {!selfHosted && (
         <section class="seo-section">
             <h1>Share a One-Time Secret with an Encrypted, Self-Destructing Link</h1>
             <p>
@@ -175,5 +178,6 @@ const jsonLd = {
                 <a href="/blog/privnote-alternative/">1time.io vs Privnote</a>
             </nav>
         </section>
+        )}
     </div>
 </BaseLayout>

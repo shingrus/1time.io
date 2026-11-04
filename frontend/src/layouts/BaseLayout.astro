@@ -2,7 +2,7 @@
 import InlineCss from '../components/InlineCss.astro';
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
-import {absoluteUrl, siteHost, siteUrl} from '../lib/siteConfig.js';
+import {absoluteUrl, isSelfHosted, selfHostedTitle, siteHost, siteUrl} from '../lib/siteConfig.js';
 
 interface Props {
     title: string;
@@ -18,11 +18,13 @@ interface Props {
     pageview?: boolean;
 }
 
+const selfHosted = isSelfHosted();
+
 const {
-    title,
+    title: pageTitle,
     description,
     canonical,
-    ogTitle = title,
+    ogTitle: pageOgTitle,
     ogDescription = description,
     ogImage = '/1time-og-main.png',
     ogImageAlt = `${siteHost} — Encrypted One-Time Secret Links`,
@@ -31,6 +33,9 @@ const {
     robots,
     pageview = true,
 } = Astro.props;
+
+const title = selfHosted ? selfHostedTitle : pageTitle;
+const ogTitle = selfHosted ? selfHostedTitle : (pageOgTitle ?? pageTitle);
 
 // Page-view beacon. Cloudflare serves this HTML from its edge cache, so the page
 // request itself rarely reaches the access log; this GET does, and nginx answers
@@ -83,7 +88,7 @@ const websiteSchema = {
         <title>{title}</title>
         <meta name="description" content={description} />
         {robots && <meta name="robots" content={robots} />}
-        {canonicalHref && <link rel="canonical" href={canonicalHref} />}
+        {!selfHosted && canonicalHref && <link rel="canonical" href={canonicalHref} />}
         <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
         <link rel="icon" href="/favicon.ico" sizes="any" />
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
@@ -91,18 +96,24 @@ const websiteSchema = {
         <meta property="og:title" content={ogTitle} />
         <meta property="og:description" content={ogDescription} />
         <meta property="og:type" content={ogType} />
-        <meta property="og:url" content={ogUrlAbsolute} />
-        <meta property="og:image" content={ogImageAbsolute} />
-        <meta property="og:image:width" content="1200" />
-        <meta property="og:image:height" content="630" />
-        <meta property="og:image:alt" content={ogImageAlt} />
-        <meta name="twitter:card" content="summary_large_image" />
+        {selfHosted ? (
+            <meta name="twitter:card" content="summary" />
+        ) : (
+            <Fragment>
+                <meta property="og:url" content={ogUrlAbsolute} />
+                <meta property="og:image" content={ogImageAbsolute} />
+                <meta property="og:image:width" content="1200" />
+                <meta property="og:image:height" content="630" />
+                <meta property="og:image:alt" content={ogImageAlt} />
+                <meta name="twitter:card" content="summary_large_image" />
+            </Fragment>
+        )}
         <meta name="twitter:title" content={ogTitle} />
         <meta name="twitter:description" content={ogDescription} />
-        <meta name="twitter:image" content={ogImageAbsolute} />
+        {!selfHosted && <meta name="twitter:image" content={ogImageAbsolute} />}
         <InlineCss name="globals" />
-        <script type="application/ld+json" set:html={JSON.stringify(orgSchema)} is:inline></script>
-        <script type="application/ld+json" set:html={JSON.stringify(websiteSchema)} is:inline></script>
+        {!selfHosted && <script type="application/ld+json" set:html={JSON.stringify(orgSchema)} is:inline></script>}
+        {!selfHosted && <script type="application/ld+json" set:html={JSON.stringify(websiteSchema)} is:inline></script>}
         <slot name="head" />
     </head>
     <body>
@@ -113,6 +124,6 @@ const websiteSchema = {
             </main>
             <Footer />
         </div>
-        {pageview && <script is:inline set:html={pageviewBeacon}></script>}
+        {pageview && !selfHosted && <script is:inline set:html={pageviewBeacon}></script>}
     </body>
 </html>
