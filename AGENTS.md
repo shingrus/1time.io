@@ -236,6 +236,7 @@ The frontend builds in two editions from the same source.
 - Host nginx has an exact `/f/` location with the same sensitive-header treatment as `/v/`.
 - The docker nginx (`docker/nginx/`) sends the production security headers from `docker/nginx/snippets/`, without HSTS: TLS is the self-hoster's reverse proxy's job. Its `/v/` and `/f/` use `try_files /v/index.html =404`. `$uri/` would make the directory index redirect internally into `location /`, which drops the no-referrer headers.
 - `docker/nginx/30-1time-config.sh` writes the docker real-IP config and the rate-limit zones at container start from `TRUSTED_PROXIES`, `REAL_IP_HEADER`, `RATE_LIMIT`, `RATE_LIMIT_WRITE`, `RATE_LIMIT_UPLOAD` and `RATE_LIMIT_READ`. Its defaults match the rates above. Bursts are fixed in the script.
+- With `TRUSTED_PROXIES` empty, the script trusts only the subnets the container is attached to (read from `/proc/net/route` and `/proc/net/if_inet6`). Never default to all private ranges: on an internal network every user has a private address and could then fake `X-Forwarded-For` to bypass the limits and the access log. The script's awk avoids `^`, because busybox builds without math support reject it.
 - The nginx `try_files` directive includes `$uri/index.html` for static trailing-slash routes.
 
 ## Important Behavior

@@ -154,7 +154,7 @@ The self-hosted edition is just the tool: text and file sharing, the password ge
 | `APP_PORT` | `8080` | External HTTP port |
 | `DATA_DIR` | `./data` | Host path for Redis persistence and encrypted file storage |
 | `BACKEND_UPSTREAM` | `backend:8080` | Backend upstream (`host:port`) nginx proxies `/api/` requests to |
-| `TRUSTED_PROXIES` | private ranges + loopback | Addresses or CIDRs (comma-separated) of your reverse proxy. Rate limits use the visitor IP these report. `none` trusts nobody |
+| `TRUSTED_PROXIES` | the container's Docker network | Addresses or CIDRs (comma-separated) of your reverse proxy. Rate limits use the visitor IP these report. `none` trusts nobody |
 | `REAL_IP_HEADER` | `X-Forwarded-For` | Header your proxy puts the visitor IP in (`CF-Connecting-IP` behind Cloudflare) |
 | `RATE_LIMIT` | `on` | `off` disables all API rate limits |
 | `RATE_LIMIT_WRITE` | `45r/m` | Text secrets created per visitor IP |
@@ -164,7 +164,9 @@ The self-hosted edition is just the tool: text and file sharing, the password ge
 
 Put your own reverse proxy (Caddy, Traefik, nginx) in front for HTTPS/TLS termination. The web container sends the security headers (CSP, `X-Frame-Options`, `Referrer-Policy`) but not HSTS; set that on your proxy.
 
-> **Rate limits behind a proxy:** a proxy on a private network (the usual Docker setup) is trusted by default, so each visitor gets their own limit. With rootless Docker or Docker Desktop, nginx can see every client as the Docker gateway, and that address is inside the default range. If such an instance is reachable without a proxy, set `TRUSTED_PROXIES` to only your proxy's address so visitors can't fake theirs.
+> **Rate limits behind a proxy:** by default the web container trusts only its own Docker network. That covers a proxy container in the same compose setup and a proxy on the host, which reaches the container from the Docker gateway. Either way each visitor gets their own limit. A proxy on another machine isn't trusted until you list its address in `TRUSTED_PROXIES`; until then every visitor shares the proxy's limit. Don't trust whole private ranges such as `10.0.0.0/8`: on an internal network your users have private addresses too, and could fake any IP to get around the limits.
+>
+> With rootless Docker or Docker Desktop, nginx can see every client as the Docker gateway, which is inside the default range. If such an instance is reachable without a proxy, set `TRUSTED_PROXIES` to only your proxy's address.
 
 > **Upgrading:** `APP_HOSTNAME` and `SHOW_BLOG` are no longer read and can be removed from `.env`.
 
