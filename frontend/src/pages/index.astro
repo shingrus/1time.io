@@ -6,15 +6,15 @@ import {isSelfHosted, siteHost, siteUrl} from '../lib/siteConfig.js';
 
 const selfHosted = isSelfHosted();
 
-const title = `One-Time Link: Share a One-Time Secret Our Server Can't Read`;
-const description = 'Create a one-time link for a password, API key or file up to 250 MB. Encrypted in your browser; the key stays in the link and never reaches our server.';
+const title = `One-Time Secret: Send Passwords & Files via One-Time Link`;
+const description = 'Send a password, API key or file as a one-time secret link. Encrypted in your browser, opened once, then deleted. Free, no signup, open source.';
 
 const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'WebApplication',
     name: siteHost,
     url: siteUrl,
-    description: 'Create a one-time link for a password, API key or file up to 250 MB. Encrypted in your browser; the key stays in the link and never reaches our server.',
+    description: 'Send a password, API key or file as a one-time secret link. Encrypted in your browser, opened once, then deleted. Free, no signup, open source.',
     applicationCategory: 'SecurityApplication',
     operatingSystem: 'Any',
     offers: {'@type': 'Offer', price: '0', priceCurrency: 'USD'},
