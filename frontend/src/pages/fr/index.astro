@@ -1,0 +1,135 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import InlineCss from '../../components/InlineCss.astro';
+import NewMessageForm from '../../components/NewMessageForm.astro';
+import {absoluteUrl, siteHost} from '../../lib/siteConfig.js';
+import {pageAlternates} from '../../lib/i18n.js';
+
+const title = 'Créer un lien à usage unique pour un mot de passe ou un fichier';
+const description = 'Créez gratuitement un lien à usage unique pour transmettre un mot de passe, une clé API ou un fichier. Le contenu est chiffré dans votre navigateur et supprimé du serveur après lecture. Sans inscription.';
+
+const faqItems = [
+    {question: '1time.io est-il sûr ?', answer: 'Le contenu est chiffré dans votre navigateur avec AES-256-GCM avant l’envoi, et la clé de déchiffrement n’arrive jamais sur le serveur. Ni 1time.io ni une personne ayant accès au serveur ne peut donc lire ce que vous partagez. Le code est open source (licence MIT) : chacun peut le vérifier.'},
+    {question: 'Faut-il un compte ou une application ?', answer: 'Non. 1time.io fonctionne dans n’importe quel navigateur, y compris sur mobile, sans inscription ni application. Le destinataire n’a pas besoin de compte non plus.'},
+    {question: 'Puis-je envoyer le lien par SMS, WhatsApp ou e-mail ?', answer: 'Oui. Le message ne contient que le lien, pas le mot de passe. Une fois le contenu lu, il ne reste dans la conversation qu’un lien qui ne fonctionne plus. Attention : tant qu’il n’a pas été lu, toute personne qui a le lien peut l’ouvrir. Pour vous en protéger, ajoutez une phrase secrète et communiquez-la par un autre canal.'},
+    {question: 'Quelle différence avec Password Pusher ?', answer: 'Les deux créent des liens qui expirent. D’après sa documentation, Password Pusher chiffre les données sur son serveur, sans chiffrement dans le navigateur : le serveur reçoit donc le contenu lisible. 1time.io le chiffre dans votre navigateur, et le serveur ne reçoit que des données chiffrées, jamais la clé.'},
+];
+
+const jsonLd = [
+    {
+        '@context': 'https://schema.org',
+        '@type': 'WebApplication',
+        name: siteHost,
+        url: absoluteUrl('/fr/'),
+        inLanguage: 'fr',
+        description,
+        applicationCategory: 'SecurityApplication',
+        operatingSystem: 'Any',
+        offers: {'@type': 'Offer', price: '0', priceCurrency: 'EUR'},
+        featureList: 'Liens à usage unique, Chiffrement de bout en bout AES-256-GCM, Zero-knowledge, Expiration de 1 heure à 30 jours, Une lecture par défaut et jusqu’à 10 en option, Fichiers jusqu’à 250 Mo, Phrase secrète facultative, Sans inscription, Open source',
+        dateModified: '2026-11-07',
+    },
+    {
+        '@context': 'https://schema.org',
+        '@type': 'FAQPage',
+        inLanguage: 'fr',
+        mainEntity: faqItems.map((item) => ({
+            '@type': 'Question',
+            name: item.question,
+            acceptedAnswer: {'@type': 'Answer', text: item.answer},
+        })),
+    },
+];
+---
+<BaseLayout
+    title={title}
+    description={description}
+    canonical="/fr/"
+    lang="fr"
+    alternates={pageAlternates.home}
+    ogImageAlt={`${siteHost} : lien à usage unique pour mots de passe, clés API et fichiers`}
+>
+    <InlineCss slot="head" name="home" />
+    <script slot="head" type="application/ld+json" set:html={JSON.stringify(jsonLd)} is:inline></script>
+
+    <div class="share-flow-page">
+        <nav class="share-mode-nav" aria-label="Choisissez quoi partager">
+            <a href="/fr/" class="share-mode-link share-mode-link-active">Texte secret</a>
+            <a href="/fr/envoyer-fichier-securise/" class="share-mode-link">Fichier à usage unique</a>
+        </nav>
+
+        <NewMessageForm lang="fr" />
+
+        <section class="seo-section">
+            <h1>Lien à usage unique : transmettez un mot de passe ou un fichier lisible une seule fois</h1>
+            <p>
+                {siteHost} crée des liens à usage unique, gratuitement et sans compte. Collez un mot de passe, une
+                clé API ou une note privée, ou choisissez un fichier : vous obtenez un lien que le destinataire peut
+                lire une fois. Le contenu est chiffré dans votre navigateur avant l’envoi. Le serveur ne stocke que
+                des données chiffrées et ne reçoit jamais la clé.
+            </p>
+
+            <h2>Comment fonctionne un lien à usage unique sur 1time.io</h2>
+            <ul>
+                <li><strong>Ouvrir le lien ne suffit pas à le consommer.</strong> Le contenu n’est déchiffré que lorsque le destinataire confirme qu’il veut l’afficher, ou télécharger le fichier. Les aperçus de liens générés par les messageries ne l’utilisent donc pas.</li>
+                <li><strong>Après la lecture, la copie du serveur est supprimée.</strong> Le lien ne donne plus accès au contenu. En revanche, ce que le destinataire a copié, enregistré ou capturé à l’écran n’est pas effacé.</li>
+                <li><strong>Sans lecture, le contenu expire.</strong> Il est supprimé à la fin du délai choisi, de 1 heure à 30 jours.</li>
+                <li><strong>Une lecture par défaut.</strong> Si plusieurs personnes ont besoin du même secret, vous pouvez autoriser 2, 3, 5 ou 10 lectures.</li>
+                <li><strong>Un lien qui ne fonctionne plus a été utilisé ou a expiré.</strong> Si le destinataire ne l’a pas encore ouvert et que le délai n’est pas écoulé, quelqu’un d’autre a pu le lire : par précaution, changez le mot de passe.</li>
+            </ul>
+
+            <h2>Créer un lien en quatre étapes</h2>
+            <ol>
+                <li>Collez le secret dans le champ ci-dessus. Pour un document, utilisez l’onglet <a href="/fr/envoyer-fichier-securise/">Fichier à usage unique</a>.</li>
+                <li>Choisissez la durée de validité et, si besoin, le nombre de lectures.</li>
+                <li>Ajoutez éventuellement une phrase secrète, que vous transmettrez par un autre canal.</li>
+                <li>Cliquez sur « Créer le lien » et envoyez-le par e-mail, SMS, WhatsApp, Teams ou Slack.</li>
+            </ol>
+
+            <h2>L’essentiel</h2>
+            <dl class="glossary">
+                <dt>Chiffrement</dt>
+                <dd>AES-256-GCM dans votre navigateur, avec une clé dérivée par HKDF-SHA256.</dd>
+                <dt>Où se trouve la clé</dt>
+                <dd>Dans le lien, après le symbole #. Les navigateurs n’envoient jamais cette partie au serveur.</dd>
+                <dt>Ce que stocke le serveur</dt>
+                <dd>Uniquement des données chiffrées, jamais la clé ni le contenu lisible.</dd>
+                <dt>Fichiers</dt>
+                <dd>Jusqu’à 250 Mo. Le nom et le type du fichier sont chiffrés avec son contenu.</dd>
+                <dt>Prix</dt>
+                <dd>Gratuit et sans compte, pour l’expéditeur comme pour le destinataire. Code open source sous licence MIT.</dd>
+            </dl>
+
+            <h2>À quoi ça sert</h2>
+            <ul>
+                <li>Transmettre un identifiant et un mot de passe à un client, un prestataire ou un collègue.</li>
+                <li>Donner le code Wi-Fi à un invité.</li>
+                <li>Envoyer une clé API, un token d’accès ou les accès à une base de données.</li>
+                <li>Partager des codes de secours de double authentification.</li>
+                <li><a href="/fr/envoyer-fichier-securise/">Envoyer une copie de carte d’identité, un contrat ou un RIB</a> sans la laisser dans l’historique d’une conversation.</li>
+            </ul>
+
+            <h2>Quelle différence avec les messages éphémères de WhatsApp ?</h2>
+            <p>
+                Les messages éphémères de WhatsApp disparaissent au bout d’un délai fixe (24 heures, 7 jours ou
+                90 jours). D’ici là, ils restent visibles sur les deux téléphones et peuvent être transférés ou
+                copiés. Avec un lien à usage unique, la conversation ne contient que le lien, et le contenu est
+                supprimé du serveur dès qu’il a été lu.
+            </p>
+
+            <h2>Questions fréquentes</h2>
+            {faqItems.map((item) => (
+                <div class="feature-card" style="margin-bottom:12px">
+                    <div class="feature-card-header"><h3>{item.question}</h3></div>
+                    <p>{item.answer}</p>
+                </div>
+            ))}
+
+            <h2>D’autres façons de partager en toute sécurité</h2>
+            <nav class="seo-nav">
+                <a href="/fr/envoyer-mot-de-passe/">Envoyer un mot de passe en toute sécurité</a>
+                <a href="/fr/envoyer-fichier-securise/">Envoyer un fichier en toute sécurité</a>
+            </nav>
+        </section>
+    </div>
+</BaseLayout>

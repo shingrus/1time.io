@@ -3,6 +3,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 import InlineCss from '../../components/InlineCss.astro';
 import NewMessageForm from '../../components/NewMessageForm.astro';
 import {absoluteUrl, siteHost} from '../../lib/siteConfig.js';
+import {pageAlternates} from '../../lib/i18n.js';
 
 const title = 'Crear un enlace de un solo uso para contraseñas y archivos';
 const description = 'Crea gratis un enlace de un solo uso para enviar una contraseña, una clave API o un archivo. Se cifra en tu navegador, se abre una vez y se borra. Sin registro.';
@@ -47,7 +48,7 @@ const jsonLd = [
     description={description}
     canonical="/es/"
     lang="es"
-    alternates={{en: '/', es: '/es/'}}
+    alternates={pageAlternates.home}
     ogImageAlt={`${siteHost}: enlace de un solo uso para compartir contraseñas, claves API y archivos`}
 >
     <InlineCss slot="head" name="home" />

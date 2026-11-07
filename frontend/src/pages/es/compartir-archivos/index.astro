@@ -4,6 +4,7 @@ import FileShareForm from '../../../components/FileShareForm.astro';
 import InlineCss from '../../../components/InlineCss.astro';
 import {absoluteUrl, siteHost} from '../../../lib/siteConfig.js';
 import {Constants} from '../../../lib/util.js';
+import {pageAlternates} from '../../../lib/i18n.js';
 
 const title = 'Enviar documentos de forma segura: DNI, contratos y archivos';
 const description = 'Envía tu DNI, pasaporte, un contrato o cualquier archivo de hasta 250 MB con un enlace cifrado que se borra tras la descarga. Más seguro que WhatsApp o el correo. Gratis.';
@@ -74,7 +75,7 @@ const jsonLd = [
     description={description}
     canonical="/es/compartir-archivos/"
     lang="es"
-    alternates={{en: '/secure-file-sharing/', es: '/es/compartir-archivos/'}}
+    alternates={pageAlternates.file}
     ogImageAlt="Envía documentos con un enlace de descarga cifrado de un solo uso"
 >
     <InlineCss slot="head" name="home" />

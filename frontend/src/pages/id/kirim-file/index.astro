@@ -1,0 +1,148 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import FileShareForm from '../../../components/FileShareForm.astro';
+import InlineCss from '../../../components/InlineCss.astro';
+import {absoluteUrl, siteHost} from '../../../lib/siteConfig.js';
+import {Constants} from '../../../lib/util.js';
+import {pageAlternates} from '../../../lib/i18n.js';
+
+const title = 'Kirim Foto KTP dan File dengan Aman lewat Link Sekali Pakai';
+const description = 'Kirim foto KTP, KK, atau file sampai 250 MB lewat link download sekali pakai. File dienkripsi di browser dan dihapus dari server setelah diunduh. Tanpa login, gratis.';
+const maxMb = Math.round(Constants.maxFileSizeBytes / (1024 * 1024));
+
+const faqItems = [
+    {
+        question: 'Apakah aman kirim foto KTP lewat WhatsApp?',
+        answer: 'Ada risikonya. Foto KTP tersimpan di kedua chat, di galeri HP penerima, dan di backup, serta bisa diteruskan. Kalau jatuh ke tangan yang salah, data KTP bisa disalahgunakan, misalnya untuk mendaftar pinjol ilegal atas nama kamu. Link sekali pakai mencegah foto tersimpan di percakapan, tapi tidak bisa mencegah penyalahgunaan oleh penerima yang sudah mengunduhnya.',
+    },
+    {
+        question: 'Bisakah 1time.io melihat file saya?',
+        answer: 'Tidak. File dienkripsi di browser kamu dengan AES-256-GCM sebelum diunggah, termasuk nama dan jenis filenya. Kuncinya ada di link setelah tanda #, dan tidak pernah sampai ke server.',
+    },
+    {
+        question: 'File apa saja yang bisa dikirim?',
+        answer: `File apa pun sampai ${maxMb} MB: PDF, foto atau scan KTP, KK, NPWP, paspor, kontrak, slip gaji, ijazah, atau file ZIP.`,
+    },
+    {
+        question: 'Penerima bilang linknya tidak bisa dibuka. Kenapa?',
+        answer: 'File sudah diunduh sebanyak yang diizinkan, atau masa berlakunya sudah habis. Kalau seharusnya belum, mungkin ada orang lain yang mengunduhnya. Untuk mengurangi risiko ini, tambahkan kode akses dan beri tahu lewat jalur lain.',
+    },
+];
+
+const jsonLd = [
+    {
+        '@context': 'https://schema.org',
+        '@type': 'WebApplication',
+        name: 'Kirim file dan foto KTP dengan aman',
+        url: absoluteUrl('/id/kirim-file/'),
+        inLanguage: 'id',
+        description,
+        applicationCategory: 'SecurityApplication',
+        operatingSystem: 'Any',
+        offers: {'@type': 'Offer', price: '0', priceCurrency: 'IDR'},
+        dateModified: '2026-11-07',
+    },
+    {
+        '@context': 'https://schema.org',
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+            {'@type': 'ListItem', position: 1, name: 'Beranda', item: absoluteUrl('/id/')},
+            {'@type': 'ListItem', position: 2, name: 'Kirim file dan foto KTP dengan aman', item: absoluteUrl('/id/kirim-file/')},
+        ],
+    },
+    {
+        '@context': 'https://schema.org',
+        '@type': 'FAQPage',
+        inLanguage: 'id',
+        mainEntity: faqItems.map((item) => ({
+            '@type': 'Question',
+            name: item.question,
+            acceptedAnswer: {'@type': 'Answer', text: item.answer},
+        })),
+    },
+];
+---
+<BaseLayout
+    title={title}
+    description={description}
+    canonical="/id/kirim-file/"
+    lang="id"
+    alternates={pageAlternates.file}
+    ogImageAlt="Kirim dokumen lewat link download sekali pakai"
+>
+    <InlineCss slot="head" name="home" />
+    <InlineCss slot="head" name="file-sharing" />
+    <script slot="head" type="application/ld+json" set:html={JSON.stringify(jsonLd)} is:inline></script>
+
+    <div class="share-flow-page">
+        <nav class="share-mode-nav" aria-label="Pilih yang mau dikirim">
+            <a href="/id/kirim-password/" class="share-mode-link">Teks rahasia</a>
+            <a href="/id/kirim-file/" class="share-mode-link share-mode-link-active">File sekali unduh</a>
+        </nav>
+
+        <FileShareForm lang="id" />
+
+        <section class="seo-section">
+            <p>
+                Unggah dokumen di sini, lalu kirim link download sekali pakai yang kamu dapat. File dienkripsi di
+                browser kamu sebelum diunggah. Setelah diunduh, salinan di server dihapus dan link tidak bisa
+                digunakan lagi. Gratis dan tanpa login, untuk pengirim maupun penerima.
+            </p>
+
+            <h2>Cara kerjanya</h2>
+            <dl class="glossary">
+                <dt>Jumlah unduhan</dt>
+                <dd>Sekali secara default. Bisa diatur 2, 3, 5, atau 10 kali kalau beberapa orang butuh file yang sama.</dd>
+                <dt>Saat link dibuka</dt>
+                <dd>Penerima melihat halaman konfirmasi dulu. Jumlah unduhan baru berkurang saat penerima mulai mengunduh file.</dd>
+                <dt>Masa berlaku</dt>
+                <dd>1 jam sampai 30 hari. Setelah itu file dihapus, meski belum diunduh.</dd>
+                <dt>Yang dilihat server</dt>
+                <dd>Hanya data terenkripsi, bukan isi, nama, atau jenis filenya.</dd>
+                <dt>Ukuran maksimal</dt>
+                <dd>{maxMb} MB per file.</dd>
+            </dl>
+
+            <h2>Cara kirim foto KTP dengan aman</h2>
+            <ol>
+                <li>Kirim hanya dokumen yang memang diminta, dan hanya ke pihak yang jelas.</li>
+                <li>Tambahkan watermark di foto, misalnya "Hanya untuk verifikasi sewa kos, 12-12-2026", agar lebih sulit dipakai untuk keperluan lain.</li>
+                <li>Unggah filenya di sini, buat link, lalu kirim lewat WhatsApp atau email.</li>
+            </ol>
+            <p>
+                Link sekali pakai membuat foto KTP tidak tersimpan di chat, tapi tidak bisa mengontrol apa yang
+                dilakukan penerima setelah file diunduh. Kirim KTP hanya ke pihak yang benar-benar membutuhkannya,
+                seperti pemilik kos, HRD, atau layanan resmi yang kamu gunakan.
+            </p>
+
+            <h2>Kirim file lewat link, bukan lampiran</h2>
+            <p>
+                Daripada melampirkan PDF di email atau mengirim file langsung di chat, tempel link download-nya.
+                Dokumen tidak ikut tersimpan di inbox atau backup. Tapi link tidak melindungi dari salah kirim: kalau
+                pesan sampai ke orang lain, orang itu bisa mengunduh file-nya. Untuk dokumen penting seperti slip
+                gaji, kontrak, atau data rekening, tambahkan kode akses dan beri tahu lewat telepon.
+            </p>
+
+            <h2>Kirim file besar pakai apa?</h2>
+            <p>
+                Untuk file yang sangat besar, seperti video atau backup berukuran beberapa GB, Google Drive atau
+                WeTransfer lebih cocok. {siteHost} dibuat untuk dokumen rahasia sampai {maxMb} MB yang dikirim ke
+                orang tertentu, dienkripsi sebelum diunggah, dan dihapus dari server setelah diunduh.
+            </p>
+
+            <h2>Pertanyaan yang sering diajukan</h2>
+            {faqItems.map((item) => (
+                <div class="feature-card" style="margin-bottom:12px">
+                    <div class="feature-card-header"><h3>{item.question}</h3></div>
+                    <p>{item.answer}</p>
+                </div>
+            ))}
+
+            <h2>Cara aman lainnya</h2>
+            <nav class="seo-nav">
+                <a href="/id/">Buat link sekali pakai</a>
+                <a href="/id/kirim-password/">Cara kirim password dengan aman</a>
+            </nav>
+        </section>
+    </div>
+</BaseLayout>

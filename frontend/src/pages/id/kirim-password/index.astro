@@ -1,0 +1,163 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import InlineCss from '../../../components/InlineCss.astro';
+import NewMessageForm from '../../../components/NewMessageForm.astro';
+import {absoluteUrl, siteHost} from '../../../lib/siteConfig.js';
+import {pageAlternates} from '../../../lib/i18n.js';
+
+const title = 'Cara Kirim Password dengan Aman lewat WhatsApp atau Email';
+const description = 'Bagikan informasi login, seperti username dan password, lewat WhatsApp, email, atau Teams tanpa meninggalkannya di riwayat chat: pakai link sekali pakai yang hanya bisa dibaca sekali. Gratis, tanpa daftar.';
+
+const faqItems = [
+    {question: 'Amankah kirim password lewat WhatsApp?', answer: 'WhatsApp mengenkripsi pesan selama dikirim, tapi password tetap tertulis di kedua HP, di backup chat, dan di chat mana pun tempat pesan itu diteruskan. Lebih baik kirim link sekali pakai: setelah password dibaca, link tidak bisa digunakan lagi.'},
+    {question: 'Bisakah 1time.io melihat password saya?', answer: 'Tidak. Kunci untuk membukanya ada di link setelah tanda #, dan browser tidak pernah mengirim bagian itu ke server. 1time.io hanya menyimpan data terenkripsi yang tidak bisa dibacanya.'},
+    {question: 'Penerima bilang linknya tidak bisa dibuka. Kenapa?', answer: 'Password-nya sudah dibaca, atau masa berlakunya sudah habis. Cek dulu dua kemungkinan itu. Kalau penerima belum membacanya dan link belum kedaluwarsa, mungkin ada orang lain yang membukanya. Ganti password-nya, lalu kirim yang baru.'},
+    {question: 'Bisa kirim password yang sama ke beberapa orang?', answer: 'Bisa. Saat membuat link, kamu bisa mengizinkan 2, 3, 5, atau 10 kali akses. Satu link untuk satu orang tetap lebih mudah dipantau.'},
+    {question: 'Bolehkah kode OTP dikirim lewat link ini?', answer: 'Jangan. Kode OTP dari bank, e-wallet, atau WhatsApp tidak boleh dibagikan ke siapa pun, lewat cara apa pun. Penipu sering meminta OTP dengan alasan "salah kirim kode". Link sekali pakai untuk password dan data yang memang perlu kamu bagikan, bukan untuk OTP.'},
+];
+
+const jsonLd = [
+    {
+        '@context': 'https://schema.org',
+        '@type': 'WebApplication',
+        name: 'Kirim password dengan aman',
+        url: absoluteUrl('/id/kirim-password/'),
+        inLanguage: 'id',
+        description,
+        applicationCategory: 'SecurityApplication',
+        operatingSystem: 'Any',
+        offers: {'@type': 'Offer', price: '0', priceCurrency: 'IDR'},
+        dateModified: '2026-11-07',
+    },
+    {
+        '@context': 'https://schema.org',
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+            {'@type': 'ListItem', position: 1, name: 'Beranda', item: absoluteUrl('/id/')},
+            {'@type': 'ListItem', position: 2, name: 'Cara kirim password dengan aman', item: absoluteUrl('/id/kirim-password/')},
+        ],
+    },
+    {
+        '@context': 'https://schema.org',
+        '@type': 'FAQPage',
+        inLanguage: 'id',
+        mainEntity: faqItems.map((item) => ({
+            '@type': 'Question',
+            name: item.question,
+            acceptedAnswer: {'@type': 'Answer', text: item.answer},
+        })),
+    },
+];
+---
+<BaseLayout
+    title={title}
+    description={description}
+    canonical="/id/kirim-password/"
+    lang="id"
+    alternates={pageAlternates.password}
+    ogImageAlt="Kirim password lewat link sekali pakai"
+>
+    <InlineCss slot="head" name="home" />
+    <InlineCss slot="head" name="article" />
+    <script slot="head" type="application/ld+json" set:html={JSON.stringify(jsonLd)} is:inline></script>
+
+    <div class="share-flow-page">
+        <nav class="share-mode-nav" aria-label="Pilih yang mau dikirim">
+            <a href="/id/kirim-password/" class="share-mode-link share-mode-link-active">Teks rahasia</a>
+            <a href="/id/kirim-file/" class="share-mode-link">File sekali unduh</a>
+        </nav>
+
+        <NewMessageForm lang="id" />
+
+        <section class="seo-section">
+            <h1>Cara kirim password dengan aman</h1>
+            <p>
+                Daripada mengetik password langsung di chat atau email, kirim link sekali pakai. Penerima membaca
+                password-nya satu kali, lalu salinan di server dihapus. Di WhatsApp, email, atau Teams, yang tersisa
+                hanya link yang tidak bisa digunakan lagi, bukan password yang masih berlaku.
+            </p>
+
+            <h2>Kirim password lewat WhatsApp</h2>
+            <p>
+                WhatsApp mengenkripsi pesan end-to-end, tapi password yang diketik tetap tersimpan di kedua HP, di
+                backup chat Google Drive atau iCloud, dan di chat tempat pesan itu diteruskan. Caranya:
+            </p>
+            <ol>
+                <li>Tempel password di kotak di atas, lalu klik "Buat link".</li>
+                <li>Salin linknya, atau bagikan langsung dari HP.</li>
+                <li>Tempel di chat. Tidak perlu menulis password itu untuk akun apa.</li>
+            </ol>
+
+            <h2>Kirim password lewat email</h2>
+            <p>
+                Email tersimpan di folder Terkirim, di inbox penerima, di server email, dan di backup-nya, sering kali
+                selama bertahun-tahun. Supaya password yang masih berlaku tidak ikut tersimpan:
+            </p>
+            <ul>
+                <li>Tulis link sekali pakai di email, bukan password-nya.</li>
+                <li>Pilih masa berlaku sesingkat yang kamu butuhkan, mulai dari 1 jam.</li>
+                <li>Kalau email bisa saja terkirim ke orang yang salah, tambahkan kode akses dan beri tahu lewat telepon.</li>
+            </ul>
+
+            <h2>Berbagi password dengan rekan kerja: apa risikonya?</h2>
+            <p>
+                Password yang dibagikan di grup chat atau email kantor bisa dibaca siapa saja yang punya akses ke
+                percakapan itu, termasuk orang yang sudah keluar dari tim. Kalau terjadi masalah, juga sulit
+                dilacak siapa yang memakai akun tersebut. Untuk akses bersama yang dipakai terus-menerus, gunakan
+                password manager tim. Untuk serah terima sekali, misalnya ke vendor atau karyawan baru, kirim link
+                sekali pakai dengan masa berlaku 1 hari dan kode akses. Kirim link lewat email dan kode akses lewat
+                telepon, lalu minta penerima mengganti password setelah login pertama.
+            </p>
+
+            <h2>Berbagi password sementara</h2>
+            <p>
+                Kalau seseorang hanya butuh akses sebentar, misalnya teknisi, peserta magang, atau rekan yang
+                menggantikanmu selama cuti, buat password baru khusus untuk itu, kirim lewat link sekali pakai, dan
+                ganti setelah pekerjaannya selesai.
+            </p>
+
+            <h2>Perbandingan cara kirim password</h2>
+            <table class="comparison-table">
+                <thead>
+                    <tr><th>Cara</th><th>Terhapus setelah dipakai?</th><th>Di mana salinannya tersimpan</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td><strong>Link sekali pakai ({siteHost})</strong></td><td><span class="check">✓</span> Setelah dibaca atau kedaluwarsa</td><td>Hanya yang disimpan penerima. Server hanya menerima data terenkripsi.</td></tr>
+                    <tr><td><strong>Password Pusher</strong></td><td><span class="check">✓</span> Setelah batas akses atau waktunya habis</td><td>Menurut dokumentasinya, server menerima isi aslinya lalu mengenkripsinya sendiri.</td></tr>
+                    <tr><td><strong>Brankas bersama di password manager</strong></td><td><span class="cross">✗</span> Tetap ada sampai dihapus, memang begitu fungsinya</td><td>Brankas bersama. Kedua pihak perlu akun.</td></tr>
+                    <tr><td><strong>WhatsApp atau Telegram</strong></td><td><span class="cross">✗</span> Kecuali pesan sementara, setelah waktu tertentu</td><td>Kedua HP, backup chat, dan chat tempat pesan diteruskan.</td></tr>
+                    <tr><td><strong>Email</strong></td><td><span class="cross">✗</span></td><td>Kedua inbox, server email, dan backup-nya.</td></tr>
+                    <tr><td><strong>SMS</strong></td><td><span class="cross">✗</span></td><td>Kedua HP dan operator seluler.</td></tr>
+                </tbody>
+            </table>
+
+            <h2>Tips aman</h2>
+            <ul>
+                <li><strong>Pisahkan link dan kode akses.</strong> Link lewat email, kode akses lewat telepon: yang satu tidak berguna tanpa yang lain.</li>
+                <li><strong>Ganti password setelah kerja sama selesai.</strong> Kalau vendor sudah selesai atau ada yang keluar dari tim, ganti password yang dia tahu.</li>
+                <li><strong>Aktifkan verifikasi dua langkah.</strong> Password yang bocor tidak cukup untuk masuk tanpa faktor kedua.</li>
+            </ul>
+
+            <h2>Pertanyaan yang sering diajukan</h2>
+            {faqItems.map((item) => (
+                <div class="feature-card" style="margin-bottom:12px">
+                    <div class="feature-card-header"><h3>{item.question}</h3></div>
+                    <p>{item.answer}</p>
+                </div>
+            ))}
+
+            <h2>Cara aman lainnya</h2>
+            <nav class="seo-nav">
+                <a href="/id/">Buat link sekali pakai</a>
+                <a href="/id/kirim-file/">Kirim file dan foto KTP dengan aman</a>
+            </nav>
+        </section>
+    </div>
+</BaseLayout>
+
+<style>
+    .comparison-table {
+        display: block;
+        overflow-x: auto;
+    }
+</style>

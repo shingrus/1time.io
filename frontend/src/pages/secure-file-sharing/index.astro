@@ -4,6 +4,7 @@ import FileShareForm from '../../components/FileShareForm.astro';
 import InlineCss from '../../components/InlineCss.astro';
 import {absoluteUrl, isSelfHosted, siteHost} from '../../lib/siteConfig.js';
 import {Constants} from '../../lib/util.js';
+import {pageAlternates} from '../../lib/i18n.js';
 
 const title = `One-Time File Sharing — Encrypted Self-Destructing Download Links`;
 const description = 'One-time file sharing through an encrypted, self-destructing download link. Zero-knowledge browser encryption, optional passphrase — free, no signup.';
@@ -81,7 +82,7 @@ const jsonLd = [
     title={title}
     description={description}
     canonical="/secure-file-sharing/"
-    alternates={{en: '/secure-file-sharing/', es: '/es/compartir-archivos/'}}
+    alternates={pageAlternates.file}
     ogImage="/1time-og-main.png"
     ogImageAlt="One-time file sharing with encrypted self-destructing download links"
 >

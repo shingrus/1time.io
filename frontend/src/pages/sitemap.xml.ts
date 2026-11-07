@@ -31,6 +31,15 @@ const coreRoutes: RouteEntry[] = [
     {path: '/es/', priority: 0.8, changefreq: 'weekly', lastmod: '2026-11-06'},
     {path: '/es/compartir-contrasena/', priority: 0.7, changefreq: 'weekly', lastmod: '2026-11-06'},
     {path: '/es/compartir-archivos/', priority: 0.7, changefreq: 'weekly', lastmod: '2026-11-06'},
+    {path: '/fr/', priority: 0.8, changefreq: 'weekly', lastmod: '2026-11-07'},
+    {path: '/fr/envoyer-mot-de-passe/', priority: 0.7, changefreq: 'weekly', lastmod: '2026-11-07'},
+    {path: '/fr/envoyer-fichier-securise/', priority: 0.7, changefreq: 'weekly', lastmod: '2026-11-07'},
+    {path: '/ja/', priority: 0.8, changefreq: 'weekly', lastmod: '2026-11-07'},
+    {path: '/ja/password/', priority: 0.7, changefreq: 'weekly', lastmod: '2026-11-07'},
+    {path: '/ja/file/', priority: 0.7, changefreq: 'weekly', lastmod: '2026-11-07'},
+    {path: '/id/', priority: 0.8, changefreq: 'weekly', lastmod: '2026-11-07'},
+    {path: '/id/kirim-password/', priority: 0.7, changefreq: 'weekly', lastmod: '2026-11-07'},
+    {path: '/id/kirim-file/', priority: 0.7, changefreq: 'weekly', lastmod: '2026-11-07'},
 ];
 
 const blogRoutes: RouteEntry[] = [
