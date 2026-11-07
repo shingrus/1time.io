@@ -1,0 +1,153 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import FileShareForm from '../../../components/FileShareForm.astro';
+import InlineCss from '../../../components/InlineCss.astro';
+import {absoluteUrl, siteHost} from '../../../lib/siteConfig.js';
+import {Constants} from '../../../lib/util.js';
+import {pageAlternates} from '../../../lib/i18n.js';
+
+const title = 'ワンタイムURLでファイルを安全に送る｜パスワード付きZIP（PPAP）の代替手段';
+const description = 'パスワード付きZIPとパスワードを別々のメールで送る「PPAP」の代替手段として、ファイルをブラウザ内で暗号化し、ダウンロード回数を限定したワンタイムURLで送れます。250MBまで、無料・登録不要。';
+const maxMb = Math.round(Constants.maxFileSizeBytes / (1024 * 1024));
+
+const faqItems = [
+    {
+        question: 'PPAPを禁止されたら、ファイルはどう送ればいいですか？',
+        answer: 'まずは社内で認められたファイル共有サービスがあるか確認してください。ない場合や、社外の相手に1回だけ渡したい場合は、ワンタイムURLが手軽です。1time.ioならファイルをブラウザ内で暗号化してアップロードし、URLをメールに貼るだけで、受信者側の登録もZIPの解凍も要りません。',
+    },
+    {
+        question: 'PPAPの代わりに無料で使えますか？',
+        answer: `はい。1time.ioは無料で、送る側も受け取る側も登録不要です。${maxMb}MBまでのファイルを、ダウンロード回数と有効期限を決めて送れます。社内の承認フローや送信ログの保管が必要な場合は、法人向けのファイル共有サービスを検討してください。`,
+    },
+    {
+        question: '1time.ioにファイルの中身を見られることはありますか？',
+        answer: 'ありません。ファイルはファイル名・形式と一緒に、アップロード前にブラウザ内でAES-256-GCMにより暗号化されます。復号キーはURLの「#」より後ろにあり、サーバーには届きません。',
+    },
+    {
+        question: '受信者から「URLが開けない」と言われたら？',
+        answer: '許可した回数のダウンロードが済んだか、有効期限が切れています。どちらでもないはずなら、別の人がダウンロードした可能性があります。こうした事態に備えるには、合言葉を設定して電話など別の手段で伝えてください。',
+    },
+];
+
+const jsonLd = [
+    {
+        '@context': 'https://schema.org',
+        '@type': 'WebApplication',
+        name: 'ワンタイムURLでファイルを安全に送る',
+        url: absoluteUrl('/ja/file/'),
+        inLanguage: 'ja',
+        description,
+        applicationCategory: 'SecurityApplication',
+        operatingSystem: 'Any',
+        offers: {'@type': 'Offer', price: '0', priceCurrency: 'JPY'},
+        dateModified: '2026-11-07',
+    },
+    {
+        '@context': 'https://schema.org',
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+            {'@type': 'ListItem', position: 1, name: 'ホーム', item: absoluteUrl('/ja/')},
+            {'@type': 'ListItem', position: 2, name: 'ワンタイムURLでファイルを安全に送る', item: absoluteUrl('/ja/file/')},
+        ],
+    },
+    {
+        '@context': 'https://schema.org',
+        '@type': 'FAQPage',
+        inLanguage: 'ja',
+        mainEntity: faqItems.map((item) => ({
+            '@type': 'Question',
+            name: item.question,
+            acceptedAnswer: {'@type': 'Answer', text: item.answer},
+        })),
+    },
+];
+---
+<BaseLayout
+    title={title}
+    description={description}
+    canonical="/ja/file/"
+    lang="ja"
+    alternates={pageAlternates.file}
+    ogImageAlt="ダウンロード回数を限定したワンタイムURLでファイルを送る"
+>
+    <InlineCss slot="head" name="home" />
+    <InlineCss slot="head" name="file-sharing" />
+    <script slot="head" type="application/ld+json" set:html={JSON.stringify(jsonLd)} is:inline></script>
+
+    <div class="share-flow-page">
+        <nav class="share-mode-nav" aria-label="送るものを選ぶ">
+            <a href="/ja/password/" class="share-mode-link">テキスト</a>
+            <a href="/ja/file/" class="share-mode-link share-mode-link-active">ファイル</a>
+        </nav>
+
+        <FileShareForm lang="ja" />
+
+        <section class="seo-section">
+            <p>
+                ファイルをここにアップロードし、発行されたワンタイムURLを相手に送ります。ファイルはアップロード前にブラウザ内で暗号化され、許可した回数ダウンロードされるとサーバーから削除されます。無料で、会員登録も要りません。
+            </p>
+
+            <h2>しくみと主な仕様</h2>
+            <dl class="glossary">
+                <dt>ダウンロード回数</dt>
+                <dd>初期設定は1回です。複数人に渡す場合は2・3・5・10回も選べます。</dd>
+                <dt>URLを開いたとき</dt>
+                <dd>確認画面が表示されます。ダウンロード回数が減るのは、ダウンロードを始めた時点です。</dd>
+                <dt>有効期限</dt>
+                <dd>1時間〜30日。ダウンロードされなくても、期限が来れば削除されます。</dd>
+                <dt>サーバーから見えるもの</dt>
+                <dd>暗号化されたデータだけです。中身もファイル名も形式も見えません。</dd>
+                <dt>最大サイズ</dt>
+                <dd>1ファイル{maxMb}MBまで。</dd>
+            </dl>
+
+            <h2>PPAPとは</h2>
+            <p>
+                PPAPは、パスワード付きZIPファイルをメールで送り、そのパスワードを別のメールで送る方法です。日本のビジネスメールで長く使われてきましたが、ZIPとパスワードが同じ経路で同じ相手に届くため、誤送信や盗み見への対策としては効果が限られます。また、暗号化されたZIPはメールサーバーのウイルスチェックを通り抜けてしまうため、マルウェアの拡散にも悪用されてきました。2020年11月には内閣府と内閣官房がPPAPを廃止し、日立グループやソフトバンクなど多くの企業も続きました。
+            </p>
+
+            <h2>PPAPの代替手段</h2>
+            <ul>
+                <li><strong>オンラインストレージの共有リンク</strong>（Box、Google ドライブ、OneDriveなど）：社内で契約済みなら有力な選択肢です。共有範囲の設定ミスに注意が必要です。</li>
+                <li><strong>ファイル転送サービス</strong>：大容量のファイルに向いています。サービスによっては受信者の登録が必要です。</li>
+                <li><strong>チャットツール</strong>（Teams、Slackなど）：社内同士なら便利ですが、社外の相手とは使えないこともあります。</li>
+                <li><strong>ワンタイムURL（{siteHost}）</strong>：無料・登録不要で、ファイルはブラウザ内で暗号化され、ダウンロード後にサーバーから削除されます。社外の相手に機密ファイルを1回だけ渡したいときに向いています。</li>
+            </ul>
+            <p>
+                ただし、添付ファイルをURLに置き換えるだけでは、誤送信や盗み見は防げません。メールが別の人に届けば、その人がダウンロードできてしまいます。合言葉を設定し、電話など別の手段で伝えれば、URLだけではファイルを開けなくなります。社内の承認フローや送信ログの保管が求められる場合は、法人向けのサービスが適しています。
+            </p>
+
+            <h2>パスワード付きZIPの代わりに送る手順</h2>
+            <ol>
+                <li>上の欄でファイルを選ぶか、ドラッグ＆ドロップします。ZIPにまとめる必要はありません。</li>
+                <li>ダウンロード回数と有効期限を選び、必要なら合言葉を設定します。</li>
+                <li>「ワンタイムURLを作成」を押し、URLをメール本文に貼って送ります。</li>
+                <li>合言葉を設定した場合は、電話や別のチャットで伝えます。</li>
+            </ol>
+
+            <h2>本人確認書類の画像を送るとき</h2>
+            <p>
+                運転免許証やマイナンバーカード、パスポートの画像をメールやLINEで送ると、双方の端末やバックアップに残ります。ワンタイムURLで送れば、トーク履歴や受信箱には画像が残りません。ただし、ダウンロード後のファイルの扱いは相手次第なので、本当に必要な相手にだけ送りましょう。マイナンバーが記載された面は、提出を求められた場合以外は送らないのが基本です。
+            </p>
+
+            <h2>大容量ファイル送信サービスとの違い</h2>
+            <p>
+                動画や数GBのバックアップのような大きなファイルには、ギガファイル便やfirestorageなどの大容量ファイル送信サービスが向いています。{siteHost}は、{maxMb}MBまでの機密ファイルを特定の相手に渡すためのもので、ファイルはアップロード前に暗号化され、ダウンロード後にサーバーから削除されます。
+            </p>
+
+            <h2>よくある質問</h2>
+            {faqItems.map((item) => (
+                <div class="feature-card" style="margin-bottom:12px">
+                    <div class="feature-card-header"><h3>{item.question}</h3></div>
+                    <p>{item.answer}</p>
+                </div>
+            ))}
+
+            <h2>ほかの安全な送り方</h2>
+            <nav class="seo-nav">
+                <a href="/ja/">ワンタイムURLを作成する</a>
+                <a href="/ja/password/">パスワードを安全に送る方法</a>
+            </nav>
+        </section>
+    </div>
+</BaseLayout>

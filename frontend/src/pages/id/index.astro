@@ -1,0 +1,134 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import InlineCss from '../../components/InlineCss.astro';
+import NewMessageForm from '../../components/NewMessageForm.astro';
+import {absoluteUrl, siteHost} from '../../lib/siteConfig.js';
+import {pageAlternates} from '../../lib/i18n.js';
+
+const title = 'Link Sekali Pakai untuk Kirim Password dan File dengan Aman';
+const description = 'Buat link sekali pakai gratis untuk kirim password, API key, atau file. Isinya dienkripsi di browser dan dihapus dari server setelah dibaca. Tanpa daftar.';
+
+const faqItems = [
+    {question: 'Apakah 1time.io aman?', answer: 'Isinya dienkripsi di browser kamu dengan AES-256-GCM sebelum dikirim, dan kunci untuk membukanya tidak pernah sampai ke server. Jadi 1time.io maupun orang yang punya akses ke server tidak bisa membaca apa yang kamu kirim. Kodenya open source (lisensi MIT), sehingga siapa pun bisa memeriksanya.'},
+    {question: 'Perlu daftar akun atau install aplikasi?', answer: 'Tidak perlu. 1time.io bisa dipakai di browser apa saja, termasuk di HP, tanpa daftar dan tanpa install aplikasi. Penerima juga tidak perlu akun.'},
+    {question: 'Boleh kirim linknya lewat WhatsApp atau email?', answer: 'Boleh. Yang terkirim hanya linknya, bukan password-nya. Setelah isinya dibaca, di chat hanya tersisa link yang tidak bisa digunakan lagi. Selama belum dibaca, siapa pun yang memegang link bisa membukanya. Untuk perlindungan tambahan, tambahkan kode akses dan beri tahu lewat jalur lain.'},
+    {question: 'Apa bedanya dengan situs pesan rahasia seperti Secreto?', answer: 'Situs seperti Secreto dipakai untuk menerima pesan anonim dari orang lain. 1time.io dipakai untuk mengirim informasi rahasia ke orang tertentu: isinya dienkripsi dan hanya bisa dibaca sekali secara default.'},
+];
+
+const jsonLd = [
+    {
+        '@context': 'https://schema.org',
+        '@type': 'WebApplication',
+        name: siteHost,
+        url: absoluteUrl('/id/'),
+        inLanguage: 'id',
+        description,
+        applicationCategory: 'SecurityApplication',
+        operatingSystem: 'Any',
+        offers: {'@type': 'Offer', price: '0', priceCurrency: 'IDR'},
+        featureList: 'Link sekali pakai, Enkripsi end-to-end AES-256-GCM, Zero-knowledge, Masa berlaku 1 jam sampai 30 hari, Sekali dibuka secara default dan maksimal 10 kali, File sampai 250 MB, Kode akses opsional, Tanpa daftar, Open source',
+        dateModified: '2026-11-07',
+    },
+    {
+        '@context': 'https://schema.org',
+        '@type': 'FAQPage',
+        inLanguage: 'id',
+        mainEntity: faqItems.map((item) => ({
+            '@type': 'Question',
+            name: item.question,
+            acceptedAnswer: {'@type': 'Answer', text: item.answer},
+        })),
+    },
+];
+---
+<BaseLayout
+    title={title}
+    description={description}
+    canonical="/id/"
+    lang="id"
+    alternates={pageAlternates.home}
+    ogImageAlt={`${siteHost}: link sekali pakai untuk kirim password, API key, dan file`}
+>
+    <InlineCss slot="head" name="home" />
+    <script slot="head" type="application/ld+json" set:html={JSON.stringify(jsonLd)} is:inline></script>
+
+    <div class="share-flow-page">
+        <nav class="share-mode-nav" aria-label="Pilih yang mau dikirim">
+            <a href="/id/" class="share-mode-link share-mode-link-active">Teks rahasia</a>
+            <a href="/id/kirim-file/" class="share-mode-link">File sekali unduh</a>
+        </nav>
+
+        <NewMessageForm lang="id" />
+
+        <section class="seo-section">
+            <h1>Link sekali pakai: kirim password dan file yang hanya bisa dibaca sekali</h1>
+            <p>
+                {siteHost} membuat link sekali pakai secara gratis dan tanpa akun. Tempel password, API key, atau
+                catatan pribadi, atau pilih file, lalu kamu mendapat link yang memungkinkan penerima membaca isinya satu kali. Isinya
+                dienkripsi di browser kamu sebelum dikirim. Server hanya menyimpan data terenkripsi dan tidak pernah
+                menerima kuncinya.
+            </p>
+
+            <h2>Cara kerja link sekali pakai di 1time.io</h2>
+            <ul>
+                <li><strong>Membuka link saja tidak mengurangi jumlah akses.</strong> Isinya baru dibuka setelah penerima menekan tombol untuk menampilkan atau mengunduh. Jadi pratinjau link di aplikasi chat tidak memakai link tersebut.</li>
+                <li><strong>Setelah dibaca, salinan di server dihapus.</strong> Link tidak bisa digunakan lagi. Namun, apa yang sudah disalin, disimpan, atau di-screenshot penerima tidak ikut terhapus.</li>
+                <li><strong>Kalau tidak dibuka, isinya kedaluwarsa.</strong> Data dihapus setelah masa berlaku yang kamu pilih, dari 1 jam sampai 30 hari.</li>
+                <li><strong>Sekali dibuka secara default.</strong> Kalau beberapa orang butuh isi yang sama, kamu bisa mengizinkan 2, 3, 5, atau 10 kali akses.</li>
+                <li><strong>Link yang tidak bisa dibuka berarti sudah dipakai atau kedaluwarsa.</strong> Kalau penerima belum membukanya dan masa berlakunya belum habis, mungkin ada orang lain yang membukanya. Untuk berjaga-jaga, ganti password-nya.</li>
+            </ul>
+
+            <h2>Cara membuat link sekali pakai</h2>
+            <ol>
+                <li>Tempel isi rahasia di kotak di atas. Untuk dokumen, pakai tab <a href="/id/kirim-file/">File sekali unduh</a>.</li>
+                <li>Pilih masa berlaku dan, kalau perlu, jumlah akses.</li>
+                <li>Kalau mau, tambahkan kode akses dan beri tahu penerima lewat jalur lain.</li>
+                <li>Klik "Buat link", lalu kirim lewat WhatsApp, Telegram, email, Teams, atau Slack.</li>
+            </ol>
+
+            <h2>Fakta singkat</h2>
+            <dl class="glossary">
+                <dt>Enkripsi</dt>
+                <dd>AES-256-GCM di browser kamu, dengan kunci yang diturunkan lewat HKDF-SHA256.</dd>
+                <dt>Di mana kuncinya</dt>
+                <dd>Di link, setelah tanda #. Browser tidak pernah mengirim bagian ini ke server.</dd>
+                <dt>Yang disimpan server</dt>
+                <dd>Hanya data terenkripsi, bukan kunci atau isi aslinya.</dd>
+                <dt>File</dt>
+                <dd>Maksimal 250 MB. Nama dan jenis file ikut dienkripsi.</dd>
+                <dt>Biaya</dt>
+                <dd>Gratis dan tanpa akun, untuk pengirim maupun penerima. Kode open source dengan lisensi MIT.</dd>
+            </dl>
+
+            <h2>Bisa dipakai untuk apa saja?</h2>
+            <ul>
+                <li>Mengirim akun dan password kerja ke klien, vendor, atau rekan kerja.</li>
+                <li>Memberikan password WiFi ke tamu.</li>
+                <li>Mengirim API key, token akses, atau kredensial database.</li>
+                <li>Membagikan kode cadangan verifikasi dua langkah (2FA).</li>
+                <li><a href="/id/kirim-file/">Mengirim foto KTP, KK, atau kontrak</a> tanpa meninggalkan salinannya di chat.</li>
+            </ul>
+
+            <h2>Apa bedanya dengan fitur sekali lihat di WhatsApp?</h2>
+            <p>
+                Fitur sekali lihat di WhatsApp berlaku untuk foto, video, dan pesan suara, bukan teks. Password yang
+                diketik di chat tetap tersimpan di kedua HP dan di backup. Dengan link sekali pakai, chat hanya berisi
+                link, dan isinya dihapus dari server setelah dibaca.
+            </p>
+
+            <h2>Pertanyaan yang sering diajukan</h2>
+            {faqItems.map((item) => (
+                <div class="feature-card" style="margin-bottom:12px">
+                    <div class="feature-card-header"><h3>{item.question}</h3></div>
+                    <p>{item.answer}</p>
+                </div>
+            ))}
+
+            <h2>Cara aman lainnya</h2>
+            <nav class="seo-nav">
+                <a href="/id/kirim-password/">Cara kirim password dengan aman</a>
+                <a href="/id/kirim-file/">Kirim file dan foto KTP dengan aman</a>
+            </nav>
+        </section>
+    </div>
+</BaseLayout>

@@ -1,0 +1,170 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import InlineCss from '../../../components/InlineCss.astro';
+import NewMessageForm from '../../../components/NewMessageForm.astro';
+import {absoluteUrl, siteHost} from '../../../lib/siteConfig.js';
+import {pageAlternates} from '../../../lib/i18n.js';
+
+const title = 'Envoyer un mot de passe en toute sécurité : lien à usage unique';
+const description = 'Transmettez un mot de passe ou des identifiants par mail, SMS, WhatsApp ou Teams sans les laisser dans l’historique : un lien à usage unique, lisible une fois. Gratuit, sans inscription.';
+
+const faqItems = [
+    {question: 'Peut-on envoyer un mot de passe par mail ?', answer: 'Mieux vaut ne pas l’écrire dans le mail : il resterait dans les deux boîtes et leurs sauvegardes. Mettez plutôt dans le mail un lien à usage unique. Une fois le mot de passe lu, le lien ne donne plus accès à rien.'},
+    {question: 'Comment envoyer un mot de passe crypté ?', answer: 'Collez-le dans le champ en haut de cette page : il est chiffré (on dit souvent « crypté ») dans votre navigateur avec AES-256-GCM avant d’être envoyé. Vous n’avez rien à installer, et le destinataire n’a besoin que du lien.'},
+    {question: '1time.io peut-il voir mon mot de passe ?', answer: 'Non. La clé de déchiffrement se trouve dans le lien, après le symbole #, une partie que les navigateurs n’envoient jamais au serveur. 1time.io ne stocke que des données chiffrées qu’il ne peut pas lire.'},
+    {question: 'Le destinataire dit que le lien ne fonctionne plus. Que s’est-il passé ?', answer: 'Le mot de passe a déjà été lu, ou le délai de validité est écoulé. Vérifiez d’abord ces deux cas. Si le destinataire ne l’a pas lu et que le lien n’a pas expiré, quelqu’un d’autre a pu l’ouvrir : changez le mot de passe et envoyez-en un nouveau.'},
+    {question: 'Puis-je envoyer le même mot de passe à plusieurs personnes ?', answer: 'Oui : à la création du lien, vous pouvez autoriser 2, 3, 5 ou 10 lectures. Un lien par personne reste plus simple à suivre, puisque chacun ne sert qu’une fois.'},
+];
+
+const jsonLd = [
+    {
+        '@context': 'https://schema.org',
+        '@type': 'WebApplication',
+        name: 'Envoyer un mot de passe en toute sécurité',
+        url: absoluteUrl('/fr/envoyer-mot-de-passe/'),
+        inLanguage: 'fr',
+        description,
+        applicationCategory: 'SecurityApplication',
+        operatingSystem: 'Any',
+        offers: {'@type': 'Offer', price: '0', priceCurrency: 'EUR'},
+        dateModified: '2026-11-07',
+    },
+    {
+        '@context': 'https://schema.org',
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+            {'@type': 'ListItem', position: 1, name: 'Accueil', item: absoluteUrl('/fr/')},
+            {'@type': 'ListItem', position: 2, name: 'Envoyer un mot de passe en toute sécurité', item: absoluteUrl('/fr/envoyer-mot-de-passe/')},
+        ],
+    },
+    {
+        '@context': 'https://schema.org',
+        '@type': 'FAQPage',
+        inLanguage: 'fr',
+        mainEntity: faqItems.map((item) => ({
+            '@type': 'Question',
+            name: item.question,
+            acceptedAnswer: {'@type': 'Answer', text: item.answer},
+        })),
+    },
+];
+---
+<BaseLayout
+    title={title}
+    description={description}
+    canonical="/fr/envoyer-mot-de-passe/"
+    lang="fr"
+    alternates={pageAlternates.password}
+    ogImageAlt="Envoyer un mot de passe avec un lien à usage unique"
+>
+    <InlineCss slot="head" name="home" />
+    <InlineCss slot="head" name="article" />
+    <script slot="head" type="application/ld+json" set:html={JSON.stringify(jsonLd)} is:inline></script>
+
+    <div class="share-flow-page">
+        <nav class="share-mode-nav" aria-label="Choisissez quoi partager">
+            <a href="/fr/envoyer-mot-de-passe/" class="share-mode-link share-mode-link-active">Texte secret</a>
+            <a href="/fr/envoyer-fichier-securise/" class="share-mode-link">Fichier à usage unique</a>
+        </nav>
+
+        <NewMessageForm lang="fr" />
+
+        <section class="seo-section">
+            <h1>Comment envoyer un mot de passe en toute sécurité</h1>
+            <p>
+                Pour partager un mot de passe sans le laisser dans un historique, n’écrivez pas le mot de passe
+                lui-même dans le message : envoyez un lien à usage unique. Le destinataire le lit une fois, puis la
+                copie du serveur est supprimée. Dans vos mails, vos SMS ou sur Teams, il ne reste qu’un lien qui
+                ne fonctionne plus.
+            </p>
+
+            <h2>Envoyer un mot de passe par mail</h2>
+            <p>
+                Un e-mail est conservé dans votre dossier Envoyés, dans la boîte du destinataire, sur les serveurs
+                de messagerie et dans leurs sauvegardes, souvent pendant des années. Pour éviter qu’un mot de passe
+                valide y reste :
+            </p>
+            <ul>
+                <li>Mettez dans le mail le lien à usage unique, pas le mot de passe.</li>
+                <li>Choisissez la durée de validité la plus courte qui vous convient, à partir d’une heure.</li>
+                <li>N’écrivez pas « mot de passe » dans l’objet : inutile d’attirer l’attention.</li>
+                <li>Si le mail risque d’arriver chez quelqu’un d’autre, ajoutez une phrase secrète et donnez-la par téléphone.</li>
+            </ul>
+
+            <h2>Envoyer un mot de passe par SMS ou WhatsApp</h2>
+            <p>
+                WhatsApp chiffre les messages pendant le transport, mais le mot de passe reste écrit sur les deux
+                téléphones, dans les sauvegardes et dans toute conversation où il est transféré. Un SMS n’est pas
+                chiffré de bout en bout et transite par l’opérateur. Dans les deux cas, envoyez plutôt le lien :
+            </p>
+            <ol>
+                <li>Collez le mot de passe dans le champ ci-dessus et cliquez sur « Créer le lien ».</li>
+                <li>Copiez le lien, ou partagez-le directement depuis votre téléphone.</li>
+                <li>Collez-le dans la conversation, sans préciser à quel compte il correspond.</li>
+            </ol>
+
+            <h2>Transmettre un identifiant et un mot de passe à un client ou un prestataire</h2>
+            <p>
+                Pour une personne extérieure à votre entreprise, créez un lien valable un jour avec une phrase
+                secrète. Envoyez le lien par mail et la phrase par téléphone ou par SMS : aucun des deux messages ne
+                suffit seul pour lire les identifiants. Demandez au destinataire de changer le mot de passe dès sa
+                première connexion.
+            </p>
+
+            <h2>Partager un mot de passe temporaire</h2>
+            <p>
+                Si quelqu’un a besoin d’un accès pour peu de temps, comme un technicien, un stagiaire ou un collègue
+                qui vous remplace, créez un mot de passe dédié, transmettez-le par un lien à usage unique et
+                changez-le une fois la mission terminée.
+            </p>
+
+            <h2>Les façons d’envoyer un mot de passe, comparées</h2>
+            <table class="comparison-table">
+                <thead>
+                    <tr><th>Méthode</th><th>Supprimé après usage ?</th><th>Où restent des copies</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td><strong>Lien à usage unique ({siteHost})</strong></td><td><span class="check">✓</span> Après lecture ou expiration</td><td>Seulement ce que garde le destinataire. Le serveur ne reçoit que des données chiffrées.</td></tr>
+                    <tr><td><strong>Password Pusher</strong></td><td><span class="check">✓</span> Après les consultations ou le délai</td><td>D’après sa documentation, le serveur reçoit le contenu lisible et le chiffre lui-même.</td></tr>
+                    <tr><td><strong>Coffre partagé d’un gestionnaire de mots de passe</strong></td><td><span class="cross">✗</span> Reste jusqu’à ce que vous le retiriez, c’est voulu</td><td>Le coffre partagé. Les deux personnes ont besoin d’un compte.</td></tr>
+                    <tr><td><strong>WhatsApp ou autre messagerie</strong></td><td><span class="cross">✗</span> Sauf messages éphémères, après un délai fixe</td><td>Les deux téléphones, les sauvegardes et les conversations transférées.</td></tr>
+                    <tr><td><strong>E-mail</strong></td><td><span class="cross">✗</span></td><td>Les deux boîtes mail, les serveurs de messagerie et leurs sauvegardes.</td></tr>
+                    <tr><td><strong>SMS</strong></td><td><span class="cross">✗</span></td><td>Les deux téléphones et l’opérateur.</td></tr>
+                </tbody>
+            </table>
+            <p>
+                Pour un accès partagé et durable au sein d’une équipe, un gestionnaire de mots de passe reste le bon
+                outil. Le lien à usage unique sert aux envois ponctuels, notamment vers des personnes qui ne
+                l’utilisent pas.
+            </p>
+
+            <h2>Bonnes pratiques</h2>
+            <ul>
+                <li><strong>Séparez le lien et la phrase secrète.</strong> Le lien par mail, la phrase par téléphone : l’un ne sert à rien sans l’autre.</li>
+                <li><strong>Changez le mot de passe en fin de collaboration.</strong> Quand un prestataire termine sa mission ou qu’un collègue quitte l’équipe, changez ce qu’il connaissait.</li>
+                <li><strong>Activez la double authentification.</strong> Un mot de passe divulgué ne suffit pas sans le second facteur.</li>
+            </ul>
+
+            <h2>Questions fréquentes</h2>
+            {faqItems.map((item) => (
+                <div class="feature-card" style="margin-bottom:12px">
+                    <div class="feature-card-header"><h3>{item.question}</h3></div>
+                    <p>{item.answer}</p>
+                </div>
+            ))}
+
+            <h2>D’autres façons de partager en toute sécurité</h2>
+            <nav class="seo-nav">
+                <a href="/fr/">Créer un lien à usage unique</a>
+                <a href="/fr/envoyer-fichier-securise/">Envoyer un fichier en toute sécurité</a>
+            </nav>
+        </section>
+    </div>
+</BaseLayout>
+
+<style>
+    .comparison-table {
+        display: block;
+        overflow-x: auto;
+    }
+</style>

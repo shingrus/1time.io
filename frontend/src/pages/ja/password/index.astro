@@ -1,0 +1,151 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import InlineCss from '../../../components/InlineCss.astro';
+import NewMessageForm from '../../../components/NewMessageForm.astro';
+import {absoluteUrl, siteHost} from '../../../lib/siteConfig.js';
+import {pageAlternates} from '../../../lib/i18n.js';
+
+const title = 'パスワードを安全に送る方法：メールやLINEにはワンタイムURLを';
+const description = 'IDやパスワードをメール、LINE、Teamsで送るときに、履歴にパスワードを残さない方法を解説します。1回見たら消えるワンタイムURLと、合言葉を別の経路で伝える手順。無料・登録不要。';
+
+const faqItems = [
+    {question: 'メールの件名はどうすればいいですか？', answer: '件名に「パスワード」「ログイン情報」などと書くのは避けましょう。本文にはワンタイムURLだけを貼り、どのサービスのパスワードかは電話や別のチャットで伝えると安心です。'},
+    {question: '1time.ioにパスワードを見られることはありますか？', answer: 'ありません。復号キーはURLの「#」より後ろにあり、この部分はブラウザからサーバーに送られません。1time.ioが保存するのは、読めない暗号化データだけです。'},
+    {question: '受信者から「URLが開けない」と言われたら？', answer: 'すでに表示されたか、有効期限が切れています。まずこの2つを確認してください。受信者がまだ見ておらず期限内なら、別の人が開いた可能性があります。パスワードを変更し、新しいURLで送り直してください。'},
+    {question: '同じパスワードを複数人に送れますか？', answer: 'はい。URLを作るときに閲覧回数を2・3・5・10回から選べます。ただ、1人につき1つのURLにしたほうが、誰が開いたかを把握しやすくなります。'},
+];
+
+const jsonLd = [
+    {
+        '@context': 'https://schema.org',
+        '@type': 'WebApplication',
+        name: 'パスワードを安全に送る',
+        url: absoluteUrl('/ja/password/'),
+        inLanguage: 'ja',
+        description,
+        applicationCategory: 'SecurityApplication',
+        operatingSystem: 'Any',
+        offers: {'@type': 'Offer', price: '0', priceCurrency: 'JPY'},
+        dateModified: '2026-11-07',
+    },
+    {
+        '@context': 'https://schema.org',
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+            {'@type': 'ListItem', position: 1, name: 'ホーム', item: absoluteUrl('/ja/')},
+            {'@type': 'ListItem', position: 2, name: 'パスワードを安全に送る方法', item: absoluteUrl('/ja/password/')},
+        ],
+    },
+    {
+        '@context': 'https://schema.org',
+        '@type': 'FAQPage',
+        inLanguage: 'ja',
+        mainEntity: faqItems.map((item) => ({
+            '@type': 'Question',
+            name: item.question,
+            acceptedAnswer: {'@type': 'Answer', text: item.answer},
+        })),
+    },
+];
+---
+<BaseLayout
+    title={title}
+    description={description}
+    canonical="/ja/password/"
+    lang="ja"
+    alternates={pageAlternates.password}
+    ogImageAlt="1回見たら消えるワンタイムURLでパスワードを送る"
+>
+    <InlineCss slot="head" name="home" />
+    <InlineCss slot="head" name="article" />
+    <script slot="head" type="application/ld+json" set:html={JSON.stringify(jsonLd)} is:inline></script>
+
+    <div class="share-flow-page">
+        <nav class="share-mode-nav" aria-label="送るものを選ぶ">
+            <a href="/ja/password/" class="share-mode-link share-mode-link-active">テキスト</a>
+            <a href="/ja/file/" class="share-mode-link">ファイル</a>
+        </nav>
+
+        <NewMessageForm lang="ja" />
+
+        <section class="seo-section">
+            <h1>パスワードを安全に送る方法</h1>
+            <p>
+                パスワードをメールやチャットに直接書くと、送信履歴やトーク履歴に残り続けます。代わりに、1回見たら消えるワンタイムURLを送りましょう。受信者が内容を表示すると、サーバー上のデータは削除され、履歴に残るのは使えなくなったURLだけになります。
+            </p>
+
+            <h2>メールでパスワードを送るとき</h2>
+            <ol>
+                <li>上の欄にパスワードを貼り付け、有効期限はできるだけ短く設定します（最短1時間）。</li>
+                <li>「ワンタイムURLを作成」を押し、URLをコピーします。</li>
+                <li>メール本文にはURLだけを貼ります。件名に「パスワード」と書くのは避けましょう。</li>
+                <li>誤送信が心配な場合は合言葉を設定し、電話や別のチャットで伝えます。</li>
+            </ol>
+
+            <h2>パスワードを別メールで送っても安全とは限らない理由</h2>
+            <p>
+                パスワードを2通目のメールで送っても、2通とも同じアドレスに同じ経路で届きます。宛先を間違えれば両方とも同じ相手に届き、メールボックスにアクセスできる人には両方とも読めます。経路を分けたいなら、合言葉は電話など別の手段で伝えましょう。パスワード付きZIPファイルを送る場合については、<a href="/ja/file/">ファイルを安全に送る方法</a>で詳しく説明しています。
+            </p>
+
+            <h2>LINEやチャットで送るとき</h2>
+            <p>
+                LINEのトークは暗号化されていますが、送ったパスワードは双方のスマホとトーク履歴のバックアップに残り、転送やスクリーンショットも簡単です。チャットにはパスワードではなくワンタイムURLを貼り、どのアカウントのものかは書かないようにしましょう。
+            </p>
+
+            <h2>取引先や外部の人にIDとパスワードを渡すとき</h2>
+            <p>
+                社外の人にログイン情報を渡すときは、有効期限1日・合言葉付きのワンタイムURLを作り、URLはメールで、合言葉は電話や別のチャットで伝えます。どちらか一方だけではログイン情報を読めません。初回ログイン後にパスワードを変更してもらうよう、ひと言添えておきましょう。
+            </p>
+
+            <h2>一時的なパスワードを共有する</h2>
+            <p>
+                保守業者や派遣スタッフ、休暇中の代理担当など、短期間だけアクセスが必要な場合は、そのためのパスワードを新しく作ってワンタイムURLで渡し、作業が終わったら変更します。
+            </p>
+
+            <h2>パスワードの送り方を比較</h2>
+            <table class="comparison-table">
+                <thead>
+                    <tr><th>方法</th><th>使用後に消える？</th><th>コピーが残る場所</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td><strong>ワンタイムURL（{siteHost}）</strong></td><td><span class="check">✓</span> 表示後または期限切れ時</td><td>受信者が保存した分だけです。サーバーには暗号化されたデータしか届きません。</td></tr>
+                    <tr><td><strong>Password Pusher</strong></td><td><span class="check">✓</span> 閲覧回数または期限の到達時</td><td>公式ドキュメントによると、サーバーが内容を受け取ってから暗号化します。</td></tr>
+                    <tr><td><strong>パスワード管理ツールの共有保管庫</strong></td><td><span class="cross">✗</span> 削除するまで残ります（意図どおり）</td><td>共有の保管庫。双方にアカウントが必要です。</td></tr>
+                    <tr><td><strong>LINEなどのチャット</strong></td><td><span class="cross">✗</span></td><td>双方のスマホ、トーク履歴のバックアップ、転送先のトーク。</td></tr>
+                    <tr><td><strong>メール</strong></td><td><span class="cross">✗</span></td><td>双方のメールボックス、メールサーバー、そのバックアップ。</td></tr>
+                </tbody>
+            </table>
+            <p>
+                チーム内で継続的に共有するアカウントには、パスワード管理ツールが適しています。ワンタイムURLは、管理ツールを使っていない相手に一度だけ渡すときに向いています。
+            </p>
+
+            <h2>パスワードを送るときのポイント</h2>
+            <ul>
+                <li><strong>URLと合言葉は別々に伝えます。</strong>URLはメール、合言葉は電話。片方だけでは役に立ちません。</li>
+                <li><strong>やり取りが終わったらパスワードを変更します。</strong>外注先の作業が終わったときや担当者が異動したときは、相手が知っているパスワードを変えましょう。</li>
+                <li><strong>二段階認証を有効にします。</strong>パスワードが漏れても、2つ目の要素がなければログインできません。</li>
+            </ul>
+
+            <h2>よくある質問</h2>
+            {faqItems.map((item) => (
+                <div class="feature-card" style="margin-bottom:12px">
+                    <div class="feature-card-header"><h3>{item.question}</h3></div>
+                    <p>{item.answer}</p>
+                </div>
+            ))}
+
+            <h2>ほかの安全な送り方</h2>
+            <nav class="seo-nav">
+                <a href="/ja/">ワンタイムURLを作成する</a>
+                <a href="/ja/file/">ワンタイムURLでファイルを安全に送る</a>
+            </nav>
+        </section>
+    </div>
+</BaseLayout>
+
+<style>
+    .comparison-table {
+        display: block;
+        overflow-x: auto;
+    }
+</style>

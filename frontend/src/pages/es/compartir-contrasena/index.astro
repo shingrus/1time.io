@@ -3,6 +3,7 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
 import InlineCss from '../../../components/InlineCss.astro';
 import NewMessageForm from '../../../components/NewMessageForm.astro';
 import {absoluteUrl, siteHost} from '../../../lib/siteConfig.js';
+import {pageAlternates} from '../../../lib/i18n.js';
 
 const title = 'Compartir contraseñas de forma segura: enlace de un solo uso';
 const description = 'Cómo compartir o enviar una contraseña de forma segura por WhatsApp, correo o Teams: mándala en un enlace cifrado que se borra al abrirse. Gratis y sin registro.';
@@ -54,7 +55,7 @@ const jsonLd = [
     description={description}
     canonical="/es/compartir-contrasena/"
     lang="es"
-    alternates={{en: '/share-password-securely/', es: '/es/compartir-contrasena/'}}
+    alternates={pageAlternates.password}
     ogImageAlt="Comparte contraseñas de forma segura con un enlace cifrado de un solo uso"
 >
     <InlineCss slot="head" name="home" />

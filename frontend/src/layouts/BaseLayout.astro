@@ -3,7 +3,7 @@ import InlineCss from '../components/InlineCss.astro';
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
 import {absoluteUrl, isSelfHosted, selfHostedTitle, siteHost, siteUrl} from '../lib/siteConfig.js';
-import type {Alternates, Lang} from '../lib/i18n.js';
+import {langs, type Alternates, type Lang} from '../lib/i18n.js';
 
 interface Props {
     title: string;
@@ -95,8 +95,7 @@ const websiteSchema = {
         {robots && <meta name="robots" content={robots} />}
         {!selfHosted && canonicalHref && <link rel="canonical" href={canonicalHref} />}{!selfHosted && alternates && (
             <Fragment>
-                <link rel="alternate" hreflang="en" href={absoluteUrl(alternates.en)} />
-                <link rel="alternate" hreflang="es" href={absoluteUrl(alternates.es)} />
+                {langs.map((code) => <link rel="alternate" hreflang={code} href={absoluteUrl(alternates[code])} />)}
                 <link rel="alternate" hreflang="x-default" href={absoluteUrl(alternates.en)} />
             </Fragment>
         )}
@@ -123,6 +122,7 @@ const websiteSchema = {
         <meta name="twitter:description" content={ogDescription} />
         {!selfHosted && <meta name="twitter:image" content={ogImageAbsolute} />}
         <InlineCss name="globals" />
+        {lang === 'ja' && <style is:inline>body{line-break:strict}h1,h2,h3,.share-title,.share-note{word-break:auto-phrase}</style>}
         {!selfHosted && <script type="application/ld+json" set:html={JSON.stringify(orgSchema)} is:inline></script>}
         {!selfHosted && <script type="application/ld+json" set:html={JSON.stringify(websiteSchema)} is:inline></script>}
         <slot name="head" />

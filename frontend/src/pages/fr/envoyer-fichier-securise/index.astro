@@ -1,0 +1,155 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import FileShareForm from '../../../components/FileShareForm.astro';
+import InlineCss from '../../../components/InlineCss.astro';
+import {absoluteUrl, siteHost} from '../../../lib/siteConfig.js';
+import {Constants} from '../../../lib/util.js';
+import {pageAlternates} from '../../../lib/i18n.js';
+
+const title = 'Envoyer un fichier en toute sécurité : carte d’identité, contrat, RIB';
+const description = 'Envoyez une copie de carte d’identité, un contrat ou tout fichier jusqu’à 250 Mo avec un lien de téléchargement à usage unique. Chiffré dans votre navigateur, supprimé du serveur après téléchargement. Gratuit, sans compte.';
+const maxMb = Math.round(Constants.maxFileSizeBytes / (1024 * 1024));
+
+const faqItems = [
+    {
+        question: 'Est-ce risqué d’envoyer sa carte d’identité par mail ?',
+        answer: 'La pièce jointe reste dans les deux boîtes mail et leurs sauvegardes, souvent pendant des années, et peut être transférée. Quelqu’un qui y accède plus tard pourrait s’en servir pour tenter une usurpation d’identité. Avec un lien à usage unique, le mail ne contient pas le document, et la copie du serveur est supprimée après le téléchargement.',
+    },
+    {
+        question: '1time.io peut-il voir mes fichiers ?',
+        answer: 'Non. Le fichier est chiffré dans votre navigateur avec AES-256-GCM avant l’envoi, avec son nom et son type. La clé se trouve dans le lien, après le symbole #, et n’arrive jamais sur le serveur, qui ne stocke que des données chiffrées.',
+    },
+    {
+        question: 'Quels fichiers puis-je envoyer ?',
+        answer: `N’importe quel fichier jusqu’à ${maxMb} Mo : PDF, scans de carte d’identité, de passeport ou de titre de séjour, contrats, fiches de paie, avis d’imposition, RIB, archives ZIP.`,
+    },
+    {
+        question: 'Le destinataire dit que le lien ne fonctionne plus. Pourquoi ?',
+        answer: 'Le fichier a déjà été téléchargé le nombre de fois autorisé, ou le délai de validité est écoulé. Si ni l’un ni l’autre ne devrait être le cas, quelqu’un d’autre a pu le télécharger. Pour limiter ce risque, ajoutez une phrase secrète et transmettez-la par un autre canal.',
+    },
+];
+
+const jsonLd = [
+    {
+        '@context': 'https://schema.org',
+        '@type': 'WebApplication',
+        name: 'Envoyer un fichier en toute sécurité',
+        url: absoluteUrl('/fr/envoyer-fichier-securise/'),
+        inLanguage: 'fr',
+        description,
+        applicationCategory: 'SecurityApplication',
+        operatingSystem: 'Any',
+        offers: {'@type': 'Offer', price: '0', priceCurrency: 'EUR'},
+        dateModified: '2026-11-07',
+    },
+    {
+        '@context': 'https://schema.org',
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+            {'@type': 'ListItem', position: 1, name: 'Accueil', item: absoluteUrl('/fr/')},
+            {'@type': 'ListItem', position: 2, name: 'Envoyer un fichier en toute sécurité', item: absoluteUrl('/fr/envoyer-fichier-securise/')},
+        ],
+    },
+    {
+        '@context': 'https://schema.org',
+        '@type': 'FAQPage',
+        inLanguage: 'fr',
+        mainEntity: faqItems.map((item) => ({
+            '@type': 'Question',
+            name: item.question,
+            acceptedAnswer: {'@type': 'Answer', text: item.answer},
+        })),
+    },
+];
+---
+<BaseLayout
+    title={title}
+    description={description}
+    canonical="/fr/envoyer-fichier-securise/"
+    lang="fr"
+    alternates={pageAlternates.file}
+    ogImageAlt="Envoyer un document avec un lien de téléchargement à usage unique"
+>
+    <InlineCss slot="head" name="home" />
+    <InlineCss slot="head" name="file-sharing" />
+    <script slot="head" type="application/ld+json" set:html={JSON.stringify(jsonLd)} is:inline></script>
+
+    <div class="share-flow-page">
+        <nav class="share-mode-nav" aria-label="Choisissez quoi partager">
+            <a href="/fr/envoyer-mot-de-passe/" class="share-mode-link">Texte secret</a>
+            <a href="/fr/envoyer-fichier-securise/" class="share-mode-link share-mode-link-active">Fichier à usage unique</a>
+        </nav>
+
+        <FileShareForm lang="fr" />
+
+        <section class="seo-section">
+            <p>
+                Déposez un document ici et envoyez le lien de téléchargement à usage unique que vous obtenez. Le
+                fichier est chiffré dans votre navigateur avant l’envoi. Après le téléchargement, la copie du
+                serveur est supprimée et le lien ne fonctionne plus. C’est gratuit et sans inscription.
+            </p>
+
+            <h2>Comment ça marche</h2>
+            <dl class="glossary">
+                <dt>Téléchargements</dt>
+                <dd>Un par défaut. Vous pouvez en autoriser 2, 3, 5 ou 10 si plusieurs personnes ont besoin du fichier.</dd>
+                <dt>Ouverture du lien</dt>
+                <dd>Ouvrir le lien affiche une page de confirmation. Le fichier n’est consommé qu’au moment du téléchargement.</dd>
+                <dt>Durée de validité</dt>
+                <dd>De 1 heure à 30 jours. Passé ce délai, le fichier est supprimé, même s’il n’a pas été téléchargé.</dd>
+                <dt>Ce que voit le serveur</dt>
+                <dd>Uniquement des données chiffrées : ni le contenu, ni le nom, ni le type du fichier.</dd>
+                <dt>Taille maximale</dt>
+                <dd>{maxMb} Mo par fichier.</dd>
+            </dl>
+
+            <h2>Envoyer une copie de sa carte d’identité</h2>
+            <p>
+                Une agence immobilière, un hébergement ou un employeur vous demande une copie de votre carte
+                d’identité ? Envoyée en pièce jointe ou sur WhatsApp, elle reste dans les deux messageries et leurs
+                sauvegardes. Pour limiter les risques :
+            </p>
+            <ol>
+                <li>N’envoyez que les faces ou les pages demandées.</li>
+                <li>Ajoutez un filigrane indiquant le destinataire et la date, par exemple « Dossier de location – 12/12/2026 ».</li>
+                <li>Déposez le fichier ici, créez le lien et envoyez-le par mail ou par SMS.</li>
+            </ol>
+            <p>
+                Le lien à usage unique évite que le document reste dans la conversation, mais il ne contrôle pas ce
+                que le destinataire fait du fichier une fois téléchargé. N’envoyez vos pièces d’identité qu’à des
+                personnes qui en ont vraiment besoin.
+            </p>
+
+            <h2>Remplacer une pièce jointe dans un mail</h2>
+            <p>
+                Au lieu de joindre un contrat, une fiche de paie ou un RIB, collez le lien de téléchargement dans
+                votre mail, que vous utilisiez Outlook, Gmail ou une autre messagerie. Le document ne reste ainsi
+                ni dans les boîtes mail ni dans leurs sauvegardes. Un lien ne protège pas pour autant contre une
+                erreur de destinataire : si le mail arrive chez quelqu’un d’autre, cette personne peut télécharger
+                le fichier. Pour les documents sensibles, ajoutez une phrase secrète et donnez-la par téléphone.
+            </p>
+
+            <h2>Une alternative à WeTransfer ?</h2>
+            <p>
+                Pour des fichiers très lourds, comme des vidéos ou des sauvegardes de plusieurs Go, WeTransfer,
+                SwissTransfer ou Smash sont plus adaptés. {siteHost} répond à un autre besoin : des documents
+                confidentiels jusqu’à {maxMb} Mo, destinés à une personne précise, chiffrés avant l’envoi et
+                supprimés du serveur après le téléchargement.
+            </p>
+
+            <h2>Questions fréquentes</h2>
+            {faqItems.map((item) => (
+                <div class="feature-card" style="margin-bottom:12px">
+                    <div class="feature-card-header"><h3>{item.question}</h3></div>
+                    <p>{item.answer}</p>
+                </div>
+            ))}
+
+            <h2>D’autres façons de partager en toute sécurité</h2>
+            <nav class="seo-nav">
+                <a href="/fr/">Créer un lien à usage unique</a>
+                <a href="/fr/envoyer-mot-de-passe/">Envoyer un mot de passe en toute sécurité</a>
+            </nav>
+        </section>
+    </div>
+</BaseLayout>

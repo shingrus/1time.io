@@ -1,0 +1,129 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import InlineCss from '../../components/InlineCss.astro';
+import NewMessageForm from '../../components/NewMessageForm.astro';
+import {absoluteUrl, siteHost} from '../../lib/siteConfig.js';
+import {pageAlternates} from '../../lib/i18n.js';
+
+const title = 'ワンタイムURLでパスワードを安全に送る｜1回見たら消えるリンク';
+const description = 'パスワードやAPIキー、ファイルを、1回見たら消えるワンタイムURLで送れます。内容はブラウザ内で暗号化され、表示されるとサーバーから削除されます。無料・登録不要です。';
+
+const faqItems = [
+    {question: '1time.ioは安全ですか？', answer: '内容は送信前にブラウザ内でAES-256-GCMにより暗号化され、復号キーがサーバーに届くことはありません。そのため、1time.ioの運営者もサーバーにアクセスできる第三者も、送った内容を読むことはできません。ソースコードはMITライセンスで公開されており、誰でも確認できます。'},
+    {question: '会員登録やアプリのインストールは必要ですか？', answer: '不要です。スマホを含むどのブラウザでも使えます。受け取る側もアカウントは要りません。'},
+    {question: 'LINEやメールでURLを送っても大丈夫ですか？', answer: 'はい。LINEやメールに残るのはURLだけで、パスワードそのものではありません。内容が表示されたあとは、トーク履歴や受信箱には使えないURLが残るだけです。ただし、表示される前であれば、URLを知っている人は誰でも開けます。心配な場合は合言葉を設定し、電話など別の手段で伝えてください。'},
+    {question: 'Password Pusherとは何が違いますか？', answer: 'どちらも期限付きのリンクを作れます。Password Pusherの公式ドキュメントによると、同サービスはブラウザ側では暗号化せず、サーバー側でデータを暗号化して保存します。1time.ioはブラウザ内で暗号化するため、サーバーが受け取るのは暗号化されたデータだけで、復号キーは届きません。'},
+];
+
+const jsonLd = [
+    {
+        '@context': 'https://schema.org',
+        '@type': 'WebApplication',
+        name: siteHost,
+        url: absoluteUrl('/ja/'),
+        inLanguage: 'ja',
+        description,
+        applicationCategory: 'SecurityApplication',
+        operatingSystem: 'Any',
+        offers: {'@type': 'Offer', price: '0', priceCurrency: 'JPY'},
+        featureList: 'ワンタイムURL, AES-256-GCMによるエンドツーエンド暗号化, ゼロ知識, 有効期限1時間〜30日, 初期設定は1回のみ・最大10回まで変更可, 250MBまでのファイル, 任意の合言葉, 登録不要, オープンソース',
+        dateModified: '2026-11-07',
+    },
+    {
+        '@context': 'https://schema.org',
+        '@type': 'FAQPage',
+        inLanguage: 'ja',
+        mainEntity: faqItems.map((item) => ({
+            '@type': 'Question',
+            name: item.question,
+            acceptedAnswer: {'@type': 'Answer', text: item.answer},
+        })),
+    },
+];
+---
+<BaseLayout
+    title={title}
+    description={description}
+    canonical="/ja/"
+    lang="ja"
+    alternates={pageAlternates.home}
+    ogImageAlt={`${siteHost}：パスワード、APIキー、ファイルを送れるワンタイムURL`}
+>
+    <InlineCss slot="head" name="home" />
+    <script slot="head" type="application/ld+json" set:html={JSON.stringify(jsonLd)} is:inline></script>
+
+    <div class="share-flow-page">
+        <nav class="share-mode-nav" aria-label="送るものを選ぶ">
+            <a href="/ja/" class="share-mode-link share-mode-link-active">テキスト</a>
+            <a href="/ja/file/" class="share-mode-link">ファイル</a>
+        </nav>
+
+        <NewMessageForm lang="ja" />
+
+        <section class="seo-section">
+            <h1>パスワードやファイルを、1回見たら消えるワンタイムURLで送る</h1>
+            <p>
+                {siteHost}は、ワンタイムURLを無料で作れるオープンソースのツールです。パスワードやAPIキー、メモを貼り付けるか、ファイルを選ぶと、受信者が1回だけ内容を表示できるURLが発行されます。内容は送信前にブラウザ内で暗号化されるため、サーバーに届くのは暗号化されたデータだけです。会員登録は要りません。
+            </p>
+
+            <h2>1time.ioのワンタイムURLのしくみ</h2>
+            <ul>
+                <li><strong>URLを開いただけでは消えません。</strong>受信者が内容を表示するボタン（ファイルの場合はダウンロードボタン）を押すと、内容が復号されます。チャットアプリのリンクプレビューで使われてしまうこともありません。</li>
+                <li><strong>表示後はサーバーから削除されます。</strong>同じURLで内容を見ることはできなくなります。ただし、受信者がコピー・保存・スクリーンショットした分は消えません。</li>
+                <li><strong>見られないまま期限が来ても削除されます。</strong>有効期限は1時間〜30日から選べます。</li>
+                <li><strong>初期設定は1回のみです。</strong>複数人に同じ内容を渡す場合は、閲覧回数を2・3・5・10回に増やせます。</li>
+                <li><strong>URLが開けないときは、表示済みか期限切れです。</strong>受信者がまだ見ていないはずで期限内なら、別の人が開いた可能性があります。念のためパスワードを変更してください。</li>
+            </ul>
+
+            <h2>ワンタイムURLの作り方</h2>
+            <ol>
+                <li>上の欄に、送りたいパスワードや文章を貼り付けます。ファイルを送る場合は<a href="/ja/file/">ファイル</a>タブを使います。</li>
+                <li>有効期限と、必要なら閲覧回数を選びます。</li>
+                <li>必要に応じて合言葉を設定し、URLとは別の手段で伝えます。</li>
+                <li>「ワンタイムURLを作成」を押し、URLをメール、LINE、Teams、Slackなどで送ります。</li>
+            </ol>
+
+            <h2>主な仕様</h2>
+            <dl class="glossary">
+                <dt>暗号化</dt>
+                <dd>ブラウザ内でAES-256-GCM。鍵はHKDF-SHA256で導出します。</dd>
+                <dt>復号キーの場所</dt>
+                <dd>URLの「#」より後ろ。この部分はブラウザからサーバーに送られません。</dd>
+                <dt>サーバーに保存されるもの</dt>
+                <dd>暗号化されたデータだけです。復号キーや元の内容は保存されません。</dd>
+                <dt>ファイル</dt>
+                <dd>250MBまで。ファイル名や形式も中身と一緒に暗号化されます。</dd>
+                <dt>料金</dt>
+                <dd>無料です。送る側も受け取る側もアカウントは不要です。ソースコードはMITライセンスで公開しています。</dd>
+            </dl>
+
+            <h2>こんなときに使えます</h2>
+            <ul>
+                <li>取引先や外注先、同僚にアカウントのIDとパスワードを渡すとき。</li>
+                <li>来客にWi-Fiのパスワードを伝えるとき。</li>
+                <li>APIキーやアクセストークン、データベースの接続情報を送るとき。</li>
+                <li>二段階認証のバックアップコードを共有するとき。</li>
+                <li><a href="/ja/file/">パスワード付きZIPの代わりに、ファイルを送りたい</a>とき。</li>
+            </ul>
+
+            <h2>LINEやメールでそのまま送るのと何が違う？</h2>
+            <p>
+                LINEやメールに書いたパスワードは、双方の端末やバックアップに残り、転送やスクリーンショットも簡単です。ワンタイムURLなら、トーク履歴や受信箱に残るのはURLだけで、内容は表示されたあとにサーバーから削除されます。
+            </p>
+
+            <h2>よくある質問</h2>
+            {faqItems.map((item) => (
+                <div class="feature-card" style="margin-bottom:12px">
+                    <div class="feature-card-header"><h3>{item.question}</h3></div>
+                    <p>{item.answer}</p>
+                </div>
+            ))}
+
+            <h2>ほかの安全な送り方</h2>
+            <nav class="seo-nav">
+                <a href="/ja/password/">パスワードを安全に送る方法</a>
+                <a href="/ja/file/">ワンタイムURLでファイルを安全に送る</a>
+            </nav>
+        </section>
+    </div>
+</BaseLayout>

@@ -48,6 +48,24 @@ Key facts:
 - [Compartir contraseñas de forma segura](https://1time.io/es/compartir-contrasena/): How to send a password safely over WhatsApp, email or Teams
 - [Enviar documentos de forma segura](https://1time.io/es/compartir-archivos/): One-time download links for ID documents, contracts and other files up to 250 MB
 
+## Pages in French (en français)
+
+- [Lien à usage unique](https://1time.io/fr/): French homepage; create a one-time link for a password, API key, private note or file
+- [Envoyer un mot de passe en toute sécurité](https://1time.io/fr/envoyer-mot-de-passe/): How to send a password or login details safely by email, SMS, WhatsApp or Teams
+- [Envoyer un fichier en toute sécurité](https://1time.io/fr/envoyer-fichier-securise/): One-time download links for ID cards, contracts and other files up to 250 MB
+
+## Pages in Japanese (日本語)
+
+- [ワンタイムURL](https://1time.io/ja/): Japanese homepage; create a one-time URL for a password, API key, note or file
+- [パスワードを安全に送る方法](https://1time.io/ja/password/): How to send a password safely instead of a separate follow-up email, over email, LINE or Teams
+- [ワンタイムURLでファイルを安全に送る](https://1time.io/ja/file/): A free alternative to password-protected ZIP attachments (PPAP); one-time download links for files up to 250 MB
+
+## Pages in Indonesian (Bahasa Indonesia)
+
+- [Link sekali pakai](https://1time.io/id/): Indonesian homepage; create a one-time link for a password, API key, private note or file
+- [Cara kirim password dengan aman](https://1time.io/id/kirim-password/): How to send a password safely over WhatsApp or email
+- [Kirim file dan foto KTP dengan aman](https://1time.io/id/kirim-file/): One-time download links for ID card photos (KTP), contracts and other files up to 250 MB
+
 ## For Developers
 
 - [Developer page](https://1time.io/developers/): Integration guide, protocol version, limits, and apps built with 1time
