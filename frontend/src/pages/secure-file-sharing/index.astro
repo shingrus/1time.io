@@ -1,9 +1,7 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
-import EncryptionNote from '../../components/EncryptionNote.astro';
+import FileShareForm from '../../components/FileShareForm.astro';
 import InlineCss from '../../components/InlineCss.astro';
-import LinkReadyTemplate from '../../components/LinkReadyTemplate.astro';
-import ShareOptions from '../../components/ShareOptions.astro';
 import {absoluteUrl, isSelfHosted, siteHost} from '../../lib/siteConfig.js';
 import {Constants} from '../../lib/util.js';
 
@@ -83,6 +81,7 @@ const jsonLd = [
     title={title}
     description={description}
     canonical="/secure-file-sharing/"
+    alternates={{en: '/secure-file-sharing/', es: '/es/compartir-archivos/'}}
     ogImage="/1time-og-main.png"
     ogImageAlt="One-time file sharing with encrypted self-destructing download links"
 >
@@ -96,60 +95,7 @@ const jsonLd = [
             <a href="/secure-file-sharing/" class="share-mode-link share-mode-link-active">One-time file</a>
         </nav>
 
-        <form id="secure-file-form" autocomplete="off">
-            <div class="share-card">
-                <h1 class="share-title">Send a one-time file download link</h1>
-
-                <input type="file" data-file-input hidden />
-
-                <button type="button" class="file-drop-zone" data-drop-zone>
-                    <span class="btn btn-primary file-browse">Choose a file</span>
-                    <span class="file-drop-title">or drop file here</span>
-                    <span class="file-drop-hint">Any file type, up to {maxMb} MB</span>
-                </button>
-
-                <div class="file-state file-state-error" data-file-error-card hidden role="alert">
-                    <span class="file-icon">
-                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                    </span>
-                    <span class="file-state-copy">
-                        <span class="file-state-title" data-file-error></span>
-                        <span class="form-help file-state-meta" data-file-error-sub></span>
-                    </span>
-                    <button type="button" class="btn btn-secondary file-choose-another" data-file-choose-another>Choose another</button>
-                </div>
-
-                <div class="file-progress" data-file-progress hidden aria-live="polite">
-                    <div class="file-progress-head">
-                        <span class="form-label file-progress-label" data-progress-label></span>
-                        <span class="form-help file-progress-value" data-progress-value></span>
-                    </div>
-                    <div class="file-progress-track" data-progress-track>
-                        <div class="file-progress-fill" data-progress-fill style="width:0%"></div>
-                    </div>
-                    <p class="form-help" data-progress-help></p>
-                </div>
-
-                <ShareOptions kind="file">
-                    <div slot="primary" class="file-state file-state-selected">
-                        <span class="file-icon">
-                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-                        </span>
-                        <span class="file-state-copy">
-                            <span class="file-state-title" data-file-name></span>
-                            <span class="form-help file-state-meta" data-file-size></span>
-                        </span>
-                        <button type="button" class="btn btn-ghost file-remove" data-file-remove aria-label="Remove file">&times;</button>
-                    </div>
-                    <button slot="submit" class="btn btn-primary btn-lg" disabled type="submit">Create one-time link</button>
-                </ShareOptions>
-
-                <p class="form-help form-help-error share-form-error" data-file-note role="alert" hidden></p>
-                <EncryptionNote />
-            </div>
-        </form>
-
-        <LinkReadyTemplate />
+        <FileShareForm />
 
         {!selfHosted && (
         <section class="seo-section">
@@ -284,8 +230,4 @@ const jsonLd = [
         </section>
         )}
     </div>
-
-    <script>
-        import '../../islands/secure-file-share.ts';
-    </script>
 </BaseLayout>

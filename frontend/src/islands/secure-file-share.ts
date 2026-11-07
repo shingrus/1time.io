@@ -37,6 +37,8 @@ if (form) {
     let uploadProgress = 0;
 
     const maxMb = Math.round(Constants.maxFileSizeBytes / (1024 * 1024));
+    const text = form.dataset;
+    const createLabel = submitBtn.textContent ?? 'Create one-time link';
     // formatBytes always keeps one decimal; whole numbers read better without it.
     const sizeLabel = (bytes: number) => formatBytes(bytes).replace('.0 ', ' ');
 
@@ -62,10 +64,10 @@ if (form) {
         const loading = isEncrypting || isUploading;
         submitBtn.disabled = !selectedFile || loading;
         submitBtn.textContent = isEncrypting
-            ? 'Encrypting...'
+            ? text.busyLabel ?? 'Encrypting...'
             : isUploading
-                ? `Uploading ${uploadProgress}%...`
-                : 'Create one-time link';
+                ? (text.uploadingLabel ?? 'Uploading {percent}%...').replace('{percent}', String(uploadProgress))
+                : createLabel;
     };
 
     const renderProgress = () => {
@@ -73,14 +75,14 @@ if (form) {
         progressEl.toggleAttribute('hidden', !loading);
         if (!loading) return;
         progressLabel.textContent = isEncrypting
-            ? 'Encrypting file in your browser...'
-            : 'Uploading encrypted file...';
-        progressValue.textContent = isUploading ? `${uploadProgress}%` : 'Preparing';
+            ? text.progressEncrypting ?? 'Encrypting file in your browser...'
+            : text.progressUploading ?? 'Uploading encrypted file...';
+        progressValue.textContent = isUploading ? `${uploadProgress}%` : text.progressPreparing ?? 'Preparing';
         progressTrack.classList.toggle('file-progress-track-indeterminate', isEncrypting);
         progressFill.style.width = isUploading ? `${uploadProgress}%` : '42%';
         progressHelp.textContent = isEncrypting
-            ? 'Encryption happens locally before the file is uploaded.'
-            : 'Only the encrypted file is being sent to the server.';
+            ? text.helpEncrypting ?? 'Encryption happens locally before the file is uploaded.'
+            : text.helpUploading ?? 'Only the encrypted file is being sent to the server.';
     };
 
     const clearSelection = () => {
@@ -102,7 +104,7 @@ if (form) {
         if (file.size > Constants.maxFileSizeBytes) {
             selectedFile = null;
             fileInput.value = '';
-            errorTitle.textContent = `File exceeds the ${maxMb} MB limit`;
+            errorTitle.textContent = (text.tooLarge ?? 'File exceeds the {mb} MB limit').replace('{mb}', String(maxMb));
             errorSub.textContent = `${file.name} · ${sizeLabel(file.size)}`;
             errorCard.toggleAttribute('hidden', false);
             renderSelection();
@@ -194,12 +196,12 @@ if (form) {
                     durationSelect.value = String(Constants.defaultDurationSeconds);
                     viewsSelect.value = '1';
                     updateSubmit();
-                }, {uses: selectedViews, kind: 'file', durationSeconds});
+                }, {uses: selectedViews, kind: 'file', durationLabel: durationSelect.selectedOptions[0].text});
                 return;
             }
-            setNote('Could not create the file link. Please try again.');
+            setNote(text.linkFailed ?? 'Could not create the file link. Please try again.');
         } catch {
-            setNote('Could not encrypt or upload the file. Please try again.');
+            setNote(text.uploadFailed ?? 'Could not encrypt or upload the file. Please try again.');
         }
         isEncrypting = false;
         isUploading = false;

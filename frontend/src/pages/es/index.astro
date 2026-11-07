@@ -1,0 +1,143 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import InlineCss from '../../components/InlineCss.astro';
+import NewMessageForm from '../../components/NewMessageForm.astro';
+import {absoluteUrl, siteHost} from '../../lib/siteConfig.js';
+
+const title = 'Crear un enlace de un solo uso para contraseñas y archivos';
+const description = 'Crea gratis un enlace de un solo uso para enviar una contraseña, una clave API o un archivo. Se cifra en tu navegador, se abre una vez y se borra. Sin registro.';
+
+const faqItems = [
+    {question: '¿Es seguro 1time.io?', answer: 'Sí. El contenido se cifra en tu navegador con AES-256-GCM antes de enviarse, y la clave para descifrarlo nunca llega al servidor. Ni 1time.io ni quien acceda al servidor puede leer lo que compartes. El código es abierto (licencia MIT), así que cualquiera puede comprobarlo.'},
+    {question: '¿Qué pasa si nadie abre el enlace?', answer: 'Caduca al terminar el plazo que elegiste, de 1 hora a 30 días, y los datos cifrados se borran igualmente. Nada se queda guardado indefinidamente.'},
+    {question: '¿Necesito una cuenta o instalar algo?', answer: 'No. 1time.io funciona en cualquier navegador, también desde el teléfono, sin registro y sin instalar ninguna aplicación. El destinatario tampoco necesita cuenta.'},
+    {question: '¿Puedo enviar el enlace por WhatsApp o por correo?', answer: 'Sí. El canal solo transporta el enlace, no la contraseña. Una vez abierto, el enlace deja de funcionar, así que en el chat o en el correo queda una dirección muerta. Si te preocupa que alguien intercepte el mensaje, añade una frase de acceso y compártela por otro canal.'},
+    {question: '¿Para qué sirve la frase de acceso?', answer: 'Es una contraseña adicional y opcional. Si la añades, el destinatario necesita el enlace y la frase para leer el secreto. Envía cada uno por un canal distinto, por ejemplo el enlace por correo y la frase por teléfono.'},
+    {question: '¿Qué diferencia hay con One Time Secret o Password Pusher?', answer: 'Los tres crean enlaces que caducan, pero One Time Secret y Password Pusher reciben el secreto sin cifrar y lo cifran en su servidor. 1time.io lo cifra en tu navegador, de modo que el servidor solo recibe datos cifrados y nunca la clave.'},
+];
+
+const jsonLd = [
+    {
+        '@context': 'https://schema.org',
+        '@type': 'WebApplication',
+        name: siteHost,
+        url: absoluteUrl('/es/'),
+        inLanguage: 'es',
+        description,
+        applicationCategory: 'SecurityApplication',
+        operatingSystem: 'Any',
+        offers: {'@type': 'Offer', price: '0', priceCurrency: 'EUR'},
+        featureList: 'Enlaces de un solo uso, Cifrado de extremo a extremo AES-256-GCM, Conocimiento cero, Caducidad de 1 hora a 30 días, Hasta 10 aperturas, Archivos de hasta 250 MB, Frase de acceso opcional, Sin registro, Código abierto',
+        dateModified: '2026-11-06',
+    },
+    {
+        '@context': 'https://schema.org',
+        '@type': 'FAQPage',
+        inLanguage: 'es',
+        mainEntity: faqItems.map((item) => ({
+            '@type': 'Question',
+            name: item.question,
+            acceptedAnswer: {'@type': 'Answer', text: item.answer},
+        })),
+    },
+];
+---
+<BaseLayout
+    title={title}
+    description={description}
+    canonical="/es/"
+    lang="es"
+    alternates={{en: '/', es: '/es/'}}
+    ogImageAlt={`${siteHost}: enlace de un solo uso para compartir contraseñas, claves API y archivos`}
+>
+    <InlineCss slot="head" name="home" />
+    <script slot="head" type="application/ld+json" set:html={JSON.stringify(jsonLd)} is:inline></script>
+
+    <div class="share-flow-page">
+        <nav class="share-mode-nav" aria-label="Elige qué compartir">
+            <a href="/es/" class="share-mode-link share-mode-link-active">Texto secreto</a>
+            <a href="/es/compartir-archivos/" class="share-mode-link">Archivo de un solo uso</a>
+        </nav>
+
+        <NewMessageForm lang="es" />
+
+        <section class="seo-section">
+            <h1>Enlace de un solo uso: comparte contraseñas y archivos que se borran al abrirse</h1>
+            <p>
+                {siteHost} es una herramienta gratuita y de código abierto para crear enlaces de un solo uso.
+                Pegas una contraseña, una clave API o una nota privada, o eliges un archivo, y obtienes un link que
+                solo se puede abrir una vez: después, el contenido se borra del servidor para siempre. Todo se
+                cifra en tu navegador con AES-256-GCM antes de salir de tu dispositivo, así que {siteHost} nunca
+                puede leer lo que compartes. No hace falta crear una cuenta.
+            </p>
+
+            <h2>¿Qué es un enlace de un solo uso?</h2>
+            <p>
+                Un enlace de un solo uso, también llamado link de un solo uso, enlace que se autodestruye o nota
+                que se autodestruye, es una URL que muestra su contenido una sola vez. Cuando el destinatario la
+                abre, el servidor borra los datos y la misma dirección deja de funcionar. Así, una contraseña no se
+                queda guardada en WhatsApp, en el correo ni en el historial de un chat: en la conversación solo
+                queda un enlace muerto.
+            </p>
+
+            <h2>Cómo crear un enlace de un solo uso</h2>
+            <ol>
+                <li>Escribe o pega el secreto en el cuadro de arriba. Para enviar un documento, usa la pestaña <a href="/es/compartir-archivos/">Archivo de un solo uso</a>.</li>
+                <li>Elige cuándo caduca, de 1 hora a 30 días, y cuántas veces se puede abrir: una por defecto, hasta 10.</li>
+                <li>Si quieres, añade una frase de acceso. El destinatario necesitará el enlace y la frase.</li>
+                <li>Pulsa «Crear enlace» y envía el enlace por WhatsApp, correo, Teams, Slack o SMS.</li>
+            </ol>
+
+            <h2>Datos clave</h2>
+            <dl class="glossary">
+                <dt>Cifrado</dt>
+                <dd>AES-256-GCM en tu navegador, con una clave derivada mediante HKDF-SHA256.</dd>
+                <dt>Dónde está la clave</dt>
+                <dd>En el fragmento de la URL, lo que va después del símbolo #. Los navegadores no envían esa parte al servidor.</dd>
+                <dt>Qué guarda el servidor</dt>
+                <dd>Solo los datos cifrados. Nunca la clave ni el contenido legible.</dd>
+                <dt>Aperturas</dt>
+                <dd>Una por defecto. Puedes permitir 2, 3, 5 o 10 si varias personas necesitan el mismo secreto.</dd>
+                <dt>Caducidad</dt>
+                <dd>1 hora, 1 día, 3 días, 7 días o 30 días. Pasado el plazo, se borra aunque nadie lo haya abierto.</dd>
+                <dt>Archivos</dt>
+                <dd>Hasta 250 MB. El nombre y el tipo del archivo viajan cifrados junto con el contenido.</dd>
+                <dt>Precio y registro</dt>
+                <dd>Gratis y sin cuenta, tanto para quien envía como para quien recibe.</dd>
+                <dt>Código</dt>
+                <dd>Abierto, con licencia MIT.</dd>
+            </dl>
+
+            <h2>Para qué sirve</h2>
+            <ul>
+                <li>Pasar el usuario y la contraseña de una cuenta a un cliente, un proveedor o un compañero.</li>
+                <li>Dar la clave del wifi a un invitado.</li>
+                <li>Enviar claves API, tokens de acceso o credenciales de una base de datos.</li>
+                <li>Compartir códigos de recuperación de la verificación en dos pasos.</li>
+                <li><a href="/es/compartir-archivos/">Enviar el DNI, el pasaporte o un contrato</a> sin que se quede una copia en el chat.</li>
+            </ul>
+
+            <h2>¿En qué se diferencia de los mensajes temporales de WhatsApp?</h2>
+            <p>
+                Los mensajes temporales de WhatsApp desaparecen al cabo de 24 horas, 7 días o 90 días, pero hasta
+                entonces siguen en los dos teléfonos y se pueden reenviar o copiar. Un enlace de un solo uso deja de
+                funcionar en cuanto se abre, y su contenido no se queda en ningún chat ni copia de seguridad: en la
+                conversación solo queda el enlace, que ya no abre.
+            </p>
+
+            <h2>Preguntas frecuentes</h2>
+            {faqItems.map((item) => (
+                <div class="feature-card" style="margin-bottom:12px">
+                    <div class="feature-card-header"><h3>{item.question}</h3></div>
+                    <p>{item.answer}</p>
+                </div>
+            ))}
+
+            <h2>Más formas de compartir de forma segura</h2>
+            <nav class="seo-nav">
+                <a href="/es/compartir-contrasena/">Cómo compartir una contraseña de forma segura</a>
+                <a href="/es/compartir-archivos/">Enviar documentos y archivos de forma segura</a>
+            </nav>
+        </section>
+    </div>
+</BaseLayout>

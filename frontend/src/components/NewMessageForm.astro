@@ -2,36 +2,40 @@
 import EncryptionNote from './EncryptionNote.astro';
 import LinkReadyTemplate from './LinkReadyTemplate.astro';
 import ShareOptions from './ShareOptions.astro';
----
-<form id="new-message-form" autocomplete="off">
-    <div class="share-card">
-        <p class="share-title">Send a one-time secret</p>
+import {messageFormData, ui, type Lang} from '../lib/i18n.js';
 
-        <ShareOptions kind="secret">
+const {lang = 'en'} = Astro.props as {lang?: Lang};
+const t = ui[lang];
+---
+<form id="new-message-form" autocomplete="off" {...messageFormData(lang)}>
+    <div class="share-card">
+        <p class="share-title">{t.shareTitle}</p>
+
+        <ShareOptions kind="secret" lang={lang}>
             <textarea
                 slot="primary"
                 class="form-textarea secret-textarea"
                 id="secretMessage"
-                aria-label="Secret message"
+                aria-label={t.secretLabel}
                 autofocus
                 autocomplete="off"
                 autocapitalize="none"
-                placeholder="Paste a password, API key, or private note"
+                placeholder={t.secretPlaceholder}
                 rows="5"
                 spellcheck="false"
             ></textarea>
             <button slot="submit" class="btn btn-primary btn-lg" disabled type="submit">
-                <span class="btn-label">Create one-time link</span>
+                <span class="btn-label">{t.createLink}</span>
                 <kbd class="btn-kbd" data-shortcut-hint aria-hidden="true" hidden></kbd>
             </button>
         </ShareOptions>
 
         <p class="form-help form-help-error share-form-error" data-message-error role="alert" hidden></p>
-        <EncryptionNote />
+        <EncryptionNote lang={lang} />
     </div>
 </form>
 
-<LinkReadyTemplate />
+<LinkReadyTemplate lang={lang} />
 
 <script>
     import '../islands/new-message.ts';

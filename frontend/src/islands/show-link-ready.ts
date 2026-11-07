@@ -1,4 +1,4 @@
-import {Constants, copyTextToClipboard, formatRemaining} from '../lib/util.js';
+import {copyTextToClipboard} from '../lib/util.js';
 import {parseSecretLink} from '../lib/protocol.mjs';
 
 const loadStyles = async (id: string, importer: () => Promise<{default: string}>) => {
@@ -18,8 +18,8 @@ export async function showLinkReady(
     {
         uses = 1,
         kind = 'secret',
-        durationSeconds = Constants.defaultDurationSeconds,
-    }: {uses?: number; kind?: 'secret' | 'file'; durationSeconds?: number} = {},
+        durationLabel = '1 day',
+    }: {uses?: number; kind?: 'secret' | 'file'; durationLabel?: string} = {},
 ): Promise<void> {
     // Start the best-effort auto-copy immediately instead of putting it behind a CSS request.
     const autoCopy = copyTextToClipboard(link);
@@ -31,6 +31,7 @@ export async function showLinkReady(
     if (!tpl) return;
 
     const clone = tpl.content.firstElementChild!.cloneNode(true) as HTMLElement;
+    const text = tpl.dataset;
     const isFile = kind === 'file';
     const item = isFile ? 'file' : 'secret';
     const action = isFile ? 'download' : 'view';
@@ -42,21 +43,22 @@ export async function showLinkReady(
     const resetBtn = clone.querySelector<HTMLButtonElement>('[data-reset]')!;
     const input = clone.querySelector<HTMLInputElement>('[data-link-input]')!;
 
-    title.textContent = `Your one-time ${item} link is ready`;
-    expiry.textContent = `Expires in ${formatRemaining(durationSeconds)}`;
-    usage.textContent = `${uses} ${action}${uses === 1 ? '' : 's'}`;
-    warning.textContent =
+    title.textContent = text.title ?? `Your one-time ${item} link is ready`;
+    expiry.textContent = (text.expiry ?? 'Expires in {duration}').replace('{duration}', durationLabel);
+    usage.textContent = ((uses === 1 ? text.usesOne : text.usesOther) ?? `{count} ${action}${uses === 1 ? '' : 's'}`)
+        .replace('{count}', String(uses));
+    warning.textContent = text.warning ??
         `This page is the only place the link exists. We cannot show it again, and we cannot read the ${item}: ` +
         'the key lives in the # fragment, which never reaches our servers.';
-    resetBtn.textContent = `Send another ${item}`;
+    resetBtn.textContent = text.reset ?? `Send another ${item}`;
     input.value = link;
-    input.setAttribute('aria-label', `${isFile ? 'File' : 'Secret'} one-time link`);
+    input.setAttribute('aria-label', text.inputLabel ?? `${isFile ? 'File' : 'Secret'} one-time link`);
 
-    const footerSeparator = clone.querySelector<HTMLElement>('[data-footer-separator]')!;
+    const footerSeparator = clone.querySelector<HTMLElement>('[data-footer-separator]');
     const referenceWrap = clone.querySelector<HTMLElement>('[data-reference-wrap]')!;
     const referenceName = clone.querySelector<HTMLElement>('[data-reference-name]')!;
     const updateFooterMeta = () => {
-        footerSeparator.hidden = referenceWrap.hidden;
+        if (footerSeparator) footerSeparator.hidden = referenceWrap.hidden;
     };
 
     let secretId = '';
@@ -85,7 +87,9 @@ export async function showLinkReady(
     const copyStatus = clone.querySelector<HTMLElement>('[data-copy-status]')!;
     let copyTimer: number | undefined;
 
-    const showCopyStatus = (message: 'Already copied' | 'Copied') => {
+    const copiedLabel = text.copied ?? 'Copied';
+    const showQrLabel = text.qrShow ?? 'Show QR code';
+    const showCopyStatus = (message: string) => {
         copyStatus.textContent = message;
         copyStatus.hidden = false;
         if (copyTimer) clearTimeout(copyTimer);
@@ -97,7 +101,7 @@ export async function showLinkReady(
 
     const handleCopy = async () => {
         if (!await copyTextToClipboard(link)) return;
-        showCopyStatus('Copied');
+        showCopyStatus(copiedLabel);
     };
     copyBtn.addEventListener('click', handleCopy);
     input.addEventListener('click', handleCopy);
@@ -134,7 +138,7 @@ export async function showLinkReady(
     const qrLabel = clone.querySelector<HTMLElement>('[data-qr-label]')!;
     const qrPanel = clone.querySelector<HTMLElement>('[data-qr-panel]')!;
     const qrSlot = clone.querySelector<HTMLElement>('[data-qr-slot]')!;
-    qrSlot.setAttribute('aria-label', `${isFile ? 'File' : 'Secret'} link QR code`);
+    qrSlot.setAttribute('aria-label', text.qrLabel ?? `${isFile ? 'File' : 'Secret'} link QR code`);
     let qrLoading = false;
     let qrVisible = false;
     let qrReady = false;
@@ -145,13 +149,13 @@ export async function showLinkReady(
             qrVisible = false;
             qrPanel.hidden = true;
             qrToggle.setAttribute('aria-expanded', 'false');
-            qrLabel.textContent = 'Show QR code';
+            qrLabel.textContent = showQrLabel;
             return;
         }
 
         if (!qrReady) {
             qrLoading = true;
-            qrLabel.textContent = 'Loading QR...';
+            qrLabel.textContent = text.qrLoading ?? 'Loading QR...';
             try {
                 const [{createQrSvg}] = await Promise.all([
                     import('../lib/qr.js'),
@@ -160,7 +164,7 @@ export async function showLinkReady(
                 qrSlot.innerHTML = await createQrSvg(link);
                 qrReady = true;
             } catch {
-                qrLabel.textContent = 'Show QR code';
+                qrLabel.textContent = showQrLabel;
                 qrLoading = false;
                 return;
             }
@@ -170,7 +174,7 @@ export async function showLinkReady(
         qrVisible = true;
         qrPanel.hidden = false;
         qrToggle.setAttribute('aria-expanded', 'true');
-        qrLabel.textContent = 'Hide QR code';
+        qrLabel.textContent = text.qrHide ?? 'Hide QR code';
     });
 
     resetBtn.addEventListener('click', () => {
@@ -183,6 +187,6 @@ export async function showLinkReady(
 
     // Clipboard permissions vary; a visible Copy button remains available when this fails.
     void autoCopy.then((copied) => {
-        if (copied) showCopyStatus('Already copied');
+        if (copied) showCopyStatus(text.alreadyCopied ?? 'Already copied');
     });
 }

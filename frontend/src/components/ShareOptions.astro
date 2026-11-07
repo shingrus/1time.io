@@ -1,14 +1,15 @@
 ---
 import {Constants, SHARE_DURATION_OPTIONS} from '../lib/util.js';
+import {ui, type Lang} from '../lib/i18n.js';
 
 interface Props {
     kind?: 'secret' | 'file';
+    lang?: Lang;
 }
 
-const {kind = 'secret'} = Astro.props;
+const {kind = 'secret', lang = 'en'} = Astro.props;
 const isFile = kind === 'file';
-const usageNoun = isFile ? 'download' : 'view';
-const usageLabel = isFile ? 'Downloads' : 'Views';
+const t = ui[lang];
 const usageOptions = [1, 2, 3, 5, 10];
 ---
 <div
@@ -25,10 +26,10 @@ const usageOptions = [1, 2, 3, 5, 10];
             <input
                 class="form-input"
                 id="secretKey"
-                aria-label="Optional passphrase the recipient must know if set"
+                aria-label={t.passphraseLabel}
                 autocomplete="off"
                 autocapitalize="none"
-                placeholder="Optional passphrase"
+                placeholder={t.passphrasePlaceholder}
                 spellcheck="false"
                 type="text"
             />
@@ -39,9 +40,9 @@ const usageOptions = [1, 2, 3, 5, 10];
                     <circle cx="12" cy="12" r="9"></circle>
                     <path d="M12 7v5l3 2"></path>
                 </svg>
-                <select class="form-select share-option-select" id="duration" aria-label="Expire after">
-                    {SHARE_DURATION_OPTIONS.map(({value, label}) => (
-                        <option value={value} selected={value === Constants.defaultDurationSeconds}>{label}</option>
+                <select class="form-select share-option-select" id="duration" aria-label={t.expireAfter}>
+                    {SHARE_DURATION_OPTIONS.map(({value}) => (
+                        <option value={value} selected={value === Constants.defaultDurationSeconds}>{t.durations[value]}</option>
                     ))}
                 </select>
             </label>
@@ -58,10 +59,10 @@ const usageOptions = [1, 2, 3, 5, 10];
                         <circle cx="12" cy="12" r="2.5"></circle>
                     </svg>
                 )}
-                <select class="form-select share-option-select" id="views" aria-label={`${usageLabel} allowed`}>
+                <select class="form-select share-option-select" id="views" aria-label={t.usageAllowed[kind]}>
                     {usageOptions.map((count) => (
                         <option value={count} selected={count === 1}>
-                            {count} {usageNoun}{count === 1 ? '' : 's'}
+                            {t.usage(count, kind)}
                         </option>
                     ))}
                 </select>
@@ -71,7 +72,7 @@ const usageOptions = [1, 2, 3, 5, 10];
                     <rect x="5" y="10" width="14" height="11" rx="2"></rect>
                     <path d="M8 10V7a4 4 0 0 1 8 0v3"></path>
                 </svg>
-                <span>Set passphrase</span>
+                <span>{t.setPassphrase}</span>
             </button>
         </div>
         <div class="share-submit">

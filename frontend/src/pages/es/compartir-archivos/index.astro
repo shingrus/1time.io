@@ -1,0 +1,178 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import FileShareForm from '../../../components/FileShareForm.astro';
+import InlineCss from '../../../components/InlineCss.astro';
+import {absoluteUrl, siteHost} from '../../../lib/siteConfig.js';
+import {Constants} from '../../../lib/util.js';
+
+const title = 'Enviar documentos de forma segura: DNI, contratos y archivos';
+const description = 'Envía tu DNI, pasaporte, un contrato o cualquier archivo de hasta 250 MB con un enlace cifrado que se borra tras la descarga. Más seguro que WhatsApp o el correo. Gratis.';
+const maxMb = Math.round(Constants.maxFileSizeBytes / (1024 * 1024));
+
+const faqItems = [
+    {
+        question: '¿Cómo puedo enviar mi DNI escaneado de forma segura?',
+        answer: 'Tapa los datos que no te pidan, escribe sobre la copia para qué es y la fecha, y envíala con un enlace de descarga de un solo uso. El archivo se cifra en tu navegador, el destinatario lo descarga una vez y la copia se borra del servidor. En el chat o en el correo solo queda un enlace que ya no funciona.',
+    },
+    {
+        question: '¿Qué pasa si envío mi DNI por WhatsApp?',
+        answer: 'La imagen se queda en los dos chats, en la galería del teléfono del destinatario y en las copias de seguridad, y se puede reenviar. Si alguien accede más tarde a esas copias, puede usarla para intentar suplantar tu identidad. Un enlace de un solo uso evita que el documento se quede guardado en la conversación.',
+    },
+    {
+        question: '¿Puede 1time.io ver mis archivos?',
+        answer: 'No. El archivo se cifra en tu navegador con AES-256-GCM antes de subirse, junto con su nombre y su tipo. La clave va en el enlace, después del símbolo #, y nunca llega al servidor, que solo guarda datos cifrados.',
+    },
+    {
+        question: '¿Qué archivos puedo enviar?',
+        answer: `Cualquier archivo de hasta ${maxMb} MB: PDF, fotos o escaneos del DNI, el pasaporte, la INE o la cédula, contratos, nóminas, certificados, archivos comprimidos o capturas de pantalla.`,
+    },
+    {
+        question: '¿Y si abre el enlace otra persona?',
+        answer: 'Por defecto el enlace funciona una vez. Si el destinatario te dice que ya no abre, alguien llegó antes y lo sabrás enseguida. Para evitarlo, añade una frase de acceso al crear el enlace y compártela por otro canal, por ejemplo por teléfono.',
+    },
+    {
+        question: '¿Puedo enviar el mismo archivo a varias personas?',
+        answer: 'Sí. Al crear el enlace puedes permitir 2, 3, 5 o 10 descargas. El archivo se borra tras la última descarga permitida o cuando caduca, lo que ocurra primero.',
+    },
+];
+
+const jsonLd = [
+    {
+        '@context': 'https://schema.org',
+        '@type': 'WebApplication',
+        name: 'Enviar documentos y archivos de forma segura',
+        url: absoluteUrl('/es/compartir-archivos/'),
+        inLanguage: 'es',
+        description,
+        applicationCategory: 'SecurityApplication',
+        operatingSystem: 'Any',
+        offers: {'@type': 'Offer', price: '0', priceCurrency: 'EUR'},
+        dateModified: '2026-11-06',
+    },
+    {
+        '@context': 'https://schema.org',
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+            {'@type': 'ListItem', position: 1, name: 'Inicio', item: absoluteUrl('/es/')},
+            {'@type': 'ListItem', position: 2, name: 'Enviar documentos de forma segura', item: absoluteUrl('/es/compartir-archivos/')},
+        ],
+    },
+    {
+        '@context': 'https://schema.org',
+        '@type': 'FAQPage',
+        inLanguage: 'es',
+        mainEntity: faqItems.map((item) => ({
+            '@type': 'Question',
+            name: item.question,
+            acceptedAnswer: {'@type': 'Answer', text: item.answer},
+        })),
+    },
+];
+---
+<BaseLayout
+    title={title}
+    description={description}
+    canonical="/es/compartir-archivos/"
+    lang="es"
+    alternates={{en: '/secure-file-sharing/', es: '/es/compartir-archivos/'}}
+    ogImageAlt="Envía documentos con un enlace de descarga cifrado de un solo uso"
+>
+    <InlineCss slot="head" name="home" />
+    <InlineCss slot="head" name="file-sharing" />
+    <script slot="head" type="application/ld+json" set:html={JSON.stringify(jsonLd)} is:inline></script>
+
+    <div class="share-flow-page">
+        <nav class="share-mode-nav" aria-label="Elige qué compartir">
+            <a href="/es/compartir-contrasena/" class="share-mode-link">Texto secreto</a>
+            <a href="/es/compartir-archivos/" class="share-mode-link share-mode-link-active">Archivo de un solo uso</a>
+        </nav>
+
+        <FileShareForm lang="es" />
+
+        <section class="seo-section">
+            <p>
+                Para enviar un documento de forma segura, súbelo aquí y comparte el enlace de descarga de un solo
+                uso que obtienes. El archivo se cifra en tu navegador antes de subirse, el destinatario puede
+                descargarlo una vez y después se borra del servidor. En WhatsApp o en el correo solo queda un
+                enlace que ya no funciona, no una copia de tu documento. Es gratis y no hace falta registrarse.
+            </p>
+
+            <h2>¿Es seguro enviar el DNI por WhatsApp?</h2>
+            <p>
+                WhatsApp cifra el envío, pero la foto del DNI se queda en los dos chats, en la galería del teléfono
+                del destinatario y en las copias de seguridad, y se puede reenviar. Con una copia de tu DNI,
+                pasaporte, INE o cédula, alguien podría intentar suplantar tu identidad, por ejemplo para contratar
+                servicios a tu nombre. Por correo electrónico pasa lo mismo: el documento se queda años en los dos
+                buzones.
+            </p>
+
+            <h2>Cómo enviar tu DNI o pasaporte de forma segura</h2>
+            <ol>
+                <li>Comparte solo las caras o páginas que te pidan.</li>
+                <li>Tapa los datos que el destinatario no necesite.</li>
+                <li>Escribe sobre la copia para qué es y la fecha, por ejemplo «Solo para la reserva del 12 de diciembre de 2026». Así es más difícil reutilizarla.</li>
+                <li>Sube el archivo aquí, crea el enlace y envíalo por WhatsApp o por correo. Si quieres, añade una frase de acceso y dísela por teléfono.</li>
+                <li>Cuando el destinatario lo descargue, el archivo se borra del servidor y el enlace deja de funcionar.</li>
+            </ol>
+            <p>
+                Un enlace de un solo uso no controla lo que el destinatario haga con el archivo después de
+                descargarlo. Envía documentos de identidad solo a quien de verdad los necesite, como un alojamiento
+                de Booking o Airbnb, una inmobiliaria o tu gestoría.
+            </p>
+
+            <h2>Cómo enviar documentos por correo de forma segura</h2>
+            <p>
+                En lugar de adjuntar el PDF, súbelo aquí y pega en el correo el enlace de descarga. El correo no
+                lleva el documento, solo un enlace que funciona una vez, así que no queda ninguna copia en los
+                buzones ni en sus copias de seguridad. Para documentos especialmente sensibles, como nóminas,
+                contratos o datos bancarios, añade una frase de acceso y compártela por otro canal.
+            </p>
+
+            <h2>Cómo enviar un archivo cifrado</h2>
+            <p>
+                No necesitas instalar nada ni saber de cifrado. Al elegir el archivo, tu navegador lo empaqueta
+                junto con su nombre y su tipo, lo cifra con AES-256-GCM y sube solo el resultado cifrado. La clave
+                para descifrarlo va en el enlace, después del símbolo #, y nunca se envía al servidor. Cuando el
+                destinatario abre el enlace, su navegador descarga el archivo cifrado y lo descifra en su
+                dispositivo.
+            </p>
+
+            <h2>Datos clave</h2>
+            <dl class="glossary">
+                <dt>Tamaño máximo</dt>
+                <dd>{maxMb} MB por archivo.</dd>
+                <dt>Descargas</dt>
+                <dd>Una por defecto. Puedes permitir 2, 3, 5 o 10.</dd>
+                <dt>Caducidad</dt>
+                <dd>De 1 hora a 30 días. El archivo se borra aunque nadie lo descargue.</dd>
+                <dt>Qué ve el servidor</dt>
+                <dd>Solo datos cifrados: ni el contenido, ni el nombre, ni el tipo de archivo.</dd>
+                <dt>Registro</dt>
+                <dd>No hace falta cuenta, ni para enviar ni para descargar.</dd>
+            </dl>
+
+            <h2>¿Una alternativa a WeTransfer?</h2>
+            <p>
+                Para enviar archivos muy grandes, como vídeos o copias de seguridad de varios GB, servicios como
+                WeTransfer, SwissTransfer o Smash son mejor opción. {siteHost} está pensado para otra cosa:
+                documentos confidenciales de hasta {maxMb} MB que deben llegar a una sola persona y desaparecer
+                después. El archivo se cifra en tu navegador antes de subirse, se borra tras la descarga y no hace
+                falta registrarse.
+            </p>
+
+            <h2>Preguntas frecuentes</h2>
+            {faqItems.map((item) => (
+                <div class="feature-card" style="margin-bottom:12px">
+                    <div class="feature-card-header"><h3>{item.question}</h3></div>
+                    <p>{item.answer}</p>
+                </div>
+            ))}
+
+            <h2>Más formas de compartir de forma segura</h2>
+            <nav class="seo-nav">
+                <a href="/es/">Crear un enlace de un solo uso</a>
+                <a href="/es/compartir-contrasena/">Cómo compartir una contraseña de forma segura</a>
+            </nav>
+        </section>
+    </div>
+</BaseLayout>

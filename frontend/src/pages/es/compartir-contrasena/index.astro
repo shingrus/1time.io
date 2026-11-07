@@ -1,0 +1,182 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import InlineCss from '../../../components/InlineCss.astro';
+import NewMessageForm from '../../../components/NewMessageForm.astro';
+import {absoluteUrl, siteHost} from '../../../lib/siteConfig.js';
+
+const title = 'Compartir contraseñas de forma segura: enlace de un solo uso';
+const description = 'Cómo compartir o enviar una contraseña de forma segura por WhatsApp, correo o Teams: mándala en un enlace cifrado que se borra al abrirse. Gratis y sin registro.';
+
+const faqItems = [
+    {question: '¿Cuál es la forma más segura de enviar una contraseña?', answer: 'Enviar un enlace de un solo uso en lugar de la contraseña. La contraseña se cifra en tu navegador, el enlace se abre una sola vez y después se borra del servidor. Si además añades una frase de acceso y la compartes por otro canal, ninguno de los dos mensajes basta por sí solo para leerla.'},
+    {question: '¿Es seguro enviar contraseñas por WhatsApp?', answer: 'No del todo. WhatsApp cifra los mensajes por el camino, pero la contraseña se queda escrita en los dos teléfonos, en las copias de seguridad y en cualquier chat al que se reenvíe. Envía por WhatsApp un enlace de un solo uso: cuando el destinatario lo abre, deja de funcionar.'},
+    {question: '¿Qué web puedo usar para enviar contraseñas?', answer: 'Un servicio de enlaces de un solo uso que cifre en el navegador. 1time.io es gratuito, de código abierto y no pide registro: cifra la contraseña en tu dispositivo con AES-256-GCM antes de enviarla, y el servidor nunca recibe la clave.'},
+    {question: '¿Puede 1time.io ver mi contraseña?', answer: 'No. La clave para descifrarla va en el fragmento del enlace, la parte que sigue al símbolo #, y los navegadores no la envían al servidor. 1time.io solo guarda datos cifrados que no puede leer.'},
+    {question: '¿Qué pasa cuando el destinatario abre el enlace?', answer: 'La contraseña se descifra en su navegador y la copia cifrada se borra del servidor. El enlace deja de funcionar para siempre, también para quien lo envió. Lo que el destinatario copie o guarde queda en sus manos, así que, si es una contraseña temporal, pídele que la cambie.'},
+    {question: '¿Puedo enviar la misma contraseña a varias personas?', answer: 'Sí: al crear el enlace puedes permitir 2, 3, 5 o 10 aperturas. Aun así, es mejor crear un enlace por persona. Si a alguien no le abre, sabrás que otra persona lo abrió antes.'},
+];
+
+const jsonLd = [
+    {
+        '@context': 'https://schema.org',
+        '@type': 'WebApplication',
+        name: 'Compartir contraseñas de forma segura',
+        url: absoluteUrl('/es/compartir-contrasena/'),
+        inLanguage: 'es',
+        description,
+        applicationCategory: 'SecurityApplication',
+        operatingSystem: 'Any',
+        offers: {'@type': 'Offer', price: '0', priceCurrency: 'EUR'},
+        dateModified: '2026-11-06',
+    },
+    {
+        '@context': 'https://schema.org',
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+            {'@type': 'ListItem', position: 1, name: 'Inicio', item: absoluteUrl('/es/')},
+            {'@type': 'ListItem', position: 2, name: 'Compartir contraseñas de forma segura', item: absoluteUrl('/es/compartir-contrasena/')},
+        ],
+    },
+    {
+        '@context': 'https://schema.org',
+        '@type': 'FAQPage',
+        inLanguage: 'es',
+        mainEntity: faqItems.map((item) => ({
+            '@type': 'Question',
+            name: item.question,
+            acceptedAnswer: {'@type': 'Answer', text: item.answer},
+        })),
+    },
+];
+---
+<BaseLayout
+    title={title}
+    description={description}
+    canonical="/es/compartir-contrasena/"
+    lang="es"
+    alternates={{en: '/share-password-securely/', es: '/es/compartir-contrasena/'}}
+    ogImageAlt="Comparte contraseñas de forma segura con un enlace cifrado de un solo uso"
+>
+    <InlineCss slot="head" name="home" />
+    <InlineCss slot="head" name="article" />
+    <script slot="head" type="application/ld+json" set:html={JSON.stringify(jsonLd)} is:inline></script>
+
+    <div class="share-flow-page">
+        <nav class="share-mode-nav" aria-label="Elige qué compartir">
+            <a href="/es/compartir-contrasena/" class="share-mode-link share-mode-link-active">Texto secreto</a>
+            <a href="/es/compartir-archivos/" class="share-mode-link">Archivo de un solo uso</a>
+        </nav>
+
+        <NewMessageForm lang="es" />
+
+        <section class="seo-section">
+            <h1>Cómo compartir una contraseña de forma segura</h1>
+            <p>
+                La forma más segura de compartir una contraseña es no enviarla tal cual: envía un enlace de un solo
+                uso. La contraseña se cifra en tu navegador, el enlace se puede abrir una sola vez y después se
+                borra del servidor. En WhatsApp, en el correo o en Teams solo queda un enlace que ya no funciona, en
+                lugar de una contraseña válida.
+            </p>
+            <p>
+                Con {siteHost} se hace en tres pasos y sin registrarte: pega la contraseña en el cuadro de arriba,
+                pulsa «Crear enlace» y envía el enlace. Para más seguridad, añade una frase de acceso y compártela
+                por otro canal.
+            </p>
+
+            <h2>¿Es seguro enviar contraseñas por WhatsApp?</h2>
+            <p>
+                No del todo. WhatsApp cifra los mensajes de extremo a extremo, así que nadie los lee por el camino,
+                pero la contraseña se queda escrita en los dos teléfonos, en las copias de seguridad del chat y en
+                cualquier conversación a la que se reenvíe. Si alguien accede más tarde a uno de esos teléfonos o
+                copias, la encuentra. Los mensajes temporales no lo resuelven: siguen visibles hasta que vence el
+                plazo, de 24 horas como mínimo.
+            </p>
+            <h3>Cómo enviar una contraseña por WhatsApp</h3>
+            <ol>
+                <li>Pega la contraseña en el cuadro de arriba y pulsa «Crear enlace».</li>
+                <li>Copia el enlace, o compártelo directamente desde el teléfono.</li>
+                <li>Pégalo en el chat. No hace falta escribir para qué cuenta es.</li>
+                <li>Cuando el destinatario lo abra, el enlace dejará de funcionar. Si te dice que no le abre, alguien lo abrió antes: cambia la contraseña.</li>
+            </ol>
+
+            <h2>Cómo enviar una contraseña por correo electrónico</h2>
+            <p>
+                Un correo se guarda en tu carpeta de enviados, en los servidores de correo de las dos partes, en la
+                bandeja del destinatario y en sus copias de seguridad. El cifrado TLS solo lo protege mientras viaja.
+                Por eso:
+            </p>
+            <ul>
+                <li>Pon en el correo el enlace de un solo uso, nunca la contraseña.</li>
+                <li>Elige la caducidad más corta que te sirva. El mínimo es 1 hora.</li>
+                <li>Si añades una frase de acceso, dila por teléfono o por otro chat.</li>
+                <li>Un ZIP protegido con contraseña es mejor que nada, pero el adjunto se queda para siempre en los dos buzones. Para enviar un archivo, usa un <a href="/es/compartir-archivos/">enlace de descarga de un solo uso</a>.</li>
+            </ul>
+
+            <h2>Cómo enviar credenciales a un cliente o proveedor</h2>
+            <p>
+                Para entregar un usuario y una contraseña a alguien de fuera de tu empresa, crea un enlace con
+                caducidad de 1 día y una frase de acceso. Envía el enlace por correo y la frase por teléfono o por
+                otro chat. Ningún canal tiene por sí solo lo necesario para leer las credenciales, y cuando el
+                destinatario las abre, el enlace deja de funcionar. Pídele que cambie la contraseña tras el primer
+                acceso.
+            </p>
+
+            <h2>Compartir una contraseña temporal</h2>
+            <p>
+                Si alguien necesita acceso durante poco tiempo, como un técnico, un invitado o quien te sustituye
+                unos días, crea una contraseña nueva solo para eso, compártela con un enlace de un solo uso y
+                cámbiala cuando termine. El enlace caduca por su cuenta aunque nadie lo abra.
+            </p>
+
+            <h2>Formas de compartir una contraseña, comparadas</h2>
+            <table class="comparison-table">
+                <thead>
+                    <tr><th>Método</th><th>¿Se borra tras usarla?</th><th>Dónde quedan copias</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td><strong>Enlace de un solo uso ({siteHost})</strong></td><td><span class="check">✓</span> Al abrirse o al caducar</td><td>Solo lo que guarde el destinatario. El servidor nunca tuvo la contraseña legible.</td></tr>
+                    <tr><td><strong>Password Pusher, One Time Secret</strong></td><td><span class="check">✓</span> Tras las aperturas o el plazo</td><td>El servidor la recibe sin cifrar y la cifra él mismo.</td></tr>
+                    <tr><td><strong>Gestor de contraseñas compartido</strong> (Bitwarden, 1Password, NordPass)</td><td><span class="cross">✗</span> Se queda hasta que la quites, a propósito</td><td>La bóveda compartida. Las dos personas necesitan cuenta.</td></tr>
+                    <tr><td><strong>WhatsApp u otro chat</strong></td><td><span class="cross">✗</span> Salvo mensajes temporales, tras 24 horas como mínimo</td><td>Los dos teléfonos, las copias de seguridad y los chats reenviados.</td></tr>
+                    <tr><td><strong>Correo electrónico</strong></td><td><span class="cross">✗</span></td><td>Los dos buzones, los servidores de correo y sus copias de seguridad.</td></tr>
+                    <tr><td><strong>SMS</strong></td><td><span class="cross">✗</span></td><td>Los dos teléfonos y la operadora.</td></tr>
+                </tbody>
+            </table>
+            <p>
+                Un gestor de contraseñas es la herramienta adecuada para el acceso compartido y continuo dentro de
+                un equipo. El enlace de un solo uso sirve para las entregas puntuales, sobre todo a personas que no
+                usan tu gestor.
+            </p>
+
+            <h2>Buenas prácticas</h2>
+            <ul>
+                <li><strong>No envíes nunca la contraseña por un canal que la guarde.</strong> Que el chat conserve un enlace muerto, no una credencial válida.</li>
+                <li><strong>Usa la caducidad más corta posible.</strong> Si la van a leer en cinco minutos, el enlace no necesita durar una semana.</li>
+                <li><strong>Separa el enlace y la frase de acceso.</strong> El enlace por correo y la frase por teléfono: ninguno sirve sin el otro.</li>
+                <li><strong>Cambia la contraseña cuando termine la colaboración.</strong> Si un proveedor acaba su trabajo o alguien deja el equipo, cambia lo que tenía.</li>
+                <li><strong>Activa la verificación en dos pasos.</strong> Una contraseña filtrada no basta sin el segundo factor.</li>
+            </ul>
+
+            <h2>Preguntas frecuentes</h2>
+            {faqItems.map((item) => (
+                <div class="feature-card" style="margin-bottom:12px">
+                    <div class="feature-card-header"><h3>{item.question}</h3></div>
+                    <p>{item.answer}</p>
+                </div>
+            ))}
+
+            <h2>Más formas de compartir de forma segura</h2>
+            <nav class="seo-nav">
+                <a href="/es/">Crear un enlace de un solo uso</a>
+                <a href="/es/compartir-archivos/">Enviar documentos y archivos de forma segura</a>
+            </nav>
+        </section>
+    </div>
+</BaseLayout>
+
+<style>
+    .comparison-table {
+        display: block;
+        overflow-x: auto;
+    }
+</style>
