@@ -1,0 +1,69 @@
+---
+import EncryptionNote from './EncryptionNote.astro';
+import LinkReadyTemplate from './LinkReadyTemplate.astro';
+import ShareOptions from './ShareOptions.astro';
+import {fileFormData, ui, type Lang} from '../lib/i18n.js';
+import {Constants} from '../lib/util.js';
+
+const {lang = 'en'} = Astro.props as {lang?: Lang};
+const t = ui[lang];
+const maxMb = Math.round(Constants.maxFileSizeBytes / (1024 * 1024));
+---
+<form id="secure-file-form" autocomplete="off" {...fileFormData(lang)}>
+    <div class="share-card">
+        <h1 class="share-title">{t.fileTitle}</h1>
+
+        <input type="file" data-file-input hidden />
+
+        <button type="button" class="file-drop-zone" data-drop-zone>
+            <span class="btn btn-primary file-browse">{t.chooseFile}</span>
+            <span class="file-drop-title">{t.dropFile}</span>
+            <span class="file-drop-hint">{t.fileHint(maxMb)}</span>
+        </button>
+
+        <div class="file-state file-state-error" data-file-error-card hidden role="alert">
+            <span class="file-icon">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            </span>
+            <span class="file-state-copy">
+                <span class="file-state-title" data-file-error></span>
+                <span class="form-help file-state-meta" data-file-error-sub></span>
+            </span>
+            <button type="button" class="btn btn-secondary file-choose-another" data-file-choose-another>{t.chooseAnother}</button>
+        </div>
+
+        <div class="file-progress" data-file-progress hidden aria-live="polite">
+            <div class="file-progress-head">
+                <span class="form-label file-progress-label" data-progress-label></span>
+                <span class="form-help file-progress-value" data-progress-value></span>
+            </div>
+            <div class="file-progress-track" data-progress-track>
+                <div class="file-progress-fill" data-progress-fill style="width:0%"></div>
+            </div>
+            <p class="form-help" data-progress-help></p>
+        </div>
+
+        <ShareOptions kind="file" lang={lang}>
+            <div slot="primary" class="file-state file-state-selected">
+                <span class="file-icon">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                </span>
+                <span class="file-state-copy">
+                    <span class="file-state-title" data-file-name></span>
+                    <span class="form-help file-state-meta" data-file-size></span>
+                </span>
+                <button type="button" class="btn btn-ghost file-remove" data-file-remove aria-label={t.removeFile}>&times;</button>
+            </div>
+            <button slot="submit" class="btn btn-primary btn-lg" disabled type="submit">{t.createLink}</button>
+        </ShareOptions>
+
+        <p class="form-help form-help-error share-form-error" data-file-note role="alert" hidden></p>
+        <EncryptionNote lang={lang} />
+    </div>
+</form>
+
+<LinkReadyTemplate lang={lang} kind="file" />
+
+<script>
+    import '../islands/secure-file-share.ts';
+</script>

@@ -1,4 +1,10 @@
-<template id="link-ready-template">
+---
+import {linkReadyData, ui, type Lang} from '../lib/i18n.js';
+
+const {lang = 'en', kind = 'secret'} = Astro.props as {lang?: Lang; kind?: 'secret' | 'file'};
+const t = ui[lang];
+---
+<template id="link-ready-template" {...linkReadyData(lang, kind)}>
     <section class="link-display" aria-labelledby="link-ready-title">
         <header class="link-ready-header">
             <span class="link-ready-icon" aria-hidden="true">
@@ -8,11 +14,11 @@
                 </svg>
             </span>
             <div class="link-ready-copy">
-                <h2 class="link-display-label" id="link-ready-title" data-link-title>Your one-time secret link is ready</h2>
+                <h2 class="link-display-label" id="link-ready-title" data-link-title>{t.linkReadyTitle}</h2>
                 <p class="link-ready-meta">
-                    <span data-link-expiry>Expires in 1 day</span>
+                    <span data-link-expiry>{t.linkReadyExpiry}</span>
                     <span aria-hidden="true"> · </span>
-                    <span data-link-uses>1 view</span>
+                    <span data-link-uses>{t.linkReadyUses}</span>
                 </p>
             </div>
         </header>
@@ -21,7 +27,7 @@
             <input
                 class="link-display-input"
                 data-link-input
-                aria-label="Secret one-time link"
+                aria-label={t.linkInputLabel}
                 autocomplete="off"
                 autocapitalize="none"
                 spellcheck="false"
@@ -30,10 +36,10 @@
             />
             <div class="link-copy-actions">
                 <button class="btn btn-success btn-lg link-copy-button" type="button" data-copy>
-                    <span>Copy</span>
+                    <span>{t.copy}</span>
                     <span class="link-copy-status" data-copy-status aria-live="polite" hidden></span>
                 </button>
-                <button class="btn btn-secondary btn-lg link-share-button" type="button" data-share aria-label="Share link" hidden>
+                <button class="btn btn-secondary btn-lg link-share-button" type="button" data-share aria-label={t.shareLink} hidden>
                     <svg data-share-icon="apple" aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M8 9H6.5A1.5 1.5 0 0 0 5 10.5v9A1.5 1.5 0 0 0 6.5 21h11a1.5 1.5 0 0 0 1.5-1.5v-9A1.5 1.5 0 0 0 17.5 9H16" />
                         <polyline points="8 6 12 2 16 6" />
@@ -50,15 +56,15 @@
             </div>
         </div>
 
-        <nav class="link-secondary-actions" aria-label="Link actions">
+        <nav class="link-secondary-actions" aria-label={t.linkActions}>
             <button class="link-inline-action" type="button" data-toggle-qr aria-expanded="false">
-                <span data-qr-label>Show QR code</span>
+                <span data-qr-label>{t.showQr}</span>
             </button>
-            <button class="link-inline-action link-inline-action-accent" type="button" data-reset>Send another secret</button>
+            <button class="link-inline-action link-inline-action-accent" type="button" data-reset>{t.sendAnother}</button>
         </nav>
 
         <section class="qr-panel" data-qr-panel hidden aria-live="polite">
-            <div class="qr-panel-code"><div data-qr-slot aria-label="Secret link QR code"></div></div>
+            <div class="qr-panel-code"><div data-qr-slot aria-label={t.qrLabel}></div></div>
         </section>
 
         <div class="link-warning" role="note">
@@ -66,9 +72,9 @@
         </div>
 
         <div class="link-footer-meta" data-footer-meta>
-            <span data-reference-wrap hidden>Reference <strong data-reference-name></strong></span>
-            <span data-footer-separator aria-hidden="true" hidden>·</span>
-            <a class="link-extension" href="/my-secrets/">Check if it's been read</a>
+            <span data-reference-wrap hidden>{t.reference} <strong data-reference-name></strong></span>
+            {lang === 'en' && <span data-footer-separator aria-hidden="true" hidden>·</span>}
+            {lang === 'en' && <a class="link-extension" href="/my-secrets/">Check if it's been read</a>}
         </div>
     </section>
 </template>

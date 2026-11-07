@@ -42,6 +42,12 @@ Key facts:
 - One-time file link format: `https://1time.io/f/#...` (decryption key lives only in the URL fragment)
 - CLI support for encrypted file upload and download via `1time send-file` and `1time read-file`
 
+## Pages in Spanish (en español)
+
+- [Enlace de un solo uso](https://1time.io/es/): Spanish homepage; create a one-time link for a password, API key, private note or file
+- [Compartir contraseñas de forma segura](https://1time.io/es/compartir-contrasena/): How to send a password safely over WhatsApp, email or Teams
+- [Enviar documentos de forma segura](https://1time.io/es/compartir-archivos/): One-time download links for ID documents, contracts and other files up to 250 MB
+
 ## For Developers
 
 - [Developer page](https://1time.io/developers/): Integration guide, protocol version, limits, and apps built with 1time

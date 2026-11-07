@@ -28,6 +28,9 @@ const coreRoutes: RouteEntry[] = [
     {path: '/about/', priority: 0.5, changefreq: 'monthly', lastmod: '2026-05-23'},
     {path: '/no-cookie-banner/', priority: 0.6, changefreq: 'monthly', lastmod: '2026-08-27'},
     {path: '/privacy/', priority: 0.4, changefreq: 'monthly', lastmod: '2026-10-11'},
+    {path: '/es/', priority: 0.8, changefreq: 'weekly', lastmod: '2026-11-06'},
+    {path: '/es/compartir-contrasena/', priority: 0.7, changefreq: 'weekly', lastmod: '2026-11-06'},
+    {path: '/es/compartir-archivos/', priority: 0.7, changefreq: 'weekly', lastmod: '2026-11-06'},
 ];
 
 const blogRoutes: RouteEntry[] = [

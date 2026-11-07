@@ -3,6 +3,7 @@ import InlineCss from '../components/InlineCss.astro';
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
 import {absoluteUrl, isSelfHosted, selfHostedTitle, siteHost, siteUrl} from '../lib/siteConfig.js';
+import type {Alternates, Lang} from '../lib/i18n.js';
 
 interface Props {
     title: string;
@@ -16,6 +17,8 @@ interface Props {
     ogUrl?: string;
     robots?: string;
     pageview?: boolean;
+    lang?: Lang;
+    alternates?: Alternates;
 }
 
 const selfHosted = isSelfHosted();
@@ -32,6 +35,8 @@ const {
     ogUrl = canonical ?? '/',
     robots,
     pageview = true,
+    lang = 'en',
+    alternates,
 } = Astro.props;
 
 const title = selfHosted ? selfHostedTitle : pageTitle;
@@ -80,7 +85,7 @@ const websiteSchema = {
 };
 ---
 <!DOCTYPE html>
-<html lang="en">
+<html lang={lang}>
     <head>
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -88,7 +93,13 @@ const websiteSchema = {
         <title>{title}</title>
         <meta name="description" content={description} />
         {robots && <meta name="robots" content={robots} />}
-        {!selfHosted && canonicalHref && <link rel="canonical" href={canonicalHref} />}
+        {!selfHosted && canonicalHref && <link rel="canonical" href={canonicalHref} />}{!selfHosted && alternates && (
+            <Fragment>
+                <link rel="alternate" hreflang="en" href={absoluteUrl(alternates.en)} />
+                <link rel="alternate" hreflang="es" href={absoluteUrl(alternates.es)} />
+                <link rel="alternate" hreflang="x-default" href={absoluteUrl(alternates.en)} />
+            </Fragment>
+        )}
         <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
         <link rel="icon" href="/favicon.ico" sizes="any" />
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
@@ -118,11 +129,11 @@ const websiteSchema = {
     </head>
     <body>
         <div class="app-layout">
-            <Header />
+            <Header lang={lang} alternates={alternates} />
             <main class="app-main">
                 <slot />
             </main>
-            <Footer />
+            <Footer lang={lang} alternates={alternates} />
         </div>
         {pageview && !selfHosted && <script is:inline set:html={pageviewBeacon}></script>}
     </body>

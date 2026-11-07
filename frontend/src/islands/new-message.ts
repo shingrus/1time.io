@@ -14,6 +14,7 @@ if (form) {
     const kbdHint = submitBtn.querySelector<HTMLElement>('[data-shortcut-hint]')!;
     const errorEl = form.querySelector<HTMLElement>('[data-message-error]')!;
     const defaultLabel = labelEl.textContent ?? 'Create one-time link';
+    const busyLabel = form.dataset.busyLabel ?? 'Encrypting...';
 
     const setError = (msg: string) => {
         errorEl.textContent = msg;
@@ -39,7 +40,7 @@ if (form) {
 
     const updateSubmitState = (isLoading = false) => {
         submitBtn.disabled = isLoading || textarea.value.length === 0;
-        labelEl.textContent = isLoading ? 'Encrypting...' : defaultLabel;
+        labelEl.textContent = isLoading ? busyLabel : defaultLabel;
         if (!submitBtn.disabled) showShortcutHint();
     };
 
@@ -84,11 +85,11 @@ if (form) {
                     viewsSelect.value = '1';
                     updateSubmitState(false);
                     textarea.focus();
-                }, {uses: selectedViews, durationSeconds});
+                }, {uses: selectedViews, durationLabel: durationSelect.selectedOptions[0].text});
                 return;
             }
         } catch {
-            setError('Could not create the link. Please try again.');
+            setError(form.dataset.error ?? 'Could not create the link. Please try again.');
         }
         updateSubmitState(false);
     });
