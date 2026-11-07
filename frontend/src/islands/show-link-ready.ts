@@ -1,4 +1,4 @@
-import {copyTextToClipboard} from '../lib/util.js';
+import {Constants, copyTextToClipboard, formatRemaining} from '../lib/util.js';
 import {parseSecretLink} from '../lib/protocol.mjs';
 
 const loadStyles = async (id: string, importer: () => Promise<{default: string}>) => {
@@ -18,7 +18,7 @@ export async function showLinkReady(
     {
         uses = 1,
         kind = 'secret',
-        durationLabel = '1 day',
+        durationLabel = formatRemaining(Constants.defaultDurationSeconds),
     }: {uses?: number; kind?: 'secret' | 'file'; durationLabel?: string} = {},
 ): Promise<void> {
     // Start the best-effort auto-copy immediately instead of putting it behind a CSS request.
