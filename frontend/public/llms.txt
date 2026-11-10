@@ -66,6 +66,18 @@ Key facts:
 - [Cara kirim password dengan aman](https://1time.io/id/kirim-password/): How to send a password safely over WhatsApp or email
 - [Kirim file dan foto KTP dengan aman](https://1time.io/id/kirim-file/): One-time download links for ID card photos (KTP), contracts and other files up to 250 MB
 
+## Pages in German (auf Deutsch)
+
+- [Einmal-Link](https://1time.io/de/): German homepage; create a one-time link for a password, API key, private note or file
+- [Passwort sicher versenden](https://1time.io/de/passwort-sicher-versenden/): How to send a password or login details safely by email, SMS, WhatsApp or Teams
+- [Dateien sicher versenden](https://1time.io/de/dateien-sicher-versenden/): One-time download links for ID card copies, contracts, PDFs and other files up to 250 MB
+
+## Pages in Brazilian Portuguese (português do Brasil)
+
+- [Link de uso único](https://1time.io/pt/): Portuguese homepage; create a one-time link for a password, API key, private note or file
+- [Enviar senha de forma segura](https://1time.io/pt/enviar-senha/): How to send a password safely over WhatsApp, email or Teams
+- [Enviar arquivos por link](https://1time.io/pt/enviar-arquivos/): One-time download links for RG and CPF copies, contracts and other files up to 250 MB
+
 ## For Developers
 
 - [Developer page](https://1time.io/developers/): Integration guide, protocol version, limits, and apps built with 1time

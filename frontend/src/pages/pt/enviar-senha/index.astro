@@ -1,0 +1,167 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import InlineCss from '../../../components/InlineCss.astro';
+import NewMessageForm from '../../../components/NewMessageForm.astro';
+import {absoluteUrl, siteHost} from '../../../lib/siteConfig.js';
+import {pageAlternates} from '../../../lib/i18n.js';
+
+const title = 'Enviar senha de forma segura: link temporário de uso único';
+const description = 'Envie uma senha ou um login por WhatsApp, e-mail ou Teams sem deixá-los no histórico: um link temporário que só pode ser lido uma vez. Senha criptografada no navegador. Grátis, sem cadastro.';
+
+const faqItems = [
+    {question: 'É seguro enviar senha por WhatsApp?', answer: 'O WhatsApp criptografa as mensagens durante o envio, mas a senha continua escrita nos dois celulares, nos backups da conversa e em qualquer chat para onde a mensagem for encaminhada. O melhor é enviar um link de uso único: depois que a senha é lida, o link não serve mais para nada.'},
+    {question: 'Como enviar uma senha criptografada?', answer: 'Cole a senha no campo no topo desta página: ela é criptografada no seu navegador com AES-256-GCM antes de ser enviada. Você não precisa instalar nada, e o destinatário só precisa do link.'},
+    {question: 'O 1time.io consegue ver minha senha?', answer: 'Não. A chave para descriptografar fica no link, depois do símbolo #, uma parte que os navegadores nunca enviam ao servidor. O 1time.io guarda apenas dados criptografados que não consegue ler.'},
+    {question: 'O destinatário disse que o link não funciona mais. O que aconteceu?', answer: 'A senha já foi lida, ou o prazo de validade acabou. Confira primeiro essas duas possibilidades. Se o destinatário não a leu e o link não expirou, outra pessoa pode tê-lo aberto: troque a senha e envie uma nova.'},
+    {question: 'Posso enviar a mesma senha para várias pessoas?', answer: 'Pode: ao criar o link, você escolhe permitir 2, 3, 5 ou 10 visualizações. Um link por pessoa continua sendo mais fácil de acompanhar, já que cada um só funciona uma vez.'},
+];
+
+const jsonLd = [
+    {
+        '@context': 'https://schema.org',
+        '@type': 'WebApplication',
+        name: 'Enviar senha de forma segura',
+        url: absoluteUrl('/pt/enviar-senha/'),
+        inLanguage: 'pt',
+        description,
+        applicationCategory: 'SecurityApplication',
+        operatingSystem: 'Any',
+        offers: {'@type': 'Offer', price: '0', priceCurrency: 'BRL'},
+        dateModified: '2026-11-10',
+    },
+    {
+        '@context': 'https://schema.org',
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+            {'@type': 'ListItem', position: 1, name: 'Início', item: absoluteUrl('/pt/')},
+            {'@type': 'ListItem', position: 2, name: 'Enviar senha de forma segura', item: absoluteUrl('/pt/enviar-senha/')},
+        ],
+    },
+    {
+        '@context': 'https://schema.org',
+        '@type': 'FAQPage',
+        inLanguage: 'pt',
+        mainEntity: faqItems.map((item) => ({
+            '@type': 'Question',
+            name: item.question,
+            acceptedAnswer: {'@type': 'Answer', text: item.answer},
+        })),
+    },
+];
+---
+<BaseLayout
+    title={title}
+    description={description}
+    canonical="/pt/enviar-senha/"
+    lang="pt"
+    alternates={pageAlternates.password}
+    ogImageAlt="Enviar uma senha com um link de uso único"
+>
+    <InlineCss slot="head" name="home" />
+    <InlineCss slot="head" name="article" />
+    <script slot="head" type="application/ld+json" set:html={JSON.stringify(jsonLd)} is:inline></script>
+
+    <div class="share-flow-page">
+        <nav class="share-mode-nav" aria-label="Escolha o que compartilhar">
+            <a href="/pt/enviar-senha/" class="share-mode-link share-mode-link-active">Texto secreto</a>
+            <a href="/pt/enviar-arquivos/" class="share-mode-link">Arquivo de uso único</a>
+        </nav>
+
+        <NewMessageForm lang="pt" />
+
+        <section class="seo-section">
+            <h1>Como enviar senha de forma segura</h1>
+            <p>
+                Para compartilhar uma senha de forma segura, sem deixá-la num histórico, não escreva a senha na
+                mensagem: envie um link de uso único. O destinatário o lê uma vez, e a cópia no servidor é apagada.
+                Nos seus e-mails, SMS ou no Teams, sobra apenas um link que não funciona mais.
+            </p>
+
+            <h2>Enviar senha por e-mail</h2>
+            <p>
+                Um e-mail fica guardado na sua pasta de enviados, na caixa do destinatário, nos servidores de e-mail
+                e nos backups deles, muitas vezes por anos. Para que uma senha válida não fique ali:
+            </p>
+            <ul>
+                <li>Coloque no e-mail o link de uso único, não a senha.</li>
+                <li>Escolha o menor prazo de validade que atenda você, a partir de uma hora.</li>
+                <li>Não escreva “senha” no assunto: não há motivo para chamar atenção.</li>
+                <li>Se o e-mail puder chegar à pessoa errada, adicione uma frase secreta e passe-a por telefone.</li>
+            </ul>
+
+            <h2>Enviar senha por WhatsApp ou SMS</h2>
+            <p>
+                O WhatsApp criptografa as mensagens durante o envio, mas a senha continua escrita nos dois celulares,
+                nos backups e em qualquer conversa para onde for encaminhada. O SMS não tem criptografia de ponta a
+                ponta e passa pela operadora. Nos dois casos, prefira enviar o link:
+            </p>
+            <ol>
+                <li>Cole a senha no campo acima e clique em “Criar link”.</li>
+                <li>Copie o link ou compartilhe-o direto do celular.</li>
+                <li>Cole-o na conversa, sem dizer a que conta ele se refere.</li>
+            </ol>
+
+            <h2>Enviar login e senha para um cliente ou fornecedor</h2>
+            <p>
+                Para alguém de fora da sua empresa, crie um link válido por um dia, com uma frase secreta. Mande o
+                link por e-mail e a frase por telefone ou SMS: nenhuma das duas mensagens basta sozinha para ler o
+                login. Peça que o destinatário troque a senha no primeiro acesso.
+            </p>
+
+            <h2>Compartilhar uma senha temporária</h2>
+            <p>
+                Se alguém precisa de acesso por pouco tempo, como um técnico, um estagiário ou um colega que vai
+                cobrir você, crie uma senha só para isso, envie por um link de uso único e troque-a quando o trabalho
+                terminar.
+            </p>
+
+            <h2>Formas de enviar uma senha, comparadas</h2>
+            <table class="comparison-table">
+                <thead>
+                    <tr><th>Método</th><th>Apagado depois do uso?</th><th>Onde ficam cópias</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td><strong>Link de uso único ({siteHost})</strong></td><td><span class="check">✓</span> Após a leitura ou a expiração</td><td>Só o que o destinatário guardar. O servidor recebe apenas dados criptografados.</td></tr>
+                    <tr><td><strong>Password Pusher</strong></td><td><span class="check">✓</span> Após as visualizações ou o prazo</td><td>Segundo a documentação, o servidor recebe o conteúdo legível e o criptografa por conta própria.</td></tr>
+                    <tr><td><strong>Cofre compartilhado de um gerenciador de senhas</strong></td><td><span class="cross">✗</span> Fica até você remover, por design</td><td>No cofre compartilhado. As duas pessoas precisam de conta.</td></tr>
+                    <tr><td><strong>WhatsApp ou outro aplicativo de mensagens</strong></td><td><span class="cross">✗</span> Só com mensagens temporárias, após prazo fixo</td><td>Os dois celulares, os backups e as conversas encaminhadas.</td></tr>
+                    <tr><td><strong>E-mail</strong></td><td><span class="cross">✗</span></td><td>As duas caixas de e-mail, os servidores e os backups deles.</td></tr>
+                    <tr><td><strong>SMS</strong></td><td><span class="cross">✗</span></td><td>Os dois celulares e a operadora.</td></tr>
+                </tbody>
+            </table>
+            <p>
+                Para acesso compartilhado e permanente numa equipe, o gerenciador de senhas continua sendo a
+                ferramenta certa. O link de uso único serve para envios pontuais, principalmente para pessoas que não
+                usam um.
+            </p>
+
+            <h2>Boas práticas</h2>
+            <ul>
+                <li><strong>Separe o link da frase secreta.</strong> O link por e-mail, a frase por telefone: um sem o outro não serve para nada.</li>
+                <li><strong>Troque a senha no fim da parceria.</strong> Quando um fornecedor termina o trabalho ou um colega sai da equipe, troque o que ele conhecia.</li>
+                <li><strong>Ative a verificação em duas etapas.</strong> Uma senha vazada não basta sem o segundo fator.</li>
+            </ul>
+
+            <h2>Perguntas frequentes</h2>
+            {faqItems.map((item) => (
+                <div class="feature-card" style="margin-bottom:12px">
+                    <div class="feature-card-header"><h3>{item.question}</h3></div>
+                    <p>{item.answer}</p>
+                </div>
+            ))}
+
+            <h2>Outras formas de compartilhar com segurança</h2>
+            <nav class="seo-nav">
+                <a href="/pt/">Criar um link de uso único</a>
+                <a href="/pt/enviar-arquivos/">Enviar arquivos por link</a>
+            </nav>
+        </section>
+    </div>
+</BaseLayout>
+
+<style>
+    .comparison-table {
+        display: block;
+        overflow-x: auto;
+    }
+</style>

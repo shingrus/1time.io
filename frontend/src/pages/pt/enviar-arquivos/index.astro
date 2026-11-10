@@ -1,0 +1,154 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import FileShareForm from '../../../components/FileShareForm.astro';
+import InlineCss from '../../../components/InlineCss.astro';
+import {absoluteUrl, siteHost} from '../../../lib/siteConfig.js';
+import {Constants} from '../../../lib/util.js';
+import {pageAlternates} from '../../../lib/i18n.js';
+
+const title = 'Enviar arquivos por link grátis: RG, CPF, contratos e PDF';
+const description = 'Enviar arquivos grandes por link grátis: cópia de RG ou CPF, contrato ou qualquer arquivo de até 250 MB com um link temporário de uso único. Criptografado no navegador, apagado após o download. Sem cadastro.';
+const maxMb = Math.round(Constants.maxFileSizeBytes / (1024 * 1024));
+
+const faqItems = [
+    {
+        question: 'Como enviar documentos com segurança, como RG e CPF?',
+        answer: 'Evite deixar o documento anexado em e-mails ou no WhatsApp, onde ele fica guardado por muito tempo. Envie um link de uso único: o e-mail não contém o documento, e a cópia no servidor é apagada depois do download. Mande apenas o que foi pedido e, se possível, escreva a finalidade na própria imagem.',
+    },
+    {
+        question: 'O 1time.io consegue ver meus arquivos?',
+        answer: 'Não. O arquivo é criptografado no seu navegador com AES-256-GCM antes do envio, junto com o nome e o tipo. A chave fica no link, depois do símbolo #, e nunca chega ao servidor, que guarda apenas dados criptografados.',
+    },
+    {
+        question: 'Quais arquivos posso enviar?',
+        answer: `Qualquer arquivo de até ${maxMb} MB: PDF, digitalizações de RG, CPF, CNH ou passaporte, contratos, holerites, informes de rendimentos, arquivos ZIP.`,
+    },
+    {
+        question: 'O destinatário disse que o link não funciona mais. Por quê?',
+        answer: 'O arquivo já foi baixado o número de vezes permitido, ou o prazo de validade acabou. Se nenhuma das duas situações se aplica, outra pessoa pode tê-lo baixado. Para reduzir esse risco, adicione uma frase secreta e passe-a por outro canal.',
+    },
+];
+
+const jsonLd = [
+    {
+        '@context': 'https://schema.org',
+        '@type': 'WebApplication',
+        name: 'Enviar arquivos por link',
+        url: absoluteUrl('/pt/enviar-arquivos/'),
+        inLanguage: 'pt',
+        description,
+        applicationCategory: 'SecurityApplication',
+        operatingSystem: 'Any',
+        offers: {'@type': 'Offer', price: '0', priceCurrency: 'BRL'},
+        dateModified: '2026-11-10',
+    },
+    {
+        '@context': 'https://schema.org',
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+            {'@type': 'ListItem', position: 1, name: 'Início', item: absoluteUrl('/pt/')},
+            {'@type': 'ListItem', position: 2, name: 'Enviar arquivos por link', item: absoluteUrl('/pt/enviar-arquivos/')},
+        ],
+    },
+    {
+        '@context': 'https://schema.org',
+        '@type': 'FAQPage',
+        inLanguage: 'pt',
+        mainEntity: faqItems.map((item) => ({
+            '@type': 'Question',
+            name: item.question,
+            acceptedAnswer: {'@type': 'Answer', text: item.answer},
+        })),
+    },
+];
+---
+<BaseLayout
+    title={title}
+    description={description}
+    canonical="/pt/enviar-arquivos/"
+    lang="pt"
+    alternates={pageAlternates.file}
+    ogImageAlt="Enviar um documento com um link de download de uso único"
+>
+    <InlineCss slot="head" name="home" />
+    <InlineCss slot="head" name="file-sharing" />
+    <script slot="head" type="application/ld+json" set:html={JSON.stringify(jsonLd)} is:inline></script>
+
+    <div class="share-flow-page">
+        <nav class="share-mode-nav" aria-label="Escolha o que compartilhar">
+            <a href="/pt/enviar-senha/" class="share-mode-link">Texto secreto</a>
+            <a href="/pt/enviar-arquivos/" class="share-mode-link share-mode-link-active">Arquivo de uso único</a>
+        </nav>
+
+        <FileShareForm lang="pt" />
+
+        <section class="seo-section">
+            <p>
+                Envie um documento aqui e mande o link de download de uso único que você receber. O arquivo é
+                criptografado no seu navegador antes do envio. Depois do download, a cópia no servidor é apagada e o
+                link deixa de funcionar. É grátis e não precisa de cadastro.
+            </p>
+
+            <h2>Como funciona</h2>
+            <dl class="glossary">
+                <dt>Downloads</dt>
+                <dd>Um por padrão. Você pode permitir 2, 3, 5 ou 10 se mais de uma pessoa precisar do arquivo.</dd>
+                <dt>Abrir o link</dt>
+                <dd>Abrir o link mostra uma página de confirmação. O arquivo só é consumido no momento do download.</dd>
+                <dt>Prazo de validade</dt>
+                <dd>De 1 hora a 30 dias. Passado o prazo, o arquivo é apagado, mesmo que não tenha sido baixado.</dd>
+                <dt>O que o servidor vê</dt>
+                <dd>Apenas dados criptografados: nem o conteúdo, nem o nome, nem o tipo do arquivo.</dd>
+                <dt>Tamanho máximo</dt>
+                <dd>{maxMb} MB por arquivo.</dd>
+            </dl>
+
+            <h2>Enviar cópia de RG e CPF</h2>
+            <p>
+                Uma imobiliária, uma hospedagem ou um empregador pediu cópia do seu RG ou CPF? Enviada como anexo ou
+                pelo WhatsApp, ela fica guardada nos dois aplicativos e nos backups deles. Para reduzir o risco:
+            </p>
+            <ol>
+                <li>Envie só os lados ou as páginas que foram pedidos.</li>
+                <li>Escreva sobre a imagem o destinatário e a data, por exemplo “Aluguel – 12/12/2026”.</li>
+                <li>Envie o arquivo aqui, crie o link e mande-o por e-mail ou SMS.</li>
+            </ol>
+            <p>
+                O link de uso único evita que o documento fique na conversa, mas não controla o que o destinatário
+                faz com o arquivo depois de baixá-lo. Envie documentos de identidade só para quem realmente precisa
+                deles.
+            </p>
+
+            <h2>Substituir um anexo de e-mail</h2>
+            <p>
+                Em vez de anexar um contrato, um holerite ou um PDF, cole o link de download no e-mail, seja no
+                Outlook, no Gmail ou em outro programa. Assim, o documento não fica nem nas caixas de e-mail nem nos
+                backups. Um link não protege contra um destinatário errado: se o e-mail chegar a outra pessoa, ela
+                poderá baixar o arquivo. Para documentos sensíveis, adicione uma frase secreta e passe-a por
+                telefone.
+            </p>
+
+            <h2>Uma alternativa ao WeTransfer?</h2>
+            <p>
+                Para arquivos muito pesados, como vídeos ou backups de vários GB, WeTransfer, SwissTransfer ou Smash
+                são mais indicados. O {siteHost} atende outra necessidade: documentos confidenciais de até {maxMb} MB,
+                destinados a uma pessoa específica, criptografados antes do envio e apagados do servidor depois do
+                download.
+            </p>
+
+            <h2>Perguntas frequentes</h2>
+            {faqItems.map((item) => (
+                <div class="feature-card" style="margin-bottom:12px">
+                    <div class="feature-card-header"><h3>{item.question}</h3></div>
+                    <p>{item.answer}</p>
+                </div>
+            ))}
+
+            <h2>Outras formas de compartilhar com segurança</h2>
+            <nav class="seo-nav">
+                <a href="/pt/">Criar um link de uso único</a>
+                <a href="/pt/enviar-senha/">Enviar senha de forma segura</a>
+            </nav>
+        </section>
+    </div>
+</BaseLayout>
