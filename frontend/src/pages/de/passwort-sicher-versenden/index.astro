@@ -1,0 +1,168 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import InlineCss from '../../../components/InlineCss.astro';
+import NewMessageForm from '../../../components/NewMessageForm.astro';
+import {absoluteUrl, siteHost} from '../../../lib/siteConfig.js';
+import {pageAlternates} from '../../../lib/i18n.js';
+
+const title = 'Passwort sicher versenden: Einmal-Link, nach dem Lesen gelöscht';
+const description = 'Passwort oder Zugangsdaten sicher versenden, per E-Mail, WhatsApp oder Teams, ohne dass sie im Verlauf bleiben: ein Einmal-Link, der sich nach dem Lesen selbst löscht. Kostenlos, ohne Anmeldung.';
+
+const faqItems = [
+    {question: 'Kann man ein Passwort per E-Mail verschicken?', answer: 'Besser nicht im Text der Mail: Es bliebe in beiden Postfächern und deren Backups. Schicken Sie stattdessen einen Einmal-Link. Nachdem das Passwort gelesen wurde, führt der Link zu nichts mehr.'},
+    {question: 'Wie verschicke ich ein verschlüsseltes Passwort?', answer: 'Fügen Sie es oben auf dieser Seite in das Feld ein: Es wird in Ihrem Browser mit AES-256-GCM verschlüsselt, bevor es gesendet wird. Sie müssen nichts installieren, und der Empfänger braucht nur den Link.'},
+    {question: 'Kann 1time.io mein Passwort sehen?', answer: 'Nein. Der Schlüssel zum Entschlüsseln steckt im Link, hinter dem Zeichen #, einem Teil, den Browser nie an den Server senden. 1time.io speichert nur verschlüsselte Daten, die es nicht lesen kann.'},
+    {question: 'Der Empfänger sagt, der Link funktioniere nicht mehr. Was ist passiert?', answer: 'Das Passwort wurde bereits gelesen, oder die Gültigkeit ist abgelaufen. Prüfen Sie zuerst diese beiden Fälle. Hat der Empfänger es nicht gelesen und der Link ist nicht abgelaufen, hat ihn möglicherweise jemand anderes geöffnet: Ändern Sie das Passwort und senden Sie ein neues.'},
+    {question: 'Kann ich dasselbe Passwort an mehrere Personen schicken?', answer: 'Ja: Beim Erstellen des Links können Sie 2, 3, 5 oder 10 Aufrufe erlauben. Ein Link pro Person lässt sich aber leichter nachvollziehen, da jeder nur einmal funktioniert.'},
+];
+
+const jsonLd = [
+    {
+        '@context': 'https://schema.org',
+        '@type': 'WebApplication',
+        name: 'Passwort sicher versenden',
+        url: absoluteUrl('/de/passwort-sicher-versenden/'),
+        inLanguage: 'de',
+        description,
+        applicationCategory: 'SecurityApplication',
+        operatingSystem: 'Any',
+        offers: {'@type': 'Offer', price: '0', priceCurrency: 'EUR'},
+        dateModified: '2026-11-10',
+    },
+    {
+        '@context': 'https://schema.org',
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+            {'@type': 'ListItem', position: 1, name: 'Startseite', item: absoluteUrl('/de/')},
+            {'@type': 'ListItem', position: 2, name: 'Passwort sicher versenden', item: absoluteUrl('/de/passwort-sicher-versenden/')},
+        ],
+    },
+    {
+        '@context': 'https://schema.org',
+        '@type': 'FAQPage',
+        inLanguage: 'de',
+        mainEntity: faqItems.map((item) => ({
+            '@type': 'Question',
+            name: item.question,
+            acceptedAnswer: {'@type': 'Answer', text: item.answer},
+        })),
+    },
+];
+---
+<BaseLayout
+    title={title}
+    description={description}
+    canonical="/de/passwort-sicher-versenden/"
+    lang="de"
+    alternates={pageAlternates.password}
+    ogImageAlt="Passwort mit einem Einmal-Link sicher versenden"
+>
+    <InlineCss slot="head" name="home" />
+    <InlineCss slot="head" name="article" />
+    <script slot="head" type="application/ld+json" set:html={JSON.stringify(jsonLd)} is:inline></script>
+
+    <div class="share-flow-page">
+        <nav class="share-mode-nav" aria-label="Wählen Sie, was Sie teilen möchten">
+            <a href="/de/passwort-sicher-versenden/" class="share-mode-link share-mode-link-active">Geheimer Text</a>
+            <a href="/de/dateien-sicher-versenden/" class="share-mode-link">Datei per Einmal-Link</a>
+        </nav>
+
+        <NewMessageForm lang="de" />
+
+        <section class="seo-section">
+            <h1>So können Sie ein Passwort sicher versenden</h1>
+            <p>
+                Wer ein Passwort sicher teilen will, ohne dass es im Verlauf zurückbleibt, schreibt das Passwort
+                nicht selbst in die Nachricht, sondern schickt einen Einmal-Link. Der Empfänger liest es einmal,
+                danach wird die Kopie auf dem Server gelöscht. In Ihren Mails, SMS oder in Teams bleibt nur ein Link
+                zurück, der nicht mehr funktioniert.
+            </p>
+
+            <h2>Passwort per E-Mail senden</h2>
+            <p>
+                Eine E-Mail liegt in Ihrem Gesendet-Ordner, im Postfach des Empfängers, auf den Mailservern und in
+                deren Backups, oft jahrelang. Damit dort kein gültiges Passwort liegen bleibt:
+            </p>
+            <ul>
+                <li>Schreiben Sie den Einmal-Link in die Mail, nicht das Passwort.</li>
+                <li>Wählen Sie die kürzeste Gültigkeit, die für Sie passt, ab einer Stunde.</li>
+                <li>Schreiben Sie nicht „Passwort“ in den Betreff: Das lenkt nur Aufmerksamkeit darauf.</li>
+                <li>Wenn die Mail im falschen Postfach landen könnte, legen Sie eine Passphrase fest und nennen Sie sie telefonisch.</li>
+            </ul>
+
+            <h2>Passwort per SMS oder WhatsApp senden</h2>
+            <p>
+                WhatsApp verschlüsselt Nachrichten auf dem Transportweg, aber das Passwort steht weiterhin auf beiden
+                Smartphones, in den Backups und in jedem Chat, in den es weitergeleitet wird. Eine SMS ist nicht
+                Ende-zu-Ende-verschlüsselt und läuft über den Mobilfunkanbieter. Schicken Sie in beiden Fällen
+                lieber den Link:
+            </p>
+            <ol>
+                <li>Fügen Sie das Passwort oben in das Feld ein und klicken Sie auf „Link erstellen“.</li>
+                <li>Kopieren Sie den Link oder teilen Sie ihn direkt vom Smartphone aus.</li>
+                <li>Fügen Sie ihn in den Chat ein, ohne zu schreiben, zu welchem Konto er gehört.</li>
+            </ol>
+
+            <h2>Zugangsdaten sicher versenden an Kunden oder Dienstleister</h2>
+            <p>
+                Für jemanden außerhalb Ihres Unternehmens erstellen Sie einen Link mit einem Tag Gültigkeit und einer
+                Passphrase. Schicken Sie den Link per Mail und die Passphrase telefonisch oder per SMS: Keine der
+                beiden Nachrichten reicht allein, um die Zugangsdaten zu lesen. Bitten Sie den Empfänger, das Passwort
+                bei der ersten Anmeldung zu ändern.
+            </p>
+
+            <h2>Temporäres Passwort teilen</h2>
+            <p>
+                Braucht jemand nur kurz Zugang, etwa ein Techniker, eine Praktikantin oder ein Kollege als Vertretung,
+                legen Sie ein eigenes Passwort an, schicken es per Einmal-Link und ändern es nach Ende des Einsatzes.
+            </p>
+
+            <h2>Wege, ein Passwort zu versenden, im Vergleich</h2>
+            <table class="comparison-table">
+                <thead>
+                    <tr><th>Methode</th><th>Nach Gebrauch gelöscht?</th><th>Wo Kopien bleiben</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td><strong>Einmal-Link ({siteHost})</strong></td><td><span class="check">✓</span> Nach dem Lesen oder bei Ablauf</td><td>Nur, was der Empfänger selbst aufbewahrt. Der Server erhält nur verschlüsselte Daten.</td></tr>
+                    <tr><td><strong>Password Pusher</strong></td><td><span class="check">✓</span> Nach den Aufrufen oder der Frist</td><td>Laut Dokumentation erhält der Server den Inhalt im Klartext und verschlüsselt ihn selbst.</td></tr>
+                    <tr><td><strong>Geteilter Tresor eines Passwortmanagers</strong></td><td><span class="cross">✗</span> Bleibt, bis Sie es entfernen, das ist gewollt</td><td>Im geteilten Tresor. Beide Personen brauchen ein Konto.</td></tr>
+                    <tr><td><strong>WhatsApp oder anderer Messenger</strong></td><td><span class="cross">✗</span> Außer bei verschwindenden Nachrichten, nach fester Frist</td><td>Beide Smartphones, Backups und weitergeleitete Chats.</td></tr>
+                    <tr><td><strong>E-Mail</strong></td><td><span class="cross">✗</span></td><td>Beide Postfächer, die Mailserver und deren Backups.</td></tr>
+                    <tr><td><strong>SMS</strong></td><td><span class="cross">✗</span></td><td>Beide Smartphones und der Mobilfunkanbieter.</td></tr>
+                </tbody>
+            </table>
+            <p>
+                Für dauerhaften gemeinsamen Zugriff im Team ist ein Passwortmanager das richtige Werkzeug. Der
+                Einmal-Link eignet sich für einzelne Übermittlungen, vor allem an Personen, die keinen nutzen.
+            </p>
+
+            <h2>Empfehlungen</h2>
+            <ul>
+                <li><strong>Trennen Sie Link und Passphrase.</strong> Den Link per Mail, die Passphrase per Telefon: Das eine nützt ohne das andere nichts.</li>
+                <li><strong>Ändern Sie das Passwort zum Ende der Zusammenarbeit.</strong> Wenn ein Dienstleister fertig ist oder ein Kollege das Team verlässt, ändern Sie, was er kannte.</li>
+                <li><strong>Aktivieren Sie die Zwei-Faktor-Authentifizierung.</strong> Ein weitergegebenes Passwort reicht dann ohne den zweiten Faktor nicht aus.</li>
+            </ul>
+
+            <h2>Häufige Fragen</h2>
+            {faqItems.map((item) => (
+                <div class="feature-card" style="margin-bottom:12px">
+                    <div class="feature-card-header"><h3>{item.question}</h3></div>
+                    <p>{item.answer}</p>
+                </div>
+            ))}
+
+            <h2>Weitere Möglichkeiten, sicher zu teilen</h2>
+            <nav class="seo-nav">
+                <a href="/de/">Einmal-Link erstellen</a>
+                <a href="/de/dateien-sicher-versenden/">Dateien sicher versenden</a>
+            </nav>
+        </section>
+    </div>
+</BaseLayout>
+
+<style>
+    .comparison-table {
+        display: block;
+        overflow-x: auto;
+    }
+</style>

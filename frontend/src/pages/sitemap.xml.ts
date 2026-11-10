@@ -40,6 +40,12 @@ const coreRoutes: RouteEntry[] = [
     {path: '/id/', priority: 0.8, changefreq: 'weekly', lastmod: '2026-11-07'},
     {path: '/id/kirim-password/', priority: 0.7, changefreq: 'weekly', lastmod: '2026-11-07'},
     {path: '/id/kirim-file/', priority: 0.7, changefreq: 'weekly', lastmod: '2026-11-07'},
+    {path: '/de/', priority: 0.8, changefreq: 'weekly', lastmod: '2026-11-10'},
+    {path: '/de/passwort-sicher-versenden/', priority: 0.7, changefreq: 'weekly', lastmod: '2026-11-10'},
+    {path: '/de/dateien-sicher-versenden/', priority: 0.7, changefreq: 'weekly', lastmod: '2026-11-10'},
+    {path: '/pt/', priority: 0.8, changefreq: 'weekly', lastmod: '2026-11-10'},
+    {path: '/pt/enviar-senha/', priority: 0.7, changefreq: 'weekly', lastmod: '2026-11-10'},
+    {path: '/pt/enviar-arquivos/', priority: 0.7, changefreq: 'weekly', lastmod: '2026-11-10'},
 ];
 
 const blogRoutes: RouteEntry[] = [

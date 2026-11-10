@@ -1,9 +1,9 @@
 import {SHARE_DURATION_OPTIONS} from './util.js';
 
-export type Lang = 'en' | 'es' | 'fr' | 'ja' | 'id';
+export type Lang = 'en' | 'es' | 'fr' | 'ja' | 'id' | 'de' | 'pt';
 type ShareKind = 'secret' | 'file';
 
-export const langs: Lang[] = ['en', 'es', 'fr', 'ja', 'id'];
+export const langs: Lang[] = ['en', 'es', 'fr', 'ja', 'id', 'de', 'pt'];
 
 export const langNames: Record<Lang, string> = {
     en: 'English',
@@ -11,18 +11,22 @@ export const langNames: Record<Lang, string> = {
     fr: 'Français',
     ja: '日本語',
     id: 'Bahasa Indonesia',
+    de: 'Deutsch',
+    pt: 'Português',
 };
 
 export type Alternates = Record<Lang, string>;
 
 export const pageAlternates = {
-    home: {en: '/', es: '/es/', fr: '/fr/', ja: '/ja/', id: '/id/'},
+    home: {en: '/', es: '/es/', fr: '/fr/', ja: '/ja/', id: '/id/', de: '/de/', pt: '/pt/'},
     password: {
         en: '/share-password-securely/',
         es: '/es/compartir-contrasena/',
         fr: '/fr/envoyer-mot-de-passe/',
         ja: '/ja/password/',
         id: '/id/kirim-password/',
+        de: '/de/passwort-sicher-versenden/',
+        pt: '/pt/enviar-senha/',
     },
     file: {
         en: '/secure-file-sharing/',
@@ -30,6 +34,8 @@ export const pageAlternates = {
         fr: '/fr/envoyer-fichier-securise/',
         ja: '/ja/file/',
         id: '/id/kirim-file/',
+        de: '/de/dateien-sicher-versenden/',
+        pt: '/pt/enviar-arquivos/',
     },
 } satisfies Record<string, Alternates>;
 
@@ -221,6 +227,72 @@ export const ui: Record<Lang, UiText> = {
         chooseAnother: 'Pilih file lain',
         removeFile: 'Hapus file',
     },
+    de: {
+        shareTitle: 'Einmal-Link erstellen',
+        secretLabel: 'Geheime Nachricht',
+        secretPlaceholder: 'Passwort, API-Schlüssel oder private Notiz einfügen',
+        createLink: 'Link erstellen',
+        passphraseLabel: 'Optionale Passphrase, die der Empfänger kennen muss',
+        passphrasePlaceholder: 'Passphrase (optional)',
+        expireAfter: 'Läuft ab nach',
+        durations: {3600: '1 Stunde', 86400: '1 Tag', 259200: '3 Tagen', 604800: '7 Tagen', 2592000: '30 Tagen'},
+        usageAllowed: {secret: 'Erlaubte Aufrufe', file: 'Erlaubte Downloads'},
+        usage: (count, kind) => (kind === 'file'
+            ? `${count} ${count === 1 ? 'Download' : 'Downloads'}`
+            : `${count} ${count === 1 ? 'Aufruf' : 'Aufrufe'}`),
+        setPassphrase: 'Passphrase festlegen',
+        encryptionNote: 'Ende-zu-Ende-verschlüsselt in Ihrem Browser. Der Schlüssel erreicht nie unsere Server.',
+        linkReadyTitle: 'Ihr Einmal-Link ist fertig',
+        linkReadyExpiry: 'Läuft ab in 1 Tag',
+        linkReadyUses: '1 Aufruf',
+        linkInputLabel: 'Geheimer Einmal-Link',
+        copy: 'Kopieren',
+        shareLink: 'Link teilen',
+        linkActions: 'Link-Aktionen',
+        showQr: 'QR-Code anzeigen',
+        sendAnother: 'Weitere Nachricht senden',
+        qrLabel: 'QR-Code des geheimen Links',
+        reference: 'Referenz',
+        fileTitle: 'Dateien sicher versenden',
+        chooseFile: 'Datei auswählen',
+        dropFile: 'oder Datei hierher ziehen',
+        fileHint: (maxMb) => `Jeder Dateityp, bis ${maxMb} MB`,
+        chooseAnother: 'Andere wählen',
+        removeFile: 'Datei entfernen',
+    },
+    pt: {
+        shareTitle: 'Criar um link de uso único',
+        secretLabel: 'Mensagem secreta',
+        secretPlaceholder: 'Cole uma senha, uma chave de API ou uma nota privada',
+        createLink: 'Criar link',
+        passphraseLabel: 'Frase secreta opcional que o destinatário precisará saber',
+        passphrasePlaceholder: 'Frase secreta (opcional)',
+        expireAfter: 'Expira em',
+        durations: {3600: '1 hora', 86400: '1 dia', 259200: '3 dias', 604800: '7 dias', 2592000: '30 dias'},
+        usageAllowed: {secret: 'Visualizações permitidas', file: 'Downloads permitidos'},
+        usage: (count, kind) => (kind === 'file'
+            ? `${count} ${count === 1 ? 'download' : 'downloads'}`
+            : `${count} ${count === 1 ? 'visualização' : 'visualizações'}`),
+        setPassphrase: 'Definir frase secreta',
+        encryptionNote: 'Criptografado de ponta a ponta no seu navegador. A chave nunca chega aos nossos servidores.',
+        linkReadyTitle: 'Seu link secreto de uso único está pronto',
+        linkReadyExpiry: 'Expira em 1 dia',
+        linkReadyUses: '1 visualização',
+        linkInputLabel: 'Link secreto de uso único',
+        copy: 'Copiar',
+        shareLink: 'Compartilhar link',
+        linkActions: 'Ações do link',
+        showQr: 'Mostrar QR code',
+        sendAnother: 'Enviar outro segredo',
+        qrLabel: 'QR code do link secreto',
+        reference: 'Referência',
+        fileTitle: 'Enviar arquivos com segurança',
+        chooseFile: 'Escolher um arquivo',
+        dropFile: 'ou arraste o arquivo aqui',
+        fileHint: (maxMb) => `Qualquer tipo de arquivo, até ${maxMb} MB`,
+        chooseAnother: 'Escolher outro',
+        removeFile: 'Remover arquivo',
+    },
 };
 
 interface NavText {
@@ -254,6 +326,18 @@ export const navText: Record<Exclude<Lang, 'en'>, NavText> = {
         about: 'Tentang',
         privacy: 'Privasi',
         contact: 'Kontak',
+    },
+    de: {
+        githubLabel: 'Auf GitHub ansehen',
+        about: 'Über uns',
+        privacy: 'Datenschutz',
+        contact: 'Kontakt',
+    },
+    pt: {
+        githubLabel: 'Ver no GitHub',
+        about: 'Sobre',
+        privacy: 'Privacidade',
+        contact: 'Contato',
     },
 };
 
@@ -452,6 +536,88 @@ const islandText: Record<Exclude<Lang, 'en'>, IslandText> = {
                 reset: 'Kirim file lain',
                 inputLabel: 'Link download sekali pakai',
                 qrLabel: 'Kode QR link file',
+            },
+        },
+    },
+    de: {
+        busy: 'Verschlüsselung läuft…',
+        createError: 'Der Link konnte nicht erstellt werden. Bitte versuchen Sie es erneut.',
+        uploading: 'Hochladen {percent} %…',
+        progressEncrypting: 'Datei wird in Ihrem Browser verschlüsselt…',
+        progressUploading: 'Verschlüsselte Datei wird hochgeladen…',
+        progressPreparing: 'Vorbereitung',
+        helpEncrypting: 'Die Datei wird vor dem Hochladen auf Ihrem Gerät verschlüsselt.',
+        helpUploading: 'Zum Server wird nur die verschlüsselte Datei gesendet.',
+        tooLarge: 'Die Datei überschreitet das Limit von {mb} MB',
+        linkFailed: 'Der Datei-Link konnte nicht erstellt werden. Bitte versuchen Sie es erneut.',
+        uploadFailed: 'Die Datei konnte nicht verschlüsselt oder hochgeladen werden. Bitte versuchen Sie es erneut.',
+        expiry: 'Läuft ab in {duration}',
+        copied: 'Kopiert',
+        alreadyCopied: 'Bereits kopiert',
+        qrShow: 'QR-Code anzeigen',
+        qrLoading: 'QR-Code wird geladen…',
+        qrHide: 'QR-Code ausblenden',
+        linkReady: {
+            secret: {
+                title: 'Ihr Einmal-Link ist fertig',
+                usesOne: '{count} Aufruf',
+                usesOther: '{count} Aufrufe',
+                warning: 'Dieser Link existiert nur auf dieser Seite. Wir können ihn nicht erneut anzeigen und den Inhalt nicht lesen: '
+                    + 'Der Schlüssel steht hinter dem #, einem Teil, den der Browser nie an unsere Server sendet.',
+                reset: 'Weitere Nachricht senden',
+                inputLabel: 'Geheimer Einmal-Link',
+                qrLabel: 'QR-Code des geheimen Links',
+            },
+            file: {
+                title: 'Ihr Einmal-Link zum Download ist fertig',
+                usesOne: '{count} Download',
+                usesOther: '{count} Downloads',
+                warning: 'Dieser Link existiert nur auf dieser Seite. Wir können ihn nicht erneut anzeigen und die Datei nicht lesen: '
+                    + 'Der Schlüssel steht hinter dem #, einem Teil, den der Browser nie an unsere Server sendet.',
+                reset: 'Weitere Datei senden',
+                inputLabel: 'Einmal-Link zum Download',
+                qrLabel: 'QR-Code des Datei-Links',
+            },
+        },
+    },
+    pt: {
+        busy: 'Criptografando…',
+        createError: 'Não foi possível criar o link. Tente novamente.',
+        uploading: 'Enviando {percent}%…',
+        progressEncrypting: 'Criptografando o arquivo no seu navegador…',
+        progressUploading: 'Enviando o arquivo criptografado…',
+        progressPreparing: 'Preparando',
+        helpEncrypting: 'O arquivo é criptografado no seu dispositivo antes do envio.',
+        helpUploading: 'Só o arquivo criptografado é enviado ao servidor.',
+        tooLarge: 'O arquivo ultrapassa o limite de {mb} MB',
+        linkFailed: 'Não foi possível criar o link do arquivo. Tente novamente.',
+        uploadFailed: 'Não foi possível criptografar ou enviar o arquivo. Tente novamente.',
+        expiry: 'Expira em {duration}',
+        copied: 'Copiado',
+        alreadyCopied: 'Já copiado',
+        qrShow: 'Mostrar QR code',
+        qrLoading: 'Carregando QR code…',
+        qrHide: 'Ocultar QR code',
+        linkReady: {
+            secret: {
+                title: 'Seu link secreto de uso único está pronto',
+                usesOne: '{count} visualização',
+                usesOther: '{count} visualizações',
+                warning: 'Este link só existe nesta página. Não podemos mostrá-lo de novo nem ler o segredo: '
+                    + 'a chave fica depois do #, uma parte que o navegador nunca envia aos nossos servidores.',
+                reset: 'Enviar outro segredo',
+                inputLabel: 'Link secreto de uso único',
+                qrLabel: 'QR code do link secreto',
+            },
+            file: {
+                title: 'Seu link de download de uso único está pronto',
+                usesOne: '{count} download',
+                usesOther: '{count} downloads',
+                warning: 'Este link só existe nesta página. Não podemos mostrá-lo de novo nem ler o arquivo: '
+                    + 'a chave fica depois do #, uma parte que o navegador nunca envia aos nossos servidores.',
+                reset: 'Enviar outro arquivo',
+                inputLabel: 'Link de download de uso único',
+                qrLabel: 'QR code do link do arquivo',
             },
         },
     },

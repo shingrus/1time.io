@@ -1,0 +1,135 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import InlineCss from '../../components/InlineCss.astro';
+import NewMessageForm from '../../components/NewMessageForm.astro';
+import {absoluteUrl, siteHost} from '../../lib/siteConfig.js';
+import {pageAlternates} from '../../lib/i18n.js';
+
+const title = 'Einmal-Link für Passwörter und Dateien erstellen';
+const description = 'Erstellen Sie kostenlos einen Einmal-Link, um ein Passwort, einen API-Schlüssel oder eine Datei sicher zu versenden. Verschlüsselt im Browser, nach dem Lesen vom Server gelöscht. Ohne Anmeldung.';
+
+const faqItems = [
+    {question: 'Ist 1time.io sicher?', answer: 'Der Inhalt wird vor dem Senden in Ihrem Browser mit AES-256-GCM verschlüsselt, und der Schlüssel zum Entschlüsseln erreicht nie den Server. Weder 1time.io noch jemand mit Zugriff auf den Server kann also lesen, was Sie teilen. Der Code ist Open Source (MIT-Lizenz) und für alle einsehbar.'},
+    {question: 'Brauche ich ein Konto oder eine App?', answer: 'Nein. 1time.io funktioniert in jedem Browser, auch auf dem Smartphone, ohne Anmeldung und ohne App. Auch der Empfänger braucht kein Konto.'},
+    {question: 'Kann ich den Link per E-Mail, WhatsApp oder SMS schicken?', answer: 'Ja. In der Nachricht steht nur der Link, nicht das Passwort. Nach dem Lesen bleibt im Chat nur ein Link zurück, der nicht mehr funktioniert. Solange er ungelesen ist, kann ihn aber jeder öffnen, der ihn hat. Zusätzlichen Schutz bietet eine Passphrase, die Sie über einen anderen Kanal mitteilen.'},
+    {question: 'Was ist der Unterschied zu Password Pusher?', answer: 'Beide erzeugen Links, die ablaufen. Laut Dokumentation verschlüsselt Password Pusher die Daten auf seinem Server, nicht im Browser: Der Server erhält den Inhalt also im Klartext. 1time.io verschlüsselt im Browser, und der Server erhält nur verschlüsselte Daten, nie den Schlüssel.'},
+];
+
+const jsonLd = [
+    {
+        '@context': 'https://schema.org',
+        '@type': 'WebApplication',
+        name: siteHost,
+        url: absoluteUrl('/de/'),
+        inLanguage: 'de',
+        description,
+        applicationCategory: 'SecurityApplication',
+        operatingSystem: 'Any',
+        offers: {'@type': 'Offer', price: '0', priceCurrency: 'EUR'},
+        featureList: 'Einmal-Links, Ende-zu-Ende-Verschlüsselung mit AES-256-GCM, Zero-Knowledge, Ablauf nach 1 Stunde bis 30 Tagen, standardmäßig ein Aufruf und optional bis zu 10, Dateien bis 250 MB, optionale Passphrase, ohne Anmeldung, Open Source',
+        dateModified: '2026-11-10',
+    },
+    {
+        '@context': 'https://schema.org',
+        '@type': 'FAQPage',
+        inLanguage: 'de',
+        mainEntity: faqItems.map((item) => ({
+            '@type': 'Question',
+            name: item.question,
+            acceptedAnswer: {'@type': 'Answer', text: item.answer},
+        })),
+    },
+];
+---
+<BaseLayout
+    title={title}
+    description={description}
+    canonical="/de/"
+    lang="de"
+    alternates={pageAlternates.home}
+    ogImageAlt={`${siteHost}: Einmal-Link für Passwörter, API-Schlüssel und Dateien`}
+>
+    <InlineCss slot="head" name="home" />
+    <script slot="head" type="application/ld+json" set:html={JSON.stringify(jsonLd)} is:inline></script>
+
+    <div class="share-flow-page">
+        <nav class="share-mode-nav" aria-label="Wählen Sie, was Sie teilen möchten">
+            <a href="/de/" class="share-mode-link share-mode-link-active">Geheimer Text</a>
+            <a href="/de/dateien-sicher-versenden/" class="share-mode-link">Datei per Einmal-Link</a>
+        </nav>
+
+        <NewMessageForm lang="de" />
+
+        <section class="seo-section">
+            <h1>Einmal-Link: Passwort oder Datei, die nur einmal gelesen werden kann</h1>
+            <p>
+                {siteHost} erstellt Einmal-Links, kostenlos und ohne Konto. Fügen Sie ein Passwort, einen
+                API-Schlüssel oder eine private Notiz ein oder wählen Sie eine Datei aus: Sie erhalten einen Link,
+                den der Empfänger einmal öffnen kann. Der Inhalt wird vor dem Senden in Ihrem Browser verschlüsselt.
+                Der Server speichert nur verschlüsselte Daten und erhält nie den Schlüssel.
+            </p>
+
+            <h2>So funktioniert ein Einmal-Link bei 1time.io</h2>
+            <ul>
+                <li><strong>Das bloße Öffnen des Links verbraucht ihn nicht.</strong> Der Inhalt wird erst entschlüsselt, wenn der Empfänger bestätigt, dass er ihn anzeigen oder die Datei herunterladen möchte. Link-Vorschauen von Messengern lösen das also nicht aus.</li>
+                <li><strong>Nach dem Lesen wird die Kopie auf dem Server gelöscht.</strong> Der Link führt dann zu nichts mehr. Was der Empfänger kopiert, gespeichert oder per Screenshot festgehalten hat, wird dadurch nicht gelöscht.</li>
+                <li><strong>Ungelesene Inhalte laufen ab.</strong> Sie werden nach der gewählten Frist gelöscht, zwischen 1 Stunde und 30 Tagen.</li>
+                <li><strong>Standardmäßig ein Aufruf.</strong> Brauchen mehrere Personen dasselbe Geheimnis, können Sie 2, 3, 5 oder 10 Aufrufe erlauben.</li>
+                <li><strong>Ein Link, der nicht mehr funktioniert, wurde benutzt oder ist abgelaufen.</strong> Hat der Empfänger ihn nicht geöffnet und die Frist ist nicht um, hat ihn vielleicht jemand anderes gelesen: Ändern Sie dann vorsorglich das Passwort.</li>
+            </ul>
+
+            <h2>Link in vier Schritten erstellen</h2>
+            <ol>
+                <li>Fügen Sie das Geheimnis oben in das Feld ein. Für Dokumente nutzen Sie den Tab <a href="/de/dateien-sicher-versenden/">Datei per Einmal-Link</a>.</li>
+                <li>Wählen Sie die Gültigkeitsdauer und bei Bedarf die Anzahl der Aufrufe.</li>
+                <li>Legen Sie optional eine Passphrase fest, die Sie über einen anderen Kanal mitteilen.</li>
+                <li>Klicken Sie auf „Link erstellen“ und schicken Sie ihn per E-Mail, SMS, WhatsApp, Teams oder Slack.</li>
+            </ol>
+
+            <h2>Das Wichtigste in Kürze</h2>
+            <dl class="glossary">
+                <dt>Verschlüsselung</dt>
+                <dd>AES-256-GCM in Ihrem Browser, mit einem per HKDF-SHA256 abgeleiteten Schlüssel.</dd>
+                <dt>Wo der Schlüssel liegt</dt>
+                <dd>Im Link, hinter dem Zeichen #. Browser senden diesen Teil nie an den Server.</dd>
+                <dt>Was der Server speichert</dt>
+                <dd>Nur verschlüsselte Daten, nie den Schlüssel und nie den Inhalt im Klartext.</dd>
+                <dt>Dateien</dt>
+                <dd>Bis zu 250 MB. Dateiname und Dateityp werden zusammen mit dem Inhalt verschlüsselt.</dd>
+                <dt>Preis</dt>
+                <dd>Kostenlos und ohne Konto, für Absender und Empfänger. Open-Source-Code unter MIT-Lizenz.</dd>
+            </dl>
+
+            <h2>Wofür Sie ihn nutzen können</h2>
+            <ul>
+                <li>Zugangsdaten sicher versenden: Benutzername und Passwort an Kunden, Dienstleister oder Kollegen.</li>
+                <li>Das WLAN-Passwort an Gäste weitergeben.</li>
+                <li>Einen API-Schlüssel, ein Zugriffstoken oder Datenbankzugänge schicken.</li>
+                <li>Backup-Codes für die Zwei-Faktor-Authentifizierung teilen.</li>
+                <li><a href="/de/dateien-sicher-versenden/">Eine Kopie des Personalausweises, einen Vertrag oder Gehaltsabrechnungen versenden</a>, ohne dass sie im Chatverlauf bleiben.</li>
+            </ul>
+
+            <h2>Was ist der Unterschied zu selbstzerstörenden Nachrichten in WhatsApp?</h2>
+            <p>
+                Verschwindende Nachrichten in WhatsApp werden erst nach einer festen Frist gelöscht (24 Stunden,
+                7 oder 90 Tage). Bis dahin sind sie auf beiden Smartphones sichtbar und lassen sich weiterleiten oder
+                kopieren. Bei einer selbstzerstörenden Nachricht per Einmal-Link steht im Chat nur der Link, und der
+                Inhalt wird auf dem Server gelöscht, sobald er gelesen wurde.
+            </p>
+
+            <h2>Häufige Fragen</h2>
+            {faqItems.map((item) => (
+                <div class="feature-card" style="margin-bottom:12px">
+                    <div class="feature-card-header"><h3>{item.question}</h3></div>
+                    <p>{item.answer}</p>
+                </div>
+            ))}
+
+            <h2>Weitere Möglichkeiten, sicher zu teilen</h2>
+            <nav class="seo-nav">
+                <a href="/de/passwort-sicher-versenden/">Passwort sicher versenden</a>
+                <a href="/de/dateien-sicher-versenden/">Dateien sicher versenden</a>
+            </nav>
+        </section>
+    </div>
+</BaseLayout>

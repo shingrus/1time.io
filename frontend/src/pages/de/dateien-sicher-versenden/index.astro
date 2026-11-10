@@ -1,0 +1,155 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import FileShareForm from '../../../components/FileShareForm.astro';
+import InlineCss from '../../../components/InlineCss.astro';
+import {absoluteUrl, siteHost} from '../../../lib/siteConfig.js';
+import {Constants} from '../../../lib/util.js';
+import {pageAlternates} from '../../../lib/i18n.js';
+
+const title = 'Dateien sicher versenden: Personalausweis-Kopie, Verträge, PDF';
+const description = 'Dateien sicher versenden: Personalausweis-Kopie, Vertrag oder jede andere Datei bis 250 MB per Einmal-Link. Im Browser verschlüsselt, nach dem Download vom Server gelöscht. Kostenlos, ohne Anmeldung.';
+const maxMb = Math.round(Constants.maxFileSizeBytes / (1024 * 1024));
+
+const faqItems = [
+    {
+        question: 'Ist es riskant, eine Personalausweis-Kopie per E-Mail zu schicken?',
+        answer: 'Der Anhang bleibt in beiden Postfächern und deren Backups, oft jahrelang, und lässt sich weiterleiten. Wer später darauf Zugriff hat, könnte versuchen, damit Ihre Identität zu missbrauchen. Bei einem Einmal-Link enthält die Mail das Dokument nicht, und die Kopie auf dem Server wird nach dem Download gelöscht.',
+    },
+    {
+        question: 'Kann 1time.io meine Dateien sehen?',
+        answer: 'Nein. Die Datei wird vor dem Hochladen in Ihrem Browser mit AES-256-GCM verschlüsselt, samt Name und Typ. Der Schlüssel steckt im Link, hinter dem Zeichen #, und erreicht nie den Server, der nur verschlüsselte Daten speichert.',
+    },
+    {
+        question: 'Welche Dateien kann ich senden?',
+        answer: `Jede Datei bis ${maxMb} MB: PDF, Scans von Personalausweis, Reisepass oder Aufenthaltstitel, Verträge, Gehaltsabrechnungen, Steuerbescheide, ZIP-Archive.`,
+    },
+    {
+        question: 'Der Empfänger sagt, der Link funktioniere nicht mehr. Warum?',
+        answer: 'Die Datei wurde bereits so oft heruntergeladen, wie erlaubt war, oder die Gültigkeit ist abgelaufen. Trifft keines von beiden zu, hat sie möglicherweise jemand anderes heruntergeladen. Um das Risiko zu senken, legen Sie eine Passphrase fest und nennen Sie sie über einen anderen Kanal.',
+    },
+];
+
+const jsonLd = [
+    {
+        '@context': 'https://schema.org',
+        '@type': 'WebApplication',
+        name: 'Dateien sicher versenden',
+        url: absoluteUrl('/de/dateien-sicher-versenden/'),
+        inLanguage: 'de',
+        description,
+        applicationCategory: 'SecurityApplication',
+        operatingSystem: 'Any',
+        offers: {'@type': 'Offer', price: '0', priceCurrency: 'EUR'},
+        dateModified: '2026-11-10',
+    },
+    {
+        '@context': 'https://schema.org',
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+            {'@type': 'ListItem', position: 1, name: 'Startseite', item: absoluteUrl('/de/')},
+            {'@type': 'ListItem', position: 2, name: 'Dateien sicher versenden', item: absoluteUrl('/de/dateien-sicher-versenden/')},
+        ],
+    },
+    {
+        '@context': 'https://schema.org',
+        '@type': 'FAQPage',
+        inLanguage: 'de',
+        mainEntity: faqItems.map((item) => ({
+            '@type': 'Question',
+            name: item.question,
+            acceptedAnswer: {'@type': 'Answer', text: item.answer},
+        })),
+    },
+];
+---
+<BaseLayout
+    title={title}
+    description={description}
+    canonical="/de/dateien-sicher-versenden/"
+    lang="de"
+    alternates={pageAlternates.file}
+    ogImageAlt="Dokument mit einem Einmal-Link zum Download sicher versenden"
+>
+    <InlineCss slot="head" name="home" />
+    <InlineCss slot="head" name="file-sharing" />
+    <script slot="head" type="application/ld+json" set:html={JSON.stringify(jsonLd)} is:inline></script>
+
+    <div class="share-flow-page">
+        <nav class="share-mode-nav" aria-label="Wählen Sie, was Sie teilen möchten">
+            <a href="/de/passwort-sicher-versenden/" class="share-mode-link">Geheimer Text</a>
+            <a href="/de/dateien-sicher-versenden/" class="share-mode-link share-mode-link-active">Datei per Einmal-Link</a>
+        </nav>
+
+        <FileShareForm lang="de" />
+
+        <section class="seo-section">
+            <p>
+                Legen Sie hier ein Dokument ab und schicken Sie den Einmal-Link zum Download, den Sie erhalten. Die
+                Datei wird vor dem Hochladen in Ihrem Browser verschlüsselt. Nach dem Download wird die Kopie auf dem
+                Server gelöscht, und der Link funktioniert nicht mehr. Kostenlos und ohne Anmeldung.
+            </p>
+
+            <h2>So funktioniert es</h2>
+            <dl class="glossary">
+                <dt>Downloads</dt>
+                <dd>Standardmäßig einer. Sie können 2, 3, 5 oder 10 erlauben, wenn mehrere Personen die Datei brauchen.</dd>
+                <dt>Link öffnen</dt>
+                <dd>Das Öffnen des Links zeigt eine Bestätigungsseite. Die Datei wird erst beim Download verbraucht.</dd>
+                <dt>Gültigkeit</dt>
+                <dd>Von 1 Stunde bis 30 Tage. Danach wird die Datei gelöscht, auch wenn sie nicht heruntergeladen wurde.</dd>
+                <dt>Was der Server sieht</dt>
+                <dd>Nur verschlüsselte Daten: weder den Inhalt noch den Namen oder den Typ der Datei.</dd>
+                <dt>Maximale Größe</dt>
+                <dd>{maxMb} MB pro Datei, auch große Dateien wie umfangreiche PDFs oder ZIP-Archive.</dd>
+            </dl>
+
+            <h2>Personalausweis-Kopie sicher versenden</h2>
+            <p>
+                Ein Vermieter, eine Unterkunft oder ein Arbeitgeber verlangt eine Kopie Ihres Personalausweises?
+                Als Anhang oder über WhatsApp bleibt sie in beiden Messengern und deren Backups. So verringern Sie
+                das Risiko:
+            </p>
+            <ol>
+                <li>Senden Sie nur die Seiten, die verlangt werden.</li>
+                <li>Fügen Sie ein Wasserzeichen mit Empfänger und Datum hinzu, zum Beispiel „Mietbewerbung – 12.12.2026“.</li>
+                <li>Legen Sie die Datei hier ab, erstellen Sie den Link und schicken Sie ihn per Mail oder SMS.</li>
+            </ol>
+            <p>
+                Der Einmal-Link verhindert, dass das Dokument im Chatverlauf bleibt, kontrolliert aber nicht, was der
+                Empfänger nach dem Download mit der Datei macht. Schicken Sie Ausweisdaten nur an Personen, die sie
+                wirklich brauchen.
+            </p>
+
+            <h2>Anhang in einer E-Mail ersetzen</h2>
+            <p>
+                Statt einen Vertrag, eine Gehaltsabrechnung oder ein PDF anzuhängen, fügen Sie den Download-Link in
+                Ihre Mail ein, egal ob Sie Outlook, Gmail oder ein anderes Programm nutzen. So bleibt das Dokument
+                weder in den Postfächern noch in deren Backups. Ein Link schützt allerdings nicht vor einem falschen
+                Empfänger: Landet die Mail bei jemand anderem, kann diese Person die Datei herunterladen. Legen Sie
+                bei sensiblen Dokumenten eine Passphrase fest und nennen Sie sie telefonisch.
+            </p>
+
+            <h2>Eine WeTransfer-Alternative mit Datenschutz?</h2>
+            <p>
+                Für sehr große Dateien wie Videos oder Backups mit mehreren GB sind WeTransfer, SwissTransfer oder
+                Smash besser geeignet. {siteHost} erfüllt einen anderen Zweck: vertrauliche Dokumente bis {maxMb} MB
+                für eine bestimmte Person, vor dem Senden im Browser verschlüsselt, ohne Anmeldung und nach dem
+                Download vom Server gelöscht.
+            </p>
+
+            <h2>Häufige Fragen</h2>
+            {faqItems.map((item) => (
+                <div class="feature-card" style="margin-bottom:12px">
+                    <div class="feature-card-header"><h3>{item.question}</h3></div>
+                    <p>{item.answer}</p>
+                </div>
+            ))}
+
+            <h2>Weitere Möglichkeiten, sicher zu teilen</h2>
+            <nav class="seo-nav">
+                <a href="/de/">Einmal-Link erstellen</a>
+                <a href="/de/passwort-sicher-versenden/">Passwort sicher versenden</a>
+            </nav>
+        </section>
+    </div>
+</BaseLayout>
