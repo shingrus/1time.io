@@ -61,11 +61,11 @@ const jsonLd = [
         <NewMessageForm lang="de" />
 
         <section class="seo-section">
-            <h1>Einmal-Link: Passwort oder Datei, die nur einmal gelesen werden kann</h1>
+            <h1>Einmal-Link erstellen: Passwörter und Dateien sicher teilen</h1>
             <p>
                 {siteHost} erstellt Einmal-Links, kostenlos und ohne Konto. Fügen Sie ein Passwort, einen
                 API-Schlüssel oder eine private Notiz ein oder wählen Sie eine Datei aus: Sie erhalten einen Link,
-                den der Empfänger einmal öffnen kann. Der Inhalt wird vor dem Senden in Ihrem Browser verschlüsselt.
+                über den der Empfänger das Geheimnis einmal abrufen oder die Datei einmal herunterladen kann. Der Inhalt wird vor dem Senden in Ihrem Browser verschlüsselt.
                 Der Server speichert nur verschlüsselte Daten und erhält nie den Schlüssel.
             </p>
 
@@ -75,7 +75,7 @@ const jsonLd = [
                 <li><strong>Nach dem Lesen wird die Kopie auf dem Server gelöscht.</strong> Der Link führt dann zu nichts mehr. Was der Empfänger kopiert, gespeichert oder per Screenshot festgehalten hat, wird dadurch nicht gelöscht.</li>
                 <li><strong>Ungelesene Inhalte laufen ab.</strong> Sie werden nach der gewählten Frist gelöscht, zwischen 1 Stunde und 30 Tagen.</li>
                 <li><strong>Standardmäßig ein Aufruf.</strong> Brauchen mehrere Personen dasselbe Geheimnis, können Sie 2, 3, 5 oder 10 Aufrufe erlauben.</li>
-                <li><strong>Ein Link, der nicht mehr funktioniert, wurde benutzt oder ist abgelaufen.</strong> Hat der Empfänger ihn nicht geöffnet und die Frist ist nicht um, hat ihn vielleicht jemand anderes gelesen: Ändern Sie dann vorsorglich das Passwort.</li>
+                <li><strong>Ein Link, der nicht mehr funktioniert, kann benutzt worden oder abgelaufen sein.</strong> Prüfen Sie die Gültigkeitsdauer, den vollständigen Link und gegebenenfalls die Passphrase. Ein fehlgeschlagener Aufruf allein beweist keinen fremden Zugriff. Ändern Sie das Passwort, wenn Sie einen konkreten Grund zur Annahme haben, dass es weitergegeben wurde.</li>
             </ul>
 
             <h2>Link in vier Schritten erstellen</h2>
@@ -102,7 +102,7 @@ const jsonLd = [
 
             <h2>Wofür Sie ihn nutzen können</h2>
             <ul>
-                <li>Zugangsdaten sicher versenden: Benutzername und Passwort an Kunden, Dienstleister oder Kollegen.</li>
+                <li><a href="/de/passwort-sicher-versenden/">Zugangsdaten sicher versenden</a>: Benutzername und Passwort an Kunden, Dienstleister oder Kollegen.</li>
                 <li>Das WLAN-Passwort an Gäste weitergeben.</li>
                 <li>Einen API-Schlüssel, ein Zugriffstoken oder Datenbankzugänge schicken.</li>
                 <li>Backup-Codes für die Zwei-Faktor-Authentifizierung teilen.</li>

@@ -6,13 +6,13 @@ import {absoluteUrl, siteHost} from '../../../lib/siteConfig.js';
 import {pageAlternates} from '../../../lib/i18n.js';
 
 const title = 'Passwort sicher versenden: Einmal-Link, nach dem Lesen gelöscht';
-const description = 'Passwort oder Zugangsdaten sicher versenden, per E-Mail, WhatsApp oder Teams, ohne dass sie im Verlauf bleiben: ein Einmal-Link, der sich nach dem Lesen selbst löscht. Kostenlos, ohne Anmeldung.';
+const description = 'Passwörter per Einmal-Link über E-Mail, WhatsApp oder Teams versenden. Im Browser verschlüsselt, nach dem Lesen vom Server gelöscht. Ohne Anmeldung.';
 
 const faqItems = [
-    {question: 'Kann man ein Passwort per E-Mail verschicken?', answer: 'Besser nicht im Text der Mail: Es bliebe in beiden Postfächern und deren Backups. Schicken Sie stattdessen einen Einmal-Link. Nachdem das Passwort gelesen wurde, führt der Link zu nichts mehr.'},
+    {question: 'Kann man ein Passwort per E-Mail verschicken?', answer: 'Besser nicht im Text der Mail: Es könnte in beiden Postfächern und deren Backups bleiben. Schicken Sie stattdessen einen Einmal-Link. Nachdem das Passwort gelesen wurde, führt der Link zu nichts mehr.'},
     {question: 'Wie verschicke ich ein verschlüsseltes Passwort?', answer: 'Fügen Sie es oben auf dieser Seite in das Feld ein: Es wird in Ihrem Browser mit AES-256-GCM verschlüsselt, bevor es gesendet wird. Sie müssen nichts installieren, und der Empfänger braucht nur den Link.'},
     {question: 'Kann 1time.io mein Passwort sehen?', answer: 'Nein. Der Schlüssel zum Entschlüsseln steckt im Link, hinter dem Zeichen #, einem Teil, den Browser nie an den Server senden. 1time.io speichert nur verschlüsselte Daten, die es nicht lesen kann.'},
-    {question: 'Der Empfänger sagt, der Link funktioniere nicht mehr. Was ist passiert?', answer: 'Das Passwort wurde bereits gelesen, oder die Gültigkeit ist abgelaufen. Prüfen Sie zuerst diese beiden Fälle. Hat der Empfänger es nicht gelesen und der Link ist nicht abgelaufen, hat ihn möglicherweise jemand anderes geöffnet: Ändern Sie das Passwort und senden Sie ein neues.'},
+    {question: 'Der Empfänger sagt, der Link funktioniere nicht mehr. Was ist passiert?', answer: 'Prüfen Sie die Gültigkeitsdauer, den vollständigen Link und gegebenenfalls die Passphrase. Der Link kann auch bereits verbraucht sein. Ein fehlgeschlagener Aufruf allein beweist keinen fremden Zugriff. Gibt es einen konkreten Anlass zu der Annahme, dass das Passwort in falsche Hände geraten ist, ändern Sie es und senden Sie ein neues.'},
     {question: 'Kann ich dasselbe Passwort an mehrere Personen schicken?', answer: 'Ja: Beim Erstellen des Links können Sie 2, 3, 5 oder 10 Aufrufe erlauben. Ein Link pro Person lässt sich aber leichter nachvollziehen, da jeder nur einmal funktioniert.'},
 ];
 
@@ -80,8 +80,8 @@ const jsonLd = [
 
             <h2>Passwort per E-Mail senden</h2>
             <p>
-                Eine E-Mail liegt in Ihrem Gesendet-Ordner, im Postfach des Empfängers, auf den Mailservern und in
-                deren Backups, oft jahrelang. Damit dort kein gültiges Passwort liegen bleibt:
+                Eine E-Mail kann in Ihrem Gesendet-Ordner, im Postfach des Empfängers, auf den Mailservern und in
+                deren Backups liegen bleiben, mitunter jahrelang. Damit dort kein gültiges Passwort liegen bleibt:
             </p>
             <ul>
                 <li>Schreiben Sie den Einmal-Link in die Mail, nicht das Passwort.</li>
@@ -92,8 +92,8 @@ const jsonLd = [
 
             <h2>Passwort per SMS oder WhatsApp senden</h2>
             <p>
-                WhatsApp verschlüsselt Nachrichten auf dem Transportweg, aber das Passwort steht weiterhin auf beiden
-                Smartphones, in den Backups und in jedem Chat, in den es weitergeleitet wird. Eine SMS ist nicht
+                WhatsApp verschlüsselt Nachrichten auf dem Transportweg, aber das Passwort kann weiterhin auf beiden
+                Smartphones, in Backups und in jedem Chat, in den es weitergeleitet wird, erhalten bleiben. Eine SMS ist nicht
                 Ende-zu-Ende-verschlüsselt und läuft über den Mobilfunkanbieter. Schicken Sie in beiden Fällen
                 lieber den Link:
             </p>
@@ -103,7 +103,7 @@ const jsonLd = [
                 <li>Fügen Sie ihn in den Chat ein, ohne zu schreiben, zu welchem Konto er gehört.</li>
             </ol>
 
-            <h2>Zugangsdaten sicher versenden an Kunden oder Dienstleister</h2>
+            <h2>Zugangsdaten sicher an Kunden oder Dienstleister versenden</h2>
             <p>
                 Für jemanden außerhalb Ihres Unternehmens erstellen Sie einen Link mit einem Tag Gültigkeit und einer
                 Passphrase. Schicken Sie den Link per Mail und die Passphrase telefonisch oder per SMS: Keine der
@@ -120,11 +120,11 @@ const jsonLd = [
             <h2>Wege, ein Passwort zu versenden, im Vergleich</h2>
             <table class="comparison-table">
                 <thead>
-                    <tr><th>Methode</th><th>Nach Gebrauch gelöscht?</th><th>Wo Kopien bleiben</th></tr>
+                    <tr><th>Methode</th><th>Nach Gebrauch gelöscht?</th><th>Wo Kopien bleiben können</th></tr>
                 </thead>
                 <tbody>
                     <tr><td><strong>Einmal-Link ({siteHost})</strong></td><td><span class="check">✓</span> Nach dem Lesen oder bei Ablauf</td><td>Nur, was der Empfänger selbst aufbewahrt. Der Server erhält nur verschlüsselte Daten.</td></tr>
-                    <tr><td><strong>Password Pusher</strong></td><td><span class="check">✓</span> Nach den Aufrufen oder der Frist</td><td>Laut Dokumentation erhält der Server den Inhalt im Klartext und verschlüsselt ihn selbst.</td></tr>
+                    <tr><td><strong>Password Pusher</strong></td><td><span class="check">✓</span> Nach den Aufrufen oder der Frist</td><td><a href="https://docs.pwpush.com/docs/security/">Laut Dokumentation</a> erhält der Server den Inhalt im Klartext und verschlüsselt ihn selbst.</td></tr>
                     <tr><td><strong>Geteilter Tresor eines Passwortmanagers</strong></td><td><span class="cross">✗</span> Bleibt, bis Sie es entfernen, das ist gewollt</td><td>Im geteilten Tresor. Beide Personen brauchen ein Konto.</td></tr>
                     <tr><td><strong>WhatsApp oder anderer Messenger</strong></td><td><span class="cross">✗</span> Außer bei verschwindenden Nachrichten, nach fester Frist</td><td>Beide Smartphones, Backups und weitergeleitete Chats.</td></tr>
                     <tr><td><strong>E-Mail</strong></td><td><span class="cross">✗</span></td><td>Beide Postfächer, die Mailserver und deren Backups.</td></tr>

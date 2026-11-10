@@ -13,7 +13,7 @@ const maxMb = Math.round(Constants.maxFileSizeBytes / (1024 * 1024));
 const faqItems = [
     {
         question: 'Ist es riskant, eine Personalausweis-Kopie per E-Mail zu schicken?',
-        answer: 'Der Anhang bleibt in beiden Postfächern und deren Backups, oft jahrelang, und lässt sich weiterleiten. Wer später darauf Zugriff hat, könnte versuchen, damit Ihre Identität zu missbrauchen. Bei einem Einmal-Link enthält die Mail das Dokument nicht, und die Kopie auf dem Server wird nach dem Download gelöscht.',
+        answer: 'Der Anhang kann in beiden Postfächern und deren Backups bleiben, mitunter jahrelang, und lässt sich weiterleiten. Wer später darauf Zugriff hat, könnte versuchen, damit Ihre Identität zu missbrauchen. Bei einem Einmal-Link enthält die Mail das Dokument nicht, und die Kopie auf dem Server wird nach dem Download gelöscht.',
     },
     {
         question: 'Kann 1time.io meine Dateien sehen?',
@@ -25,7 +25,7 @@ const faqItems = [
     },
     {
         question: 'Der Empfänger sagt, der Link funktioniere nicht mehr. Warum?',
-        answer: 'Die Datei wurde bereits so oft heruntergeladen, wie erlaubt war, oder die Gültigkeit ist abgelaufen. Trifft keines von beiden zu, hat sie möglicherweise jemand anderes heruntergeladen. Um das Risiko zu senken, legen Sie eine Passphrase fest und nennen Sie sie über einen anderen Kanal.',
+        answer: 'Prüfen Sie die Gültigkeitsdauer, den vollständigen Link und gegebenenfalls die Passphrase. Der Link kann auch bereits verbraucht sein. Ein fehlgeschlagener Aufruf allein beweist keinen fremden Zugriff. Bei sensiblen Dateien legen Sie am besten eine Passphrase fest und nennen sie über einen anderen Kanal.',
     },
 ];
 
@@ -86,7 +86,7 @@ const jsonLd = [
             <p>
                 Legen Sie hier ein Dokument ab und schicken Sie den Einmal-Link zum Download, den Sie erhalten. Die
                 Datei wird vor dem Hochladen in Ihrem Browser verschlüsselt. Nach dem Download wird die Kopie auf dem
-                Server gelöscht, und der Link funktioniert nicht mehr. Kostenlos und ohne Anmeldung.
+                Server gelöscht, und der Link funktioniert nicht mehr. Kostenlos und ohne Anmeldung. Die heruntergeladene Kopie kann der Empfänger behalten und weitergeben.
             </p>
 
             <h2>So funktioniert es</h2>
@@ -100,13 +100,13 @@ const jsonLd = [
                 <dt>Was der Server sieht</dt>
                 <dd>Nur verschlüsselte Daten: weder den Inhalt noch den Namen oder den Typ der Datei.</dd>
                 <dt>Maximale Größe</dt>
-                <dd>{maxMb} MB pro Datei, auch große Dateien wie umfangreiche PDFs oder ZIP-Archive.</dd>
+                <dd>{maxMb} MB pro Datei.</dd>
             </dl>
 
             <h2>Personalausweis-Kopie sicher versenden</h2>
             <p>
                 Ein Vermieter, eine Unterkunft oder ein Arbeitgeber verlangt eine Kopie Ihres Personalausweises?
-                Als Anhang oder über WhatsApp bleibt sie in beiden Messengern und deren Backups. So verringern Sie
+                Als E-Mail-Anhang bleibt die Kopie in den Postfächern; über WhatsApp kann sie im Chatverlauf und in Backups erhalten bleiben. So verringern Sie
                 das Risiko:
             </p>
             <ol>
