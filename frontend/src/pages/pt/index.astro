@@ -6,7 +6,7 @@ import {absoluteUrl, siteHost} from '../../lib/siteConfig.js';
 import {pageAlternates} from '../../lib/i18n.js';
 
 const title = 'Link de uso único para enviar senhas e arquivos com segurança';
-const description = 'Crie grátis um link temporário de uso único para enviar uma senha, uma chave de API ou um arquivo. Criptografado no seu navegador e apagado do servidor depois de aberto. Sem cadastro.';
+const description = 'Crie um link de uso único para senhas e arquivos. Criptografia no navegador, uma leitura ou download por padrão. Grátis e sem cadastro.';
 
 const faqItems = [
     {question: 'O 1time.io é seguro?', answer: 'O conteúdo é criptografado no seu navegador com AES-256-GCM antes de ser enviado, e a chave para abri-lo nunca chega ao servidor. Por isso, nem o 1time.io nem quem tenha acesso ao servidor consegue ler o que você compartilha. O código é open source (licença MIT) e qualquer pessoa pode conferi-lo.'},
@@ -61,10 +61,10 @@ const jsonLd = [
         <NewMessageForm lang="pt" />
 
         <section class="seo-section">
-            <h1>Link de uso único: envie uma senha ou um arquivo que só pode ser lido uma vez</h1>
+            <h1>Crie um link de uso único para senhas e arquivos</h1>
             <p>
                 O {siteHost} cria links de uso único, grátis e sem conta. Cole uma senha, uma chave de API ou uma
-                nota privada, ou escolha um arquivo: você recebe um link que o destinatário pode abrir uma vez. O
+                nota privada, ou escolha um arquivo: você recebe um link para o destinatário ler o segredo ou baixar o arquivo uma vez. O
                 conteúdo é criptografado no seu navegador antes do envio. O servidor guarda apenas dados
                 criptografados e nunca recebe a chave.
             </p>
@@ -75,7 +75,7 @@ const jsonLd = [
                 <li><strong>Depois da leitura, a cópia no servidor é apagada.</strong> O link deixa de dar acesso ao conteúdo. Já o que o destinatário copiou, salvou ou capturou na tela não é apagado.</li>
                 <li><strong>Sem leitura, o conteúdo expira.</strong> Ele é apagado ao fim do prazo escolhido, de 1 hora a 30 dias.</li>
                 <li><strong>Uma visualização por padrão.</strong> Se mais de uma pessoa precisa do mesmo segredo, você pode permitir 2, 3, 5 ou 10 visualizações.</li>
-                <li><strong>Um link que não funciona mais foi usado ou expirou.</strong> Se o destinatário ainda não o abriu e o prazo não acabou, outra pessoa pode tê-lo lido: por precaução, troque a senha.</li>
+                <li><strong>Um link que não funciona mais pode ter sido usado ou ter expirado.</strong> Confira o prazo de validade, o link completo e, se houver, a frase secreta. Uma falha ao abrir o link, sozinha, não comprova acesso por outra pessoa. Se houver motivo concreto para achar que a senha vazou, troque-a.</li>
             </ul>
 
             <h2>Criar um link em quatro passos</h2>
@@ -102,7 +102,7 @@ const jsonLd = [
 
             <h2>Para que serve</h2>
             <ul>
-                <li>Enviar login e senha para um cliente, um fornecedor ou um colega.</li>
+                <li><a href="/pt/enviar-senha/">Enviar login e senha</a> para um cliente, um fornecedor ou um colega.</li>
                 <li>Passar a senha do Wi-Fi para um convidado.</li>
                 <li>Mandar uma chave de API, um token de acesso ou as credenciais de um banco de dados.</li>
                 <li>Compartilhar códigos de backup da verificação em duas etapas.</li>

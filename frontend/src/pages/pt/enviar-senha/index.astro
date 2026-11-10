@@ -6,13 +6,13 @@ import {absoluteUrl, siteHost} from '../../../lib/siteConfig.js';
 import {pageAlternates} from '../../../lib/i18n.js';
 
 const title = 'Enviar senha de forma segura: link temporário de uso único';
-const description = 'Envie uma senha ou um login por WhatsApp, e-mail ou Teams sem deixá-los no histórico: um link temporário que só pode ser lido uma vez. Senha criptografada no navegador. Grátis, sem cadastro.';
+const description = 'Envie senhas por link de uso único no WhatsApp, e-mail ou Teams. Criptografia no navegador, grátis e sem cadastro.';
 
 const faqItems = [
-    {question: 'É seguro enviar senha por WhatsApp?', answer: 'O WhatsApp criptografa as mensagens durante o envio, mas a senha continua escrita nos dois celulares, nos backups da conversa e em qualquer chat para onde a mensagem for encaminhada. O melhor é enviar um link de uso único: depois que a senha é lida, o link não serve mais para nada.'},
+    {question: 'É seguro enviar senha por WhatsApp?', answer: 'O WhatsApp criptografa as mensagens durante o envio, mas a senha continua escrita nos dois celulares e pode ficar nos backups da conversa e em qualquer chat para onde a mensagem for encaminhada. O melhor é enviar um link de uso único: depois que a senha é lida, o link não serve mais para nada.'},
     {question: 'Como enviar uma senha criptografada?', answer: 'Cole a senha no campo no topo desta página: ela é criptografada no seu navegador com AES-256-GCM antes de ser enviada. Você não precisa instalar nada, e o destinatário só precisa do link.'},
     {question: 'O 1time.io consegue ver minha senha?', answer: 'Não. A chave para descriptografar fica no link, depois do símbolo #, uma parte que os navegadores nunca enviam ao servidor. O 1time.io guarda apenas dados criptografados que não consegue ler.'},
-    {question: 'O destinatário disse que o link não funciona mais. O que aconteceu?', answer: 'A senha já foi lida, ou o prazo de validade acabou. Confira primeiro essas duas possibilidades. Se o destinatário não a leu e o link não expirou, outra pessoa pode tê-lo aberto: troque a senha e envie uma nova.'},
+    {question: 'O destinatário disse que o link não funciona mais. O que aconteceu?', answer: 'Confira o prazo de validade, o link completo e, se houver, a frase secreta. O limite de acessos também pode ter sido atingido. Uma falha ao abrir o link, sozinha, não comprova acesso por outra pessoa. Se houver motivo concreto para achar que a senha vazou, troque-a e envie uma nova.'},
     {question: 'Posso enviar a mesma senha para várias pessoas?', answer: 'Pode: ao criar o link, você escolhe permitir 2, 3, 5 ou 10 visualizações. Um link por pessoa continua sendo mais fácil de acompanhar, já que cada um só funciona uma vez.'},
 ];
 
@@ -79,8 +79,8 @@ const jsonLd = [
 
             <h2>Enviar senha por e-mail</h2>
             <p>
-                Um e-mail fica guardado na sua pasta de enviados, na caixa do destinatário, nos servidores de e-mail
-                e nos backups deles, muitas vezes por anos. Para que uma senha válida não fique ali:
+                Um e-mail pode ficar guardado na sua pasta de enviados, na caixa do destinatário, nos servidores de e-mail
+                e nos backups deles, às vezes por anos. Para que uma senha válida não fique ali:
             </p>
             <ul>
                 <li>Coloque no e-mail o link de uso único, não a senha.</li>
@@ -91,8 +91,8 @@ const jsonLd = [
 
             <h2>Enviar senha por WhatsApp ou SMS</h2>
             <p>
-                O WhatsApp criptografa as mensagens durante o envio, mas a senha continua escrita nos dois celulares,
-                nos backups e em qualquer conversa para onde for encaminhada. O SMS não tem criptografia de ponta a
+                O WhatsApp criptografa as mensagens durante o envio, mas a senha continua escrita nos dois celulares
+                e pode ficar em backups e em qualquer conversa para onde for encaminhada. O SMS não tem criptografia de ponta a
                 ponta e passa pela operadora. Nos dois casos, prefira enviar o link:
             </p>
             <ol>
@@ -118,12 +118,12 @@ const jsonLd = [
             <h2>Formas de enviar uma senha, comparadas</h2>
             <table class="comparison-table">
                 <thead>
-                    <tr><th>Método</th><th>Apagado depois do uso?</th><th>Onde ficam cópias</th></tr>
+                    <tr><th>Método</th><th>Apagado depois do uso?</th><th>Onde cópias podem ficar</th></tr>
                 </thead>
                 <tbody>
                     <tr><td><strong>Link de uso único ({siteHost})</strong></td><td><span class="check">✓</span> Após a leitura ou a expiração</td><td>Só o que o destinatário guardar. O servidor recebe apenas dados criptografados.</td></tr>
-                    <tr><td><strong>Password Pusher</strong></td><td><span class="check">✓</span> Após as visualizações ou o prazo</td><td>Segundo a documentação, o servidor recebe o conteúdo legível e o criptografa por conta própria.</td></tr>
-                    <tr><td><strong>Cofre compartilhado de um gerenciador de senhas</strong></td><td><span class="cross">✗</span> Fica até você remover, por design</td><td>No cofre compartilhado. As duas pessoas precisam de conta.</td></tr>
+                    <tr><td><strong>Password Pusher</strong></td><td><span class="check">✓</span> Após as visualizações ou o prazo</td><td><a href="https://docs.pwpush.com/docs/security/">Segundo a documentação</a>, o servidor recebe o conteúdo legível e o criptografa por conta própria.</td></tr>
+                    <tr><td><strong>Cofre compartilhado de um gerenciador de senhas</strong></td><td><span class="cross">✗</span> Permanece no cofre até ser removida</td><td>No cofre compartilhado. As duas pessoas precisam de conta.</td></tr>
                     <tr><td><strong>WhatsApp ou outro aplicativo de mensagens</strong></td><td><span class="cross">✗</span> Só com mensagens temporárias, após prazo fixo</td><td>Os dois celulares, os backups e as conversas encaminhadas.</td></tr>
                     <tr><td><strong>E-mail</strong></td><td><span class="cross">✗</span></td><td>As duas caixas de e-mail, os servidores e os backups deles.</td></tr>
                     <tr><td><strong>SMS</strong></td><td><span class="cross">✗</span></td><td>Os dois celulares e a operadora.</td></tr>

@@ -6,14 +6,14 @@ import {absoluteUrl, siteHost} from '../../../lib/siteConfig.js';
 import {Constants} from '../../../lib/util.js';
 import {pageAlternates} from '../../../lib/i18n.js';
 
-const title = 'Enviar arquivos por link grátis: RG, CPF, contratos e PDF';
-const description = 'Enviar arquivos grandes por link grátis: cópia de RG ou CPF, contrato ou qualquer arquivo de até 250 MB com um link temporário de uso único. Criptografado no navegador, apagado após o download. Sem cadastro.';
+const title = 'Enviar arquivos por link de uso único';
+const description = 'Envie documentos e arquivos de até 250 MB por link de uso único. Criptografia no navegador. Grátis e sem cadastro.';
 const maxMb = Math.round(Constants.maxFileSizeBytes / (1024 * 1024));
 
 const faqItems = [
     {
         question: 'Como enviar documentos com segurança, como RG e CPF?',
-        answer: 'Evite deixar o documento anexado em e-mails ou no WhatsApp, onde ele fica guardado por muito tempo. Envie um link de uso único: o e-mail não contém o documento, e a cópia no servidor é apagada depois do download. Mande apenas o que foi pedido e, se possível, escreva a finalidade na própria imagem.',
+        answer: 'Evite deixar o documento anexado em e-mails ou no WhatsApp, onde ele pode ficar guardado por muito tempo. Envie um link de uso único: o e-mail não contém o documento, e a cópia no servidor é apagada depois do download. Mande apenas o que foi pedido e, se possível, escreva a finalidade na própria imagem.',
     },
     {
         question: 'O 1time.io consegue ver meus arquivos?',
@@ -25,7 +25,7 @@ const faqItems = [
     },
     {
         question: 'O destinatário disse que o link não funciona mais. Por quê?',
-        answer: 'O arquivo já foi baixado o número de vezes permitido, ou o prazo de validade acabou. Se nenhuma das duas situações se aplica, outra pessoa pode tê-lo baixado. Para reduzir esse risco, adicione uma frase secreta e passe-a por outro canal.',
+        answer: 'Confira o prazo de validade, o link completo e, se houver, a frase secreta. O limite de downloads também pode ter sido atingido. Uma falha ao abrir o link, sozinha, não comprova acesso por outra pessoa. Em arquivos sensíveis, adicione uma frase secreta e passe-a por outro canal.',
     },
 ];
 
@@ -86,7 +86,7 @@ const jsonLd = [
             <p>
                 Envie um documento aqui e mande o link de download de uso único que você receber. O arquivo é
                 criptografado no seu navegador antes do envio. Depois do download, a cópia no servidor é apagada e o
-                link deixa de funcionar. É grátis e não precisa de cadastro.
+                link deixa de funcionar. É grátis e não precisa de cadastro. Quem recebe pode guardar e compartilhar a cópia baixada.
             </p>
 
             <h2>Como funciona</h2>
@@ -106,7 +106,7 @@ const jsonLd = [
             <h2>Enviar cópia de RG e CPF</h2>
             <p>
                 Uma imobiliária, uma hospedagem ou um empregador pediu cópia do seu RG ou CPF? Enviada como anexo ou
-                pelo WhatsApp, ela fica guardada nos dois aplicativos e nos backups deles. Para reduzir o risco:
+                pelo WhatsApp, ela pode ficar guardada nos dois aplicativos e nos backups deles. Para reduzir o risco:
             </p>
             <ol>
                 <li>Envie só os lados ou as páginas que foram pedidos.</li>
