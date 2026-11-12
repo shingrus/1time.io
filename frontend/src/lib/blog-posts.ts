@@ -731,9 +731,9 @@ export const blogPosts: BlogPost[] = [
     },
     {
         "slug": "privnote-alternative",
-        "title": "Is Privnote Safe? Its Crypto Library Was Archived in 2018",
+        "title": "Privnote Alternative: Is Privnote Safe? Open-Source Comparison",
         "description": "Privnote uses Gibberish-AES — archived in 2018, with no tamper detection. Side-by-side with a free, open-source, ad-free alternative. No signup.",
-        "ogTitle": "Is Privnote Safe? Its Crypto Library Was Archived in 2018",
+        "ogTitle": "Privnote Alternative: Is Privnote Safe? Open-Source Comparison",
         "ogDescription": "Privnote's encryption library was archived by its maintainer in 2018 and its AES-CBC mode cannot detect tampering. An honest side-by-side comparison.",
         "ogImageAlt": "Privnote Alternative",
         "tag": "Comparison",

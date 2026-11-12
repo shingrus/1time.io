@@ -13,6 +13,10 @@ const maxMb = Math.round(Constants.maxFileSizeBytes / (1024 * 1024));
 
 const faqItems = [
     {
+        question: 'How do I send a file that deletes itself after it is downloaded?',
+        answer: 'Choose the file above, optionally add a passphrase, and create the link, then send the link to your recipient. The file is encrypted in your browser before upload. The encrypted copy is deleted from the server after the download, or when the link expires if nobody opens it. If you allow more than one download, it is deleted after the last one.',
+    },
+    {
         question: 'How does secure file sharing work on 1time.io?',
         answer: 'Your file is packed and encrypted in the browser before upload. The server stores only encrypted bytes. The download link works once by default. When you need to send the file to a few people, you can allow up to 10 downloads. The encrypted file is deleted after the final allowed download or when the expiry time is reached.',
     },
@@ -46,7 +50,7 @@ const jsonLd = [
         description: 'Send a one-time file through an encrypted self-destructing download link. Browser-side zero-knowledge encryption, optional passphrase, and no signup.',
         url: absoluteUrl('/secure-file-sharing/'),
         isPartOf: absoluteUrl('/'),
-        dateModified: '2026-10-14',
+        dateModified: '2026-11-12',
     },
     {
         '@context': 'https://schema.org',
@@ -107,6 +111,14 @@ const jsonLd = [
                 If you allow up to 10 downloads, it remains available only until the final download or expiry.
                 It is the file-sharing equivalent of a self-destructing message: a one-time URL that disappears after the file lands.
             </p>
+            <h2>A temporary download link that deletes itself</h2>
+            <p>
+                Every file you send here gets a temporary, secure download link. It works once by default,
+                or up to 10 times if you choose, and the encrypted file is deleted after the final allowed
+                download or when the expiry time runs out, whichever comes first. There is no account to
+                create and nothing for the recipient to install: they open the link, their browser decrypts
+                the file, and the link stops working.
+            </p>
             <h2>Why use one-time encrypted file sharing?</h2>
             <p>
                 Regular file sharing leaves copies sitting in chat history, email inboxes, and cloud
@@ -114,6 +126,7 @@ const jsonLd = [
                 deliver a one-time file, let the recipient download it, and remove it from the server.
                 It works as a drop-in <a href="/blog/firefox-send-alternative/">Firefox Send alternative</a>{' '}
                 for one-shot encrypted file delivery.
+                That makes it private, encrypted file sharing in the strict sense: not even {siteHost} can open what you send.
             </p>
 
             <div class="features-grid">

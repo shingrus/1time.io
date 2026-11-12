@@ -10,7 +10,7 @@ interface RouteEntry {
 
 const coreRoutes: RouteEntry[] = [
     {path: '/', priority: 1.0, changefreq: 'weekly', lastmod: '2026-10-24'},
-    {path: '/secure-file-sharing/', priority: 0.9, changefreq: 'weekly', lastmod: '2026-10-14'},
+    {path: '/secure-file-sharing/', priority: 0.9, changefreq: 'weekly', lastmod: '2026-11-12'},
     {path: '/chrome-extension/', priority: 0.8, changefreq: 'weekly', lastmod: '2026-07-23'},
     {path: '/developers/', priority: 0.8, changefreq: 'weekly', lastmod: '2026-09-16'},
     {path: '/self-hosted/', priority: 0.8, changefreq: 'monthly', lastmod: '2026-11-04'},
