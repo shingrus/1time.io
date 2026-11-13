@@ -6,7 +6,7 @@ import {absoluteUrl, siteHost} from '../../lib/siteConfig.js';
 // Full edition only: not on the allowlist in scripts/prune-selfhosted.mjs.
 const title = 'Self-Hosted One-Time Secret Sharing for Teams (Docker)';
 const description = 'Run your own one-time secret and file sharing server with Docker Compose. The server can\'t read what it stores. Open source (MIT), files up to 250 MB.';
-const lastUpdated = '2026-11-04';
+const lastUpdated = '2026-11-13';
 
 const faqItems = [
     {
@@ -23,7 +23,7 @@ const faqItems = [
     },
     {
         question: 'Can we turn the rate limits off for an internal instance?',
-        answer: 'Yes, set RATE_LIMIT=off in .env and restart. If you\'d rather just loosen them, change RATE_LIMIT_WRITE, RATE_LIMIT_UPLOAD or RATE_LIMIT_READ instead.',
+        answer: 'Yes, set RATE_LIMIT=off in .env and run docker compose up -d again. If you\'d rather just loosen them, change RATE_LIMIT_WRITE, RATE_LIMIT_UPLOAD or RATE_LIMIT_READ instead.',
     },
     {
         question: 'Is it free?',
@@ -88,13 +88,87 @@ const jsonLd = [
             <span class="article-tag">Self-Hosted</span>
             <h1>Self-Hosted One-Time Secret Sharing for Teams</h1>
             <p class="article-subtitle">
-                Run your own server for one-time links to passwords, API keys and files. It's two commands
+                Run your own server for one-time links to passwords, API keys and files. It's one command
                 with Docker Compose, and the server still can't read anything your team sends through it.
             </p>
-            <div class="article-meta">Updated Nov 4, 2026 · 5 min read</div>
+            <div class="article-meta">Updated Nov 13, 2026 · 5 min read</div>
         </div>
 
         <div class="article-body">
+            <p>On any machine with Docker:</p>
+            <pre><code>curl -fsSLO https://raw.githubusercontent.com/shingrus/1time.io/master/docker-compose.yml && docker compose up -d</code></pre>
+            <p>Then open <code>http://localhost:8080</code>. Settings, HTTPS and the rest are below.</p>
+
+            <h2>Deploying it</h2>
+            <p>To change the settings later, start from the example <code>.env</code> file:</p>
+            <pre><code>curl -O https://raw.githubusercontent.com/shingrus/1time.io/master/docker-compose.yml
+curl -O https://raw.githubusercontent.com/shingrus/1time.io/master/.env.example
+cp .env.example .env
+docker compose up -d</code></pre>
+            <p>
+                You get three containers: Redis, the Go API, and nginx with the static frontend. There are images
+                for amd64 and arm64, and the instance answers on <code>http://localhost:8080</code>. You don't
+                set a hostname anywhere. Links are built from whatever address people use to open it.
+            </p>
+
+            <h2>Settings (.env)</h2>
+            <p>
+                Everything is set in <code>.env</code>. Change a value and run <code>docker compose up -d</code>
+                again, no rebuild.
+            </p>
+            <div style="overflow-x:auto">
+                <table class="comparison-table">
+                    <thead>
+                        <tr><th>Variable</th><th>Default</th><th>What it does</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code>DATA_DIR</code></td><td><code>./data</code></td><td>Where Redis data and the encrypted files are stored</td></tr>
+                        <tr><td><code>APP_PORT</code></td><td><code>8080</code></td><td>The port the instance answers on</td></tr>
+                        <tr><td><code>BACKEND_UPSTREAM</code></td><td><code>backend:8080</code></td><td>Where nginx sends API calls; change it only for unusual Docker networking</td></tr>
+                        <tr><td><code>TRUSTED_PROXIES</code></td><td>container network</td><td>Your proxy's address or CIDR, if it runs on another machine</td></tr>
+                        <tr><td><code>REAL_IP_HEADER</code></td><td><code>X-Forwarded-For</code></td><td>Use <code>CF-Connecting-IP</code> behind Cloudflare</td></tr>
+                        <tr><td><code>RATE_LIMIT</code></td><td><code>on</code></td><td><code>off</code> turns all limits off, handy for a small internal instance</td></tr>
+                        <tr><td><code>RATE_LIMIT_WRITE</code></td><td><code>45r/m</code></td><td>Text secrets created per visitor</td></tr>
+                        <tr><td><code>RATE_LIMIT_UPLOAD</code></td><td><code>120r/m</code></td><td>File pieces per visitor (a 250 MB file is 63)</td></tr>
+                        <tr><td><code>RATE_LIMIT_READ</code></td><td><code>60r/m</code></td><td>Secrets and files opened per visitor</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <h3>Rate limits behind your proxy</h3>
+            <p>
+                The API is rate-limited per visitor. Behind a proxy that only works if nginx trusts the visitor
+                address the proxy passes along, and by default it trusts it only from the container's own Docker
+                network. A Caddy or Traefik container in the same compose file counts, and so does a proxy
+                running on the host. What doesn't work is someone on your office network putting a fake IP in a
+                header to get past the limits.
+            </p>
+
+            <h2>HTTPS</h2>
+            <p>
+                Use the reverse proxy you already run. If that's Caddy on the same machine, this is the entire
+                config:
+            </p>
+            <pre><code>secrets.example.com &#123;
+    reverse_proxy localhost:8080
+&#125;</code></pre>
+            <p>
+                The container already sends a Content Security Policy, <code>X-Frame-Options</code> and a strict
+                <code>Referrer-Policy</code>, and the secret and file pages send no referrer at all. HSTS is the
+                one header it leaves out, on purpose. Set it on your proxy, where you know which subdomains it
+                should cover.
+            </p>
+
+            <h2>The CLI and the browser extension</h2>
+            <p>
+                The <a href="/blog/share-secrets-from-terminal/">1time CLI</a> encrypts on your machine and takes
+                <code>--host</code>, so a script or a CI job can hand out links from your server:
+            </p>
+            <pre><code>printf '%s' "$DB_PASSWORD" | npx @1time/cli send --host https://secrets.example.com</code></pre>
+            <p>
+                The <a href="/chrome-extension/">browser extension</a> has a target server setting. Point it at
+                your instance, and when you select text and right-click, the link it copies is on your domain.
+            </p>
+
             <h2>Why run it yourself?</h2>
             <p>
                 Most teams pass credentials around in chat. A contractor needs the staging database password,
@@ -137,69 +211,6 @@ const jsonLd = [
             </p>
             <p>
                 The self-hosted build is only that. There's no blog, no marketing pages and no analytics.
-            </p>
-
-            <h2>Deploying it</h2>
-            <p>On any machine with Docker:</p>
-            <pre><code>curl -O https://raw.githubusercontent.com/shingrus/1time.io/master/docker-compose.yml
-curl -O https://raw.githubusercontent.com/shingrus/1time.io/master/.env.example
-cp .env.example .env
-docker compose up -d</code></pre>
-            <p>
-                You get three containers: Redis, the Go API, and nginx with the static frontend. There are images
-                for amd64 and arm64, and the instance answers on <code>http://localhost:8080</code>. You don't
-                set a hostname anywhere. Links are built from whatever address people use to open it.
-            </p>
-
-            <h2>HTTPS</h2>
-            <p>
-                Use the reverse proxy you already run. If that's Caddy on the same machine, this is the entire
-                config:
-            </p>
-            <pre><code>secrets.example.com &#123;
-    reverse_proxy localhost:8080
-&#125;</code></pre>
-            <p>
-                The container already sends a Content Security Policy, <code>X-Frame-Options</code> and a strict
-                <code>Referrer-Policy</code>, and the secret and file pages send no referrer at all. HSTS is the
-                one header it leaves out, on purpose. Set it on your proxy, where you know which subdomains it
-                should cover.
-            </p>
-
-            <h2>Rate limits behind your proxy</h2>
-            <p>
-                The API is rate-limited per visitor. Behind a proxy that only works if nginx trusts the visitor
-                address the proxy passes along, and by default it trusts it only from the container's own Docker
-                network. A Caddy or Traefik container in the same compose file counts, and so does a proxy
-                running on the host. What doesn't work is someone on your office network putting a fake IP in a
-                header to get past the limits.
-            </p>
-            <p>Everything is set in <code>.env</code>. Change a value and restart, no rebuild.</p>
-            <div style="overflow-x:auto">
-                <table class="comparison-table">
-                    <thead>
-                        <tr><th>Variable</th><th>Default</th><th>What it does</th></tr>
-                    </thead>
-                    <tbody>
-                        <tr><td><code>TRUSTED_PROXIES</code></td><td>container network</td><td>Your proxy's address or CIDR, if it runs on another machine</td></tr>
-                        <tr><td><code>REAL_IP_HEADER</code></td><td><code>X-Forwarded-For</code></td><td>Use <code>CF-Connecting-IP</code> behind Cloudflare</td></tr>
-                        <tr><td><code>RATE_LIMIT</code></td><td><code>on</code></td><td><code>off</code> turns all limits off, handy for a small internal instance</td></tr>
-                        <tr><td><code>RATE_LIMIT_WRITE</code></td><td><code>45r/m</code></td><td>Text secrets created per visitor</td></tr>
-                        <tr><td><code>RATE_LIMIT_UPLOAD</code></td><td><code>120r/m</code></td><td>File pieces per visitor (a 250 MB file is 63)</td></tr>
-                        <tr><td><code>RATE_LIMIT_READ</code></td><td><code>60r/m</code></td><td>Secrets and files opened per visitor</td></tr>
-                    </tbody>
-                </table>
-            </div>
-
-            <h2>The CLI and the browser extension</h2>
-            <p>
-                The <a href="/blog/share-secrets-from-terminal/">1time CLI</a> encrypts on your machine and takes
-                <code>--host</code>, so a script or a CI job can hand out links from your server:
-            </p>
-            <pre><code>printf '%s' "$DB_PASSWORD" | npx @1time/cli send --host https://secrets.example.com</code></pre>
-            <p>
-                The <a href="/chrome-extension/">browser extension</a> has a target server setting. Point it at
-                your instance, and when you select text and right-click, the link it copies is on your domain.
             </p>
 
             <h2>Self-hosted alternatives: OneTimeSecret, Yopass, PrivateBin, Password Pusher</h2>
