@@ -1,5 +1,7 @@
 import {Constants, copyTextToClipboard, formatRemaining} from '../lib/util.js';
 import {parseSecretLink} from '../lib/protocol.mjs';
+import {isSelfHosted} from '../lib/siteConfig.js';
+import type {MadeLink} from './link-list.js';
 
 const loadStyles = async (id: string, importer: () => Promise<{default: string}>) => {
     if (document.getElementById(id)) return;
@@ -9,6 +11,9 @@ const loadStyles = async (id: string, importer: () => Promise<{default: string}>
     style.textContent = css;
     document.head.append(style);
 };
+
+const showsLinkList = matchMedia('(pointer: fine)').matches;
+const madeLinks: MadeLink[] = [];
 
 /** Replace a completed share form with its link-ready state. */
 export async function showLinkReady(
@@ -68,18 +73,25 @@ export async function showLinkReady(
         // A reference is optional; the link still works.
     }
 
+    const madeLink: MadeLink = {name: '', link};
+    if (showsLinkList) madeLinks.push(madeLink);
+
     void (async () => {
         try {
-            const id = secretId;
-            if (!id) return;
+            if (!secretId) return;
             const {nameForId} = await import('../lib/secretName.js');
-            const name = nameForId(id);
+            const name = nameForId(secretId);
             if (!name) return;
+            madeLink.name = name;
             referenceName.textContent = name;
             referenceWrap.hidden = false;
             updateFooterMeta();
         } catch {
             // A reference is helpful but never required to use the link.
+        } finally {
+            if (madeLinks.length > 1) {
+                void import('./link-list.js').then(({renderLinkList}) => renderLinkList(clone.isConnected ? clone : formEl, madeLinks, text)).catch(() => {});
+            }
         }
     })();
 
@@ -89,13 +101,21 @@ export async function showLinkReady(
 
     const copiedLabel = text.copied ?? 'Copied';
     const showQrLabel = text.qrShow ?? 'Show QR code';
+    const copyHint = clone.querySelector<HTMLElement>('[data-copy-hint]')!;
+    const hasCopyHint = matchMedia('(pointer: fine)').matches;
+    if (hasCopyHint) {
+        copyHint.textContent = /Mac|iPhone|iPad|iPod/.test(navigator.userAgent) ? '⌘C' : 'Ctrl+C';
+        copyHint.hidden = false;
+    }
     const showCopyStatus = (message: string) => {
         copyStatus.textContent = message;
         copyStatus.hidden = false;
+        copyHint.hidden = true;
         if (copyTimer) clearTimeout(copyTimer);
         copyTimer = window.setTimeout(() => {
             copyStatus.hidden = true;
             copyStatus.textContent = '';
+            copyHint.hidden = !hasCopyHint;
         }, 4000);
     };
 
@@ -177,13 +197,29 @@ export async function showLinkReady(
         qrLabel.textContent = text.qrHide ?? 'Hide QR code';
     });
 
+    const copyShortcut = (event: KeyboardEvent) => {
+        if (!(event.ctrlKey || event.metaKey) || event.altKey || event.shiftKey) return;
+        if (event.key.toLowerCase() !== 'c' && (/^[a-z]$/i.test(event.key) || event.code !== 'KeyC')) return;
+        if (!clone.isConnected) return;
+        const active = document.activeElement;
+        const fieldSelection = (active instanceof HTMLInputElement || active instanceof HTMLTextAreaElement)
+            && active.selectionStart !== active.selectionEnd;
+        if (window.getSelection()?.isCollapsed === false || fieldSelection) return;
+        event.preventDefault();
+        void handleCopy();
+    };
+
     resetBtn.addEventListener('click', () => {
+        document.removeEventListener('keydown', copyShortcut);
+        if (!isSelfHosted()) fetch('/pv?e=send-another', {keepalive: true, credentials: 'omit'}).catch(() => {});
         if (copyTimer) clearTimeout(copyTimer);
         clone.replaceWith(formEl);
         onReset();
     });
 
     formEl.replaceWith(clone);
+    resetBtn.focus({preventScroll: true});
+    document.addEventListener('keydown', copyShortcut);
 
     // Clipboard permissions vary; a visible Copy button remains available when this fails.
     void autoCopy.then((copied) => {

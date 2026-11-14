@@ -1,4 +1,4 @@
-import {Constants, createSecretLink} from '../lib/util.js';
+import {createSecretLink} from '../lib/util.js';
 import {showLinkReady} from './show-link-ready.js';
 
 const form = document.querySelector<HTMLFormElement>('#new-message-form');
@@ -81,8 +81,6 @@ if (form) {
                 await showLinkReady(form, link, () => {
                     textarea.value = '';
                     resetPassphrase();
-                    durationSelect.value = String(Constants.defaultDurationSeconds);
-                    viewsSelect.value = '1';
                     updateSubmitState(false);
                     textarea.focus();
                 }, {uses: selectedViews, durationLabel: durationSelect.selectedOptions[0].text});

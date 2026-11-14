@@ -116,8 +116,13 @@
 .link-secondary-actions {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   gap: 12px 28px;
   margin-top: 14px;
+}
+
+.link-reset-button {
+  margin-left: auto;
 }
 
 .link-inline-action,
@@ -168,6 +173,61 @@
   color: var(--text-muted);
   font-size: 14px;
   line-height: 1.5;
+}
+
+.link-list {
+  margin-top: 16px;
+}
+
+.link-list-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.link-list-title {
+  margin: 0;
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.link-list-rows {
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.link-list-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 2px 12px;
+  padding: 12px 0;
+  border-top: 1px solid var(--border);
+}
+
+.link-list-name {
+  grid-column: 1;
+  color: var(--text-secondary);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.link-list-url {
+  grid-column: 1;
+  color: var(--text-muted);
+  font-family: 'SF Mono', 'Fira Code', 'Fira Mono', monospace;
+  font-size: 13px;
+  word-break: break-all;
+}
+
+.link-list-row .btn {
+  grid-column: 2;
+  grid-row: 1 / span 2;
 }
 
 @media (max-width: 480px) {
