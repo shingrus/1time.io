@@ -366,6 +366,10 @@ interface IslandText {
     expiry: string;
     copied: string;
     alreadyCopied: string;
+    listTitle: string;
+    copyAll: string;
+    copyRowLabel: string;
+    listNote: string;
     qrShow: string;
     qrLoading: string;
     qrHide: string;
@@ -390,6 +394,10 @@ const islandText: Record<Exclude<Lang, 'en'>, IslandText> = {
         expiry: 'Caduca en {duration}',
         copied: 'Copiado',
         alreadyCopied: 'Ya está copiado',
+        listTitle: 'Enlaces creados en esta pestaña ({count})',
+        copyAll: 'Copiar todo',
+        copyRowLabel: 'Copiar enlace {name}',
+        listNote: 'Solo en esta pestaña, sin guardarse ni enviarse a ningún sitio. Al recargar la página, la lista se olvida.',
         qrShow: 'Mostrar código QR',
         qrLoading: 'Cargando QR...',
         qrHide: 'Ocultar código QR',
@@ -431,6 +439,10 @@ const islandText: Record<Exclude<Lang, 'en'>, IslandText> = {
         expiry: 'Expire dans {duration}',
         copied: 'Copié',
         alreadyCopied: 'Déjà copié',
+        listTitle: 'Liens créés dans cet onglet ({count})',
+        copyAll: 'Tout copier',
+        copyRowLabel: 'Copier le lien {name}',
+        listNote: 'Uniquement dans cet onglet, jamais stockés ni envoyés. Si vous rechargez la page, la liste est oubliée.',
         qrShow: 'Afficher le QR code',
         qrLoading: 'Chargement du QR code…',
         qrHide: 'Masquer le QR code',
@@ -472,6 +484,10 @@ const islandText: Record<Exclude<Lang, 'en'>, IslandText> = {
         expiry: '有効期限 {duration}',
         copied: 'コピーしました',
         alreadyCopied: 'コピー済み',
+        listTitle: 'このタブで作成したURL（{count}）',
+        copyAll: 'すべてコピー',
+        copyRowLabel: '{name} のURLをコピー',
+        listNote: 'このタブ内のみで、保存も送信もされません。ページを再読み込みすると一覧は破棄されます。',
         qrShow: 'QRコードを表示',
         qrLoading: 'QRコードを読み込み中…',
         qrHide: 'QRコードを隠す',
@@ -513,6 +529,10 @@ const islandText: Record<Exclude<Lang, 'en'>, IslandText> = {
         expiry: 'Berlaku {duration}',
         copied: 'Tersalin',
         alreadyCopied: 'Sudah tersalin',
+        listTitle: 'Link yang dibuat di tab ini ({count})',
+        copyAll: 'Salin semua',
+        copyRowLabel: 'Salin link {name}',
+        listNote: 'Hanya di tab ini, tidak disimpan atau dikirim ke mana pun. Saat halaman dimuat ulang, daftar ini dilupakan.',
         qrShow: 'Tampilkan kode QR',
         qrLoading: 'Memuat kode QR…',
         qrHide: 'Sembunyikan kode QR',
@@ -554,6 +574,10 @@ const islandText: Record<Exclude<Lang, 'en'>, IslandText> = {
         expiry: 'Läuft ab in {duration}',
         copied: 'Kopiert',
         alreadyCopied: 'Bereits kopiert',
+        listTitle: 'In diesem Tab erstellte Links ({count})',
+        copyAll: 'Alle kopieren',
+        copyRowLabel: 'Link {name} kopieren',
+        listNote: 'Nur in diesem Tab, nirgends gespeichert oder übertragen. Beim Neuladen der Seite wird die Liste verworfen.',
         qrShow: 'QR-Code anzeigen',
         qrLoading: 'QR-Code wird geladen…',
         qrHide: 'QR-Code ausblenden',
@@ -595,6 +619,10 @@ const islandText: Record<Exclude<Lang, 'en'>, IslandText> = {
         expiry: 'Expira em {duration}',
         copied: 'Copiado',
         alreadyCopied: 'Já copiado',
+        listTitle: 'Links criados nesta aba ({count})',
+        copyAll: 'Copiar tudo',
+        copyRowLabel: 'Copiar link {name}',
+        listNote: 'Somente nesta aba, nunca armazenados nem enviados. Ao recarregar a página, a lista é descartada.',
         qrShow: 'Mostrar QR code',
         qrLoading: 'Carregando QR code…',
         qrHide: 'Ocultar QR code',
@@ -664,6 +692,11 @@ export function linkReadyData(lang: Lang, kind: ShareKind) {
         'data-qr-label': r.qrLabel,
         'data-copied': t.copied,
         'data-already-copied': t.alreadyCopied,
+        'data-list-title': t.listTitle,
+        'data-copy': ui[lang].copy,
+        'data-copy-all': t.copyAll,
+        'data-copy-row-label': t.copyRowLabel,
+        'data-list-note': t.listNote,
         'data-qr-show': t.qrShow,
         'data-qr-loading': t.qrLoading,
         'data-qr-hide': t.qrHide,

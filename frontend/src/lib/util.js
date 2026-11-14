@@ -124,6 +124,7 @@ export async function copyTextToClipboard(text) {
     textArea.style.position = 'absolute';
     textArea.style.left = '-9999px';
 
+    const previousFocus = document.activeElement;
     document.body.appendChild(textArea);
     textArea.select();
     textArea.setSelectionRange(0, text.length);
@@ -134,5 +135,6 @@ export async function copyTextToClipboard(text) {
     } catch (error) {}
 
     document.body.removeChild(textArea);
+    if (previousFocus instanceof HTMLElement && previousFocus.isConnected) previousFocus.focus({preventScroll: true});
     return copied;
 }

@@ -36,7 +36,7 @@ const t = ui[lang];
             />
             <div class="link-copy-actions">
                 <button class="btn btn-success btn-lg link-copy-button" type="button" data-copy>
-                    <span>{t.copy}</span>
+                    <span>{t.copy}<kbd class="btn-kbd" data-copy-hint aria-hidden="true" hidden></kbd></span>
                     <span class="link-copy-status" data-copy-status aria-live="polite" hidden></span>
                 </button>
                 <button class="btn btn-secondary btn-lg link-share-button" type="button" data-share aria-label={t.shareLink} hidden>
@@ -60,7 +60,7 @@ const t = ui[lang];
             <button class="link-inline-action" type="button" data-toggle-qr aria-expanded="false">
                 <span data-qr-label>{t.showQr}</span>
             </button>
-            <button class="link-inline-action link-inline-action-accent" type="button" data-reset>{t.sendAnother}</button>
+            <button class="btn btn-secondary btn-sm link-reset-button" type="button" data-reset>{t.sendAnother}</button>
         </nav>
 
         <section class="qr-panel" data-qr-panel hidden aria-live="polite">
