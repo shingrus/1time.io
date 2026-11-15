@@ -96,7 +96,7 @@ const jsonLd = [
 
         <div class="article-body">
             <p>On any machine with Docker:</p>
-            <pre><code>curl -fsSLO https://raw.githubusercontent.com/shingrus/1time.io/master/docker-compose.yml && docker compose up -d</code></pre>
+            <pre><code>curl -fsSLO https://raw.githubusercontent.com/shingrus/1time.io/master/docker-compose.yml && docker compose up -d --pull always</code></pre>
             <p>Then open <code>http://localhost:8080</code>. Settings, HTTPS and the rest are below.</p>
 
             <h2>Deploying it</h2>
@@ -104,7 +104,7 @@ const jsonLd = [
             <pre><code>curl -O https://raw.githubusercontent.com/shingrus/1time.io/master/docker-compose.yml
 curl -O https://raw.githubusercontent.com/shingrus/1time.io/master/.env.example
 cp .env.example .env
-docker compose up -d</code></pre>
+docker compose up -d --pull always</code></pre>
             <p>
                 You get three containers: Redis, the Go API, and nginx with the static frontend. There are images
                 for amd64 and arm64, and the instance answers on <code>http://localhost:8080</code>. You don't

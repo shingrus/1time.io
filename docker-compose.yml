@@ -1,7 +1,7 @@
 ## Deploy with pre-built images from GHCR (no build required)
 ## Usage:
 ##   cp .env.example .env
-##   docker compose up -d
+##   docker compose up -d --pull always
 
 services:
   redis:
@@ -23,6 +23,7 @@ services:
 
   backend:
     image: ghcr.io/shingrus/1time-backend:latest
+    pull_policy: always
     restart: unless-stopped
     environment:
       LISTEN_ADDR: 0.0.0.0:8080
@@ -36,6 +37,7 @@ services:
 
   web:
     image: ghcr.io/shingrus/1time-web:latest
+    pull_policy: always
     restart: unless-stopped
     environment:
       NGINX_PORT: 8080
