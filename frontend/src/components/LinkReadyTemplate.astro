@@ -57,10 +57,12 @@ const t = ui[lang];
         </div>
 
         <nav class="link-secondary-actions" aria-label={t.linkActions}>
+            <button class="btn btn-secondary btn-sm" type="button" data-reset>
+                <span><span data-reset-label>{t.sendAnother}</span><kbd class="btn-kbd" data-reset-hint aria-hidden="true" hidden>↵</kbd></span>
+            </button>
             <button class="link-inline-action" type="button" data-toggle-qr aria-expanded="false">
                 <span data-qr-label>{t.showQr}</span>
             </button>
-            <button class="btn btn-secondary btn-sm link-reset-button" type="button" data-reset>{t.sendAnother}</button>
         </nav>
 
         <section class="qr-panel" data-qr-panel hidden aria-live="polite">
