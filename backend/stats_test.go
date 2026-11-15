@@ -436,4 +436,10 @@ func TestStatSnapshotCarriesAPIVersion(t *testing.T) {
 	if snapshot.APIVersion != apiVersion {
 		t.Fatalf("snapshot APIVersion = %d, want %d", snapshot.APIVersion, apiVersion)
 	}
+	if snapshot.Version != version {
+		t.Fatalf("snapshot Version = %q, want %q", snapshot.Version, version)
+	}
+	if _, err := time.Parse(time.RFC3339, snapshot.StartedAt); err != nil {
+		t.Fatalf("snapshot StartedAt = %q is not RFC3339: %v", snapshot.StartedAt, err)
+	}
 }

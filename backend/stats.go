@@ -75,12 +75,16 @@ type counterField struct {
 type pendingCounters map[counterField]int64
 
 type StatsSnapshot struct {
-	APIVersion           int   `json:"apiVersion"`
-	SaveSchemes          []int `json:"saveSchemes"`
-	OverallStoredSecrets int64 `json:"overallStoredSecrets"`
-	OverallStoredFiles   int64 `json:"overallStoredFiles"`
-	FlushIntervalSeconds int64 `json:"flushIntervalSeconds"`
+	APIVersion           int    `json:"apiVersion"`
+	SaveSchemes          []int  `json:"saveSchemes"`
+	OverallStoredSecrets int64  `json:"overallStoredSecrets"`
+	OverallStoredFiles   int64  `json:"overallStoredFiles"`
+	FlushIntervalSeconds int64  `json:"flushIntervalSeconds"`
+	Version              string `json:"version"`
+	StartedAt            string `json:"startedAt"`
 }
+
+var processStartedAt = time.Now().UTC().Format(time.RFC3339)
 
 type StatsManager struct {
 	mu                   sync.Mutex
@@ -146,6 +150,8 @@ func (s *StatsManager) GetSnapshot() StatsSnapshot {
 		OverallStoredSecrets: s.GetOverallStoredSecrets(),
 		OverallStoredFiles:   s.GetOverallStoredFiles(),
 		FlushIntervalSeconds: int64(statsFlushInterval / time.Second),
+		Version:              version,
+		StartedAt:            processStartedAt,
 	}
 }
 
