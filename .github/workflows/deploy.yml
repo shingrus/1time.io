@@ -27,7 +27,7 @@ jobs:
           --health-timeout 2s
           --health-retries 15
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
           fetch-depth: 0
@@ -40,23 +40,25 @@ jobs:
           publish=false
           if [ "${GITHUB_REF_TYPE:-}" = "tag" ] && [[ "$GITHUB_REF" == refs/tags/deploy-* ]]; then
             if ! [[ "$GITHUB_REF_NAME" =~ ^deploy-[A-Za-z0-9._-]+$ ]]; then
-              echo "no publish: tag name must match deploy-[A-Za-z0-9._-]+"
+              echo "::error::no publish: tag name must match deploy-[A-Za-z0-9._-]+"
               exit 1
             fi
             if ! git rev-parse --verify --quiet refs/remotes/origin/master >/dev/null; then
-              echo "no publish: origin/master is not available"
-            elif git merge-base --is-ancestor "$GITHUB_SHA" refs/remotes/origin/master; then
-              publish=true
-              echo "publish: tag ${GITHUB_REF_NAME} is on a master commit"
-            else
-              echo "no publish: tag ${GITHUB_REF_NAME} is not on master"
+              echo "::error::no publish: origin/master is not available"
+              exit 1
             fi
+            if ! git merge-base --is-ancestor "$GITHUB_SHA" refs/remotes/origin/master; then
+              echo "::error::no publish: tag ${GITHUB_REF_NAME} is not on master; push the commit to master, then tag origin/master"
+              exit 1
+            fi
+            publish=true
+            echo "publish: tag ${GITHUB_REF_NAME} is on a master commit"
           else
             echo "no publish: ${GITHUB_REF} is not a deploy-* tag"
           fi
           echo "publish=${publish}" >> "$GITHUB_OUTPUT"
 
-      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5.6.0
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version-file: go.mod
 
@@ -75,7 +77,7 @@ jobs:
           go vet ./backend/...
           go test -race ./backend/...
 
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: '26.1.0'
           cache: npm
