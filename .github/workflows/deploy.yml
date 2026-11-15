@@ -16,6 +16,16 @@ jobs:
   build:
     runs-on: ubuntu-24.04
     timeout-minutes: 20
+    services:
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 2s
+          --health-timeout 2s
+          --health-retries 15
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
@@ -52,6 +62,8 @@ jobs:
 
       - name: Check and test backend
         shell: bash
+        env:
+          REDISHOST: 127.0.0.1:6379
         run: |
           set -euo pipefail
           unformatted="$(gofmt -l backend)"
