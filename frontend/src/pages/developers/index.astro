@@ -2,12 +2,16 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import InlineCss from '../../components/InlineCss.astro';
 import agentSpec from '../../lib/agent-spec.md?raw';
+import powershellSnippet from '../../lib/1time.ps1?raw';
+import appsScriptSnippet from '../../lib/1time.gs?raw';
 import {ProtocolConstants} from '../../lib/protocol.mjs';
 import {absoluteUrl, siteUrl} from '../../lib/siteConfig.js';
 
 const title = '1time for Developers — One-Time Secret API and Protocol Spec';
 const description = 'Build encrypted one-time secret and file links into your app. Zero-knowledge protocol spec, HTTP API, limits and test vectors. No API key, no signup.';
-const lastUpdated = '2026-09-16';
+const appsScriptUsage = `const link = createOneTimeLink('my secret', {expiresInSeconds: 3600});
+const secret = readOneTimeLink(link).text;`;
+const lastUpdated = '2026-11-15';
 const jsonLd = [
     {
         '@context': 'https://schema.org',
@@ -74,6 +78,40 @@ const jsonLd = [
                     <button type="button" class="dev-code-copy" data-copy-target="agent-spec">Copy</button>
                 </div>
                 <pre><code id="agent-spec">{agentSpec}</code></pre>
+            </div>
+
+            <h2>PowerShell: ready-made client</h2>
+            <p>A tested script for creating and reading one-time text links, using only what ships with PowerShell 7.2 or later. Windows PowerShell 5.1 is not supported: it has no AES-GCM. Save it as <code>1time.ps1</code>, set your contact URL at the top, then:</p>
+            <div class="dev-code">
+                <div class="dev-code-bar">
+                    <span>usage</span>
+                </div>
+                <pre><code>. ./1time.ps1
+$link = 'my secret' | New-OneTimeLink -ExpiresInSeconds 3600
+(Read-OneTimeLink $link).Text</code></pre>
+            </div>
+            <div class="dev-code dev-code-tall">
+                <div class="dev-code-bar">
+                    <span>1time.ps1</span>
+                    <button type="button" class="dev-code-copy" data-copy-target="powershell-snippet">Copy</button>
+                </div>
+                <pre><code id="powershell-snippet">{powershellSnippet}</code></pre>
+            </div>
+
+            <h2>Google Apps Script: ready-made client</h2>
+            <p>The same two functions for Apps Script. This one is not end-to-end zero-knowledge: the script runs on Google's servers, so the secret and its key pass through Google. Apps Script has no Web Crypto, so AES-256-GCM comes from a bundled copy of <a href="https://github.com/paulmillr/noble-ciphers" target="_blank" rel="noopener noreferrer">noble-ciphers</a> and random keys are built from <code>Utilities.getUuid()</code>. Paste it into a script file, then:</p>
+            <div class="dev-code">
+                <div class="dev-code-bar">
+                    <span>usage</span>
+                </div>
+                <pre><code>{appsScriptUsage}</code></pre>
+            </div>
+            <div class="dev-code dev-code-tall">
+                <div class="dev-code-bar">
+                    <span>1time.gs</span>
+                    <button type="button" class="dev-code-copy" data-copy-target="apps-script-snippet">Copy</button>
+                </div>
+                <pre><code id="apps-script-snippet">{appsScriptSnippet}</code></pre>
             </div>
 
             <h2>Built with 1time</h2>
