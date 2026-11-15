@@ -151,7 +151,17 @@ install -d -m 750 -o "${APP_USER}" -g "${APP_GROUP}" "${FILE_STORAGE_DIR}"
 install -m 0755 -o "${APP_USER}" -g "${APP_GROUP}" "${BIN_SOURCE}" "${BIN_DIR}/1time-api"
 
 if [[ -d "${FRONTEND_SOURCE}" ]]; then
-    rsync -a --delete "${FRONTEND_SOURCE}/" "${STATIC_ROOT}/"
+    # Scripts first, old ones kept: pages never point at a missing file.
+    # --no-times: live files get today's mtime, so only retired ones age out.
+    rsync -a --no-times "${FRONTEND_SOURCE}/_astro/" "${STATIC_ROOT}/_astro/"
+    rsync -a --delete --exclude='/_astro/' "${FRONTEND_SOURCE}/" "${STATIC_ROOT}/"
+    # Re-date what was live until now, so the 7 days start at retirement.
+    live_list="${INSTALL_ROOT}/astro-live.txt"
+    if [[ -f "${live_list}" ]]; then
+        (cd "${STATIC_ROOT}/_astro" && xargs -r -d '\n' -a "${live_list}" touch -c --)
+    fi
+    ls "${FRONTEND_SOURCE}/_astro" > "${live_list}"
+    find "${STATIC_ROOT}/_astro" -type f -mtime +6 -delete
     chown -R "${APP_USER}:${APP_GROUP}" "${STATIC_ROOT}"
 else
     echo "Skipping frontend copy: ${FRONTEND_SOURCE} does not exist."

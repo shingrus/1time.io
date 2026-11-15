@@ -69,6 +69,7 @@ interface UiText {
     fileHint: (maxMb: number) => string;
     chooseAnother: string;
     removeFile: string;
+    addFiles: string;
 }
 
 export const ui: Record<Lang, UiText> = {
@@ -97,11 +98,12 @@ export const ui: Record<Lang, UiText> = {
         qrLabel: 'Secret link QR code',
         reference: 'Reference',
         fileTitle: 'Send a one-time file download link',
-        chooseFile: 'Choose a file',
-        dropFile: 'or drop file here',
-        fileHint: (maxMb) => `Any file type, up to ${maxMb} MB`,
+        chooseFile: 'Choose files',
+        dropFile: 'or drop files here',
+        fileHint: (maxMb) => `Any file type, up to ${maxMb} MB in total`,
         chooseAnother: 'Choose another',
         removeFile: 'Remove file',
+        addFiles: 'Add files',
     },
     es: {
         shareTitle: 'Envía un secreto de un solo uso',
@@ -128,11 +130,12 @@ export const ui: Record<Lang, UiText> = {
         qrLabel: 'Código QR del enlace secreto',
         reference: 'Referencia',
         fileTitle: 'Envía documentos y archivos de forma segura',
-        chooseFile: 'Elegir un archivo',
-        dropFile: 'o arrástralo aquí',
-        fileHint: (maxMb) => `Cualquier tipo de archivo, hasta ${maxMb} MB`,
+        chooseFile: 'Elegir archivos',
+        dropFile: 'o arrástralos aquí',
+        fileHint: (maxMb) => `Cualquier tipo de archivo, hasta ${maxMb} MB en total`,
         chooseAnother: 'Elegir otro',
         removeFile: 'Quitar archivo',
+        addFiles: 'Añadir archivos',
     },
     fr: {
         shareTitle: 'Créer un lien à usage unique',
@@ -159,11 +162,12 @@ export const ui: Record<Lang, UiText> = {
         qrLabel: 'QR code du lien secret',
         reference: 'Référence',
         fileTitle: 'Envoyer un fichier en toute sécurité',
-        chooseFile: 'Choisir un fichier',
-        dropFile: 'ou déposez-le ici',
-        fileHint: (maxMb) => `Tous types de fichiers, jusqu’à ${maxMb} Mo`,
+        chooseFile: 'Choisir des fichiers',
+        dropFile: 'ou déposez-les ici',
+        fileHint: (maxMb) => `Tous types de fichiers, jusqu’à ${maxMb} Mo au total`,
         chooseAnother: 'En choisir un autre',
         removeFile: 'Retirer le fichier',
+        addFiles: 'Ajouter des fichiers',
     },
     ja: {
         shareTitle: 'ワンタイムURLで安全に送る',
@@ -192,9 +196,10 @@ export const ui: Record<Lang, UiText> = {
         fileTitle: 'ワンタイムURLでファイルを安全に送る',
         chooseFile: 'ファイルを選択',
         dropFile: 'またはここにドロップ',
-        fileHint: (maxMb) => `形式を問わず${maxMb}MBまで`,
+        fileHint: (maxMb) => `複数選択可・形式を問わず合計${maxMb}MBまで`,
         chooseAnother: '別のファイルを選ぶ',
         removeFile: '選択を解除',
+        addFiles: 'ファイルを追加',
     },
     id: {
         shareTitle: 'Buat link sekali pakai',
@@ -223,9 +228,10 @@ export const ui: Record<Lang, UiText> = {
         fileTitle: 'Kirim file dan foto KTP dengan aman',
         chooseFile: 'Pilih file',
         dropFile: 'atau seret file ke sini',
-        fileHint: (maxMb) => `Semua jenis file, maksimal ${maxMb} MB`,
+        fileHint: (maxMb) => `Semua jenis file, bisa beberapa sekaligus, total maksimal ${maxMb} MB`,
         chooseAnother: 'Pilih file lain',
         removeFile: 'Hapus file',
+        addFiles: 'Tambah file',
     },
     de: {
         shareTitle: 'Einmal-Link erstellen',
@@ -254,11 +260,12 @@ export const ui: Record<Lang, UiText> = {
         qrLabel: 'QR-Code des geheimen Links',
         reference: 'Referenz',
         fileTitle: 'Dateien sicher versenden',
-        chooseFile: 'Datei auswählen',
-        dropFile: 'oder Datei hierher ziehen',
-        fileHint: (maxMb) => `Jeder Dateityp, bis ${maxMb} MB`,
+        chooseFile: 'Dateien auswählen',
+        dropFile: 'oder Dateien hierher ziehen',
+        fileHint: (maxMb) => `Jeder Dateityp, insgesamt bis ${maxMb} MB`,
         chooseAnother: 'Andere wählen',
         removeFile: 'Datei entfernen',
+        addFiles: 'Dateien hinzufügen',
     },
     pt: {
         shareTitle: 'Criar um link de uso único',
@@ -287,11 +294,12 @@ export const ui: Record<Lang, UiText> = {
         qrLabel: 'QR code do link secreto',
         reference: 'Referência',
         fileTitle: 'Enviar arquivos com segurança',
-        chooseFile: 'Escolher um arquivo',
-        dropFile: 'ou arraste o arquivo aqui',
-        fileHint: (maxMb) => `Qualquer tipo de arquivo, até ${maxMb} MB`,
+        chooseFile: 'Escolher arquivos',
+        dropFile: 'ou arraste os arquivos aqui',
+        fileHint: (maxMb) => `Qualquer tipo de arquivo, até ${maxMb} MB no total`,
         chooseAnother: 'Escolher outro',
         removeFile: 'Remover arquivo',
+        addFiles: 'Adicionar arquivos',
     },
 };
 
@@ -363,6 +371,9 @@ interface IslandText {
     tooLarge: string;
     linkFailed: string;
     uploadFailed: string;
+    multiSummary: string;
+    zipNote: string;
+    removeAll: string;
     expiry: string;
     copied: string;
     alreadyCopied: string;
@@ -391,6 +402,9 @@ const islandText: Record<Exclude<Lang, 'en'>, IslandText> = {
         tooLarge: 'El archivo supera el límite de {mb} MB',
         linkFailed: 'No se pudo crear el enlace del archivo. Inténtalo de nuevo.',
         uploadFailed: 'No se pudo cifrar o subir el archivo. Inténtalo de nuevo.',
+        multiSummary: '{count} archivos · {size}',
+        zipNote: 'Se envían en un solo archivo zip',
+        removeAll: 'Quitar todos',
         expiry: 'Caduca en {duration}',
         copied: 'Copiado',
         alreadyCopied: 'Ya está copiado',
@@ -436,6 +450,9 @@ const islandText: Record<Exclude<Lang, 'en'>, IslandText> = {
         tooLarge: 'Le fichier dépasse la limite de {mb} Mo',
         linkFailed: 'Impossible de créer le lien du fichier. Veuillez réessayer.',
         uploadFailed: 'Impossible de chiffrer ou d’envoyer le fichier. Veuillez réessayer.',
+        multiSummary: '{count} fichiers · {size}',
+        zipNote: 'Envoyés dans un seul fichier zip',
+        removeAll: 'Tout retirer',
         expiry: 'Expire dans {duration}',
         copied: 'Copié',
         alreadyCopied: 'Déjà copié',
@@ -481,6 +498,9 @@ const islandText: Record<Exclude<Lang, 'en'>, IslandText> = {
         tooLarge: 'ファイルが上限の{mb}MBを超えています',
         linkFailed: 'ファイルのリンクを作成できませんでした。もう一度お試しください。',
         uploadFailed: 'ファイルの暗号化またはアップロードに失敗しました。もう一度お試しください。',
+        multiSummary: 'ファイル{count}件 · {size}',
+        zipNote: '1つのZIPにまとめて送信します',
+        removeAll: 'すべて解除',
         expiry: '有効期限 {duration}',
         copied: 'コピーしました',
         alreadyCopied: 'コピー済み',
@@ -526,6 +546,9 @@ const islandText: Record<Exclude<Lang, 'en'>, IslandText> = {
         tooLarge: 'Ukuran file melebihi batas {mb} MB',
         linkFailed: 'Gagal membuat link file. Coba lagi.',
         uploadFailed: 'Gagal mengenkripsi atau mengunggah file. Coba lagi.',
+        multiSummary: '{count} file · {size}',
+        zipNote: 'Dikirim sebagai satu file zip',
+        removeAll: 'Hapus semua',
         expiry: 'Berlaku {duration}',
         copied: 'Tersalin',
         alreadyCopied: 'Sudah tersalin',
@@ -571,6 +594,9 @@ const islandText: Record<Exclude<Lang, 'en'>, IslandText> = {
         tooLarge: 'Die Datei überschreitet das Limit von {mb} MB',
         linkFailed: 'Der Datei-Link konnte nicht erstellt werden. Bitte versuchen Sie es erneut.',
         uploadFailed: 'Die Datei konnte nicht verschlüsselt oder hochgeladen werden. Bitte versuchen Sie es erneut.',
+        multiSummary: '{count} Dateien · {size}',
+        zipNote: 'Werden als eine ZIP-Datei gesendet',
+        removeAll: 'Alle entfernen',
         expiry: 'Läuft ab in {duration}',
         copied: 'Kopiert',
         alreadyCopied: 'Bereits kopiert',
@@ -616,6 +642,9 @@ const islandText: Record<Exclude<Lang, 'en'>, IslandText> = {
         tooLarge: 'O arquivo ultrapassa o limite de {mb} MB',
         linkFailed: 'Não foi possível criar o link do arquivo. Tente novamente.',
         uploadFailed: 'Não foi possível criptografar ou enviar o arquivo. Tente novamente.',
+        multiSummary: '{count} arquivos · {size}',
+        zipNote: 'Enviados em um único arquivo zip',
+        removeAll: 'Remover todos',
         expiry: 'Expira em {duration}',
         copied: 'Copiado',
         alreadyCopied: 'Já copiado',
@@ -674,6 +703,9 @@ export function fileFormData(lang: Lang) {
         'data-too-large': t.tooLarge,
         'data-link-failed': t.linkFailed,
         'data-upload-failed': t.uploadFailed,
+        'data-multi-summary': t.multiSummary,
+        'data-zip-note': t.zipNote,
+        'data-remove-all': t.removeAll,
     };
 }
 

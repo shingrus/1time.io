@@ -39,6 +39,7 @@ Key facts:
 ## File Sharing
 
 - [Secure file sharing app](https://1time.io/secure-file-sharing/): Browser-side encryption before upload, optional passphrase for file links
+- Several files in one link: pick or drop multiple files in the web form and the browser packs them into a single uncompressed zip (`1timeio-files.zip`) before encryption; the recipient downloads one file, and the 250 MB limit applies to the total
 - One-time file link format: `https://1time.io/f/#...` (decryption key lives only in the URL fragment)
 - CLI support for encrypted file upload and download via `1time send-file` and `1time read-file`
 

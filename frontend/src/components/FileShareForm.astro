@@ -13,7 +13,7 @@ const maxMb = Math.round(Constants.maxFileSizeBytes / (1024 * 1024));
     <div class="share-card">
         <h1 class="share-title">{t.fileTitle}</h1>
 
-        <input type="file" data-file-input hidden />
+        <input type="file" data-file-input multiple hidden />
 
         <button type="button" class="file-drop-zone" data-drop-zone>
             <span class="btn btn-primary file-browse">{t.chooseFile}</span>
@@ -54,6 +54,7 @@ const maxMb = Math.round(Constants.maxFileSizeBytes / (1024 * 1024));
                 </span>
                 <button type="button" class="btn btn-ghost file-remove" data-file-remove aria-label={t.removeFile}>&times;</button>
             </div>
+            <button slot="primary" type="button" class="btn btn-ghost btn-sm" data-file-add>+ {t.addFiles}</button>
             <button slot="submit" class="btn btn-primary btn-lg" disabled type="submit">{t.createLink}</button>
         </ShareOptions>
 

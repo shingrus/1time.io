@@ -10,8 +10,11 @@ if (form) {
     const dropZone = form.querySelector<HTMLElement>('[data-drop-zone]')!;
     const fileInput = form.querySelector<HTMLInputElement>('[data-file-input]')!;
     const selectedEl = form.querySelector<HTMLElement>('[data-file-selected]')!;
+    const selectedRow = form.querySelector<HTMLElement>('.file-state-selected')!;
     const selectedName = form.querySelector<HTMLElement>('[data-file-name]')!;
     const selectedSize = form.querySelector<HTMLElement>('[data-file-size]')!;
+    const selectionCard = form.querySelector<HTMLElement>('.file-selection-card')!;
+    const addBtn = form.querySelector<HTMLButtonElement>('[data-file-add]')!;
     const removeBtn = form.querySelector<HTMLButtonElement>('[data-file-remove]')!;
     const errorCard = form.querySelector<HTMLElement>('[data-file-error-card]')!;
     const errorTitle = form.querySelector<HTMLElement>('[data-file-error]')!;
@@ -31,7 +34,9 @@ if (form) {
     const durationSelect = form.querySelector<HTMLSelectElement>('#duration')!;
     const viewsSelect = form.querySelector<HTMLSelectElement>('#views')!;
 
-    let selectedFile: File | null = null;
+    let selectedFiles: File[] = [];
+    let multiFile: typeof import('./multi-file.js') | null = null;
+    let selectionToken = 0;
     let isEncrypting = false;
     let isUploading = false;
     let uploadProgress = 0;
@@ -48,13 +53,19 @@ if (form) {
     };
 
     const renderSelection = () => {
-        const hasFile = !!selectedFile;
+        const hasFile = selectedFiles.length > 0;
         const hasSizeError = !errorCard.hidden;
         dropZone.toggleAttribute('hidden', hasFile || hasSizeError);
         selectedEl.toggleAttribute('hidden', !hasFile);
-        if (selectedFile) {
-            selectedName.textContent = selectedFile.name;
-            selectedSize.textContent = sizeLabel(selectedFile.size);
+        selectedRow.toggleAttribute('hidden', selectedFiles.length > 1);
+        if (selectedFiles.length === 1) {
+            selectedName.textContent = selectedFiles[0].name;
+            selectedSize.textContent = sizeLabel(selectedFiles[0].size);
+        }
+        if (selectedFiles.length > 1) {
+            multiFile!.renderList(selectedRow, selectedFiles, text, sizeLabel, removeFileAt, clearSelection);
+        } else {
+            multiFile?.clearList();
         }
         setNote('');
         updateSubmit();
@@ -62,7 +73,7 @@ if (form) {
 
     const updateSubmit = () => {
         const loading = isEncrypting || isUploading;
-        submitBtn.disabled = !selectedFile || loading;
+        submitBtn.disabled = !selectedFiles.length || loading;
         submitBtn.textContent = isEncrypting
             ? text.busyLabel ?? 'Encrypting...'
             : isUploading
@@ -73,6 +84,7 @@ if (form) {
     const renderProgress = () => {
         const loading = isEncrypting || isUploading;
         progressEl.toggleAttribute('hidden', !loading);
+        selectionCard.inert = loading;
         if (!loading) return;
         progressLabel.textContent = isEncrypting
             ? text.progressEncrypting ?? 'Encrypting file in your browser...'
@@ -86,7 +98,8 @@ if (form) {
     };
 
     const clearSelection = () => {
-        selectedFile = null;
+        selectionToken++;
+        selectedFiles = [];
         fileInput.value = '';
         errorCard.toggleAttribute('hidden', true);
         renderSelection();
@@ -99,26 +112,76 @@ if (form) {
         passphraseAddBtn.setAttribute('aria-expanded', 'false');
     };
 
+    const rejectTooLarge = (sub: string, bytes: number) => {
+        const title = (text.tooLarge ?? 'File exceeds the {mb} MB limit').replace('{mb}', String(maxMb));
+        if (selectedFiles.length) {
+            setNote(title);
+        } else {
+            errorTitle.textContent = title;
+            errorSub.textContent = sub;
+            errorCard.toggleAttribute('hidden', false);
+            renderSelection();
+        }
+        const mb = Math.round(bytes / (1024 * 1024));
+        fetch(`/stat-reject-limit-${mb}mb`, {method: 'HEAD', keepalive: true}).catch(() => {});
+    };
+
     const selectFile = (file: File | undefined | null) => {
         if (!file) return;
         if (file.size > Constants.maxFileSizeBytes) {
-            selectedFile = null;
-            fileInput.value = '';
-            errorTitle.textContent = (text.tooLarge ?? 'File exceeds the {mb} MB limit').replace('{mb}', String(maxMb));
-            errorSub.textContent = `${file.name} · ${sizeLabel(file.size)}`;
-            errorCard.toggleAttribute('hidden', false);
-            renderSelection();
-            const mb = Math.round(file.size / (1024 * 1024));
-            fetch(`/stat-reject-limit-${mb}mb`, {method: 'HEAD', keepalive: true}).catch(() => {});
+            rejectTooLarge(`${file.name} · ${sizeLabel(file.size)}`, file.size);
             return;
         }
         errorCard.toggleAttribute('hidden', true);
-        selectedFile = file;
+        selectedFiles = [file];
         renderSelection();
     };
 
+    const selectFiles = (added: File[]) => {
+        if (!added.length || isEncrypting || isUploading) return;
+        if (added.length === 1 && !selectedFiles.length) return selectFile(added[0]);
+        const token = selectionToken;
+        (multiFile ? Promise.resolve(multiFile) : import('./multi-file.js'))
+            .then((loaded) => {
+                if (token !== selectionToken || isEncrypting || isUploading) return;
+                multiFile = loaded;
+                const files = [...selectedFiles, ...added];
+                if (files.length < 2) return selectFile(files[0]);
+                const zipBytes = loaded.zipSize(files);
+                if (zipBytes > Constants.maxFileSizeBytes) {
+                    rejectTooLarge(loaded.multiSummary(files, text, sizeLabel), zipBytes);
+                    return;
+                }
+                errorCard.toggleAttribute('hidden', true);
+                selectedFiles = files;
+                renderSelection();
+            })
+            .catch(() => {
+                if (token !== selectionToken) return;
+                setNote(text.uploadFailed ?? 'Could not encrypt or upload the file. Please try again.');
+            });
+    };
+
+    const removeFileAt = (index: number) => {
+        const hadFocus = selectionCard.contains(document.activeElement);
+        selectedFiles = selectedFiles.filter((_, i) => i !== index);
+        renderSelection();
+        if (hadFocus) {
+            const buttons = selectionCard.querySelectorAll<HTMLButtonElement>('.file-list .file-remove');
+            (buttons[Math.min(index, selectedFiles.length - 1)] ?? removeBtn).focus();
+        }
+    };
+
     dropZone.addEventListener('click', () => fileInput.click());
-    fileInput.addEventListener('change', () => selectFile(fileInput.files?.[0]));
+    fileInput.addEventListener('change', () => {
+        const picked = Array.from(fileInput.files ?? []);
+        fileInput.value = '';
+        selectFiles(picked);
+    });
+    addBtn.addEventListener('click', () => {
+        fileInput.click();
+        if (!multiFile) import('./multi-file.js').then((loaded) => (multiFile ??= loaded)).catch(() => {});
+    });
     removeBtn.addEventListener('click', (e) => {
         e.stopPropagation();
         clearSelection();
@@ -135,16 +198,20 @@ if (form) {
     });
     dropTarget.addEventListener('dragover', (e) => {
         e.preventDefault();
+        if (isEncrypting || isUploading) return;
         dropZone.classList.add('file-drop-zone-active');
+        selectionCard.classList.add('file-drop-zone-active');
     });
     dropTarget.addEventListener('dragleave', (e) => {
         if (e.relatedTarget instanceof Node && dropTarget.contains(e.relatedTarget)) return;
         dropZone.classList.remove('file-drop-zone-active');
+        selectionCard.classList.remove('file-drop-zone-active');
     });
     dropTarget.addEventListener('drop', (e) => {
         e.preventDefault();
         dropZone.classList.remove('file-drop-zone-active');
-        selectFile(e.dataTransfer?.files?.[0]);
+        selectionCard.classList.remove('file-drop-zone-active');
+        selectFiles(Array.from(e.dataTransfer?.files ?? []));
     });
 
     updateSubmit();
@@ -152,7 +219,8 @@ if (form) {
 
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
-        if (!selectedFile) return;
+        if (!selectedFiles.length) return;
+        const files = [...selectedFiles];
         const durationSeconds = Number(durationSelect.value);
         const selectedViews = Number(viewsSelect.value);
         const passphrase = keyInput.value;
@@ -163,7 +231,10 @@ if (form) {
         renderProgress();
         updateSubmit();
         try {
-            const {encryptedBytes, readTokenHash, randomKey} = await encryptFile(selectedFile, passphrase);
+            const {encryptedBytes, readTokenHash, randomKey} = await encryptFile(
+                files.length > 1 ? await multiFile!.buildZip(files) : files[0],
+                passphrase,
+            );
             isEncrypting = false;
             isUploading = true;
             renderProgress();
@@ -185,6 +256,7 @@ if (form) {
                     .then(({recordSecret}) =>
                         recordSecret({id: data.newId, kind: 'file', durationSeconds, views: selectedViews}))
                     .catch(() => {});
+                if (files.length > 1) multiFile!.reportMultiFileSent();
                 const link = `${window.location.origin}/f/#${randomKey}${data.newId}`;
                 isEncrypting = false;
                 isUploading = false;
