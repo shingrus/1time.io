@@ -55,7 +55,7 @@ export async function showLinkReady(
     warning.textContent = text.warning ??
         `This page is the only place the link exists. We cannot show it again, and we cannot read the ${item}: ` +
         'the key lives in the # fragment, which never reaches our servers.';
-    resetBtn.textContent = text.reset ?? `Send another ${item}`;
+    clone.querySelector<HTMLElement>('[data-reset-label]')!.textContent = text.reset ?? `Send another ${item}`;
     input.value = link;
     input.setAttribute('aria-label', text.inputLabel ?? `${isFile ? 'File' : 'Secret'} one-time link`);
 
@@ -106,6 +106,9 @@ export async function showLinkReady(
     if (hasCopyHint) {
         copyHint.textContent = /Mac|iPhone|iPad|iPod/.test(navigator.userAgent) ? '⌘C' : 'Ctrl+C';
         copyHint.hidden = false;
+        const resetHint = clone.querySelector<HTMLElement>('[data-reset-hint]')!;
+        resetBtn.addEventListener('focus', () => { resetHint.hidden = false; });
+        resetBtn.addEventListener('blur', () => { resetHint.hidden = true; });
     }
     const showCopyStatus = (message: string) => {
         copyStatus.textContent = message;
