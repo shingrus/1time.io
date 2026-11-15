@@ -1,0 +1,345 @@
+#!/usr/bin/env bash
+# Blue/green installer for the rolling GitHub release "deploy" (backend + static site); see AGENTS.md.
+# Usage: 1time-deploy-update [--purge-cache]
+# Test overrides: BASE_URL INSTALL_DIR STATE_DIR LOCK_FILE SYSTEMCTL SERVICE_RUNNER HEALTH_WAIT DRAIN
+# NGINX TAR LIVE_LINK UPSTREAM_DIR HEALTH_HOST TIMEOUT STATIC_ROOT ENV_FILE LEGACY_UNIT
+set -euo pipefail
+
+GITHUB_REPO="${GITHUB_REPO:-shingrus/1time.io}"
+BASE_URL="${BASE_URL:-https://github.com/$GITHUB_REPO/releases/download/deploy}"
+ASSET=1time-release.tar.gz
+APP_USER="${APP_USER:-onetime}"
+APP_GROUP="${APP_GROUP:-$APP_USER}"
+INSTALL_DIR="${INSTALL_DIR:-/opt/1time}"
+STATE_DIR="${STATE_DIR:-/var/lib/1time/state}"
+LOCK_FILE="${LOCK_FILE:-/run/1time-deploy-update.lock}"
+LIVE_LINK="${LIVE_LINK:-/etc/nginx/conf.d/1time-live.conf}"
+UPSTREAM_DIR="${UPSTREAM_DIR:-/etc/nginx/1time}"
+STATIC_ROOT="${STATIC_ROOT:-/var/www/1time}"
+ENV_FILE="${ENV_FILE:-/etc/1time/env}"
+LEGACY_UNIT="${LEGACY_UNIT:-1time.service}"
+HEALTH_HOST="${HEALTH_HOST:-127.0.0.1}"
+SYSTEMCTL="${SYSTEMCTL:-systemctl}"
+NGINX="${NGINX:-nginx}"
+TAR="${TAR:-tar}"
+TIMEOUT="${TIMEOUT:-timeout}"
+SERVICE_RUNNER="${SERVICE_RUNNER-setpriv --reuid=$APP_USER --regid=$APP_GROUP --clear-groups}"
+RELEASES="$INSTALL_DIR/releases"
+HEALTH_WAIT="${HEALTH_WAIT:-20}"
+DRAIN="${DRAIN:-10}"
+
+log() {
+    printf '%s %s\n' "$(date -u '+%Y-%m-%dT%H:%M:%SZ')" "$*"
+}
+
+ping_hc() {
+    [[ -n "${HC_PING_DEPLOY:-}" ]] || return 0
+    curl -fsS -m 10 --retry 3 -o /dev/null "${HC_PING_DEPLOY}${1:-}" >/dev/null 2>&1 || log "warning: health ping failed"
+    return 0
+}
+
+sha256_of() {
+    if command -v sha256sum >/dev/null 2>&1; then
+        sha256sum "$1" | cut -d' ' -f1
+    else
+        shasum -a 256 "$1" | cut -d' ' -f1
+    fi
+}
+
+set_link() {
+    ln -sfn "$1" "$2.tmp"
+    mv -Tf "$2.tmp" "$2"
+}
+
+unit() { printf '1time@%s' "$1"; }
+
+busy() {
+    local state
+    state="$("$SYSTEMCTL" is-active "$1" 2>/dev/null || true)"
+    [[ "$state" == active || "$state" == activating || "$state" == deactivating ]]
+}
+
+purge_cloudflare() {
+    local token="" zone="" err_file response attempt
+    if [[ -f "$ENV_FILE" ]]; then
+        token="$(grep '^CF_API_TOKEN=' "$ENV_FILE" | tail -n1 | cut -d= -f2- | sed -e 's/\r$//' -e 's/[[:space:]]*$//' || true)"
+        zone="$(grep '^CF_ZONE_ID=' "$ENV_FILE" | tail -n1 | cut -d= -f2- | sed -e 's/\r$//' -e 's/[[:space:]]*$//' || true)"
+    fi
+    if [[ -z "$token" || -z "$zone" ]]; then
+        log "skipping Cloudflare purge: CF_API_TOKEN/CF_ZONE_ID not set in $ENV_FILE"
+        return 0
+    fi
+    err_file="$(mktemp)"
+    response="curl failed"
+    for attempt in 1 2; do
+        log "purging Cloudflare cache for zone $zone (attempt $attempt)"
+        response="$(curl -sS -o /dev/null -w '%{http_code}' --max-time 15 \
+            -X POST "https://api.cloudflare.com/client/v4/zones/${zone}/purge_cache" \
+            -H "Authorization: Bearer ${token}" \
+            -H "Content-Type: application/json" \
+            --data '{"purge_everything":true}' 2>"$err_file")" || response="curl failed"
+        [[ "$response" == "200" ]] && break
+        [[ "$attempt" -eq 1 ]] && sleep 3
+    done
+    if [[ "$response" != "200" ]]; then
+        log "warning: Cloudflare purge_cache returned $response, not 200"
+        if [[ -s "$err_file" ]]; then log "curl error output: $(cat "$err_file")"; fi
+    fi
+    rm -f "${err_file:?}"
+    return 0
+}
+
+if [[ "${1:-}" == "--purge-cache" ]]; then
+    purge_cloudflare
+    exit 0
+fi
+
+handled=0
+tmp_sum=""
+live=""
+idle=""
+idle_slot=""
+old_idle=""
+phase=""
+# shellcheck disable=SC2329 # called by the EXIT trap
+on_exit() {
+    local rc=$?
+    [[ -z "$tmp_sum" ]] || rm -f "$tmp_sum"
+    if ((rc != 0 && handled == 0)); then
+        log "error: unexpected failure (exit $rc)"
+        if [[ "$phase" == started || "$phase" == switched ]]; then
+            if [[ "$phase" == switched ]]; then
+                set_link "$UPSTREAM_DIR/upstream-$live.conf" "$LIVE_LINK" || true
+                if "$SYSTEMCTL" is-active --quiet nginx; then "$SYSTEMCTL" reload nginx || true; fi
+            fi
+            "$SYSTEMCTL" stop "$(unit "$idle")" || true
+            if [[ -n "$old_idle" ]]; then
+                set_link "$old_idle" "$idle_slot" || true
+            else
+                rm -f "${idle_slot:?}" || true
+            fi
+            rm -f "${LIVE_LINK:?}.tmp" "${idle_slot:?}.tmp" 2>/dev/null || true
+        fi
+        ping_hc /fail
+    fi
+}
+trap on_exit EXIT
+
+hex=""
+fail_build() {
+    printf '%s\n' "$hex" >"$STATE_DIR/bad.sha256.tmp"
+    mv -f "$STATE_DIR/bad.sha256.tmp" "$STATE_DIR/bad.sha256"
+    ping_hc /fail
+    handled=1
+    exit 1
+}
+
+healthy() {
+    local i body
+    for ((i = 0; i < HEALTH_WAIT; i++)); do
+        body="$(curl -fsS -m 2 "http://$HEALTH_HOST:$1/healthz" 2>/dev/null || true)"
+        [[ "$body" == "ok $2" ]] && return 0
+        sleep 1
+    done
+    return 1
+}
+
+nginx_fail() {
+    log "error: $1; restoring the link to upstream-$live.conf"
+    set_link "$UPSTREAM_DIR/upstream-$live.conf" "$LIVE_LINK"
+    if "$SYSTEMCTL" is-active --quiet nginx; then "$SYSTEMCTL" reload nginx || true; fi
+    "$SYSTEMCTL" stop "$(unit "$idle")" || true
+    ping_hc /fail
+    handled=1
+    exit 1
+}
+
+switch_backend() {
+    local work="$RELEASES/$hex.tmp" dir="$RELEASES/$hex" got expected restart_ok=1
+
+    rm -rf "${RELEASES:?}"/*.tmp
+    mkdir -p "$work"
+    if ! curl -fsSL -m 300 --retry 3 -o "$work/$ASSET" "$BASE_URL/$ASSET" 2>/dev/null; then
+        rm -rf "${work:?}"
+        log "tarball download failed (upload in progress?), trying later"
+        handled=1
+        exit 0
+    fi
+    got="$(sha256_of "$work/$ASSET")"
+    if [[ "$got" != "$hex" ]]; then
+        rm -rf "${work:?}"
+        log "tarball does not match the checksum (upload in progress?), trying later"
+        handled=1
+        exit 0
+    fi
+    if ! "$TAR" -xzf "$work/$ASSET" -C "$work" --no-same-owner || [[ ! -f "$work/1time-api" || ! -d "$work/frontend" ]]; then
+        rm -rf "${work:?}"
+        log "error: the tarball ${hex:0:12} cannot be unpacked or lacks 1time-api or frontend/"
+        fail_build
+    fi
+    rm -f "${work:?}/${ASSET:?}"
+    chmod -R go+rX "$work"
+    chmod 0755 "$work/1time-api"
+
+    # shellcheck disable=SC2086
+    if ! expected="$($TIMEOUT 10 $SERVICE_RUNNER "$work/1time-api" -version 2>/dev/null)" || [[ -z "$expected" ]]; then
+        rm -rf "${work:?}"
+        log "error: the new binary ${hex:0:12} cannot print its version (or took more than 10 s)"
+        fail_build
+    fi
+
+    old_idle="$(readlink "$idle_slot" 2>/dev/null || true)"
+    rm -rf "${dir:?}"
+    mv "$work" "$dir"
+
+    log "starting ${hex:0:12} (version $expected) on idle port $idle; live is $live"
+    set_link "releases/$hex" "$idle_slot"
+    phase=started
+    "$SYSTEMCTL" restart "$(unit "$idle")" || restart_ok=0
+    if ! { ((restart_ok)) && healthy "$idle" "$expected"; }; then
+        if ((restart_ok)); then
+            log "error: $(unit "$idle") did not report ok $expected within ${HEALTH_WAIT}s"
+        else
+            log "error: systemctl restart $(unit "$idle") failed"
+        fi
+        "$SYSTEMCTL" stop "$(unit "$idle")" || true
+        if [[ -n "$old_idle" ]]; then
+            set_link "$old_idle" "$idle_slot"
+        else
+            rm -f "${idle_slot:?}"
+        fi
+        [[ "$old_idle" == "releases/$hex" ]] || rm -rf "${dir:?}"
+        log "the live instance $(unit "$live") was not touched"
+        fail_build
+    fi
+
+    set_link "$UPSTREAM_DIR/upstream-$idle.conf" "$LIVE_LINK"
+    phase=switched
+    "$NGINX" -t >/dev/null 2>&1 || nginx_fail "nginx -t failed"
+    "$SYSTEMCTL" reload nginx || nginx_fail "nginx reload failed"
+    "$SYSTEMCTL" enable "$(unit "$idle")" >/dev/null 2>&1 || log "warning: could not enable $(unit "$idle")"
+    "$SYSTEMCTL" disable "$(unit "$live")" >/dev/null 2>&1 || log "warning: could not disable $(unit "$live")"
+    # Reload is async: old nginx workers still use the old port for a moment.
+    sleep "$DRAIN"
+    if busy "$LEGACY_UNIT" || "$SYSTEMCTL" is-enabled --quiet "$LEGACY_UNIT" 2>/dev/null; then
+        log "retiring the legacy unit $LEGACY_UNIT"
+        "$SYSTEMCTL" disable "$LEGACY_UNIT" >/dev/null 2>&1 || log "warning: could not disable $LEGACY_UNIT"
+        "$SYSTEMCTL" stop --no-block "$LEGACY_UNIT" || log "warning: could not stop $LEGACY_UNIT"
+    fi
+    "$SYSTEMCTL" stop --no-block "$(unit "$live")" || log "warning: could not stop $(unit "$live")"
+    phase=finished
+    log "live: $idle (version $expected)"
+}
+
+install_frontend() {
+    local source="$RELEASES/$hex/frontend" live_list="$INSTALL_DIR/astro-live.txt"
+    install -d -m 755 -o "$APP_USER" -g "$APP_GROUP" "$STATIC_ROOT"
+    rsync -a --no-times "$source/_astro/" "$STATIC_ROOT/_astro/"
+    rsync -a --delete --exclude='/_astro/' "$source/" "$STATIC_ROOT/"
+    if [[ -f "$live_list" ]]; then
+        (cd "$STATIC_ROOT/_astro" && xargs -r -d '\n' -a "$live_list" touch -c --)
+    fi
+    ls "$source/_astro" >"$live_list"
+    find "$STATIC_ROOT/_astro" -type f -mtime +6 -delete
+    chown -R "$APP_USER:$APP_GROUP" "$STATIC_ROOT"
+    printf '%s\n' "$hex" >"$STATE_DIR/frontend.sha256.tmp"
+    mv -f "$STATE_DIR/frontend.sha256.tmp" "$STATE_DIR/frontend.sha256"
+    log "static site ${hex:0:12} installed"
+    purge_cloudflare
+}
+
+mkdir -p "$RELEASES" "$STATE_DIR"
+exec 9>"$LOCK_FILE"
+if ! flock -n 9; then
+    log "another update is running"
+    handled=1
+    exit 0
+fi
+
+live_target="$(readlink "$LIVE_LINK" 2>/dev/null || true)"
+if [[ "${live_target##*/}" =~ ^upstream-(8080|8081)\.conf$ ]]; then
+    live="${BASH_REMATCH[1]}"
+fi
+if [[ -z "$live" ]]; then
+    log "error: $LIVE_LINK is missing or does not point to upstream-8080.conf or upstream-8081.conf: run scripts/update_vm.sh"
+    ping_hc /fail
+    handled=1
+    exit 1
+fi
+if [[ "$live" == 8080 ]]; then idle=8081; else idle=8080; fi
+live_slot="$INSTALL_DIR/slot-$live"
+idle_slot="$INSTALL_DIR/slot-$idle"
+
+if [[ -e "$live_slot/1time-api" ]] && ! { [[ "$live" == 8080 ]] && busy "$LEGACY_UNIT"; } &&
+    "$SYSTEMCTL" is-enabled --quiet "$(unit "$live")" &&
+    ! "$SYSTEMCTL" is-active --quiet "$(unit "$live")"; then
+    log "live instance $(unit "$live") is enabled but not active, starting it"
+    if ! "$SYSTEMCTL" start "$(unit "$live")"; then
+        log "error: systemctl start $(unit "$live") failed"
+        ping_hc /fail
+        handled=1
+        exit 1
+    fi
+fi
+
+tmp_sum="$(mktemp)"
+if curl -fsSL -m 30 -o "$tmp_sum" "$BASE_URL/$ASSET.sha256" 2>/dev/null; then
+    read -r hex _ <"$tmp_sum" || true
+fi
+if [[ ! "$hex" =~ ^[0-9a-f]{64}$ ]]; then
+    hex=""
+    log "no release yet or upload in progress (no valid checksum), trying later"
+    handled=1
+    exit 0
+fi
+
+installed=""
+if [[ -f "$STATE_DIR/installed.sha256" ]]; then read -r installed <"$STATE_DIR/installed.sha256" || true; fi
+if [[ "$hex" == "$installed" ]]; then
+    ping_hc
+    handled=1
+    exit 0
+fi
+bad=""
+if [[ -f "$STATE_DIR/bad.sha256" ]]; then read -r bad <"$STATE_DIR/bad.sha256" || true; fi
+if [[ "$hex" == "$bad" ]]; then
+    log "release ${hex:0:12} failed its check before, not trying it again"
+    ping_hc /fail
+    handled=1
+    exit 0
+fi
+
+if [[ "$(readlink "$live_slot" 2>/dev/null || true)" == "releases/$hex" ]]; then
+    log "release ${hex:0:12} is already live on $live"
+else
+    if busy "$(unit "$idle")" || { [[ "$idle" == 8080 ]] && busy "$LEGACY_UNIT"; }; then
+        log "previous instance still draining, trying later"
+        ping_hc
+        handled=1
+        exit 0
+    fi
+    switch_backend
+fi
+
+frontend_done=""
+if [[ -f "$STATE_DIR/frontend.sha256" ]]; then read -r frontend_done <"$STATE_DIR/frontend.sha256" || true; fi
+if [[ "$frontend_done" != "$hex" ]]; then
+    install_frontend
+fi
+
+printf '%s\n' "$hex" >"$STATE_DIR/installed.sha256.tmp"
+mv -f "$STATE_DIR/installed.sha256.tmp" "$STATE_DIR/installed.sha256"
+rm -f "$STATE_DIR/bad.sha256"
+
+keep=" $(readlink "$INSTALL_DIR/slot-8080" 2>/dev/null || true) $(readlink "$INSTALL_DIR/slot-8081" 2>/dev/null || true) "
+keep="${keep//releases\//}"
+n=0
+while IFS= read -r d; do
+    n=$((n + 1))
+    ((n <= 3)) && continue
+    [[ "$keep" == *" $d "* ]] && continue
+    rm -rf "${RELEASES:?}/${d:?}"
+done < <(ls -1t "$RELEASES")
+ping_hc
+handled=1
+exit 0

@@ -1,0 +1,10 @@
+[Unit]
+Description=1time.io: install a new release from the GitHub release "deploy"
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+EnvironmentFile=-/etc/1time/env
+ExecStart=/opt/1time/bin/1time-deploy-update
+TimeoutStartSec=5min

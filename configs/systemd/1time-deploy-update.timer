@@ -1,0 +1,10 @@
+[Unit]
+Description=1time.io: look for a new release every 2 minutes
+
+[Timer]
+OnCalendar=*:0/2
+RandomizedDelaySec=20
+Persistent=true
+
+[Install]
+WantedBy=timers.target

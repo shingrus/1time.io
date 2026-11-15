@@ -1,0 +1,119 @@
+name: Publish deploy release
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ['deploy-*']
+
+permissions:
+  contents: write
+
+concurrency:
+  group: deploy-release
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+
+      - name: Gate
+        id: gate
+        shell: bash
+        run: |
+          set -euo pipefail
+          publish=false
+          if [ "${GITHUB_REF_TYPE:-}" = "tag" ] && [[ "$GITHUB_REF" == refs/tags/deploy-* ]]; then
+            if ! [[ "$GITHUB_REF_NAME" =~ ^deploy-[A-Za-z0-9._-]+$ ]]; then
+              echo "no publish: tag name must match deploy-[A-Za-z0-9._-]+"
+              exit 1
+            fi
+            if ! git rev-parse --verify --quiet refs/remotes/origin/master >/dev/null; then
+              echo "no publish: origin/master is not available"
+            elif git merge-base --is-ancestor "$GITHUB_SHA" refs/remotes/origin/master; then
+              publish=true
+              echo "publish: tag ${GITHUB_REF_NAME} is on a master commit"
+            else
+              echo "no publish: tag ${GITHUB_REF_NAME} is not on master"
+            fi
+          else
+            echo "no publish: ${GITHUB_REF} is not a deploy-* tag"
+          fi
+          echo "publish=${publish}" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5.6.0
+        with:
+          go-version-file: go.mod
+
+      - name: Check and test backend
+        shell: bash
+        run: |
+          set -euo pipefail
+          unformatted="$(gofmt -l backend)"
+          if [ -n "$unformatted" ]; then
+            echo "gofmt needed for:" >&2
+            echo "$unformatted" >&2
+            exit 1
+          fi
+          go vet ./backend/...
+          go test -race ./backend/...
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '26.1.0'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Build frontend
+        shell: bash
+        working-directory: frontend
+        run: |
+          set -euo pipefail
+          npm install -g npm@11.12.1
+          npm ci
+          npm run build
+        env:
+          SELF_HOSTED: 'false'
+
+      - name: Build backend and package
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="$GITHUB_SHA"
+          if [ "${GITHUB_REF_TYPE:-}" = "tag" ]; then
+            version="${GITHUB_REF_NAME}@${GITHUB_SHA}"
+          fi
+          mkdir -p dist/release
+          CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -trimpath -ldflags "-s -w -X main.version=${version}" -o dist/release/1time-api ./backend
+          cp -R frontend/build dist/release/frontend
+          cd dist
+          tar -czf 1time-release.tar.gz -C release 1time-api frontend
+          sha256sum 1time-release.tar.gz > 1time-release.tar.gz.sha256
+
+      - name: Publish release
+        if: steps.gate.outputs.publish == 'true'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          built="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          notes="Tag ${GITHUB_REF_NAME}, commit ${GITHUB_SHA}, built ${built} by run ${GITHUB_RUN_ID}."
+          if ! out="$(gh release view deploy --json tagName 2>&1)"; then
+            if grep -qi 'release not found' <<<"$out"; then
+              gh release create deploy --title "Website release" --notes "$notes" --target "$GITHUB_SHA" --latest=false
+            else
+              echo "$out" >&2
+              exit 1
+            fi
+          fi
+          # Tarball first, then its checksum: a new checksum always has its tarball.
+          gh release upload deploy dist/1time-release.tar.gz --clobber
+          gh release upload deploy dist/1time-release.tar.gz.sha256 --clobber
+          gh release edit deploy --latest=false --notes "$notes"

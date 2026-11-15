@@ -1,0 +1,20 @@
+[Unit]
+Description=1time backend service (port %i)
+After=network.target redis-server.service
+Requires=redis-server.service
+
+[Service]
+Type=simple
+User=1time
+Group=1time
+WorkingDirectory=/opt/1time
+# -listen wins over LISTEN_ADDR from the env file.
+EnvironmentFile=-/etc/1time/env
+ExecStart=/opt/1time/slot-%i/1time-api -listen 127.0.0.1:%i
+Restart=always
+RestartSec=3
+KillSignal=SIGTERM
+TimeoutStopSec=16min
+
+[Install]
+WantedBy=multi-user.target

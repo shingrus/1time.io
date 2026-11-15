@@ -229,9 +229,12 @@ The frontend builds in two editions from the same source.
 ## Deployment
 
 - Frontend production build output: `frontend/build` (static HTML files per route)
-- Backend production binary from `make build`: `bin/1time-api`
+- Backend production binary from `make build`: `bin/1time-api` (local and Docker builds only; the production host runs the release build below).
 - Example nginx config: `configs/nginx/1time.conf`
-- nginx serves frontend statics and proxies `/api` to the Go app on `127.0.0.1:8080`.
+- nginx serves frontend statics and proxies `/api` to the Go app on the upstream `1time_backend`: `127.0.0.1:8080` or `:8081`, whichever `/etc/nginx/conf.d/1time-live.conf` links to (`configs/nginx/upstream-8080.conf` / `upstream-8081.conf`).
+- Production deploy flow: push a `deploy-*` tag on a master commit → `.github/workflows/deploy.yml` tests, builds and publishes `1time-release.tar.gz` (`1time-api` + `frontend/`) with its `.sha256` to the rolling release `deploy` → `1time-deploy-update.timer` on the host runs `scripts/1time-deploy-update` every 2 minutes → it starts the new backend on the idle port (`1time@8080` / `1time@8081`), waits for `/healthz` to answer `ok <version>`, switches the live link, reloads nginx, and stops the old instance → then it installs the frontend into `/var/www/1time` (7-day retention of retired `/_astro` files) and purges Cloudflare. The old instance drains in-flight transfers for up to 15 minutes (`TimeoutStopSec=16min`); until it exits the updater does nothing. Releases live in `/opt/1time/releases/<sha256>` (3 kept), state in `/var/lib/1time/state`.
+- Rollback: push a new `deploy-*` tag on an older master commit.
+- `scripts/update_vm.sh` only provisions (packages, user, env file, nginx config, units, timer). One-time migration from the old single `1time.service`: run `sudo ./scripts/update_vm.sh` once; the first release then switches over with no downtime and retires the old unit. That first switch cuts in-flight transfers once (the old binary has no graceful shutdown), so run the migration at a quiet hour.
 - nginx upload ceiling is `100m` in both `configs/nginx/1time.conf` and `docker/nginx/default.conf.template` equal to the backend's `maxFileUploadBodyBytes` and to Cloudflare Free's 100 MiB edge cap — none of the three may move alone. Upload/download timeouts on `/api/saveFile` and `/api/getFile` are `10m`. Chunked uploads make the upload side per 4 MiB request; the download side still needs roughly 3.4 Mbit/s sustained for 250 MB.
 - `/api/saveFile` has its own `api_upload` zone (120 r/m, burst 63) in both nginx configs: a 250 MB file is 63 chunk requests, which `api_write` (45 r/m, burst 10) would throttle. Keep the burst at least `maxFileChunks`.
 - Host nginx has an exact `/f/` location with the same sensitive-header treatment as `/v/`.
