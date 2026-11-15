@@ -61,7 +61,7 @@ You can run your own instance for your team, on your own domain. The self-hosted
 curl -O https://raw.githubusercontent.com/shingrus/1time.io/master/docker-compose.yml
 curl -O https://raw.githubusercontent.com/shingrus/1time.io/master/.env.example
 cp .env.example .env
-docker compose up -d
+docker compose up -d --pull always
 ```
 
 That gives you three containers on `http://localhost:8080`: Redis, the Go API, and nginx serving the frontend. Data goes under `DATA_DIR`, and the images are built for amd64 and arm64. If you'd rather build from source:

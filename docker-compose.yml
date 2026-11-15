@@ -1,7 +1,7 @@
 ## Deploy with pre-built images from GHCR (no build required)
 ## Usage:
 ##   cp .env.example .env
-##   docker compose up -d
+##   docker compose up -d --pull always
 
 services:
   redis:
