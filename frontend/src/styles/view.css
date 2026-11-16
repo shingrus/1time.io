@@ -95,7 +95,6 @@
 }
 
 .view-cta-box .btn {
-  width: 100%;
   /* Global .btn is nowrap; at 320px the label can't fit one line — allow
      wrapping here (and give wrapped lines breathing room vs line-height:1). */
   white-space: normal;

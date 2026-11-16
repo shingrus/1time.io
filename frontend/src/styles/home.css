@@ -59,7 +59,7 @@
 .share-settings-card {
   overflow: hidden;
   background: var(--surface);
-  border: 1px solid var(--border);
+  border: 1px solid var(--accent);
   border-radius: var(--radius);
 }
 
