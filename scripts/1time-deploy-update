@@ -38,6 +38,21 @@ ping_hc() {
     return 0
 }
 
+notify() {
+    [[ -n "${NTFY_URL:-}" ]] || return 0
+    curl -fsS -m 10 --retry 3 -o /dev/null -H "Title: $1" -H "Tags: $3" -H "Priority: ${4:-default}" -d "$2" "$NTFY_URL" >/dev/null 2>&1 || log "warning: ntfy notification failed"
+    return 0
+}
+
+notify_failure() {
+    local last=""
+    [[ -n "$hex" ]] || return 0
+    if [[ -f "$STATE_DIR/notified-fail.sha256" ]]; then read -r last <"$STATE_DIR/notified-fail.sha256" || true; fi
+    [[ "$hex" != "$last" ]] || return 0
+    notify "1time.io deploy failed" "$1" warning high
+    { printf '%s\n' "$hex" >"$STATE_DIR/notified-fail.sha256.tmp" && mv -f "$STATE_DIR/notified-fail.sha256.tmp" "$STATE_DIR/notified-fail.sha256"; } 2>/dev/null || true
+}
+
 sha256_of() {
     if command -v sha256sum >/dev/null 2>&1; then
         sha256sum "$1" | cut -d' ' -f1
@@ -101,6 +116,7 @@ idle=""
 idle_slot=""
 old_idle=""
 phase=""
+version=""
 # shellcheck disable=SC2329 # called by the EXIT trap
 on_exit() {
     local rc=$?
@@ -120,6 +136,7 @@ on_exit() {
             fi
             rm -f "${LIVE_LINK:?}.tmp" "${idle_slot:?}.tmp" 2>/dev/null || true
         fi
+        notify_failure "Release ${hex:0:12}: unexpected failure (exit $rc)"
         ping_hc /fail
     fi
 }
@@ -129,6 +146,7 @@ hex=""
 fail_build() {
     printf '%s\n' "$hex" >"$STATE_DIR/bad.sha256.tmp"
     mv -f "$STATE_DIR/bad.sha256.tmp" "$STATE_DIR/bad.sha256"
+    notify_failure "Release ${hex:0:12} failed its check and will not be retried"
     ping_hc /fail
     handled=1
     exit 1
@@ -149,6 +167,7 @@ nginx_fail() {
     set_link "$UPSTREAM_DIR/upstream-$live.conf" "$LIVE_LINK"
     if "$SYSTEMCTL" is-active --quiet nginx; then "$SYSTEMCTL" reload nginx || true; fi
     "$SYSTEMCTL" stop "$(unit "$idle")" || true
+    notify_failure "Release ${hex:0:12}: $1; the previous release stays live"
     ping_hc /fail
     handled=1
     exit 1
@@ -188,6 +207,7 @@ switch_backend() {
         fail_build
     fi
 
+    version="$expected"
     old_idle="$(readlink "$idle_slot" 2>/dev/null || true)"
     rm -rf "${dir:?}"
     mv "$work" "$dir"
@@ -329,7 +349,7 @@ fi
 
 printf '%s\n' "$hex" >"$STATE_DIR/installed.sha256.tmp"
 mv -f "$STATE_DIR/installed.sha256.tmp" "$STATE_DIR/installed.sha256"
-rm -f "$STATE_DIR/bad.sha256"
+rm -f "$STATE_DIR/bad.sha256" "$STATE_DIR/notified-fail.sha256"
 
 keep=" $(readlink "$INSTALL_DIR/slot-8080" 2>/dev/null || true) $(readlink "$INSTALL_DIR/slot-8081" 2>/dev/null || true) "
 keep="${keep//releases\//}"
@@ -340,6 +360,7 @@ while IFS= read -r d; do
     [[ "$keep" == *" $d "* ]] && continue
     rm -rf "${RELEASES:?}/${d:?}"
 done < <(ls -1t "$RELEASES")
+notify "1time.io deployed" "Release ${hex:0:12} is live${version:+ (version $version)}" white_check_mark
 ping_hc
 handled=1
 exit 0

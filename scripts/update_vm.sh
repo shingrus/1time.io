@@ -3,7 +3,7 @@
 # Provision a Debian/Ubuntu host for 1time.io (packages, user, env file, nginx, units, deploy timer).
 # Releases are installed by the timer, not here: see AGENTS.md, Deployment.
 #
-#   sudo env REDIS_PASS=... CF_API_TOKEN=... CF_ZONE_ID=... HC_PING_DEPLOY=... \
+#   sudo env REDIS_PASS=... CF_API_TOKEN=... CF_ZONE_ID=... HC_PING_DEPLOY=... NTFY_URL=... \
 #       ./scripts/update_vm.sh --init       first time on a fresh box
 #   sudo ./scripts/update_vm.sh             after changing nginx, units or this script
 #
@@ -41,6 +41,7 @@ REDIS_PASS="${REDIS_PASS:-}"
 CF_API_TOKEN="${CF_API_TOKEN:-}"
 CF_ZONE_ID="${CF_ZONE_ID:-}"
 HC_PING_DEPLOY="${HC_PING_DEPLOY:-}"
+NTFY_URL="${NTFY_URL:-}"
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SYSTEMD_SOURCE="${REPO_ROOT}/configs/systemd"
@@ -120,6 +121,7 @@ FILE_STORAGE_DIR=${FILE_STORAGE_DIR}
 CF_API_TOKEN=${CF_API_TOKEN}
 CF_ZONE_ID=${CF_ZONE_ID}
 HC_PING_DEPLOY=${HC_PING_DEPLOY}
+NTFY_URL=${NTFY_URL}
 ENVEOF
         chown root:"${APP_GROUP}" "${ENV_FILE}"
         chmod 0640 "${ENV_FILE}"
