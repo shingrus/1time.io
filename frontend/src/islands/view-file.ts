@@ -11,6 +11,53 @@ const isProgramFile = (name: unknown) => {
     return ext !== null && programExtensions.has(ext[1].toLowerCase());
 };
 
+const keptForMs = 10 * 60 * 1000;
+const keptMaxBytes = 50 * 1024 * 1024;
+const isFresh = (t: unknown) => typeof t === 'number' && Date.now() - t >= 0 && Date.now() - t < keptForMs;
+const minutesLeft = (t: number) => {
+    const minutes = Math.max(1, Math.ceil((t + keptForMs - Date.now()) / 60000));
+    return `${minutes} more ${minutes === 1 ? 'minute' : 'minutes'}`;
+};
+
+// Every failure (no IndexedDB, private mode, quota) is swallowed: the kept copy is only a convenience.
+const keptStore = async (mode: IDBTransactionMode, use: (store: IDBObjectStore) => IDBRequest | void) => {
+    try {
+        const db = await new Promise<IDBDatabase>((resolve, reject) => {
+            const opening = indexedDB.open('1time-kept-files', 1);
+            opening.onupgradeneeded = () => opening.result.createObjectStore('files').createIndex('t', 't');
+            opening.onsuccess = () => resolve(opening.result);
+            opening.onerror = () => reject(opening.error);
+        });
+        return await new Promise<unknown>((resolve) => {
+            const tx = db.transaction('files', mode);
+            const request = use(tx.objectStore('files'));
+            tx.oncomplete = () => {
+                db.close();
+                resolve(request ? request.result : undefined);
+            };
+            tx.onerror = tx.onabort = () => {
+                db.close();
+                resolve(undefined);
+            };
+        });
+    } catch {
+        return undefined;
+    }
+};
+
+const sweepExpired = (store: IDBObjectStore) => {
+    store.index('t').openKeyCursor().onsuccess = (event) => {
+        const cursor = (event.target as IDBRequest<IDBCursor | null>).result;
+        if (!cursor) return;
+        if (!isFresh(cursor.key)) store.delete(cursor.primaryKey);
+        cursor.continue();
+    };
+};
+
+const forgetKeptCopy = (id: string) => keptStore('readwrite', (store) => {
+    store.delete(id);
+});
+
 const form = document.querySelector<HTMLFormElement>('#view-file-form');
 if (form) {
     const passphraseSection = form.querySelector<HTMLElement>('[data-state="passphrase"]')!;
@@ -32,6 +79,12 @@ if (form) {
     const downloadState = form.querySelector<HTMLElement>('[data-download-state]')!;
     const saveAgainBtn = form.querySelector<HTMLButtonElement>('[data-save-again-btn]')!;
     const saveAgainHint = form.querySelector<HTMLElement>('[data-save-again-hint]')!;
+
+    const preReadTitle = form.querySelector<HTMLElement>('[data-pre-read-title]')!;
+    const preReadText = form.querySelector<HTMLElement>('[data-pre-read-text]')!;
+    const originalPreReadTitle = preReadTitle.textContent;
+    const originalPreReadText = preReadText.innerHTML;
+    const originalSaveAgainHint = saveAgainHint.textContent;
 
     const hash = window.location.hash || '';
     const linkKey = hash.length > 1 ? hash.slice(1) : '';
@@ -77,6 +130,87 @@ if (form) {
     };
 
     let isDownloading = false;
+    let keptCopy: {c: Uint8Array; t: number} | null = null;
+    let keptAt: number | null = null;
+    let idleLabel = 'Download the file';
+
+    const renderPreRead = () => {
+        idleLabel = keptCopy ? 'Save the file again' : 'Download the file';
+        downloadLabel.textContent = idleLabel;
+        preReadTitle.textContent = keptCopy ? 'You already downloaded this file' : originalPreReadTitle;
+        if (keptCopy) {
+            preReadText.textContent = `It has been deleted from our servers. This is your local copy, kept on this device for ${minutesLeft(keptCopy.t)}.`;
+        } else {
+            preReadText.innerHTML = originalPreReadText;
+        }
+    };
+
+    const deleteWhenExpired = (id: string, t: number) => {
+        setTimeout(() => void forgetKeptCopy(id), t + keptForMs - Date.now());
+    };
+
+    const keepCopy = (id: string, ciphertext: Uint8Array) => {
+        if (secretKeyInput.value || !matchMedia('(pointer: coarse)').matches || ciphertext.byteLength > keptMaxBytes) return;
+        try {
+            if (localStorage.getItem('1time.secretsList.v1')?.includes(`"id":"${id}"`)) return;
+        } catch {
+            // Storage may be unavailable.
+        }
+        const t = Date.now();
+        void keptStore('readwrite', (store) => store.put({c: ciphertext, t}, id)).then((key) => {
+            if (key === undefined) return;
+            keptAt = t;
+            renderSaveAgainHint();
+            deleteWhenExpired(id, t);
+        });
+    };
+
+    const renderSaveAgainHint = () => {
+        saveAgainHint.textContent = keptAt
+            ? `The server copy is gone. A local copy stays on this device for ${minutesLeft(keptAt)}, so you can open this link again if the file didn't save.`
+            : originalSaveAgainHint;
+    };
+
+    const presentFile = (meta: {name: string; type: string}, fileBytes: Uint8Array, viewsLeft: number, expiresIn: number) => {
+        const save = () => {
+            savedFile = {url: createFileUrl(meta, fileBytes), name: meta.name};
+            saveFileUrl(savedFile.url, savedFile.name);
+            const expiryClause = expiresIn > 0 ? ` It expires in ${formatRemaining(expiresIn)}.` : '';
+            downloadState.textContent = viewsLeft > 0
+                ? `This 1time link has ${viewsLeft} ${viewsLeft === 1 ? 'download' : 'downloads'} remaining and will self-destruct after the last.${expiryClause}`
+                : 'One-time delivery complete. The encrypted file has been deleted from our servers.';
+            renderSaveAgainHint();
+            saveAgainHint.toggleAttribute('hidden', viewsLeft > 0);
+            showOnly(downloadedSection);
+        };
+        if (isProgramFile(meta.name)) {
+            programName.textContent = meta.name;
+            saveConfirmedProgram = save;
+            showOnly(programSection);
+        } else {
+            save();
+        }
+    };
+
+    if (isValidLinkToken(linkKey)) {
+        const linkId = linkKey.slice(Constants.randomKeyLen);
+        void keptStore('readwrite', (store) => {
+            sweepExpired(store);
+            return store.get(linkId);
+        }).then((found) => {
+            const copy = found as {c?: unknown; t?: unknown} | undefined;
+            if (!isDownloading && copy?.c instanceof Uint8Array && isFresh(copy.t)) {
+                keptCopy = {c: copy.c, t: copy.t as number};
+                renderPreRead();
+                deleteWhenExpired(linkId, keptCopy.t);
+            }
+        });
+    } else {
+        void keptStore('readwrite', (store) => {
+            sweepExpired(store);
+        });
+    }
+
     type Phase = 'idle' | 'downloading' | 'decrypting';
     const setPhase = (phase: Phase) => {
         const busy = phase !== 'idle';
@@ -89,7 +223,7 @@ if (form) {
         downloadBtn.disabled = busy;
         secretKeyInput.disabled = busy;
         if (phase === 'idle') {
-            downloadLabel.textContent = 'Download the file';
+            downloadLabel.textContent = idleLabel;
             progress.toggleAttribute('hidden', true);
             progress.classList.remove('indeterminate');
             return;
@@ -142,11 +276,32 @@ if (form) {
         noMessageSection.toggleAttribute('hidden', true);
         downloadedSection.toggleAttribute('hidden', true);
         preReadSection.toggleAttribute('hidden', false);
-        setPhase('downloading');
 
         const randomKey = linkKey.slice(0, Constants.randomKeyLen);
         const id = linkKey.slice(Constants.randomKeyLen);
         const fullSecretKey = secretKeyInput.value + randomKey;
+
+        if (keptCopy && isFresh(keptCopy.t)) {
+            setPhase('decrypting');
+            const file = await decryptFile(keptCopy.c, fullSecretKey).catch(() => null);
+            setPhase('idle');
+            if (file) {
+                keptAt = keptCopy.t;
+                try {
+                    presentFile(file.meta, file.fileBytes, 0, 0);
+                } catch {
+                    showOnly(errorSection);
+                }
+                return;
+            }
+            void forgetKeptCopy(id);
+        }
+        if (keptCopy) {
+            keptCopy = null;
+            renderPreRead();
+        }
+
+        setPhase('downloading');
 
         let result;
         try {
@@ -181,23 +336,8 @@ if (form) {
                 // Older backends omit the header and only support one download.
                 const viewsLeft = typeof result.viewsLeft === 'number' ? result.viewsLeft : 0;
                 const expiresIn = typeof result.expiresIn === 'number' ? result.expiresIn : 0;
-                const save = () => {
-                    savedFile = {url: createFileUrl(meta, fileBytes), name: meta.name};
-                    saveFileUrl(savedFile.url, savedFile.name);
-                    const expiryClause = expiresIn > 0 ? ` It expires in ${formatRemaining(expiresIn)}.` : '';
-                    downloadState.textContent = viewsLeft > 0
-                        ? `This 1time link has ${viewsLeft} ${viewsLeft === 1 ? 'download' : 'downloads'} remaining and will self-destruct after the last.${expiryClause}`
-                        : 'One-time delivery complete. The encrypted file has been deleted from our servers.';
-                    saveAgainHint.toggleAttribute('hidden', viewsLeft > 0);
-                    showOnly(downloadedSection);
-                };
-                if (isProgramFile(meta.name)) {
-                    programName.textContent = meta.name;
-                    saveConfirmedProgram = save;
-                    showOnly(programSection);
-                } else {
-                    save();
-                }
+                if (viewsLeft === 0) keepCopy(id, result.data);
+                presentFile(meta, fileBytes, viewsLeft, expiresIn);
             } catch {
                 // Download succeeded (and was consumed) but decrypt failed — be honest.
                 setPhase('idle');
