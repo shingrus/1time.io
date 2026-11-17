@@ -1,7 +1,6 @@
 import {Constants, copyTextToClipboard, formatRemaining} from '../lib/util.js';
 import {parseSecretLink} from '../lib/protocol.mjs';
 import {isSelfHosted} from '../lib/siteConfig.js';
-import type {MadeLink} from './link-list.js';
 
 const loadStyles = async (id: string, importer: () => Promise<{default: string}>) => {
     if (document.getElementById(id)) return;
@@ -11,9 +10,6 @@ const loadStyles = async (id: string, importer: () => Promise<{default: string}>
     style.textContent = css;
     document.head.append(style);
 };
-
-const showsLinkList = matchMedia('(pointer: fine)').matches;
-const madeLinks: MadeLink[] = [];
 
 /** Replace a completed share form with its link-ready state. */
 export async function showLinkReady(
@@ -73,25 +69,17 @@ export async function showLinkReady(
         // A reference is optional; the link still works.
     }
 
-    const madeLink: MadeLink = {name: '', link};
-    if (showsLinkList) madeLinks.push(madeLink);
-
     void (async () => {
         try {
             if (!secretId) return;
             const {nameForId} = await import('../lib/secretName.js');
             const name = nameForId(secretId);
             if (!name) return;
-            madeLink.name = name;
             referenceName.textContent = name;
             referenceWrap.hidden = false;
             updateFooterMeta();
         } catch {
             // A reference is helpful but never required to use the link.
-        } finally {
-            if (madeLinks.length > 1) {
-                void import('./link-list.js').then(({renderLinkList}) => renderLinkList(clone.isConnected ? clone : formEl, madeLinks, text)).catch(() => {});
-            }
         }
     })();
 
