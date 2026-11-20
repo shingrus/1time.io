@@ -135,20 +135,11 @@
   cursor: pointer;
 }
 
-.link-inline-action-accent {
-  color: var(--accent);
-}
-
 .link-inline-action:hover,
 .link-inline-action:focus-visible,
 .link-extension:hover,
 .link-extension:focus-visible {
   color: var(--text);
-}
-
-.link-inline-action-accent:hover,
-.link-inline-action-accent:focus-visible {
-  color: var(--accent-hover);
 }
 
 .link-warning {
