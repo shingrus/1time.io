@@ -83,7 +83,6 @@ export async function showLinkReady(
     void showReference();
 
     const copiedLabel = text.copied ?? 'Copied';
-    const showQrLabel = text.qrShow ?? 'Show QR code';
     const hasCopyHint = matchMedia('(pointer: fine)').matches;
     if (hasCopyHint) {
         const resetHint = clone.querySelector<HTMLElement>('[data-reset-hint]')!;
@@ -158,52 +157,6 @@ export async function showLinkReady(
     const first = wireRow(firstRow, link);
     let newest = first;
 
-    const qrToggle = clone.querySelector<HTMLButtonElement>('[data-toggle-qr]')!;
-    const qrLabel = clone.querySelector<HTMLElement>('[data-qr-label]')!;
-    const qrPanel = clone.querySelector<HTMLElement>('[data-qr-panel]')!;
-    const qrSlot = clone.querySelector<HTMLElement>('[data-qr-slot]')!;
-    qrSlot.setAttribute('aria-label', text.qrLabel ?? `${isFile ? 'File' : 'Secret'} link QR code`);
-    let qrLoading = false;
-    let qrVisible = false;
-    let qrReady = false;
-
-    qrToggle.addEventListener('click', async () => {
-        if (qrLoading) return;
-        if (qrVisible) {
-            qrVisible = false;
-            qrPanel.hidden = true;
-            qrToggle.setAttribute('aria-expanded', 'false');
-            qrLabel.textContent = showQrLabel;
-            return;
-        }
-
-        if (!qrReady) {
-            qrLoading = true;
-            const qrFor = currentLink;
-            qrLabel.textContent = text.qrLoading ?? 'Loading QR...';
-            try {
-                const [{createQrSvg}] = await Promise.all([
-                    import('../lib/qr.js'),
-                    loadStyles('qr-panel-styles', () => import('../styles/qr-panel.css?raw')).catch(() => {}),
-                ]);
-                const svg = await createQrSvg(qrFor);
-                if (qrFor !== currentLink) throw new Error('Link changed');
-                qrSlot.innerHTML = svg;
-                qrReady = true;
-            } catch {
-                qrLabel.textContent = showQrLabel;
-                qrLoading = false;
-                return;
-            }
-            qrLoading = false;
-        }
-
-        qrVisible = true;
-        qrPanel.hidden = false;
-        qrToggle.setAttribute('aria-expanded', 'true');
-        qrLabel.textContent = text.qrHide ?? 'Hide QR code';
-    });
-
     const sameSecretBtn = clone.querySelector<HTMLButtonElement>('[data-same-secret]');
     const sameSecretError = clone.querySelector<HTMLElement>('[data-same-secret-error]');
     if (sameSecret && sameSecretBtn && sameSecretError) {
@@ -223,12 +176,6 @@ export async function showLinkReady(
                 newestRow = row;
                 newest = wireRow(row, newLink);
                 void showReference();
-                qrPanel.hidden = true;
-                qrSlot.textContent = '';
-                qrToggle.setAttribute('aria-expanded', 'false');
-                qrLabel.textContent = showQrLabel;
-                qrVisible = false;
-                qrReady = false;
                 sameSecretError.hidden = true;
                 if (await copyTextToClipboard(newLink)) newest.showCopyStatus(text.alreadyCopied ?? 'Already copied');
                 if (!isSelfHosted()) fetch('/pv?e=send-again', {keepalive: true, credentials: 'omit'}).catch(() => {});

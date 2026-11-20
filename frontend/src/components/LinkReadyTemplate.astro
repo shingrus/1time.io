@@ -60,16 +60,9 @@ const t = ui[lang];
             <button class="btn btn-secondary btn-sm" type="button" data-reset>
                 <span><span data-reset-label>{t.sendAnother}</span><kbd class="btn-kbd" data-reset-hint aria-hidden="true" hidden>↵</kbd></span>
             </button>
-            {sameSecret && <button class="btn btn-secondary btn-sm" type="button" data-same-secret hidden>{t.sameSecretLink}</button>}
-            <button class="link-inline-action" type="button" data-toggle-qr aria-expanded="false">
-                <span data-qr-label>{t.showQr}</span>
-            </button>
+            {sameSecret && <button class="link-inline-action" type="button" data-same-secret hidden>+ {t.sameSecretLink}</button>}
         </nav>
         {sameSecret && <p class="form-help form-help-error" data-same-secret-error role="alert" hidden></p>}
-
-        <section class="qr-panel" data-qr-panel hidden aria-live="polite">
-            <div class="qr-panel-code"><div data-qr-slot aria-label={t.qrLabel}></div></div>
-        </section>
 
         <div class="link-warning" role="note">
             <p data-link-warning></p>

@@ -59,10 +59,8 @@ interface UiText {
     copy: string;
     shareLink: string;
     linkActions: string;
-    showQr: string;
     sendAnother: string;
     sameSecretLink: string;
-    qrLabel: string;
     reference: string;
     fileTitle: string;
     chooseFile: string;
@@ -94,10 +92,8 @@ export const ui: Record<Lang, UiText> = {
         copy: 'Copy',
         shareLink: 'Share link',
         linkActions: 'Link actions',
-        showQr: 'Show QR code',
         sendAnother: 'Send another secret',
         sameSecretLink: 'New link for the same secret',
-        qrLabel: 'Secret link QR code',
         reference: 'Reference',
         fileTitle: 'Send a one-time file download link',
         chooseFile: 'Choose files',
@@ -127,10 +123,8 @@ export const ui: Record<Lang, UiText> = {
         copy: 'Copiar',
         shareLink: 'Compartir enlace',
         linkActions: 'Acciones del enlace',
-        showQr: 'Mostrar código QR',
         sendAnother: 'Enviar otro secreto',
         sameSecretLink: 'Nuevo enlace para el mismo secreto',
-        qrLabel: 'Código QR del enlace secreto',
         reference: 'Referencia',
         fileTitle: 'Envía documentos y archivos de forma segura',
         chooseFile: 'Elegir archivos',
@@ -160,10 +154,8 @@ export const ui: Record<Lang, UiText> = {
         copy: 'Copier',
         shareLink: 'Partager le lien',
         linkActions: 'Actions du lien',
-        showQr: 'Afficher le QR code',
         sendAnother: 'Envoyer un autre secret',
         sameSecretLink: 'Nouveau lien pour le même secret',
-        qrLabel: 'QR code du lien secret',
         reference: 'Référence',
         fileTitle: 'Envoyer un fichier en toute sécurité',
         chooseFile: 'Choisir des fichiers',
@@ -193,10 +185,8 @@ export const ui: Record<Lang, UiText> = {
         copy: 'コピー',
         shareLink: 'リンクを共有',
         linkActions: 'リンクの操作',
-        showQr: 'QRコードを表示',
         sendAnother: 'もう1件送る',
         sameSecretLink: '同じ内容で新しいリンクを作成',
-        qrLabel: 'ワンタイムURLのQRコード',
         reference: '参照',
         fileTitle: 'ワンタイムURLでファイルを安全に送る',
         chooseFile: 'ファイルを選択',
@@ -226,10 +216,8 @@ export const ui: Record<Lang, UiText> = {
         copy: 'Salin',
         shareLink: 'Bagikan link',
         linkActions: 'Aksi link',
-        showQr: 'Tampilkan kode QR',
         sendAnother: 'Kirim rahasia lain',
         sameSecretLink: 'Link baru untuk rahasia yang sama',
-        qrLabel: 'Kode QR link rahasia',
         reference: 'Referensi',
         fileTitle: 'Kirim file dan foto KTP dengan aman',
         chooseFile: 'Pilih file',
@@ -261,10 +249,8 @@ export const ui: Record<Lang, UiText> = {
         copy: 'Kopieren',
         shareLink: 'Link teilen',
         linkActions: 'Link-Aktionen',
-        showQr: 'QR-Code anzeigen',
         sendAnother: 'Weitere Nachricht senden',
         sameSecretLink: 'Neuer Link für dieselbe Nachricht',
-        qrLabel: 'QR-Code des geheimen Links',
         reference: 'Referenz',
         fileTitle: 'Dateien sicher versenden',
         chooseFile: 'Dateien auswählen',
@@ -296,10 +282,8 @@ export const ui: Record<Lang, UiText> = {
         copy: 'Copiar',
         shareLink: 'Compartilhar link',
         linkActions: 'Ações do link',
-        showQr: 'Mostrar QR code',
         sendAnother: 'Enviar outro segredo',
         sameSecretLink: 'Novo link para o mesmo segredo',
-        qrLabel: 'QR code do link secreto',
         reference: 'Referência',
         fileTitle: 'Enviar arquivos com segurança',
         chooseFile: 'Escolher arquivos',
@@ -364,7 +348,6 @@ interface LinkReadyText {
     warning: string;
     reset: string;
     inputLabel: string;
-    qrLabel: string;
 }
 
 interface IslandText {
@@ -385,9 +368,6 @@ interface IslandText {
     expiry: string;
     copied: string;
     alreadyCopied: string;
-    qrShow: string;
-    qrLoading: string;
-    qrHide: string;
     linkReady: Record<ShareKind, LinkReadyText>;
 }
 
@@ -412,9 +392,6 @@ const islandText: Record<Exclude<Lang, 'en'>, IslandText> = {
         expiry: 'Caduca en {duration}',
         copied: 'Copiado',
         alreadyCopied: 'Ya está copiado',
-        qrShow: 'Mostrar código QR',
-        qrLoading: 'Cargando QR...',
-        qrHide: 'Ocultar código QR',
         linkReady: {
             secret: {
                 title: 'Tu enlace secreto de un solo uso está listo',
@@ -424,7 +401,6 @@ const islandText: Record<Exclude<Lang, 'en'>, IslandText> = {
                     + 'la clave va en el fragmento #, que nunca llega a nuestros servidores.',
                 reset: 'Enviar otro secreto',
                 inputLabel: 'Enlace secreto de un solo uso',
-                qrLabel: 'Código QR del enlace secreto',
             },
             file: {
                 title: 'Tu enlace de archivo de un solo uso está listo',
@@ -434,7 +410,6 @@ const islandText: Record<Exclude<Lang, 'en'>, IslandText> = {
                     + 'la clave va en el fragmento #, que nunca llega a nuestros servidores.',
                 reset: 'Enviar otro archivo',
                 inputLabel: 'Enlace de archivo de un solo uso',
-                qrLabel: 'Código QR del enlace del archivo',
             },
         },
     },
@@ -456,9 +431,6 @@ const islandText: Record<Exclude<Lang, 'en'>, IslandText> = {
         expiry: 'Expire dans {duration}',
         copied: 'Copié',
         alreadyCopied: 'Déjà copié',
-        qrShow: 'Afficher le QR code',
-        qrLoading: 'Chargement du QR code…',
-        qrHide: 'Masquer le QR code',
         linkReady: {
             secret: {
                 title: 'Votre lien secret à usage unique est prêt',
@@ -468,7 +440,6 @@ const islandText: Record<Exclude<Lang, 'en'>, IslandText> = {
                     + 'la clé se trouve après le #, une partie que le navigateur n’envoie jamais à nos serveurs.',
                 reset: 'Envoyer un autre secret',
                 inputLabel: 'Lien secret à usage unique',
-                qrLabel: 'QR code du lien secret',
             },
             file: {
                 title: 'Votre lien de téléchargement à usage unique est prêt',
@@ -478,7 +449,6 @@ const islandText: Record<Exclude<Lang, 'en'>, IslandText> = {
                     + 'la clé se trouve après le #, une partie que le navigateur n’envoie jamais à nos serveurs.',
                 reset: 'Envoyer un autre fichier',
                 inputLabel: 'Lien de téléchargement à usage unique',
-                qrLabel: 'QR code du lien du fichier',
             },
         },
     },
@@ -500,9 +470,6 @@ const islandText: Record<Exclude<Lang, 'en'>, IslandText> = {
         expiry: '有効期限 {duration}',
         copied: 'コピーしました',
         alreadyCopied: 'コピー済み',
-        qrShow: 'QRコードを表示',
-        qrLoading: 'QRコードを読み込み中…',
-        qrHide: 'QRコードを隠す',
         linkReady: {
             secret: {
                 title: 'ワンタイムURLができました',
@@ -512,7 +479,6 @@ const islandText: Record<Exclude<Lang, 'en'>, IslandText> = {
                     + '復号キーは「#」より後ろにあり、サーバーには送られないためです。',
                 reset: 'もう1件送る',
                 inputLabel: 'ワンタイムURL',
-                qrLabel: 'ワンタイムURLのQRコード',
             },
             file: {
                 title: 'ファイルのワンタイムURLができました',
@@ -522,7 +488,6 @@ const islandText: Record<Exclude<Lang, 'en'>, IslandText> = {
                     + '復号キーは「#」より後ろにあり、サーバーには送られないためです。',
                 reset: '別のファイルを送る',
                 inputLabel: 'ファイルのワンタイムURL',
-                qrLabel: 'ファイルのワンタイムURLのQRコード',
             },
         },
     },
@@ -544,9 +509,6 @@ const islandText: Record<Exclude<Lang, 'en'>, IslandText> = {
         expiry: 'Berlaku {duration}',
         copied: 'Tersalin',
         alreadyCopied: 'Sudah tersalin',
-        qrShow: 'Tampilkan kode QR',
-        qrLoading: 'Memuat kode QR…',
-        qrHide: 'Sembunyikan kode QR',
         linkReady: {
             secret: {
                 title: 'Link sekali pakai kamu sudah siap',
@@ -556,7 +518,6 @@ const islandText: Record<Exclude<Lang, 'en'>, IslandText> = {
                     + 'kuncinya ada setelah tanda #, bagian yang tidak pernah dikirim ke server kami.',
                 reset: 'Kirim rahasia lain',
                 inputLabel: 'Link rahasia sekali pakai',
-                qrLabel: 'Kode QR link rahasia',
             },
             file: {
                 title: 'Link download sekali pakai kamu sudah siap',
@@ -566,7 +527,6 @@ const islandText: Record<Exclude<Lang, 'en'>, IslandText> = {
                     + 'kuncinya ada setelah tanda #, bagian yang tidak pernah dikirim ke server kami.',
                 reset: 'Kirim file lain',
                 inputLabel: 'Link download sekali pakai',
-                qrLabel: 'Kode QR link file',
             },
         },
     },
@@ -588,9 +548,6 @@ const islandText: Record<Exclude<Lang, 'en'>, IslandText> = {
         expiry: 'Läuft ab in {duration}',
         copied: 'Kopiert',
         alreadyCopied: 'Bereits kopiert',
-        qrShow: 'QR-Code anzeigen',
-        qrLoading: 'QR-Code wird geladen…',
-        qrHide: 'QR-Code ausblenden',
         linkReady: {
             secret: {
                 title: 'Ihr Einmal-Link ist fertig',
@@ -600,7 +557,6 @@ const islandText: Record<Exclude<Lang, 'en'>, IslandText> = {
                     + 'Der Schlüssel steht hinter dem #, einem Teil, den der Browser nie an unsere Server sendet.',
                 reset: 'Weitere Nachricht senden',
                 inputLabel: 'Geheimer Einmal-Link',
-                qrLabel: 'QR-Code des geheimen Links',
             },
             file: {
                 title: 'Ihr Einmal-Link zum Download ist fertig',
@@ -610,7 +566,6 @@ const islandText: Record<Exclude<Lang, 'en'>, IslandText> = {
                     + 'Der Schlüssel steht hinter dem #, einem Teil, den der Browser nie an unsere Server sendet.',
                 reset: 'Weitere Datei senden',
                 inputLabel: 'Einmal-Link zum Download',
-                qrLabel: 'QR-Code des Datei-Links',
             },
         },
     },
@@ -632,9 +587,6 @@ const islandText: Record<Exclude<Lang, 'en'>, IslandText> = {
         expiry: 'Expira em {duration}',
         copied: 'Copiado',
         alreadyCopied: 'Já copiado',
-        qrShow: 'Mostrar QR code',
-        qrLoading: 'Carregando QR code…',
-        qrHide: 'Ocultar QR code',
         linkReady: {
             secret: {
                 title: 'Seu link secreto de uso único está pronto',
@@ -644,7 +596,6 @@ const islandText: Record<Exclude<Lang, 'en'>, IslandText> = {
                     + 'a chave fica depois do #, uma parte que o navegador nunca envia aos nossos servidores.',
                 reset: 'Enviar outro segredo',
                 inputLabel: 'Link secreto de uso único',
-                qrLabel: 'QR code do link secreto',
             },
             file: {
                 title: 'Seu link de download de uso único está pronto',
@@ -654,7 +605,6 @@ const islandText: Record<Exclude<Lang, 'en'>, IslandText> = {
                     + 'a chave fica depois do #, uma parte que o navegador nunca envia aos nossos servidores.',
                 reset: 'Enviar outro arquivo',
                 inputLabel: 'Link de download de uso único',
-                qrLabel: 'QR code do link do arquivo',
             },
         },
     },
@@ -701,11 +651,7 @@ export function linkReadyData(lang: Lang, kind: ShareKind) {
         'data-warning': r.warning,
         'data-reset': r.reset,
         'data-input-label': r.inputLabel,
-        'data-qr-label': r.qrLabel,
         'data-copied': t.copied,
         'data-already-copied': t.alreadyCopied,
-        'data-qr-show': t.qrShow,
-        'data-qr-loading': t.qrLoading,
-        'data-qr-hide': t.qrHide,
     };
 }
