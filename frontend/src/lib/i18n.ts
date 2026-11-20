@@ -61,6 +61,7 @@ interface UiText {
     linkActions: string;
     showQr: string;
     sendAnother: string;
+    sameSecretLink: string;
     qrLabel: string;
     reference: string;
     fileTitle: string;
@@ -95,6 +96,7 @@ export const ui: Record<Lang, UiText> = {
         linkActions: 'Link actions',
         showQr: 'Show QR code',
         sendAnother: 'Send another secret',
+        sameSecretLink: 'New link for the same secret',
         qrLabel: 'Secret link QR code',
         reference: 'Reference',
         fileTitle: 'Send a one-time file download link',
@@ -127,6 +129,7 @@ export const ui: Record<Lang, UiText> = {
         linkActions: 'Acciones del enlace',
         showQr: 'Mostrar código QR',
         sendAnother: 'Enviar otro secreto',
+        sameSecretLink: 'Nuevo enlace para el mismo secreto',
         qrLabel: 'Código QR del enlace secreto',
         reference: 'Referencia',
         fileTitle: 'Envía documentos y archivos de forma segura',
@@ -159,6 +162,7 @@ export const ui: Record<Lang, UiText> = {
         linkActions: 'Actions du lien',
         showQr: 'Afficher le QR code',
         sendAnother: 'Envoyer un autre secret',
+        sameSecretLink: 'Nouveau lien pour le même secret',
         qrLabel: 'QR code du lien secret',
         reference: 'Référence',
         fileTitle: 'Envoyer un fichier en toute sécurité',
@@ -191,6 +195,7 @@ export const ui: Record<Lang, UiText> = {
         linkActions: 'リンクの操作',
         showQr: 'QRコードを表示',
         sendAnother: 'もう1件送る',
+        sameSecretLink: '同じ内容で新しいリンクを作成',
         qrLabel: 'ワンタイムURLのQRコード',
         reference: '参照',
         fileTitle: 'ワンタイムURLでファイルを安全に送る',
@@ -223,6 +228,7 @@ export const ui: Record<Lang, UiText> = {
         linkActions: 'Aksi link',
         showQr: 'Tampilkan kode QR',
         sendAnother: 'Kirim rahasia lain',
+        sameSecretLink: 'Link baru untuk rahasia yang sama',
         qrLabel: 'Kode QR link rahasia',
         reference: 'Referensi',
         fileTitle: 'Kirim file dan foto KTP dengan aman',
@@ -257,6 +263,7 @@ export const ui: Record<Lang, UiText> = {
         linkActions: 'Link-Aktionen',
         showQr: 'QR-Code anzeigen',
         sendAnother: 'Weitere Nachricht senden',
+        sameSecretLink: 'Neuer Link für dieselbe Nachricht',
         qrLabel: 'QR-Code des geheimen Links',
         reference: 'Referenz',
         fileTitle: 'Dateien sicher versenden',
@@ -291,6 +298,7 @@ export const ui: Record<Lang, UiText> = {
         linkActions: 'Ações do link',
         showQr: 'Mostrar QR code',
         sendAnother: 'Enviar outro segredo',
+        sameSecretLink: 'Novo link para o mesmo segredo',
         qrLabel: 'QR code do link secreto',
         reference: 'Referência',
         fileTitle: 'Enviar arquivos com segurança',
