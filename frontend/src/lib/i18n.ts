@@ -60,7 +60,6 @@ interface UiText {
     shareLink: string;
     linkActions: string;
     sendAnother: string;
-    sameSecretLink: string;
     reference: string;
     fileTitle: string;
     chooseFile: string;
@@ -93,7 +92,6 @@ export const ui: Record<Lang, UiText> = {
         shareLink: 'Share link',
         linkActions: 'Link actions',
         sendAnother: 'Send another secret',
-        sameSecretLink: 'New link for the same secret',
         reference: 'Reference',
         fileTitle: 'Send a one-time file download link',
         chooseFile: 'Choose files',
@@ -124,7 +122,6 @@ export const ui: Record<Lang, UiText> = {
         shareLink: 'Compartir enlace',
         linkActions: 'Acciones del enlace',
         sendAnother: 'Enviar otro secreto',
-        sameSecretLink: 'Nuevo enlace para el mismo secreto',
         reference: 'Referencia',
         fileTitle: 'Envía documentos y archivos de forma segura',
         chooseFile: 'Elegir archivos',
@@ -155,7 +152,6 @@ export const ui: Record<Lang, UiText> = {
         shareLink: 'Partager le lien',
         linkActions: 'Actions du lien',
         sendAnother: 'Envoyer un autre secret',
-        sameSecretLink: 'Nouveau lien pour le même secret',
         reference: 'Référence',
         fileTitle: 'Envoyer un fichier en toute sécurité',
         chooseFile: 'Choisir des fichiers',
@@ -186,7 +182,6 @@ export const ui: Record<Lang, UiText> = {
         shareLink: 'リンクを共有',
         linkActions: 'リンクの操作',
         sendAnother: 'もう1件送る',
-        sameSecretLink: '同じ内容で新しいリンクを作成',
         reference: '参照',
         fileTitle: 'ワンタイムURLでファイルを安全に送る',
         chooseFile: 'ファイルを選択',
@@ -217,7 +212,6 @@ export const ui: Record<Lang, UiText> = {
         shareLink: 'Bagikan link',
         linkActions: 'Aksi link',
         sendAnother: 'Kirim rahasia lain',
-        sameSecretLink: 'Link baru untuk rahasia yang sama',
         reference: 'Referensi',
         fileTitle: 'Kirim file dan foto KTP dengan aman',
         chooseFile: 'Pilih file',
@@ -250,7 +244,6 @@ export const ui: Record<Lang, UiText> = {
         shareLink: 'Link teilen',
         linkActions: 'Link-Aktionen',
         sendAnother: 'Weitere Nachricht senden',
-        sameSecretLink: 'Neuer Link für dieselbe Nachricht',
         reference: 'Referenz',
         fileTitle: 'Dateien sicher versenden',
         chooseFile: 'Dateien auswählen',
@@ -283,7 +276,6 @@ export const ui: Record<Lang, UiText> = {
         shareLink: 'Compartilhar link',
         linkActions: 'Ações do link',
         sendAnother: 'Enviar outro segredo',
-        sameSecretLink: 'Novo link para o mesmo segredo',
         reference: 'Referência',
         fileTitle: 'Enviar arquivos com segurança',
         chooseFile: 'Escolher arquivos',

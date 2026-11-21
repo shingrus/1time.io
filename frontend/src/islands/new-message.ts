@@ -71,36 +71,23 @@ if (form) {
         updateSubmitState(true);
         const durationSeconds = Number(durationSelect.value);
         const selectedViews = Number(viewsSelect.value);
-        const errorText = form.dataset.error ?? 'Could not create the link. Please try again.';
-        const create = () => createSecretLink(textarea.value, {
-            secretKey: keyInput.value,
-            durationSeconds,
-            views: selectedViews,
-        });
         try {
-            const {link} = await create();
+            const {link} = await createSecretLink(textarea.value, {
+                secretKey: keyInput.value,
+                durationSeconds,
+                views: selectedViews,
+            });
             if (link) {
                 await showLinkReady(form, link, () => {
                     textarea.value = '';
                     resetPassphrase();
                     updateSubmitState(false);
                     textarea.focus();
-                }, {
-                    uses: selectedViews,
-                    durationLabel: durationSelect.selectedOptions[0].text,
-                    sameSecret: {
-                        create: async () => {
-                            const {link: newLink} = await create();
-                            if (!newLink) throw new Error('No link');
-                            return newLink;
-                        },
-                        error: errorText,
-                    },
-                });
+                }, {uses: selectedViews, durationLabel: durationSelect.selectedOptions[0].text});
                 return;
             }
         } catch {
-            setError(errorText);
+            setError(form.dataset.error ?? 'Could not create the link. Please try again.');
         }
         updateSubmitState(false);
     });

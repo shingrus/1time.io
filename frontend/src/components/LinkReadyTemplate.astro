@@ -1,7 +1,7 @@
 ---
 import {linkReadyData, ui, type Lang} from '../lib/i18n.js';
 
-const {lang = 'en', kind = 'secret', sameSecret = false} = Astro.props as {lang?: Lang; kind?: 'secret' | 'file'; sameSecret?: boolean};
+const {lang = 'en', kind = 'secret'} = Astro.props as {lang?: Lang; kind?: 'secret' | 'file'};
 const t = ui[lang];
 ---
 <template id="link-ready-template" {...linkReadyData(lang, kind)}>
@@ -60,9 +60,7 @@ const t = ui[lang];
             <button class="btn btn-secondary btn-sm" type="button" data-reset>
                 <span><span data-reset-label>{t.sendAnother}</span><kbd class="btn-kbd" data-reset-hint aria-hidden="true" hidden>↵</kbd></span>
             </button>
-            {sameSecret && <button class="link-inline-action" type="button" data-same-secret hidden>+ {t.sameSecretLink}</button>}
         </nav>
-        {sameSecret && <p class="form-help form-help-error" data-same-secret-error role="alert" hidden></p>}
 
         <div class="link-warning" role="note">
             <p data-link-warning></p>
