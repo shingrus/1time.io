@@ -209,6 +209,7 @@ body {
 /* Shared accent text links in prose sections. */
 .article-body a:not(.btn),
 .seo-section p a,
+.whats-new a,
 .gen-seo-text a {
   color: var(--accent);
   text-decoration: underline;
@@ -217,6 +218,7 @@ body {
 
 .article-body a:not(.btn):hover,
 .seo-section p a:hover,
+.whats-new a:hover,
 .gen-seo-text a:hover {
   color: var(--accent-hover);
 }

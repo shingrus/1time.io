@@ -33,6 +33,7 @@
 }
 
 .share-flow-page:has(.link-display) .share-mode-nav,
+.share-flow-page:has(.link-display) .whats-new,
 .share-flow-page:has(.link-display) .seo-section {
   display: none;
 }
