@@ -14,8 +14,8 @@ export var Constants = {
     isDebug: import.meta.env.DEV,
     apiBaseUrl: import.meta.env.PUBLIC_API_URL || '/api/',
     maxFileSizeBytes: 250 * 1024 * 1024 - 64 * 1024,
-    // Reset-to-default select value; ProtocolConstants.defaultDuration is in days.
-    defaultDurationSeconds: ProtocolConstants.defaultDuration * SECONDS_PER_DAY,
+    // Web form preselect only; the API/CLI default stays ProtocolConstants.defaultDuration.
+    defaultDurationSeconds: 3 * SECONDS_PER_DAY,
 };
 
 export const SHARE_DURATION_OPTIONS = [
