@@ -8,10 +8,10 @@ import {absoluteUrl, siteHost} from '../../lib/siteConfig.js';
 
 const title = `Request a Password Securely — No Signup | ${siteHost}`;
 const description = 'Request a password securely: send a one-time link, they type it in, and only you can open it, once. Encrypted in the browser. Free, no signup.';
-const requestMessage = 'Hi, could you send me the login through this secure link? Type it in and press Send. It is encrypted in your browser, only I can open it, and it is deleted after I read it.';
+const requestMessage = 'Hi, could you send me the login through this secure link? Type it in and press Encrypt and send. It is encrypted in your browser, only I can open it, and it is deleted after I read it.';
 
 const faqItems = [
-    {question: 'Does the other person need an account?', answer: 'No. They open the link in any browser, type the password and press Send. You do not need an account either.'},
+    {question: 'Does the other person need an account?', answer: 'No. They open the link in any browser, type the password and press Encrypt and send. You do not need an account either.'},
     {question: 'Can 1time.io read the answer?', answer: 'No. The answer is encrypted in their browser with AES-256-GCM. The key is only in the request link and in your browser, never on our server, which stores ciphertext and hashes only.'},
     {question: 'What if someone else gets the request link?', answer: 'Anyone who has the link can answer it once, but nobody can read anything through it. Send the link only to the person you are asking. If the answer you get is not what you expected, create a new request.'},
     {question: 'How long does a request last?', answer: 'You choose from 1 hour to 7 days. After that the link stops working. An answer waits for you until you open it, at most until the request time runs out, and is deleted once you read it.'},
@@ -65,26 +65,22 @@ const jsonLd = [
         <nav class="share-mode-nav" aria-label="Choose sharing mode">
             <a href="/" class="share-mode-link">Text secret</a>
             <a href="/secure-file-sharing/" class="share-mode-link">One-time file</a>
-            <a href="/request-password-securely/" class="share-mode-link share-mode-link-active">Request</a>
+            <a href="/request-password-securely/" class="share-mode-link share-mode-link-active">Request<span>&nbsp;a secret</span></a>
         </nav>
 
         <form id="request-form" autocomplete="off" data-message={requestMessage}>
             <div class="share-card">
-                <p class="share-title">Request a password or secret</p>
-                <p class="form-help">Get a link for someone who has the secret you need. They fill it in, and only you can open it, once.</p>
+                <p class="share-title">Ask someone to send you a password</p>
+                <div class="article-body">
+                    <ol>
+                        <li>Get a link and send it to them.</li>
+                        <li>They type the password into it.</li>
+                        <li>It appears here, and only you can open it, once.</li>
+                    </ol>
+                </div>
 
                 <ShareOptions kind="request">
-                    <input
-                        slot="primary"
-                        class="form-input"
-                        id="request-label"
-                        type="text"
-                        maxlength="60"
-                        autocomplete="off"
-                        aria-label="Note for yourself (optional, only you see it)"
-                        placeholder="Note for yourself, e.g. Bob – AWS key"
-                    />
-                    <button slot="submit" class="btn btn-primary btn-lg" type="submit" disabled data-create>Create request link</button>
+                    <button slot="submit" class="btn btn-primary btn-lg" type="submit" disabled data-create>Get the link</button>
                 </ShareOptions>
 
                 <p class="form-help form-help-error share-form-error" data-error role="alert" hidden></p>
@@ -108,7 +104,7 @@ const jsonLd = [
             <ol>
                 <li>Create a request link above. Add a note so you remember who it is for.</li>
                 <li>Send the link by email, Slack, Teams or text, with a short message like the one below.</li>
-                <li>They open it, type the password and press Send. It is encrypted in their browser.</li>
+                <li>They open it, type the password and press Encrypt and send. It is encrypted in their browser.</li>
                 <li>You get the answer on this page or in <a href="/my-secrets/">My Secrets</a>, open it once, and it is deleted.</li>
             </ol>
             </div>

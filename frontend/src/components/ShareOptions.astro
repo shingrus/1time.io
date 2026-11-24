@@ -19,9 +19,9 @@ const usageOptions = [1, 2, 3, 5, 10];
     data-file-selected={isFile ? true : undefined}
     hidden={isFile}
 >
-    <div class:list={['share-settings-card', {'file-selection-card': isFile}]}>
+    {!isRequest && <div class:list={['share-settings-card', {'file-selection-card': isFile}]}>
         <slot name="primary" />
-    </div>
+    </div>}
 
     <div class="share-options-controls">
         {!isRequest && <div class="share-passphrase-field" id={`${kind}-passphrase-field`} data-passphrase-field hidden>
@@ -35,6 +35,8 @@ const usageOptions = [1, 2, 3, 5, 10];
                 spellcheck="false"
                 type="text"
             />
+        </div>}{isRequest && <div class="share-passphrase-field" id="request-note-field" data-passphrase-field hidden>
+            <input class="form-input" id="request-label" type="text" maxlength="60" autocomplete="off" aria-label="Note for yourself (optional, only you see it)" placeholder="Private note, e.g. Bob – AWS key" />
         </div>}
         <div class="share-options-line">
             <label class="share-option-field share-option-field-duration">
@@ -75,6 +77,12 @@ const usageOptions = [1, 2, 3, 5, 10];
                     <path d="M8 10V7a4 4 0 0 1 8 0v3"></path>
                 </svg>
                 <span>{t.setPassphrase}</span>
+            </button>}{isRequest && <button class="share-passphrase-add" type="button" data-passphrase-add aria-controls="request-note-field" aria-expanded="false">
+                <svg class="share-option-icon" aria-hidden="true" viewBox="0 0 24 24">
+                    <path d="M12 20h9"></path>
+                    <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"></path>
+                </svg>
+                <span>Add a note</span>
             </button>}
         </div>
         <div class="share-submit">

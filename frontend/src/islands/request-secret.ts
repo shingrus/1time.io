@@ -42,8 +42,8 @@ const formEl = document.querySelector<HTMLFormElement>('#request-form');
 const template = document.querySelector<HTMLTemplateElement>('#link-ready-template');
 if (formEl && template) {
     Object.assign(template.dataset, {
-        title: 'Your request link is ready',
-        usesOne: 'Waiting for their answer…',
+        title: 'Send this link to the person who has the password',
+        usesOne: 'Their answer will appear here and in My Secrets',
         warning: 'Anyone with this link can answer it once. Send it only to the person you expect the secret from.',
         reset: 'Request another secret',
         inputLabel: 'Request link',
@@ -51,7 +51,15 @@ if (formEl && template) {
     });
     const durationSelect = formEl.querySelector<HTMLSelectElement>('#duration')!;
     const labelInput = formEl.querySelector<HTMLInputElement>('#request-label')!;
+    const noteAddBtn = formEl.querySelector<HTMLButtonElement>('[data-passphrase-add]')!;
+    const noteField = formEl.querySelector<HTMLElement>('[data-passphrase-field]')!;
     const createBtn = formEl.querySelector<HTMLButtonElement>('[data-create]')!;
+    noteAddBtn.addEventListener('click', () => {
+        noteAddBtn.toggleAttribute('hidden', true);
+        noteAddBtn.setAttribute('aria-expanded', 'true');
+        noteField.toggleAttribute('hidden', false);
+        labelInput.focus();
+    });
     const errorEl = formEl.querySelector<HTMLElement>('[data-error]')!;
     createBtn.disabled = false;
 
@@ -109,13 +117,13 @@ if (formEl && template) {
             const live = status === 'checking' || status === 'waiting';
             const secondsLeft = entry ? Math.round((entry.expiresAt - Date.now()) / 1000) : 0;
             card.querySelector('[data-link-title]')!.textContent = live
-                ? 'Your request link is ready'
+                ? 'Send this link to the person who has the password'
                 : status === 'answered' ? 'Your secret has arrived' : status === 'expired' ? 'This request expired' : 'This request is closed';
             card.querySelector('[data-link-expiry]')!.textContent = live
                 ? secondsLeft > 0 ? `Expires in ${formatRemaining(secondsLeft)}` : 'Expires soon'
                 : status === 'answered' ? secondsLeft > 0 ? `Open within ${formatRemaining(secondsLeft)}. It opens once, then it is deleted.` : 'It opens once, then it is deleted' : status === 'expired' ? 'Nobody answered in time' : 'The answer was opened, or the request was removed or expired.';
             const uses = card.querySelector<HTMLElement>('[data-link-uses]')!;
-            uses.textContent = status === 'waiting' ? 'Waiting for their answer…' : 'Checking…';
+            uses.textContent = status === 'waiting' ? 'Their answer will appear here and in My Secrets' : 'Checking…';
             uses.hidden = !live;
             (uses.previousElementSibling as HTMLElement).hidden = !live;
             card.querySelector<HTMLElement>('.link-copy-control')!.hidden = !live;
@@ -144,9 +152,12 @@ if (formEl && template) {
             copyMessageBtn.hidden = true;
             rememberOpenRequest(undefined);
             labelInput.value = '';
+            noteField.toggleAttribute('hidden', true);
+            noteAddBtn.toggleAttribute('hidden', false);
+            noteAddBtn.setAttribute('aria-expanded', 'false');
             durationSelect.selectedIndex = Array.from(durationSelect.options).findIndex((o) => o.defaultSelected);
             watch.start();
-            labelInput.focus({preventScroll: true});
+            createBtn.focus({preventScroll: true});
         }, {
             durationLabel: formatRemaining(Math.max(Math.round((entry.expiresAt - Date.now()) / 1000), 1)),
             autoCopy,
@@ -225,7 +236,7 @@ if (formEl && template) {
         }
 
         createBtn.disabled = false;
-        createBtn.textContent = 'Create request link';
+        createBtn.textContent = 'Get the link';
     });
 
     const navigation = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming | undefined;

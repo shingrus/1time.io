@@ -117,7 +117,7 @@ if (form) {
             sendError.textContent = 'Could not send. Please try again.';
             sendError.toggleAttribute('hidden', false);
             sendBtn.disabled = message.value.length === 0;
-            sendBtn.textContent = 'Send';
+            sendBtn.textContent = 'Encrypt and send';
         });
     }
 }
