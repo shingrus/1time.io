@@ -38,12 +38,13 @@ const jsonLd = {
         <nav class="share-mode-nav" aria-label="Choose sharing mode">
             <a href="/" class="share-mode-link share-mode-link-active">Text secret</a>
             <a href="/secure-file-sharing/" class="share-mode-link">One-time file</a>
+            {!selfHosted && <a href="/request-password-securely/" class="share-mode-link">Request</a>}
         </nav>
 
         <NewMessageForm />
 
         {!selfHosted && (
-        <p class="form-help share-note whats-new"><strong>New</strong> · <time datetime="2026-11-15">Nov 15</time> · <a href="/secure-file-sharing/">Send several files as one link</a></p>
+        <p class="form-help share-note whats-new"><strong>New</strong> · <time datetime="2026-11-22">Nov 22</time> · <a href="/request-password-securely/">Ask someone to send you a secret</a></p>
         )}
 
         {!selfHosted && (

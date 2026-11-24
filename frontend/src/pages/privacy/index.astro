@@ -18,7 +18,7 @@ const description = `Privacy policy for ${siteHost}. Zero-knowledge architecture
 
     <div class="about-page">
         <h1>Privacy Policy</h1>
-        <p class="subtitle">Last updated: October 11, 2026</p>
+        <p class="subtitle">Last updated: November 22, 2026</p>
 
         <div class="about-section">
             <h2>The short version</h2>
@@ -45,6 +45,15 @@ const description = `Privacy policy for ${siteHost}. Zero-knowledge architecture
                     whichever comes first.
                 </li>
                 <li>
+                    <strong>Secret requests:</strong> When you ask someone to send you a secret, our
+                    server stores the request's random id and two one-way hashes: one lets the person
+                    with the link answer once, the other lets only your browser open the answer. The
+                    answer is encrypted in their browser and stored as ciphertext, like any secret. The
+                    request and its answer are deleted when you open the answer, when you remove a waiting
+                    request in My Secrets, or when the request's time runs out (at most 7 days). Its random id stays for 30 days past the time limit, so the link can't be reused. The keys stay in the link
+                    and in your browser and never reach our server.
+                </li>
+                <li>
                     <strong>Server logs:</strong> Standard web server logs (IP address, timestamp,
                     URL path, request size, user agent, browser language, and the referring site or
                     browser extension) are retained for up to 28 days for security, abuse prevention
@@ -53,11 +62,28 @@ const description = `Privacy policy for ${siteHost}. Zero-knowledge architecture
                 </li>
                 <li>
                     <strong>Aggregate counters:</strong> We maintain simple counters — total secrets
-                    shared and page visits by category (home, blog, tools). These are plain numbers,
+                    shared, secret requests created, answered and opened, and page visits by category
+                    (home, blog, tools). These are plain numbers,
                     not per-user or per-session. No IP addresses, no identifiers, no way to link
                     a count to any individual.
                 </li>
             </ul>
+        </div>
+
+        <div class="about-section">
+            <h2>Stored in your browser</h2>
+            <p>
+                Some things stay in your browser: your <a href="/my-secrets/">My Secrets</a> list (ids,
+                kind, views and times, never the content or keys) and, for each request, its keys and
+                your note. Keys, notes and content never reach our server. To check status, your browser
+                sends only the ids. Opening an answer, or removing a request that is still waiting, also
+                sends a one-way token made from its key, so our server can release the answer or close
+                the request. A request disappears when you open the answer or remove it, when the
+                answer is gone or can't be opened, or, once it's been expired for a day, the next time
+                you visit My Secrets. An open request page also remembers which request it's showing.
+                On phones, a secret or file you just opened can stay encrypted on your device for 10
+                minutes, so reopening the link still works. If you clear your browser's data, any unopened answer is lost.
+            </p>
         </div>
 
         <div class="about-section">

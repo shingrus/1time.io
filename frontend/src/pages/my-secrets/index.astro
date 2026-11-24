@@ -1,8 +1,9 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import InlineCss from '../../components/InlineCss.astro';
-import {siteHost} from '../../lib/siteConfig.js';
+import {isSelfHosted, siteHost} from '../../lib/siteConfig.js';
 
+const selfHosted = isSelfHosted();
 const title = `My Secrets — ${siteHost}`;
 const description = 'Track the one-time secrets you created in this browser.';
 ---
@@ -22,6 +23,7 @@ const description = 'Track the one-time secrets you created in this browser.';
                 secret contents or decryption keys.
             </p>
             <a class="btn btn-primary my-secrets-create" data-my-secrets-create href="/">Create a new secret</a>
+            {!selfHosted && <a class="btn btn-secondary my-secrets-create" href="/request-password-securely/">Request a secret</a>}
         </header>
 
         <p class="my-secrets-loading" data-my-secrets-loading>Loading…</p>
@@ -42,6 +44,13 @@ const description = 'Track the one-time secrets you created in this browser.';
         </button>
 
         <ul class="my-secrets-list" data-my-secrets-list hidden></ul>
+
+        <div data-requests-section hidden>
+            <h2 class="form-label" data-requests-heading>Requests</h2>
+            <ul class="my-secrets-list" data-requests></ul>
+            <button class="btn btn-secondary btn-sm" type="button" data-notify hidden>Notify me when answered</button>
+            <p class="form-help" data-notify-hint hidden>Notifications are blocked for this site in your browser settings.</p>
+        </div>
 
         <div class="my-secrets-empty" data-my-secrets-empty hidden>
             <p>No secrets yet.</p>

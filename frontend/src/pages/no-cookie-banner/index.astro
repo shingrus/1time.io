@@ -117,14 +117,18 @@ const jsonLd = {
         <div class="about-section">
             <h2>What your browser does store</h2>
             <p>
-                One thing, and only if you use it. If you open <a href="/my-secrets/">My Secrets</a>,
-                your browser keeps a local list of the links you created — their ids and timestamps.
-                Never the secrets themselves, and never the decryption keys, which we could not read
-                in any case.
+                Only what you use. <a href="/my-secrets/">My Secrets</a> keeps a list of
+                the links you created: just ids and times, never the secrets or their keys. And if you
+                ask someone for a secret, your browser keeps that request's keys, your note and which
+                one is open, so you can get the answer later. On phones, a secret or file you just opened
+                can stay encrypted on your device for 10 minutes, so reopening the link still works.
             </p>
             <p>
-                That list never leaves your device. We cannot see it. Clearing it deletes nothing on
-                our side. This is exactly the case the second exemption exists for: storage that
+                Only the ids leave your device to check if something still exists. Opening an answer or
+                removing a waiting request also sends a one-way token made from that request's key, never
+                the key itself. Clear the rest
+                and nothing changes on our side, but an unopened answer is gone.
+                This is exactly the case the second exemption exists for: storage that
                 <em>is</em> the service you asked for.
             </p>
         </div>

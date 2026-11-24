@@ -54,11 +54,14 @@ minutes. The same applies to whales and to any single-day record.
   undercounts from that date.
 - `X-Forwarded-For` is set to `$remote_addr`, not `$proxy_add_x_forwarded_for`,
   to avoid duplicating the client IP behind the proxy.
-- **Open:** Cloudflare WAF rules for credential-path probes and an `/api/*`
-  allowlist (7 real endpoints: `saveSecret get secretStatus saveFile getFile stat ss`);
+- **Open:** Cloudflare WAF rules for credential-path probes and an
   origin firewall restricting 80/443 to Cloudflare's 22 ranges. Do **not** enable
   Bot Fight Mode on the Free plan — it has no path exemptions and would break the
   CLI and Zapier app.
+- The Cloudflare `/api/*` allowlist is live (measured 2026-11-22) with the 9 real
+  endpoints `saveSecret get secretStatus saveFile getFile stat ss request answer`.
+  Unknown paths get a Cloudflare 403 that nginx logs never show, so a new endpoint
+  must be added there before deploy.
 - **Browser Integrity Check** (Cloudflare default) answers `Python-urllib` with
   403 / error 1010 at the edge, including `/api/*` — invisible in nginx logs, and
   it breaks Python stdlib clients built from `/developers`. A WAF custom rule

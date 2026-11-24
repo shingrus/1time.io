@@ -20,10 +20,11 @@ export async function showLinkReady(
         uses = 1,
         kind = 'secret',
         durationLabel = formatRemaining(Constants.defaultDurationSeconds),
-    }: {uses?: number; kind?: 'secret' | 'file'; durationLabel?: string} = {},
+        autoCopy: copyOnShow = true,
+    }: {uses?: number; kind?: 'secret' | 'file'; durationLabel?: string; autoCopy?: boolean} = {},
 ): Promise<void> {
     // Start the best-effort auto-copy immediately instead of putting it behind a CSS request.
-    const autoCopy = copyTextToClipboard(link);
+    const autoCopy = copyOnShow ? copyTextToClipboard(link) : Promise.resolve(false);
 
     // Success styles stay out of the initial page and fail open if their chunk is unavailable.
     await loadStyles('link-ready-styles', () => import('../styles/link.css?raw')).catch(() => {});
@@ -133,7 +134,7 @@ export async function showLinkReady(
             sheetOpen = true;
             // Called before anything else: share needs the click's transient activation.
             const sharing = navigator.share({text: link});
-            navigator.sendBeacon('/api/stat', new Blob([JSON.stringify({share: 'tap'})], {type: 'application/json'}));
+            navigator.sendBeacon('/api/stat', new Blob([JSON.stringify({share: text.share ?? 'tap'})], {type: 'application/json'}));
             try {
                 await sharing;
             } catch {
@@ -147,7 +148,7 @@ export async function showLinkReady(
     const copyShortcut = (event: KeyboardEvent) => {
         if (!(event.ctrlKey || event.metaKey) || event.altKey || event.shiftKey) return;
         if (event.key.toLowerCase() !== 'c' && (/^[a-z]$/i.test(event.key) || event.code !== 'KeyC')) return;
-        if (!clone.isConnected) return;
+        if (!copyBtn.offsetParent) return;
         const active = document.activeElement;
         const fieldSelection = (active instanceof HTMLInputElement || active instanceof HTMLTextAreaElement)
             && active.selectionStart !== active.selectionEnd;
@@ -158,7 +159,7 @@ export async function showLinkReady(
 
     resetBtn.addEventListener('click', () => {
         document.removeEventListener('keydown', copyShortcut);
-        if (!isSelfHosted()) fetch('/pv?e=send-another', {keepalive: true, credentials: 'omit'}).catch(() => {});
+        if (!isSelfHosted() && !text.share) fetch('/pv?e=send-another', {keepalive: true, credentials: 'omit'}).catch(() => {});
         if (copyTimer) clearTimeout(copyTimer);
         clone.replaceWith(formEl);
         onReset();

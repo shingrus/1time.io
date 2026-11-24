@@ -11,7 +11,8 @@ Expected Redis key layout from the Go app:
   - stats:views:day:YYYYMMDD:VIEWS           -> per-day secrets created with VIEWS views
   - stats:views:file:total:VIEWS             -> lifetime files created with VIEWS downloads
   - stats:views:file:day:YYYYMMDD:VIEWS      -> per-day files created with VIEWS downloads
-  - stats:share:day:YYYYMMDD                 -> hash: tap -> daily share-icon presses on the link-ready screen
+  - stats:share:day:YYYYMMDD                 -> hash: tap, request -> daily share-icon presses on the link-ready screen (request = request links, not exported)
+  - stats:request:day:YYYYMMDD               -> hash: created, answered, opened -> request-a-secret lifecycle per day
 
 Nginx sender/receiver analytics:
   - Reads /var/log/nginx/1time.access.log plus every rotated sibling
@@ -28,6 +29,10 @@ Nginx sender/receiver analytics:
     upload (POST /api/saveFile?u=<upload id>&i=&n=) logs one line per chunk
     and counts as a send only on its {"status":"ok","newId":...} line, once
     per upload id.
+  - Request a secret: POST /api/request with the 49-byte ok body is a
+    "requester", POST /api/answer with a body of at least 28 bytes is an
+    "answerer", and POST /api/get?r=1 is a "request_opener" (not a text
+    receiver). All three count as active users but not as senders/receivers.
   - senders/receivers/dau are unions of those identity sets, so a person who
     sends both a text and a file counts once.
   - wau is the same union taken across the trailing 7 days, deduplicated - a
@@ -125,6 +130,8 @@ FILE_VIEWS_TOTAL_KEY_PREFIX = "stats:views:file:total:"
 FILE_VIEWS_DAY_KEY_PREFIX = "stats:views:file:day:"
 SHARE_DAY_KEY_PREFIX = "stats:share:day:"
 SHARE_FIELDS = ("tap",)
+REQUEST_DAY_KEY_PREFIX = "stats:request:day:"
+REQUEST_FIELDS = ("created", "answered", "opened")
 
 SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
 TAB_NAMES = (
@@ -164,14 +171,28 @@ SENDER_RECEIVER_COLUMNS = [
     "whale_dau",
     "ext_saves",
     "cli_saves",
+    "requesters",
+    "answerers",
+    "request_openers",
 ]
-IDENTITY_METRICS = ("text_senders", "text_receivers", "file_senders", "file_receivers")
+IDENTITY_METRICS = (
+    "text_senders",
+    "text_receivers",
+    "file_senders",
+    "file_receivers",
+    "requesters",
+    "answerers",
+    "request_openers",
+)
 
 HOURLY_EVENT_FIELDS = {
     "text_senders": "text_saves",
     "file_senders": "file_saves",
     "text_receivers": "text_reads",
     "file_receivers": "file_reads",
+    "requesters": "requests",
+    "answerers": "answers",
+    "request_openers": "request_opens",
 }
 HOURLY_COLUMNS = [
     "ts_key",
@@ -189,6 +210,12 @@ HOURLY_COLUMNS = [
     "file_reads_cum",
     "actives",
     "dau_cum",
+    "requests",
+    "answers",
+    "request_opens",
+    "requests_cum",
+    "answers_cum",
+    "request_opens_cum",
 ]
 
 NGINX_COMBINED_LOG_RE = re.compile(
@@ -209,6 +236,10 @@ NGINX_COMBINED_LOG_RE = re.compile(
 TEXT_READ_FAILURE_BODY_SIZES = {39, 43, 44, 67, 71, 72}
 FILE_READ_FAILURE_BODY_SIZES = {22, 23}
 SAVE_FAILURE_BODY_SIZES = {30}
+# {"status":"ok","newId":"<23 chars>"}; exists/error bodies are 30-31 bytes.
+REQUEST_CREATED_BODY_SIZE = 49
+# {"status":"ok","expiresIn":N} is 29-34 bytes; error bodies are at most 23.
+ANSWER_OK_MIN_BODY_SIZE = 28
 CHUNKED_SAVE_DONE_BODY_SIZE = 48
 
 
@@ -407,11 +438,12 @@ def build_views_total_rows(
 def build_daily_field_rows(
     daily: Dict[str, Dict[str, int]],
     known_fields: Iterable[str] = (),
+    only_known: bool = False,
 ) -> List[List[object]]:
     days = sorted(daily)
     fields = sorted(
         set(known_fields)
-        | {field for values in daily.values() for field in values}
+        | (set() if only_known else {field for values in daily.values() for field in values})
     )
 
     rows: List[List[object]] = [["date", *fields]]
@@ -484,8 +516,18 @@ def successful_nginx_metric(entry: Dict[str, object]) -> str | None:
         if upload_id(entry):
             return "file_senders" if body_size == CHUNKED_SAVE_DONE_BODY_SIZE else None
         return None if body_size in SAVE_FAILURE_BODY_SIZES else "file_senders"
+    if path == "/api/request":
+        return "requesters" if body_size == REQUEST_CREATED_BODY_SIZE else None
+    if path == "/api/answer":
+        if body_size is not None and body_size >= ANSWER_OK_MIN_BODY_SIZE:
+            return "answerers"
+        return None
     if path == "/api/get":
-        return None if body_size in TEXT_READ_FAILURE_BODY_SIZES else "text_receivers"
+        if body_size in TEXT_READ_FAILURE_BODY_SIZES:
+            return None
+        if "1" in parse_qs(urlsplit(str(entry["target"])).query).get("r", []):
+            return "request_openers"
+        return "text_receivers"
     if path == "/api/getFile":
         return None if body_size in FILE_READ_FAILURE_BODY_SIZES else "file_receivers"
 
@@ -634,11 +676,14 @@ def build_sender_receiver_rows(
             len(file_receivers),
             len(senders),
             len(receivers),
-            len(senders | receivers),
+            len(active_by_day[day]),
             trailing_week_actives(day, active_by_day),
             len(bucket["whales"]),
             bucket["ext_saves"],
             bucket["cli_saves"],
+            len(bucket["requesters"]),
+            len(bucket["answerers"]),
+            len(bucket["request_openers"]),
         ])
 
     return rows
@@ -694,6 +739,12 @@ def build_hourly_rows(
                 cumulative["file_reads"],
                 len(bucket["actives"]),  # type: ignore[arg-type]
                 len(seen_today),
+                bucket["requests"],
+                bucket["answers"],
+                bucket["request_opens"],
+                cumulative["requests"],
+                cumulative["answers"],
+                cumulative["request_opens"],
             ])
 
     return rows
@@ -718,13 +769,12 @@ def collect_stats(
         key.removeprefix(STORED_FILE_DAY_KEY_PREFIX): safe_int(client.get(key))
         for key in scan_keys(client, f"{STORED_FILE_DAY_KEY_PREFIX}*")
     }
-    stored_daily_rows: List[List[object]] = [["day", "stored_secrets", "stored_files"]]
-    for day in sorted(set(stored_text_daily) | set(stored_file_daily)):
-        stored_daily_rows.append([
-            day,
-            stored_text_daily.get(day, 0),
-            stored_file_daily.get(day, 0),
-        ])
+    stored_daily_rows: List[List[object]] = [[
+        "day",
+        "stored_secrets",
+        "stored_files",
+        *[f"requests_{field}" for field in REQUEST_FIELDS],
+    ]]
 
     share_daily: Dict[str, Dict[str, int]] = {}
     for key in scan_keys(client, f"{SHARE_DAY_KEY_PREFIX}*"):
@@ -732,6 +782,21 @@ def collect_stats(
         share_daily[day] = {
             field: safe_int(count) for field, count in client.hgetall(key).items()
         }
+
+    request_daily: Dict[str, Dict[str, int]] = {}
+    for key in scan_keys(client, f"{REQUEST_DAY_KEY_PREFIX}*"):
+        day = key.removeprefix(REQUEST_DAY_KEY_PREFIX)
+        request_daily[day] = {
+            field: safe_int(count) for field, count in client.hgetall(key).items()
+        }
+
+    for day in sorted(set(stored_text_daily) | set(stored_file_daily) | set(request_daily)):
+        stored_daily_rows.append([
+            day,
+            stored_text_daily.get(day, 0),
+            stored_file_daily.get(day, 0),
+            *[request_daily.get(day, {}).get(field, 0) for field in REQUEST_FIELDS],
+        ])
 
     # View-counter distribution: how many secrets were created per view bucket.
     views_total = {
@@ -766,7 +831,7 @@ def collect_stats(
     views_total_sum = sum(views_total.values())
     file_views_total_sum = sum(file_views_total.values())
 
-    share_daily_rows = build_daily_field_rows(share_daily, known_fields=SHARE_FIELDS)
+    share_daily_rows = build_daily_field_rows(share_daily, known_fields=SHARE_FIELDS, only_known=True)
     share_window_tap = sum(day.get("tap", 0) for day in share_daily.values())
 
     overview_rows: List[List[object]] = [

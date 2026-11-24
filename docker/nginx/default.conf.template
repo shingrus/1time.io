@@ -69,6 +69,26 @@ server {
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
     }
 
+    location = /api/request {
+        include /etc/nginx/1time/limit-write.conf;
+        proxy_pass http://${BACKEND_UPSTREAM};
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-Host $host;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+
+    location = /api/answer {
+        include /etc/nginx/1time/limit-write.conf;
+        proxy_pass http://${BACKEND_UPSTREAM};
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-Host $host;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+
     location = /api/get {
         include /etc/nginx/1time/limit-read.conf;
         proxy_pass http://${BACKEND_UPSTREAM};
@@ -131,6 +151,11 @@ server {
     location = /f/ {
         include /etc/nginx/snippets/1time/security-headers-sensitive.conf;
         try_files /f/index.html =404;
+    }
+
+    location = /r/ {
+        include /etc/nginx/snippets/1time/security-headers-sensitive.conf;
+        try_files /r/index.html =404;
     }
 
     location / {

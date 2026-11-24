@@ -3,12 +3,14 @@ import {Constants, SHARE_DURATION_OPTIONS} from '../lib/util.js';
 import {ui, type Lang} from '../lib/i18n.js';
 
 interface Props {
-    kind?: 'secret' | 'file';
+    kind?: 'secret' | 'file' | 'request';
     lang?: Lang;
 }
 
 const {kind = 'secret', lang = 'en'} = Astro.props;
 const isFile = kind === 'file';
+const isRequest = kind === 'request';
+const durations = isRequest ? SHARE_DURATION_OPTIONS.filter(({value}) => value <= 604800) : SHARE_DURATION_OPTIONS;
 const t = ui[lang];
 const usageOptions = [1, 2, 3, 5, 10];
 ---
@@ -22,7 +24,7 @@ const usageOptions = [1, 2, 3, 5, 10];
     </div>
 
     <div class="share-options-controls">
-        <div class="share-passphrase-field" id={`${kind}-passphrase-field`} data-passphrase-field hidden>
+        {!isRequest && <div class="share-passphrase-field" id={`${kind}-passphrase-field`} data-passphrase-field hidden>
             <input
                 class="form-input"
                 id="secretKey"
@@ -33,7 +35,7 @@ const usageOptions = [1, 2, 3, 5, 10];
                 spellcheck="false"
                 type="text"
             />
-        </div>
+        </div>}
         <div class="share-options-line">
             <label class="share-option-field share-option-field-duration">
                 <svg class="share-option-icon" aria-hidden="true" viewBox="0 0 24 24">
@@ -41,12 +43,12 @@ const usageOptions = [1, 2, 3, 5, 10];
                     <path d="M12 7v5l3 2"></path>
                 </svg>
                 <select class="form-select share-option-select" id="duration" aria-label={t.expireAfter}>
-                    {SHARE_DURATION_OPTIONS.map(({value}) => (
+                    {durations.map(({value}) => (
                         <option value={value} selected={value === Constants.defaultDurationSeconds}>{t.durations[value]}</option>
                     ))}
                 </select>
             </label>
-            <label class="share-option-field share-option-field-usage">
+            {!isRequest && <label class="share-option-field share-option-field-usage">
                 {isFile ? (
                     <svg class="share-option-icon" aria-hidden="true" viewBox="0 0 24 24">
                         <path d="M12 3v12"></path>
@@ -66,14 +68,14 @@ const usageOptions = [1, 2, 3, 5, 10];
                         </option>
                     ))}
                 </select>
-            </label>
-            <button class="share-passphrase-add" type="button" data-passphrase-add aria-controls={`${kind}-passphrase-field`} aria-expanded="false">
+            </label>}
+            {!isRequest && <button class="share-passphrase-add" type="button" data-passphrase-add aria-controls={`${kind}-passphrase-field`} aria-expanded="false">
                 <svg class="share-option-icon" aria-hidden="true" viewBox="0 0 24 24">
                     <rect x="5" y="10" width="14" height="11" rx="2"></rect>
                     <path d="M8 10V7a4 4 0 0 1 8 0v3"></path>
                 </svg>
                 <span>{t.setPassphrase}</span>
-            </button>
+            </button>}
         </div>
         <div class="share-submit">
             <slot name="submit" />

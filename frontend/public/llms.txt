@@ -23,6 +23,7 @@ Key facts:
 
 - [Homepage / Secret sharing tool](https://1time.io/): Encrypt and share a one-time secret in the browser
 - [Share Passwords Securely](https://1time.io/share-password-securely/): Send passwords through self-destructing links
+- [Request a Password Securely](https://1time.io/request-password-securely/): Send someone a link so they can send you a password or other secret, encrypted so only you can open it, once
 - [One-Time File Sharing](https://1time.io/secure-file-sharing/): Encrypted, one-time download links for files up to 250 MB
 - [Share Passwords Safely in Microsoft Teams](https://1time.io/share-passwords-microsoft-teams/): Avoid Teams retention and eDiscovery exposure
 - [Password Generator](https://1time.io/password-generator/): Generate strong random passwords

@@ -123,6 +123,9 @@ var fileStorageDir = os.Getenv("FILE_STORAGE_DIR")
 
 var (
 	saveToStorageFunc             = saveToStorage
+	saveRequestFunc               = saveRequest
+	answerRequestFunc             = answerRequest
+	cancelRequestFunc             = cancelRequest
 	consumeMessageFromStorageFunc = consumeMessageFromStorage
 	reserveFileDownloadFunc       = reserveFileDownload
 	setFileRecordFunc             = func(storeKey string, value interface{}, ttl time.Duration) (bool, error) {
@@ -130,6 +133,7 @@ var (
 	}
 	incrementStoredFileCountersFunc = incrementStoredFileCounters
 	secretsExistFunc                = secretsExist
+	requestsPendingFunc             = requestsPending
 	fileUploadRedisFunc             = getRedisClient
 	publishFileUploadFunc           = publishFileUpload
 )
@@ -204,6 +208,133 @@ func apiSaveSecret(r *http.Request) (responseCode int, response []byte) {
 	return
 }
 
+func apiRequestSecret(r *http.Request) (responseCode int, response []byte) {
+	responseCode = 200
+
+	jResponse := struct {
+		Status string `json:"status"`
+		NewId  string `json:"newId"`
+	}{
+		Status: "error",
+		NewId:  "0",
+	}
+
+	r.Body = http.MaxBytesReader(nil, r.Body, maxLookupBodyBytes)
+
+	var payload struct {
+		Id              string `json:"id"`
+		ReadTokenHash   string `json:"readTokenHash"`
+		AnswerTokenHash string `json:"answerTokenHash"`
+		Duration        int    `json:"duration"`
+		Expiry          string `json:"expiry"`
+		Cancel          string `json:"cancel"`
+	}
+	dec := json.NewDecoder(r.Body)
+
+	if dec.More() {
+		if err := dec.Decode(&payload); err == nil {
+			if payload.Cancel != "" {
+				if isValidRequestID(payload.Id) && isValidHashedKey(payload.Cancel) {
+					status, cancelErr := cancelRequestFunc(payload.Id, payload.Cancel)
+					if cancelErr == nil {
+						jResponse.Status = status
+					} else if errors.Is(cancelErr, errConsumeMessageContention) {
+						responseCode = http.StatusServiceUnavailable
+						jResponse.Status = "retry"
+					} else {
+						log.Println(cancelErr)
+					}
+				}
+				response, _ = json.Marshal(jResponse)
+				return
+			}
+			clientDay, expiryOK := parseExpiryDay(payload.Expiry)
+			if isValidRequestID(payload.Id) && isValidHashedKey(payload.ReadTokenHash) && isValidHashedKey(payload.AnswerTokenHash) && expiryOK {
+				if payload.Duration <= 0 || payload.Duration > maxRequestDuration {
+					payload.Duration = defaultDuration
+				}
+				if !expiryDayMatches(clientDay, time.Now(), payload.Duration) {
+					jResponse.Status = "clock"
+					response, _ = json.Marshal(jResponse)
+					return
+				}
+
+				status, err := saveRequestFunc(payload.Id, SecretRequest{
+					ReadTokenHash:   payload.ReadTokenHash,
+					AnswerTokenHash: payload.AnswerTokenHash,
+					Duration:        payload.Duration,
+				})
+				if err == nil {
+					jResponse.Status = status
+					if status == "ok" {
+						jResponse.NewId = payload.Id
+						appStats.Record(requestCounter, "created")
+					}
+				} else if errors.Is(err, errConsumeMessageContention) {
+					responseCode = http.StatusServiceUnavailable
+					jResponse.Status = "retry"
+				} else {
+					log.Println(err)
+				}
+			}
+		} else {
+			log.Println(err)
+		}
+	}
+
+	response, _ = json.Marshal(jResponse)
+	return
+}
+
+func apiAnswerRequest(r *http.Request) (responseCode int, response []byte) {
+	responseCode = 200
+
+	jResponse := struct {
+		Status    string `json:"status"`
+		ExpiresIn int    `json:"expiresIn,omitempty"`
+	}{
+		Status: "error",
+	}
+
+	r.Body = http.MaxBytesReader(nil, r.Body, maxSaveSecretBodyBytes)
+
+	var payload struct {
+		Id            string `json:"id"`
+		AnswerToken   string `json:"answerToken"`
+		SecretMessage string `json:"secretMessage"`
+	}
+	dec := json.NewDecoder(r.Body)
+
+	if dec.More() {
+		if err := dec.Decode(&payload); err == nil {
+			if !isValidRequestID(payload.Id) {
+				jResponse.Status = "no message"
+			} else if !isValidHashedKey(payload.AnswerToken) {
+				jResponse.Status = "wrong key"
+			} else if len(payload.SecretMessage) > 0 {
+				status, expiresIn, err := answerRequestFunc(payload.Id, payload.AnswerToken, payload.SecretMessage)
+				if err == nil {
+					jResponse.Status = status
+					if status == "ok" {
+						jResponse.ExpiresIn = expiresIn
+						appStats.Record(requestCounter, "answered")
+					}
+				} else if errors.Is(err, errConsumeMessageContention) {
+					responseCode = http.StatusServiceUnavailable
+					jResponse.Status = "retry"
+				} else {
+					log.Println(err)
+				}
+			}
+		} else {
+			log.Println(err)
+		}
+	}
+
+	response, _ = json.Marshal(jResponse)
+	return
+}
+
 /*
 *
 Good to have this api for everyone
@@ -241,7 +372,7 @@ func apiGetMessage(r *http.Request) (responseCode int, response []byte) {
 			// A malformed id cannot name an existing secret ("no message"); a
 			// malformed key can never match ("wrong key"). Both mirror what the
 			// storage layer would answer, so no new response shape is introduced.
-			if !isValidStorageID(payload.Id) {
+			if !isValidStorageID(payload.Id) && !isValidRequestID(payload.Id) {
 				jResponse.Status = "no message"
 			} else if !isValidHashedKey(payload.HashedKey) {
 				jResponse.Status = "wrong key"
@@ -257,6 +388,9 @@ func apiGetMessage(r *http.Request) (responseCode int, response []byte) {
 						jResponse.CryptedMessage = storedMessage.Message
 						jResponse.ViewsLeft = viewsLeft
 						jResponse.ExpiresIn = expiresIn
+						if isValidRequestID(payload.Id) {
+							appStats.Record(requestCounter, "opened")
+						}
 					case "wrong key":
 						jResponse.Status = "wrong key"
 						log.Println("Hashes aren't equal")
@@ -287,6 +421,7 @@ func apiSecretStatus(r *http.Request) (responseCode int, response []byte) {
 	jResponse := struct {
 		Status  string          `json:"status"`
 		Secrets map[string]bool `json:"secrets"`
+		Pending any             `json:"pending,omitempty"`
 	}{
 		Status:  "error",
 		Secrets: map[string]bool{},
@@ -304,7 +439,7 @@ func apiSecretStatus(r *http.Request) (responseCode int, response []byte) {
 			// Keep only well-formed storage ids, capped at maxStatusIDs.
 			ids := make([]string, 0, len(payload.Ids))
 			for _, id := range payload.Ids {
-				if !isValidStorageID(id) {
+				if !isValidStorageID(id) && !isValidRequestID(id) {
 					continue
 				}
 				ids = append(ids, id)
@@ -312,10 +447,25 @@ func apiSecretStatus(r *http.Request) (responseCode int, response []byte) {
 					break
 				}
 			}
-			statuses, err := secretsExistFunc(ids)
+			// Pending is read before the answers: an answer landing in between reads as answered, never as gone.
+			var pending []string
+			var err error
+			queriedRequests := false
+			if requestIDs := filterRequestIDs(ids); len(requestIDs) > 0 {
+				queriedRequests = true
+				pending, err = requestsPendingFunc(requestIDs)
+			}
+			var statuses map[string]bool
+			if err == nil {
+				statuses, err = secretsExistFunc(ids)
+			}
 			if err == nil {
 				jResponse.Status = "ok"
 				jResponse.Secrets = statuses
+				if queriedRequests {
+					// Present (even empty) whenever request ids were asked about, so clients can tell it from an old backend.
+					jResponse.Pending = append([]string{}, pending...)
+				}
 			} else {
 				log.Println(err)
 			}
@@ -326,6 +476,16 @@ func apiSecretStatus(r *http.Request) (responseCode int, response []byte) {
 
 	response, _ = json.Marshal(jResponse)
 	return
+}
+
+func filterRequestIDs(ids []string) []string {
+	var requestIDs []string
+	for _, id := range ids {
+		if isValidRequestID(id) {
+			requestIDs = append(requestIDs, id)
+		}
+	}
+	return requestIDs
 }
 
 func parseFileLifetime(durationStr, viewsStr string) (duration int, views int) {
@@ -936,6 +1096,10 @@ func apiHandler(w http.ResponseWriter, r *http.Request) {
 		responseCode, response = apiGetMessage(r)
 	case "secretStatus":
 		responseCode, response = apiSecretStatus(r)
+	case "request":
+		responseCode, response = apiRequestSecret(r)
+	case "answer":
+		responseCode, response = apiAnswerRequest(r)
 	case "saveFile":
 		responseCode, response = apiSaveSecretFile(r)
 	case "getFile":

@@ -82,3 +82,43 @@ export function recordSecret({id, kind = 'message', durationSeconds = 86400, vie
     list.push(entry);
     saveSecrets(list.length > MAX_ENTRIES ? list.slice(list.length - MAX_ENTRIES) : list);
 }
+
+export const API_BASE = import.meta.env.PUBLIC_API_URL || '/api/';
+
+const STATUS_TIMEOUT_MS = 10000;
+
+/**
+ * Which ids still exist on the server, plus the request ids still waiting for
+ * an answer (undefined when the backend predates `pending`), or null when the
+ * check failed.
+ *
+ * @param {string[]} ids
+ * @returns {Promise<{secrets: Record<string, boolean>, pending?: string[]} | null>}
+ */
+export async function fetchStatusReport(ids) {
+    if (!ids.length) return {secrets: {}};
+    try {
+        const res = await fetch(`${API_BASE}secretStatus`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ids}),
+            signal: AbortSignal.timeout?.(STATUS_TIMEOUT_MS),
+        });
+        if (!res.ok) return null;
+        const data = await res.json();
+        if (data.status !== 'ok' || !data.secrets) return null;
+        return {secrets: data.secrets, pending: Array.isArray(data.pending) ? data.pending : undefined};
+    } catch {
+        return null;
+    }
+}
+
+/**
+ * Which ids still exist on the server, or null when the check failed.
+ *
+ * @param {string[]} ids
+ * @returns {Promise<Record<string, boolean> | null>}
+ */
+export async function fetchSecretStatuses(ids) {
+    return (await fetchStatusReport(ids))?.secrets ?? null;
+}

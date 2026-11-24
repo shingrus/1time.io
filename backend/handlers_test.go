@@ -2,6 +2,8 @@ package main
 
 import (
 	"bytes"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"mime/multipart"
@@ -23,10 +25,16 @@ import (
 // base64url (see generateStorageID) and hashed keys are 64-char lowercase hex.
 const (
 	testStorageID = "msg123AAAAAAAAAAAAAAAA"
+	testRequestID = "req1234AAAAAAAAAAAAAAAA"
 	testHashedKey = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
 	testFileID    = "file123BBBBBBBBBBBBBBB"
 	testFileHash  = "fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210"
 )
+
+func expiryFor(duration int) string {
+	day := int((time.Now().UnixMilli()+int64(duration)*1000+86399999)/86400000) % expiryDays
+	return string([]byte{expiryAlphabet[day/62], expiryAlphabet[day%62]})
+}
 
 func restoreHandlerHooks(t *testing.T) {
 	t.Helper()
@@ -37,12 +45,14 @@ func restoreHandlerHooks(t *testing.T) {
 	originalSetFileRecord := setFileRecordFunc
 	originalIncrementStoredFileCounters := incrementStoredFileCountersFunc
 	originalSecretsExist := secretsExistFunc
+	originalRequestsPending := requestsPendingFunc
 	originalIncrementStoredSecretCounters := incrementStoredSecretCountersFunc
 	originalPublishFileUpload := publishFileUploadFunc
 
 	// Stats are a side effect of saving; stub them out so tests do not need Redis.
 	incrementStoredSecretCountersFunc = func(views int, now time.Time) error { return nil }
 	incrementStoredFileCountersFunc = func(views int, now time.Time) error { return nil }
+	requestsPendingFunc = func([]string) ([]string, error) { return nil, nil }
 
 	t.Cleanup(func() {
 		saveToStorageFunc = originalSaveToStorage
@@ -51,6 +61,7 @@ func restoreHandlerHooks(t *testing.T) {
 		setFileRecordFunc = originalSetFileRecord
 		incrementStoredFileCountersFunc = originalIncrementStoredFileCounters
 		secretsExistFunc = originalSecretsExist
+		requestsPendingFunc = originalRequestsPending
 		incrementStoredSecretCountersFunc = originalIncrementStoredSecretCounters
 		publishFileUploadFunc = originalPublishFileUpload
 	})
@@ -1789,5 +1800,728 @@ func TestAPISaveFileChunkedParallelSliceStartingTheUploadIsNotDeclined(t *testin
 	}
 	if entries, _ := os.ReadDir(fileStorageDir); len(entries) != 1 {
 		t.Fatalf("storage dir has %d blobs, want only the published one", len(entries))
+	}
+}
+
+func sha256Hex(value string) string {
+	sum := sha256.Sum256([]byte(value))
+	return hex.EncodeToString(sum[:])
+}
+
+func useRedisForRequests(t *testing.T, client *redis.Client) {
+	t.Helper()
+	restoreHandlerHooks(t)
+
+	originalSaveRequest := saveRequestFunc
+	originalAnswerRequest := answerRequestFunc
+	originalCancelRequest := cancelRequestFunc
+	saveRequestFunc = func(id string, request SecretRequest) (string, error) {
+		return saveRequestWithClient(client, id, request)
+	}
+	answerRequestFunc = func(id, answerToken, message string) (string, int, error) {
+		return answerRequestWithClient(client, id, answerToken, message)
+	}
+	cancelRequestFunc = func(id, readToken string) (string, error) {
+		return cancelRequestWithClient(client, id, readToken)
+	}
+	consumeMessageFromStorageFunc = func(key, hashedKey string) (StoredMessage, int, int, string, error) {
+		return consumeMessageFromStorageWithClient(client, key, hashedKey)
+	}
+	t.Cleanup(func() {
+		saveRequestFunc = originalSaveRequest
+		answerRequestFunc = originalAnswerRequest
+		cancelRequestFunc = originalCancelRequest
+	})
+}
+
+func saveTestRequest(t *testing.T, client *redis.Client, request SecretRequest) string {
+	t.Helper()
+
+	status, err := saveRequestWithClient(client, testRequestID, request)
+	if err != nil || status != "ok" {
+		t.Fatalf("saveRequestWithClient() = %q, %v, want ok", status, err)
+	}
+	return testRequestID
+}
+
+func postRequestAPI(t *testing.T, handler func(*http.Request) (int, []byte), path, body string) (int, map[string]interface{}) {
+	t.Helper()
+
+	code, raw := handler(httptest.NewRequest(http.MethodPost, path, strings.NewReader(body)))
+	var decoded map[string]interface{}
+	if err := json.Unmarshal(raw, &decoded); err != nil {
+		t.Fatalf("response %s is not JSON: %v", raw, err)
+	}
+	return code, decoded
+}
+
+func TestRequestAnswerGetRoundTrip(t *testing.T) {
+	client := startTestRedis(t)
+	useRedisForRequests(t, client)
+
+	readToken := strings.Repeat("a", hashedKeyHexLen)
+	answerToken := strings.Repeat("b", hashedKeyHexLen)
+	_, created := postRequestAPI(t, apiRequestSecret, "/api/request",
+		`{"id":"`+testRequestID+`","readTokenHash":"`+sha256Hex(readToken)+`","answerTokenHash":"`+sha256Hex(answerToken)+`","duration":3600,"expiry":"`+expiryFor(3600)+`"}`)
+	id, _ := created["newId"].(string)
+	if created["status"] != "ok" || id != testRequestID {
+		t.Fatalf("create response = %v, want ok with the client's id", created)
+	}
+	if ttl := client.TTL(getRequestKey(id)).Val(); ttl <= 0 || ttl > time.Hour {
+		t.Fatalf("request ttl = %s, want within 1h", ttl)
+	}
+
+	if client.Exists(getStoreKey(id)).Val() != 0 {
+		t.Fatal("a waiting request must not exist as a secret")
+	}
+
+	_, answered := postRequestAPI(t, apiAnswerRequest, "/api/answer",
+		`{"id":"`+id+`","answerToken":"`+answerToken+`","secretMessage":"ciphertext"}`)
+	if answered["status"] != "ok" || answered["expiresIn"] != float64(3600) {
+		t.Fatalf("answer response = %v, want ok with expiresIn 3600", answered)
+	}
+	if client.Exists(getRequestKey(id)).Val() != 0 {
+		t.Fatal("request record must be deleted by the answer")
+	}
+	if ttl := client.TTL(getStoreKey(id)).Val(); ttl <= 0 || ttl > time.Hour {
+		t.Fatalf("answer ttl = %s, want within the request's 1h", ttl)
+	}
+
+	if client.Exists(getStoreKey(id)).Val() != 1 {
+		t.Fatal("answered request must exist as a secret, which is what /api/secretStatus checks")
+	}
+
+	_, wrongRead := postRequestAPI(t, apiGetMessage, "/api/get", `{"id":"`+id+`","hashedKey":"`+answerToken+`"}`)
+	if wrongRead["status"] != "wrong key" {
+		t.Fatalf("answer token must not read the answer, got %v", wrongRead)
+	}
+
+	_, read := postRequestAPI(t, apiGetMessage, "/api/get", `{"id":"`+id+`","hashedKey":"`+readToken+`"}`)
+	if read["status"] != "ok" || read["cryptedMessage"] != "ciphertext" {
+		t.Fatalf("get response = %v, want the ciphertext", read)
+	}
+
+	_, again := postRequestAPI(t, apiGetMessage, "/api/get", `{"id":"`+id+`","hashedKey":"`+readToken+`"}`)
+	if again["status"] != "no message" {
+		t.Fatalf("second read = %v, want no message", again)
+	}
+}
+
+func TestAnswerRequestRejectsWrongTokenAndKeepsRequest(t *testing.T) {
+	client := startTestRedis(t)
+	useRedisForRequests(t, client)
+
+	answerToken := strings.Repeat("b", hashedKeyHexLen)
+	id := saveTestRequest(t, client, SecretRequest{
+		ReadTokenHash:   sha256Hex(strings.Repeat("a", hashedKeyHexLen)),
+		AnswerTokenHash: sha256Hex(answerToken),
+		Duration:        60,
+	})
+
+	_, wrong := postRequestAPI(t, apiAnswerRequest, "/api/answer",
+		`{"id":"`+id+`","answerToken":"`+strings.Repeat("c", hashedKeyHexLen)+`","secretMessage":"x"}`)
+	if wrong["status"] != "wrong key" {
+		t.Fatalf("wrong token response = %v, want wrong key", wrong)
+	}
+	if client.Exists(getRequestKey(id)).Val() != 1 || client.Exists(getStoreKey(id)).Val() != 0 {
+		t.Fatal("a wrong token must leave the request pending and write no answer")
+	}
+
+	_, hashAsToken := postRequestAPI(t, apiAnswerRequest, "/api/answer",
+		`{"id":"`+id+`","answerToken":"`+sha256Hex(answerToken)+`","secretMessage":"x"}`)
+	if hashAsToken["status"] != "wrong key" {
+		t.Fatalf("the stored hash must not work as a token, got %v", hashAsToken)
+	}
+}
+
+func TestAnswerRequestOnlyOnce(t *testing.T) {
+	client := startTestRedis(t)
+	useRedisForRequests(t, client)
+
+	answerToken := strings.Repeat("b", hashedKeyHexLen)
+	id := saveTestRequest(t, client, SecretRequest{
+		ReadTokenHash:   sha256Hex(strings.Repeat("a", hashedKeyHexLen)),
+		AnswerTokenHash: sha256Hex(answerToken),
+		Duration:        60,
+	})
+	body := `{"id":"` + id + `","answerToken":"` + answerToken + `","secretMessage":"first"}`
+
+	_, first := postRequestAPI(t, apiAnswerRequest, "/api/answer", body)
+	_, second := postRequestAPI(t, apiAnswerRequest, "/api/answer", strings.Replace(body, "first", "second", 1))
+	if first["status"] != "ok" || second["status"] != "no message" {
+		t.Fatalf("answers = %v then %v, want ok then no message", first, second)
+	}
+
+	var stored StoredMessage
+	raw, _ := client.Get(getStoreKey(id)).Result()
+	if err := json.Unmarshal([]byte(raw), &stored); err != nil {
+		t.Fatalf("stored answer is not StoredMessage JSON: %v", err)
+	}
+	if stored.Message != "first" || stored.Version != secretSchemeV3 || !stored.Encrypted || stored.Views != 0 {
+		t.Fatalf("stored answer = %+v, want the first answer as a single-view v3 record", stored)
+	}
+}
+
+func TestAnswerRequestConcurrentAnswersWriteOne(t *testing.T) {
+	client := startTestRedis(t)
+
+	answerToken := strings.Repeat("b", hashedKeyHexLen)
+	id := saveTestRequest(t, client, SecretRequest{
+		ReadTokenHash:   sha256Hex(strings.Repeat("a", hashedKeyHexLen)),
+		AnswerTokenHash: sha256Hex(answerToken),
+		Duration:        60,
+	})
+
+	var wg sync.WaitGroup
+	var accepted int32
+	for i := 0; i < 8; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			status, _, _ := answerRequestWithClient(client, id, answerToken, "ciphertext")
+			if status == "ok" {
+				atomic.AddInt32(&accepted, 1)
+			}
+		}()
+	}
+	wg.Wait()
+
+	if accepted != 1 {
+		t.Fatalf("accepted answers = %d, want exactly 1", accepted)
+	}
+}
+
+func TestAnswerRequestUnknownOrExpiredID(t *testing.T) {
+	client := startTestRedis(t)
+	useRedisForRequests(t, client)
+
+	_, unknown := postRequestAPI(t, apiAnswerRequest, "/api/answer",
+		`{"id":"`+testRequestID+`","answerToken":"`+testHashedKey+`","secretMessage":"x"}`)
+	if unknown["status"] != "no message" {
+		t.Fatalf("unknown id response = %v, want no message", unknown)
+	}
+
+	id := saveTestRequest(t, client, SecretRequest{
+		ReadTokenHash:   sha256Hex(testHashedKey),
+		AnswerTokenHash: sha256Hex(testHashedKey),
+		Duration:        1,
+	})
+	time.Sleep(1200 * time.Millisecond)
+
+	_, expired := postRequestAPI(t, apiAnswerRequest, "/api/answer",
+		`{"id":"`+id+`","answerToken":"`+testHashedKey+`","secretMessage":"x"}`)
+	if expired["status"] != "no message" {
+		t.Fatalf("expired request response = %v, want no message", expired)
+	}
+}
+
+func TestAPIRequestSecretClampsDurationAndRejectsMalformedHashes(t *testing.T) {
+	restoreHandlerHooks(t)
+
+	var saved SecretRequest
+	saveRequestFunc = func(_ string, request SecretRequest) (string, error) {
+		saved = request
+		return "ok", nil
+	}
+	t.Cleanup(func() { saveRequestFunc = saveRequest })
+
+	for duration, want := range map[int]int{0: defaultDuration, -5: defaultDuration, 604801: defaultDuration, 604800: 604800, 60: 60} {
+		_, response := postRequestAPI(t, apiRequestSecret, "/api/request",
+			`{"id":"`+testRequestID+`","readTokenHash":"`+testHashedKey+`","answerTokenHash":"`+testFileHash+`","duration":`+strconv.Itoa(duration)+`,"expiry":"`+expiryFor(want)+`"}`)
+		if response["status"] != "ok" || saved.Duration != want {
+			t.Fatalf("duration %d -> response %v, stored %d, want ok and %d", duration, response, saved.Duration, want)
+		}
+	}
+	if saved.ReadTokenHash != testHashedKey || saved.AnswerTokenHash != testFileHash {
+		t.Fatalf("stored hashes = %+v, want the submitted ones", saved)
+	}
+
+	saveRequestFunc = func(string, SecretRequest) (string, error) {
+		t.Fatal("malformed request reached storage")
+		return "", nil
+	}
+	for _, body := range []string{
+		``,
+		`not json`,
+		`{}`,
+		`{"id":"` + testRequestID + `","readTokenHash":"` + testHashedKey + `"}`,
+		`{"id":"` + testRequestID + `","readTokenHash":"` + testHashedKey + `","answerTokenHash":"short"}`,
+		`{"id":"` + testRequestID + `","readTokenHash":"` + strings.ToUpper(testHashedKey) + `","answerTokenHash":"` + testFileHash + `"}`,
+		`{"readTokenHash":"` + testHashedKey + `","answerTokenHash":"` + testFileHash + `"}`,
+		`{"id":"short","readTokenHash":"` + testHashedKey + `","answerTokenHash":"` + testFileHash + `"}`,
+		`{"id":"` + testRequestID + `+","readTokenHash":"` + testHashedKey + `","answerTokenHash":"` + testFileHash + `"}`,
+	} {
+		_, response := postRequestAPI(t, apiRequestSecret, "/api/request", body)
+		if response["status"] != "error" {
+			t.Fatalf("body %q -> %v, want error", body, response)
+		}
+	}
+}
+
+func TestAPIAnswerRejectsMalformedInput(t *testing.T) {
+	restoreHandlerHooks(t)
+	answerRequestFunc = func(string, string, string) (string, int, error) {
+		t.Fatal("malformed answer reached storage")
+		return "", 0, nil
+	}
+	t.Cleanup(func() { answerRequestFunc = answerRequest })
+
+	cases := map[string]string{
+		`{}`: "no message",
+		`{"id":"short","answerToken":"` + testHashedKey + `","secretMessage":"x"}`: "no message",
+		`{"id":"` + testRequestID + `","answerToken":"short","secretMessage":"x"}`: "wrong key",
+		`{"id":"` + testRequestID + `","answerToken":"` + testHashedKey + `"}`:     "error",
+		`garbage`: "error",
+	}
+	for body, want := range cases {
+		_, response := postRequestAPI(t, apiAnswerRequest, "/api/answer", body)
+		if response["status"] != want {
+			t.Fatalf("body %q -> %v, want %s", body, response, want)
+		}
+	}
+
+	oversized := `{"id":"` + testRequestID + `","answerToken":"` + testHashedKey + `","secretMessage":"` + strings.Repeat("a", maxSaveSecretBodyBytes) + `"}`
+	_, response := postRequestAPI(t, apiAnswerRequest, "/api/answer", oversized)
+	if response["status"] != "error" {
+		t.Fatalf("oversized body -> %v, want error", response)
+	}
+}
+
+func TestAPIAnswerRetryOnContention(t *testing.T) {
+	restoreHandlerHooks(t)
+	answerRequestFunc = func(string, string, string) (string, int, error) {
+		return "retry", 0, errConsumeMessageContention
+	}
+	t.Cleanup(func() { answerRequestFunc = answerRequest })
+
+	code, response := postRequestAPI(t, apiAnswerRequest, "/api/answer",
+		`{"id":"`+testRequestID+`","answerToken":"`+testHashedKey+`","secretMessage":"x"}`)
+	if code != http.StatusServiceUnavailable || response["status"] != "retry" {
+		t.Fatalf("got %d %v, want 503 retry", code, response)
+	}
+}
+
+func TestRequestRejectsIDAlreadyUsed(t *testing.T) {
+	client := startTestRedis(t)
+	useRedisForRequests(t, client)
+
+	body := `{"id":"` + testRequestID + `","readTokenHash":"` + testHashedKey + `","answerTokenHash":"` + testFileHash + `","duration":60,"expiry":"` + expiryFor(60) + `"}`
+
+	if err := client.Set(getStoreKey(testRequestID), "secret", time.Minute).Err(); err != nil {
+		t.Fatal(err)
+	}
+	_, usedBySecret := postRequestAPI(t, apiRequestSecret, "/api/request", body)
+	if usedBySecret["status"] != "exists" || client.Exists(getRequestKey(testRequestID)).Val() != 0 {
+		t.Fatalf("id used by a secret -> %v, want exists and no request", usedBySecret)
+	}
+	client.Del(getStoreKey(testRequestID))
+
+	_, first := postRequestAPI(t, apiRequestSecret, "/api/request", body)
+	_, second := postRequestAPI(t, apiRequestSecret, "/api/request", body)
+	if first["status"] != "ok" || second["status"] != "exists" {
+		t.Fatalf("same id twice -> %v then %v, want ok then exists", first, second)
+	}
+}
+
+func TestCancelRequestDeletesPendingRequestAndKeepsIDBlocked(t *testing.T) {
+	client := startTestRedis(t)
+	useRedisForRequests(t, client)
+
+	readToken := strings.Repeat("a", hashedKeyHexLen)
+	answerToken := strings.Repeat("b", hashedKeyHexLen)
+	createBody := `{"id":"` + testRequestID + `","readTokenHash":"` + sha256Hex(readToken) + `","answerTokenHash":"` + sha256Hex(answerToken) + `","duration":3600,"expiry":"` + expiryFor(3600) + `"}`
+	cancelBody := `{"id":"` + testRequestID + `","cancel":"` + readToken + `"}`
+
+	if _, created := postRequestAPI(t, apiRequestSecret, "/api/request", createBody); created["status"] != "ok" {
+		t.Fatalf("create = %v, want ok", created)
+	}
+	_, cancelled := postRequestAPI(t, apiRequestSecret, "/api/request", cancelBody)
+	if cancelled["status"] != "ok" || cancelled["newId"] != "0" {
+		t.Fatalf("cancel = %v, want ok with newId 0", cancelled)
+	}
+	_, answered := postRequestAPI(t, apiAnswerRequest, "/api/answer",
+		`{"id":"`+testRequestID+`","answerToken":"`+answerToken+`","secretMessage":"x"}`)
+	if answered["status"] != "no message" {
+		t.Fatalf("answer after cancel = %v, want no message", answered)
+	}
+	if _, again := postRequestAPI(t, apiRequestSecret, "/api/request", createBody); again["status"] != "exists" {
+		t.Fatalf("re-register after cancel = %v, want exists", again)
+	}
+	if _, second := postRequestAPI(t, apiRequestSecret, "/api/request", cancelBody); second["status"] != "no message" {
+		t.Fatalf("second cancel = %v, want no message", second)
+	}
+}
+
+func TestCancelRequestRejectsWrongTokenAndLeavesAnsweredRequest(t *testing.T) {
+	client := startTestRedis(t)
+	useRedisForRequests(t, client)
+
+	readToken := strings.Repeat("a", hashedKeyHexLen)
+	answerToken := strings.Repeat("b", hashedKeyHexLen)
+	id := saveTestRequest(t, client, SecretRequest{
+		ReadTokenHash:   sha256Hex(readToken),
+		AnswerTokenHash: sha256Hex(answerToken),
+		Duration:        3600,
+	})
+
+	_, wrong := postRequestAPI(t, apiRequestSecret, "/api/request",
+		`{"id":"`+id+`","cancel":"`+strings.Repeat("c", hashedKeyHexLen)+`"}`)
+	if wrong["status"] != "wrong key" || client.Exists(getRequestKey(id)).Val() != 1 {
+		t.Fatalf("wrong token cancel = %v, want wrong key and the request kept", wrong)
+	}
+
+	_, answered := postRequestAPI(t, apiAnswerRequest, "/api/answer",
+		`{"id":"`+id+`","answerToken":"`+answerToken+`","secretMessage":"ciphertext"}`)
+	if answered["status"] != "ok" {
+		t.Fatalf("answer after wrong cancel = %v, want ok", answered)
+	}
+	_, cancelled := postRequestAPI(t, apiRequestSecret, "/api/request", `{"id":"`+id+`","cancel":"`+readToken+`"}`)
+	if cancelled["status"] != "no message" || client.Exists(getStoreKey(id)).Val() != 1 {
+		t.Fatalf("cancel after answer = %v, want no message and the answer kept", cancelled)
+	}
+}
+
+func TestRequestIDCannotBeReusedAfterAnswerOrExpiry(t *testing.T) {
+	client := startTestRedis(t)
+	useRedisForRequests(t, client)
+
+	readToken := strings.Repeat("a", hashedKeyHexLen)
+	answerToken := strings.Repeat("b", hashedKeyHexLen)
+	create := func(readHash string) string {
+		_, response := postRequestAPI(t, apiRequestSecret, "/api/request",
+			`{"id":"`+testRequestID+`","readTokenHash":"`+readHash+`","answerTokenHash":"`+sha256Hex(answerToken)+`","duration":3600,"expiry":"`+expiryFor(3600)+`"}`)
+		status, _ := response["status"].(string)
+		return status
+	}
+
+	if status := create(sha256Hex(readToken)); status != "ok" {
+		t.Fatalf("create = %q, want ok", status)
+	}
+	if ttl := client.TTL(getRequestSeenKey(testRequestID)).Val(); ttl <= time.Hour+requestIDReuseBlock-time.Minute {
+		t.Fatalf("marker ttl = %s, want duration plus the reuse block", ttl)
+	}
+	postRequestAPI(t, apiAnswerRequest, "/api/answer",
+		`{"id":"`+testRequestID+`","answerToken":"`+answerToken+`","secretMessage":"ciphertext"}`)
+	postRequestAPI(t, apiGetMessage, "/api/get", `{"id":"`+testRequestID+`","hashedKey":"`+readToken+`"}`)
+
+	if status := create(sha256Hex("c")); status != "exists" || client.Exists(getRequestKey(testRequestID)).Val() != 0 {
+		t.Fatalf("reuse after answer = %q, want exists and no request", status)
+	}
+
+	client.Del(getStoreKey(testRequestID), getRequestKey(testRequestID))
+	if status := create(sha256Hex("d")); status != "exists" || client.Exists(getRequestKey(testRequestID)).Val() != 0 {
+		t.Fatalf("reuse after expiry = %q, want exists and no request", status)
+	}
+}
+
+func TestRequestConcurrentSameIDCreatesOne(t *testing.T) {
+	client := startTestRedis(t)
+
+	var wg sync.WaitGroup
+	var created int32
+	for i := 0; i < 8; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			status, _ := saveRequestWithClient(client, testRequestID, SecretRequest{ReadTokenHash: testHashedKey, AnswerTokenHash: testFileHash, Duration: 60})
+			if status == "ok" {
+				atomic.AddInt32(&created, 1)
+			}
+		}()
+	}
+	wg.Wait()
+
+	if created != 1 {
+		t.Fatalf("created requests = %d, want exactly 1", created)
+	}
+}
+
+func TestAnswerRequestNeverOverwritesExistingSecret(t *testing.T) {
+	client := startTestRedis(t)
+
+	answerToken := strings.Repeat("b", hashedKeyHexLen)
+	id := saveTestRequest(t, client, SecretRequest{
+		ReadTokenHash:   sha256Hex(strings.Repeat("a", hashedKeyHexLen)),
+		AnswerTokenHash: sha256Hex(answerToken),
+		Duration:        60,
+	})
+	if err := client.Set(getStoreKey(id), "existing", time.Minute).Err(); err != nil {
+		t.Fatal(err)
+	}
+
+	status, _, err := answerRequestWithClient(client, id, answerToken, "answer")
+	if err != nil || status != "no message" {
+		t.Fatalf("answer = %q, %v, want no message", status, err)
+	}
+	if got := client.Get(getStoreKey(id)).Val(); got != "existing" {
+		t.Fatalf("stored secret = %q, want it untouched", got)
+	}
+}
+
+func TestAPIRequestSecretRetryOnContention(t *testing.T) {
+	restoreHandlerHooks(t)
+	saveRequestFunc = func(string, SecretRequest) (string, error) {
+		return "error", errConsumeMessageContention
+	}
+	t.Cleanup(func() { saveRequestFunc = saveRequest })
+
+	code, response := postRequestAPI(t, apiRequestSecret, "/api/request",
+		`{"id":"`+testRequestID+`","readTokenHash":"`+testHashedKey+`","answerTokenHash":"`+testFileHash+`","expiry":"`+expiryFor(defaultDuration)+`"}`)
+	if code != http.StatusServiceUnavailable || response["status"] != "retry" {
+		t.Fatalf("got %d %v, want 503 retry", code, response)
+	}
+}
+
+func TestRequestIDsAreDisjointFromSecretIDs(t *testing.T) {
+	restoreHandlerHooks(t)
+	saveRequestFunc = func(string, SecretRequest) (string, error) {
+		t.Fatal("a secret-shaped id reached request storage")
+		return "", nil
+	}
+	t.Cleanup(func() { saveRequestFunc = saveRequest })
+
+	_, response := postRequestAPI(t, apiRequestSecret, "/api/request",
+		`{"id":"`+testStorageID+`","readTokenHash":"`+testHashedKey+`","answerTokenHash":"`+testFileHash+`"}`)
+	if response["status"] != "error" {
+		t.Fatalf("22-char request id -> %v, want error", response)
+	}
+	if isValidStorageID(testRequestID) || isValidRequestID(testStorageID) {
+		t.Fatal("storage and request id shapes must not overlap")
+	}
+
+	var consumed, existed []string
+	consumeMessageFromStorageFunc = func(key, _ string) (StoredMessage, int, int, string, error) {
+		consumed = append(consumed, key)
+		return StoredMessage{}, 0, 0, "no message", nil
+	}
+	secretsExistFunc = func(ids []string) (map[string]bool, error) {
+		existed = ids
+		return map[string]bool{}, nil
+	}
+	postRequestAPI(t, apiGetMessage, "/api/get", `{"id":"`+testRequestID+`","hashedKey":"`+testHashedKey+`"}`)
+	postRequestAPI(t, apiSecretStatus, "/api/secretStatus", `{"ids":["`+testRequestID+`","`+testStorageID+`"]}`)
+	if len(consumed) != 1 || consumed[0] != testRequestID || len(existed) != 2 {
+		t.Fatalf("23-char id not accepted: consumed %v, status ids %v", consumed, existed)
+	}
+
+	reserveFileDownloadFunc = func(string, string) (FileDownloadReservation, string, error) {
+		t.Fatal("a request id reached file storage")
+		return FileDownloadReservation{}, "", nil
+	}
+	rec := httptest.NewRecorder()
+	apiGetFile(rec, httptest.NewRequest(http.MethodPost, "/api/getFile", strings.NewReader(`{"id":"`+testRequestID+`","hashedKey":"`+testFileHash+`"}`)))
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("apiGetFile() with a request id = %d, want %d", rec.Code, http.StatusBadRequest)
+	}
+}
+
+func TestAnswerRequestKeepsRemainingTTL(t *testing.T) {
+	client := startTestRedis(t)
+
+	answerToken := strings.Repeat("b", hashedKeyHexLen)
+	id := saveTestRequest(t, client, SecretRequest{
+		ReadTokenHash:   sha256Hex(strings.Repeat("a", hashedKeyHexLen)),
+		AnswerTokenHash: sha256Hex(answerToken),
+		Duration:        60,
+	})
+	if err := client.Expire(getRequestKey(id), 10*time.Second).Err(); err != nil {
+		t.Fatal(err)
+	}
+
+	status, expiresIn, err := answerRequestWithClient(client, id, answerToken, "answer")
+	if err != nil || status != "ok" {
+		t.Fatalf("answer = %q, %v, want ok", status, err)
+	}
+	if ttl := client.TTL(getStoreKey(id)).Val(); ttl <= 0 || ttl > 10*time.Second {
+		t.Fatalf("answer ttl = %s, want within the request's remaining 10s", ttl)
+	}
+	if expiresIn < 1 || expiresIn > 10 {
+		t.Fatalf("expiresIn = %d, want within 1..10", expiresIn)
+	}
+}
+
+func useFreshStats(t *testing.T) {
+	t.Helper()
+	originalStats := appStats
+	appStats = NewStatsManager()
+	t.Cleanup(func() { appStats = originalStats })
+}
+
+func requestCount(field string) int64 {
+	appStats.mu.Lock()
+	defer appStats.mu.Unlock()
+	return appStats.pending[counterField{requestCounter, field}]
+}
+
+func TestRequestCounterCreatedAndAnswered(t *testing.T) {
+	restoreHandlerHooks(t)
+	useFreshStats(t)
+
+	status := "ok"
+	saveRequestFunc = func(string, SecretRequest) (string, error) { return status, nil }
+	answerRequestFunc = func(string, string, string) (string, int, error) { return status, 60, nil }
+	t.Cleanup(func() {
+		saveRequestFunc = saveRequest
+		answerRequestFunc = answerRequest
+	})
+
+	createBody := `{"id":"` + testRequestID + `","readTokenHash":"` + testHashedKey + `","answerTokenHash":"` + testFileHash + `","expiry":"` + expiryFor(defaultDuration) + `"}`
+	answerBody := `{"id":"` + testRequestID + `","answerToken":"` + testHashedKey + `","secretMessage":"x"}`
+
+	postRequestAPI(t, apiRequestSecret, "/api/request", createBody)
+	postRequestAPI(t, apiAnswerRequest, "/api/answer", answerBody)
+	if requestCount("created") != 1 || requestCount("answered") != 1 {
+		t.Fatalf("after success created=%d answered=%d, want 1 and 1", requestCount("created"), requestCount("answered"))
+	}
+
+	status = "exists"
+	postRequestAPI(t, apiRequestSecret, "/api/request", createBody)
+	status = "no message"
+	postRequestAPI(t, apiAnswerRequest, "/api/answer", answerBody)
+	postRequestAPI(t, apiRequestSecret, "/api/request", `not json`)
+	postRequestAPI(t, apiAnswerRequest, "/api/answer", `not json`)
+	if requestCount("created") != 1 || requestCount("answered") != 1 {
+		t.Fatalf("after failures created=%d answered=%d, want still 1 and 1", requestCount("created"), requestCount("answered"))
+	}
+	if requestCount("opened") != 0 {
+		t.Fatalf("opened = %d, want 0", requestCount("opened"))
+	}
+}
+
+func TestRequestCounterOpenedOnlyForRequestIDReadOK(t *testing.T) {
+	restoreHandlerHooks(t)
+	useFreshStats(t)
+
+	status := "ok"
+	consumeMessageFromStorageFunc = func(string, string) (StoredMessage, int, int, string, error) {
+		return StoredMessage{Message: "ciphertext"}, 0, 60, status, nil
+	}
+	read := func(id string) {
+		postRequestAPI(t, apiGetMessage, "/api/get", `{"id":"`+id+`","hashedKey":"`+testHashedKey+`"}`)
+	}
+
+	read(testStorageID)
+	if requestCount("opened") != 0 {
+		t.Fatalf("normal secret read counted as opened: %d", requestCount("opened"))
+	}
+
+	read(testRequestID)
+	if requestCount("opened") != 1 {
+		t.Fatalf("opened = %d, want 1", requestCount("opened"))
+	}
+
+	for _, failure := range []string{"wrong key", "no message"} {
+		status = failure
+		read(testRequestID)
+	}
+	consumeMessageFromStorageFunc = func(string, string) (StoredMessage, int, int, string, error) {
+		return StoredMessage{}, 0, 0, "", errConsumeMessageContention
+	}
+	read(testRequestID)
+	if requestCount("opened") != 1 {
+		t.Fatalf("failed reads counted: opened = %d, want 1", requestCount("opened"))
+	}
+}
+
+func TestRequestCounterFlushesToItsOwnDayKey(t *testing.T) {
+	client := startTestRedis(t)
+	now := time.Date(2026, 11, 22, 10, 0, 0, 0, time.UTC)
+	pending := pendingCounters{
+		counterField{requestCounter, "created"}:  2,
+		counterField{requestCounter, "answered"}: 1,
+		counterField{requestCounter, "opened"}:   1,
+	}
+	if err := flushCountersWithClient(client, pending, now); err != nil {
+		t.Fatal(err)
+	}
+	got := client.HGetAll("stats:request:day:20261122").Val()
+	if got["created"] != "2" || got["answered"] != "1" || got["opened"] != "1" {
+		t.Fatalf("request day hash = %v", got)
+	}
+	if client.TTL("stats:request:day:20261122").Val() <= 0 {
+		t.Fatal("request day key has no expiry")
+	}
+}
+
+func TestAPISecretStatusReportsPendingRequests(t *testing.T) {
+	client := startTestRedis(t)
+	useRedisForRequests(t, client)
+	requestsPendingFunc = func(ids []string) ([]string, error) { return requestsPendingWithClient(client, ids) }
+	secretsExistFunc = func(ids []string) (map[string]bool, error) {
+		result := map[string]bool{}
+		for _, id := range ids {
+			result[id] = client.Exists(getStoreKey(id)).Val() > 0
+		}
+		return result, nil
+	}
+
+	answerToken := strings.Repeat("b", hashedKeyHexLen)
+	id := saveTestRequest(t, client, SecretRequest{
+		ReadTokenHash:   sha256Hex(strings.Repeat("a", hashedKeyHexLen)),
+		AnswerTokenHash: sha256Hex(answerToken),
+		Duration:        60,
+	})
+	body := `{"ids":["` + id + `","` + testStorageID + `"]}`
+
+	_, waiting := postRequestAPI(t, apiSecretStatus, "/api/secretStatus", body)
+	pending, _ := waiting["pending"].([]interface{})
+	if len(pending) != 1 || pending[0] != id || waiting["secrets"].(map[string]interface{})[id] != false {
+		t.Fatalf("waiting request: %v, want pending [%s] and secrets[%s]=false", waiting, id, id)
+	}
+
+	if status, _, err := answerRequestWithClient(client, id, answerToken, "answer"); err != nil || status != "ok" {
+		t.Fatalf("answer = %q, %v, want ok", status, err)
+	}
+	_, answered := postRequestAPI(t, apiSecretStatus, "/api/secretStatus", body)
+	if p, present := answered["pending"].([]interface{}); !present || len(p) != 0 || answered["secrets"].(map[string]interface{})[id] != true {
+		t.Fatalf("answered request: %v, want empty pending and secrets[%s]=true", answered, id)
+	}
+
+	_, plain := postRequestAPI(t, apiSecretStatus, "/api/secretStatus", `{"ids":["`+testStorageID+`"]}`)
+	if _, present := plain["pending"]; present {
+		t.Fatalf("a response without requests must not carry pending: %v", plain)
+	}
+}
+
+func TestAPIRequestSecretChecksTheLinkExpiry(t *testing.T) {
+	restoreHandlerHooks(t)
+	saved := 0
+	saveRequestFunc = func(string, SecretRequest) (string, error) {
+		saved++
+		return "ok", nil
+	}
+	t.Cleanup(func() { saveRequestFunc = saveRequest })
+
+	body := func(expiry string) string {
+		return `{"id":"` + testRequestID + `","readTokenHash":"` + testHashedKey + `","answerTokenHash":"` + testFileHash + `","duration":3600` + expiry + `}`
+	}
+	_, ok := postRequestAPI(t, apiRequestSecret, "/api/request", body(`,"expiry":"`+expiryFor(3600)+`"`))
+	if ok["status"] != "ok" || saved != 1 {
+		t.Fatalf("valid expiry -> %v, saved %d, want ok and 1", ok, saved)
+	}
+
+	farOff := expiryFor(3600 + 10*86400)
+	rec := httptest.NewRecorder()
+	apiHandler(rec, httptest.NewRequest(http.MethodPost, "/api/request", strings.NewReader(body(`,"expiry":"`+farOff+`"`))))
+	if rec.Body.String() != `{"status":"clock","newId":"0"}` || len(rec.Body.String()) != len(`{"status":"error","newId":"0"}`) || saved != 1 {
+		t.Fatalf("far-off expiry -> %s, saved %d, want clock, an error-sized body and nothing saved", rec.Body.String(), saved)
+	}
+
+	for _, missing := range []string{"", `,"expiry":""`, `,"expiry":"A"`, `,"expiry":"A+"`, `,"expiry":"AAA"`} {
+		_, response := postRequestAPI(t, apiRequestSecret, "/api/request", body(missing))
+		if response["status"] != "error" || saved != 1 {
+			t.Fatalf("expiry %q -> %v, saved %d, want error and nothing saved", missing, response, saved)
+		}
+	}
+}
+
+func TestRequestFarOffExpiryCreatesNoRequestOrMarker(t *testing.T) {
+	client := startTestRedis(t)
+	useRedisForRequests(t, client)
+
+	_, response := postRequestAPI(t, apiRequestSecret, "/api/request",
+		`{"id":"`+testRequestID+`","readTokenHash":"`+testHashedKey+`","answerTokenHash":"`+testFileHash+`","duration":3600,"expiry":"`+expiryFor(3600+30*86400)+`"}`)
+	if response["status"] != "clock" || client.Exists(getRequestKey(testRequestID), getRequestSeenKey(testRequestID)).Val() != 0 {
+		t.Fatalf("far-off expiry -> %v, want clock with no request and no marker", response)
 	}
 }

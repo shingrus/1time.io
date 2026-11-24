@@ -59,7 +59,7 @@ function base64ToBytes(base64) {
     return new Uint8Array(globalThis.Buffer.from(base64, 'base64'));
 }
 
-function toBase64Url(bytes) {
+export function toBase64Url(bytes) {
     return bytesToBase64(bytes)
         .replace(/\+/g, '-')
         .replace(/\//g, '_')
@@ -143,7 +143,7 @@ async function deriveAuthToken(fullSecretKey) {
 // Digests the token's 64-character HEX STRING, not the 32 bytes it encodes.
 // backend/storage.go tokenMatchesStored hashes the same representation; the two
 // must change together or not at all.
-async function hashReadToken(readToken) {
+export async function hashReadToken(readToken) {
     const crypto = requireWebCrypto();
     const digest = await crypto.subtle.digest('SHA-256', textEncoder.encode(readToken));
 

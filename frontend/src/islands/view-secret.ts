@@ -6,7 +6,7 @@ import {
     hashSecretKey,
     postJson,
 } from '../lib/util.js';
-import {isValidLinkToken} from '../lib/protocol.mjs';
+import {ProtocolConstants, isValidLinkToken} from '../lib/protocol.mjs';
 
 // A read may only be retried when our backend explicitly reports contention
 // (503 + {"status":"retry"}). Anything else — including a bare proxy 503 — may
@@ -41,7 +41,12 @@ if (form) {
 
     const hash = window.location.hash || '';
     const linkKey = hash.length > 1 ? hash.slice(1) : '';
-    const linkIsBroken = !isValidLinkToken(linkKey);
+    const keyLen = ProtocolConstants.randomKeyLen;
+    const isAnswerLink = linkKey.startsWith('r.');
+    const linkBody = isAnswerLink ? linkKey.slice(2) : linkKey;
+    const requestKeyLen = keyLen + 2;
+    const isAnswerRead = isAnswerLink && linkBody.length === requestKeyLen + keyLen + ProtocolConstants.storageIdLen + 1 && /^[A-Za-z0-9_-]+$/.test(linkBody);
+    const linkIsBroken = isAnswerLink ? !isAnswerRead : !isValidLinkToken(linkKey);
     if (linkIsBroken) {
         qrToggle.disabled = true;
     }
@@ -119,7 +124,7 @@ if (form) {
             : 'This message is burned.';
         viewsLeftNote.toggleAttribute('hidden', false);
         qrAction.toggleAttribute('hidden', true);
-        postReadCta.toggleAttribute('hidden', false);
+        postReadCta.toggleAttribute('hidden', isAnswerRead);
         showOnly(decryptedSection);
     };
 
@@ -150,32 +155,45 @@ if (form) {
         // A fragment that is not exactly randomKeyLen + storageIdLen base64url
         // characters cannot name a secret, so this is a cut or mangled link, not
         // a consumed one. Reporting it as "gone" was both wrong and unactionable.
-        if (!isValidLinkToken(linkKey)) {
+        if (linkIsBroken) {
             qrAction.toggleAttribute('hidden', true);
             showOnly(brokenLinkSection);
             return;
         }
         setLoading(true);
 
-        const randomKey = linkKey.slice(0, Constants.randomKeyLen);
-        const id = linkKey.slice(Constants.randomKeyLen);
-        const fullSecretKey = secretKeyInput.value + randomKey;
+        const randomKey = linkBody.slice(0, isAnswerRead ? requestKeyLen : Constants.randomKeyLen);
+        const id = linkBody.slice(isAnswerRead ? requestKeyLen + keyLen : Constants.randomKeyLen);
+        const fullSecretKey = isAnswerRead ? randomKey : secretKeyInput.value + randomKey;
+        const readKey = isAnswerRead ? linkBody.slice(requestKeyLen, requestKeyLen + keyLen) : fullSecretKey;
+        const forgetRequest = () => {
+            if (!isAnswerRead) return;
+            try {
+                const storageKey = '1time.request.' + id;
+                const entry = JSON.parse(localStorage.getItem(storageKey) ?? 'null');
+                if (entry?.requestKey === randomKey && entry.requesterKey === readKey) localStorage.removeItem(storageKey);
+            } catch {
+                // Storage may be unavailable.
+            }
+        };
 
         const keptKey = keptPrefix + id;
         try {
             const copy = freshCopy(localStorage.getItem(keptKey));
-            localStorage.removeItem(keptKey);
             if (copy) {
-                showDecrypted(await decryptSecretMessage(copy, fullSecretKey), 0, 0);
+                const message = await decryptSecretMessage(copy, fullSecretKey);
+                localStorage.removeItem(keptKey);
+                showDecrypted(message, 0, 0);
                 setLoading(false);
                 return;
             }
+            localStorage.removeItem(keptKey);
         } catch {
             // A missing, stale or damaged copy falls through to the server.
         }
 
         try {
-            const hashedKey = await hashSecretKey(fullSecretKey);
+            const hashedKey = await hashSecretKey(readKey);
             // Our backend answers 503 + {"status":"retry"} when a concurrent read
             // holds the record's Redis lock; that body is the only proof the read
             // was rejected before consuming anything. A bare 503 from a proxy/CDN
@@ -184,7 +202,7 @@ if (form) {
             let data;
             for (let attempt = 0; ; attempt++) {
                 try {
-                    data = await postJson('get', {id, hashedKey});
+                    data = await postJson(isAnswerRead ? 'get?r=1' : 'get', {id, hashedKey});
                     break;
                 } catch (err) {
                     if (attempt === 0 && isRetryableRead(err)) {
@@ -196,7 +214,18 @@ if (form) {
             }
 
             if (data.status === 'ok' && typeof data.cryptedMessage === 'string' && data.cryptedMessage.length > 0) {
-                const message = await decryptSecretMessage(data.cryptedMessage, fullSecretKey);
+                let message;
+                try {
+                    message = await decryptSecretMessage(data.cryptedMessage, fullSecretKey);
+                } catch (err) {
+                    if (!isAnswerRead) throw err;
+                    forgetRequest();
+                    qrAction.toggleAttribute('hidden', true);
+                    showOnly(noMessageSection);
+                    setLoading(false);
+                    return;
+                }
+                forgetRequest();
                 // Older backends omit viewsLeft; treat that as the consumed one-time case.
                 const viewsLeft = typeof data.viewsLeft === 'number' ? data.viewsLeft : 0;
                 const expiresIn = typeof data.expiresIn === 'number' ? data.expiresIn : 0;
@@ -215,7 +244,7 @@ if (form) {
                 return;
             }
 
-            if (data.status === 'wrong key') {
+            if (data.status === 'wrong key' && !isAnswerRead) {
                 wrongKeyAlert.toggleAttribute('hidden', false);
                 passphraseSection.toggleAttribute('hidden', false);
                 secretKeyInput.focus();
@@ -223,7 +252,15 @@ if (form) {
                 return;
             }
 
+            if (data.status === 'wrong key') {
+                qrAction.toggleAttribute('hidden', true);
+                showOnly(brokenLinkSection);
+                setLoading(false);
+                return;
+            }
+
             if (data.status === 'no message') {
+                forgetRequest();
                 qrAction.toggleAttribute('hidden', true);
                 showOnly(noMessageSection);
                 setLoading(false);

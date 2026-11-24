@@ -38,6 +38,7 @@ jobs:
 
       - run: npm install -g npm@11.12.1
       - run: npm ci
+      - run: npm test
       - run: npm run build
         env:
           SELF_HOSTED: ${{ matrix.edition.self_hosted }}
