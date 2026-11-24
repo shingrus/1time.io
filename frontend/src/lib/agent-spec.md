@@ -167,6 +167,7 @@ Before saving, confirm `saveSchemes` contains `3`. If it does not, the host is t
 - Rate limit, text saves: about 45 per minute per IP, burst 10, then `429`
 - Rate limit, `saveFile` requests (each slice counts): about 120 per minute per IP, burst 63, then `429`
 - Rate limit, reads: about 60 per minute per IP, burst 15, then `429`
+- Rate limit, `secretStatus`: about 240 per minute per IP, burst 30, then `429`
 
 On `429` for a save: back off and retry. On `429` for a read: surface it to the user rather than retrying automatically.
 
