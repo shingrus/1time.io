@@ -9,7 +9,7 @@ interface RouteEntry {
 }
 
 const coreRoutes: RouteEntry[] = [
-    {path: '/', priority: 1.0, changefreq: 'weekly', lastmod: '2026-11-05'},
+    {path: '/', priority: 1.0, changefreq: 'weekly', lastmod: '2026-11-25'},
     {path: '/secure-file-sharing/', priority: 0.9, changefreq: 'weekly', lastmod: '2026-11-12'},
     {path: '/chrome-extension/', priority: 0.8, changefreq: 'weekly', lastmod: '2026-07-23'},
     {path: '/developers/', priority: 0.8, changefreq: 'weekly', lastmod: '2026-11-15'},
@@ -28,7 +28,7 @@ const coreRoutes: RouteEntry[] = [
     {path: '/about/', priority: 0.5, changefreq: 'monthly', lastmod: '2026-05-23'},
     {path: '/no-cookie-banner/', priority: 0.6, changefreq: 'monthly', lastmod: '2026-08-27'},
     {path: '/privacy/', priority: 0.4, changefreq: 'monthly', lastmod: '2026-10-11'},
-    {path: '/es/', priority: 0.8, changefreq: 'weekly', lastmod: '2026-11-06'},
+    {path: '/es/', priority: 0.8, changefreq: 'weekly', lastmod: '2026-11-25'},
     {path: '/es/compartir-contrasena/', priority: 0.7, changefreq: 'weekly', lastmod: '2026-11-06'},
     {path: '/es/compartir-archivos/', priority: 0.7, changefreq: 'weekly', lastmod: '2026-11-06'},
     {path: '/fr/', priority: 0.8, changefreq: 'weekly', lastmod: '2026-11-07'},
