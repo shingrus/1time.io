@@ -207,6 +207,8 @@ The frontend builds in two editions from the same source.
 ## Frontend JS Performance
 
 - Lighthouse performance is a hard constraint, not a nice-to-have. Treat regressions as bugs unless there is a clear product reason.
+- Limits: every page scores at least 99 in mobile Lighthouse Performance.
+- Page weight is what a first visit downloads, gzipped: the HTML, every `/_astro/` module it loads (including imports) and the font. Limits: homepages (`/` and translations) 57 KB, file pages (`/secure-file-sharing/` and translations) 62 KB, every other page 65 KB. Set 2026-11-25, when the heaviest pages were `/ja/` 56.2 KB, `/secure-file-sharing/` 61.7 KB and `/developers/` 62.0 KB. Lighthouse's "total byte weight" reads about 17 KB higher, because it also counts `favicon.ico`, `favicon.svg`, the manifest and the `/pv` beacon.
 - Static content routes such as `/blog/**` and other read-mostly pages should stay as close to zero-JS as practical. Do not add client components to content pages unless the interaction is essential.
 - Treat every `<script src>` in `frontend/build/**/index.html` as suspect on content routes. Verify whether each chunk is required for user-visible behavior on that route.
 - Do not pull generator, share-flow, stats, view-secret, or other app-tooling bundles into blog or marketing pages.

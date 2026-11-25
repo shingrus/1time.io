@@ -109,7 +109,7 @@ export const ui: Record<Lang, UiText> = {
         passphraseLabel: 'Frase de acceso opcional que el destinatario deberá conocer',
         passphrasePlaceholder: 'Frase de acceso opcional',
         expireAfter: 'Caduca en',
-        durations: {3600: '1 hora', 86400: '1 día', 259200: '3 días', 604800: '7 días', 2592000: '30 días'},
+        durations: {3600: '1 hora', 86400: '1 día', 259200: '3 días', 432000: '5 días', 604800: '7 días', 2592000: '30 días'},
         usageAllowed: {secret: 'Vistas permitidas', file: 'Descargas permitidas'},
         usage: (count, kind) => `${count} ${kind === 'file' ? 'descarga' : 'vista'}${count === 1 ? '' : 's'}`,
         setPassphrase: 'Añadir frase de acceso',
@@ -139,7 +139,7 @@ export const ui: Record<Lang, UiText> = {
         passphraseLabel: 'Phrase secrète facultative que le destinataire devra connaître',
         passphrasePlaceholder: 'Phrase secrète (facultatif)',
         expireAfter: 'Expire après',
-        durations: {3600: '1 heure', 86400: '1 jour', 259200: '3 jours', 604800: '7 jours', 2592000: '30 jours'},
+        durations: {3600: '1 heure', 86400: '1 jour', 259200: '3 jours', 432000: '5 jours', 604800: '7 jours', 2592000: '30 jours'},
         usageAllowed: {secret: 'Nombre de lectures', file: 'Nombre de téléchargements'},
         usage: (count, kind) => `${count} ${kind === 'file' ? 'téléchargement' : 'lecture'}${count === 1 ? '' : 's'}`,
         setPassphrase: 'Ajouter une phrase secrète',
@@ -169,7 +169,7 @@ export const ui: Record<Lang, UiText> = {
         passphraseLabel: '任意の合言葉（設定すると受信者にも入力が必要です）',
         passphrasePlaceholder: '合言葉（任意）',
         expireAfter: '有効期限',
-        durations: {3600: '1時間', 86400: '1日', 259200: '3日', 604800: '7日', 2592000: '30日'},
+        durations: {3600: '1時間', 86400: '1日', 259200: '3日', 432000: '5日', 604800: '7日', 2592000: '30日'},
         usageAllowed: {secret: '閲覧回数', file: 'ダウンロード回数'},
         usage: (count) => (count === 1 ? '1回のみ' : `${count}回まで`),
         setPassphrase: '合言葉を設定',
@@ -199,7 +199,7 @@ export const ui: Record<Lang, UiText> = {
         passphraseLabel: 'Kode akses opsional yang harus diketahui penerima',
         passphrasePlaceholder: 'Kode akses (opsional)',
         expireAfter: 'Masa berlaku',
-        durations: {3600: '1 jam', 86400: '1 hari', 259200: '3 hari', 604800: '7 hari', 2592000: '30 hari'},
+        durations: {3600: '1 jam', 86400: '1 hari', 259200: '3 hari', 432000: '5 hari', 604800: '7 hari', 2592000: '30 hari'},
         usageAllowed: {secret: 'Jumlah akses', file: 'Jumlah unduhan'},
         usage: (count, kind) => `${count} kali ${kind === 'file' ? 'diunduh' : 'dibuka'}`,
         setPassphrase: 'Tambahkan kode akses',
@@ -229,7 +229,7 @@ export const ui: Record<Lang, UiText> = {
         passphraseLabel: 'Optionale Passphrase, die der Empfänger kennen muss',
         passphrasePlaceholder: 'Passphrase (optional)',
         expireAfter: 'Läuft ab nach',
-        durations: {3600: '1 Stunde', 86400: '1 Tag', 259200: '3 Tagen', 604800: '7 Tagen', 2592000: '30 Tagen'},
+        durations: {3600: '1 Stunde', 86400: '1 Tag', 259200: '3 Tagen', 432000: '5 Tagen', 604800: '7 Tagen', 2592000: '30 Tagen'},
         usageAllowed: {secret: 'Erlaubte Aufrufe', file: 'Erlaubte Downloads'},
         usage: (count, kind) => (kind === 'file'
             ? `${count} ${count === 1 ? 'Download' : 'Downloads'}`
@@ -261,7 +261,7 @@ export const ui: Record<Lang, UiText> = {
         passphraseLabel: 'Frase secreta opcional que o destinatário precisará saber',
         passphrasePlaceholder: 'Frase secreta (opcional)',
         expireAfter: 'Expira em',
-        durations: {3600: '1 hora', 86400: '1 dia', 259200: '3 dias', 604800: '7 dias', 2592000: '30 dias'},
+        durations: {3600: '1 hora', 86400: '1 dia', 259200: '3 dias', 432000: '5 dias', 604800: '7 dias', 2592000: '30 dias'},
         usageAllowed: {secret: 'Visualizações permitidas', file: 'Downloads permitidos'},
         usage: (count, kind) => (kind === 'file'
             ? `${count} ${count === 1 ? 'download' : 'downloads'}`
