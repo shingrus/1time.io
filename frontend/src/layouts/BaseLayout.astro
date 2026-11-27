@@ -42,18 +42,6 @@ const {
 const title = selfHosted ? selfHostedTitle : pageTitle;
 const ogTitle = selfHosted ? selfHostedTitle : (pageOgTitle ?? pageTitle);
 
-// Page-view beacon. Cloudflare serves this HTML from its edge cache, so the page
-// request itself rarely reaches the access log; this GET does, and nginx answers
-// it with a bare 204 (configs/nginx/1time.conf). pathname only — the fragment
-// holds the decryption key on /v/ and /f/. The referrer is cut to its host (or
-// its scheme alone for app referrers such as android-app:), and utm_source is the
-// only query value read. Inline and after load, so first paint pays nothing.
-const pageviewBeacon = "addEventListener('load',function(){var r='';"
-    + "try{var u=new URL(document.referrer);r=/^https?:$/.test(u.protocol)?u.hostname:u.protocol}catch(e){}"
-    + "try{fetch('/pv?p='+encodeURIComponent(location.pathname)+'&r='+encodeURIComponent(r)"
-    + "+'&u='+encodeURIComponent(new URLSearchParams(location.search).get('utm_source')||''),"
-    + "{keepalive:true,credentials:'omit'}).catch(function(){})}catch(e){}})";
-
 const canonicalHref = canonical ? absoluteUrl(canonical) : undefined;
 const ogImageAbsolute = absoluteUrl(ogImage);
 const ogUrlAbsolute = absoluteUrl(ogUrl);
@@ -135,6 +123,6 @@ const websiteSchema = {
             </main>
             <Footer lang={lang} alternates={alternates} />
         </div>
-        {pageview && !selfHosted && <script is:inline set:html={pageviewBeacon}></script>}
+        {pageview && !selfHosted && <script is:inline src="/pv.js" defer></script>}
     </body>
 </html>
