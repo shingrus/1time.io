@@ -48,7 +48,7 @@ minutes. The same applies to whales and to any single-day record.
   mode that was **invisible in logs**, since blocked users never reached nginx.
 - **HTML is edge-cached** since 2026-09-13 22:50 UTC (`s-maxage=86400`, full purge
   on deploy in `scripts/1time-deploy-update`), so most page requests never reach nginx.
-  Page analytics depend on the inline `/pv` beacon in `BaseLayout.astro` (nginx
+  Page analytics depend on the `/pv` beacon in `frontend/public/pv.js` (nginx
   answers 204, `no-store`); `analyze.py` switches to it at `PV_CUTOVER`. Anything
   still read from HTML lines — reply CTA clicks, link-preview share platforms —
   undercounts from that date.
