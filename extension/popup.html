@@ -55,7 +55,7 @@
             display: flex;
             align-items: center;
             gap: 8px;
-            padding: 14px 16px;
+            padding: 8px 16px;
             border-bottom: 1px solid var(--border);
         }
 
@@ -76,12 +76,12 @@
         }
 
         main {
-            padding: 16px;
+            padding: 10px 16px;
         }
 
         .share {
             width: 100%;
-            padding: 10px 14px;
+            padding: 8px 14px;
             font: 600 15px var(--font-body);
             color: #fff;
             background: var(--accent);
@@ -101,6 +101,29 @@
             transform: translateY(0);
         }
 
+        .share:disabled {
+            background: var(--accent);
+            opacity: 0.5;
+            cursor: default;
+            transform: none;
+            box-shadow: none;
+        }
+
+        #create {
+            width: 100%;
+            margin-top: 8px;
+        }
+
+        details {
+            margin-top: 8px;
+        }
+
+        summary {
+            cursor: pointer;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+
         .share-hint {
             margin-top: 8px;
             font-size: 12px;
@@ -118,8 +141,8 @@
         }
 
         section {
-            margin-top: 16px;
-            padding: 14px;
+            margin-top: 10px;
+            padding: 10px 14px;
             background: var(--surface);
             border: 1px solid var(--border);
             border-radius: var(--radius);
@@ -133,12 +156,13 @@
             text-transform: uppercase;
             letter-spacing: 0.04em;
             color: var(--text-secondary);
-            margin-bottom: 10px;
+            margin-bottom: 6px;
         }
 
-        input[type="text"] {
+        input[type="text"],
+        textarea {
             width: 100%;
-            padding: 10px 14px;
+            padding: 8px 14px;
             font: 15px var(--font-body);
             color: var(--text);
             background: var(--surface);
@@ -147,24 +171,19 @@
             outline: none;
         }
 
-        input[type="text"]:focus {
+        textarea {
+            resize: vertical;
+        }
+
+        input[type="text"]:focus,
+        textarea:focus {
             border-color: var(--border-focus);
             box-shadow: var(--focus-ring);
         }
 
-        .field-label {
-            display: block;
-            margin-top: 12px;
-            margin-bottom: 6px;
-            font-size: 14px;
-            font-weight: 600;
-            letter-spacing: 0.01em;
-            color: var(--text);
-        }
-
         select {
             width: 100%;
-            padding: 10px 14px;
+            padding: 7px 14px;
             padding-right: 32px;
             font: 15px var(--font-body);
             color: var(--text);
@@ -188,25 +207,29 @@
             display: flex;
             align-items: center;
             gap: 10px;
-            margin-top: 10px;
+            margin-top: 6px;
         }
 
-        #status {
+        #status,
+        #form-status {
             min-height: 16px;
             font-size: 12px;
         }
 
         #status:empty,
+        #form-status:empty,
         #last-link-status:empty {
             display: none;
         }
 
         #status.ok,
+        #form-status.ok,
         #last-link-status.ok {
             color: var(--success);
         }
 
         #status.error,
+        #form-status.error,
         #last-link-status.error {
             color: var(--danger);
         }
@@ -239,11 +262,11 @@
         }
 
         #last-link {
-            margin-bottom: 20px;
+            margin-bottom: 10px;
         }
 
         .last-link-notice {
-            margin-top: 10px;
+            margin-top: 6px;
             font-size: 12px;
             color: var(--text-muted);
         }
@@ -282,7 +305,7 @@
         }
 
         footer {
-            padding: 10px 16px 14px;
+            padding: 6px 16px 8px;
             font-size: 11px;
             color: var(--text-muted);
         }
@@ -306,9 +329,37 @@
             <p class="last-link-notice">Works once — after it's opened, the secret is destroyed.</p>
         </section>
 
-        <button id="share" class="share">Share selection as one-time link</button>
-        <p class="share-hint">or press <kbd id="shortcut">no shortcut set</kbd> on any page</p>
+        <form id="create-form">
+            <textarea id="secret-text" rows="3" placeholder="Paste a password or secret…" spellcheck="false" autocomplete="off" aria-label="Secret text"></textarea>
+            <div class="row">
+                <select id="expiry" aria-label="Link expires after">
+                    <option value="3600">1 hour</option>
+                    <option value="86400">1 day</option>
+                    <option value="259200">3 days</option>
+                    <option value="432000">5 days</option>
+                    <option value="604800">7 days</option>
+                    <option value="2592000">30 days</option>
+                </select>
+                <select id="views" aria-label="Number of views">
+                    <option value="1">1 view</option>
+                    <option value="2">2 views</option>
+                    <option value="3">3 views</option>
+                    <option value="5">5 views</option>
+                    <option value="10">10 views</option>
+                </select>
+            </div>
+            <div class="row">
+                <button type="button" id="add-passphrase" class="btn-neutral">Set passphrase</button>
+                <input type="text" id="passphrase" placeholder="Passphrase" spellcheck="false" autocomplete="off" aria-label="Passphrase" hidden>
+            </div>
+            <button type="submit" id="create" class="share" disabled>Create one-time link</button>
+            <p id="form-status"></p>
+        </form>
 
+        <p class="share-hint">Or select text on any page and press <kbd id="shortcut">no shortcut set</kbd>, or right-click → Share as one-time link.</p>
+
+        <details id="settings">
+        <summary>Settings</summary>
         <section>
             <h2>Target server</h2>
             <input type="text" id="host" placeholder="https://1time.io" spellcheck="false">
@@ -316,14 +367,6 @@
                 <button id="save-host" class="btn-neutral">Save</button>
                 <span id="status"></span>
             </div>
-            <label class="field-label" for="expiry">Link expires after</label>
-            <select id="expiry">
-                <option value="3600">1 hour</option>
-                <option value="86400">1 day</option>
-                <option value="259200">3 days</option>
-                <option value="604800">7 days</option>
-                <option value="2592000">30 days</option>
-            </select>
         </section>
 
         <section>
@@ -333,6 +376,7 @@
                 <button id="edit-shortcut" class="btn-neutral">Change</button>
             </div>
         </section>
+        </details>
     </main>
 
     <footer>

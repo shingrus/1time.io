@@ -93,8 +93,8 @@ const description = `Privacy policy for ${siteHost}. Zero-knowledge architecture
             <h2>Browser extension</h2>
             <p>
                 The 1time browser extension reads the text you select only when you
-                explicitly trigger it — via the shortcut, the right-click menu, or the
-                toolbar button. That text is encrypted in your browser before upload, so
+                explicitly trigger it — via the shortcut or the right-click menu — or the
+                text you type into the extension's popup. That text is encrypted in your browser before upload, so
                 the same zero-knowledge guarantees apply: the server never sees plaintext
                 or keys. The generated one-time link is written to your clipboard, and
                 nothing else leaves your browser. The use of information received from Google
@@ -107,7 +107,10 @@ const description = `Privacy policy for ${siteHost}. Zero-knowledge architecture
                 account or server. It also holds the most recently created link in
                 temporary session memory so you can re-copy it from the popup; that
                 clears when you close the browser, or immediately when you press
-                Clear. It never stores your plaintext secrets, your browsing history,
+                Clear. While you type in the popup, the unfinished text is kept in
+                temporary session memory so it survives the popup closing; it is
+                deleted as soon as the link is created, or when you close the browser.
+                Apart from that draft, it never stores your plaintext secrets, your browsing history,
                 or a lasting record of the links you create.
             </p>
         </div>
