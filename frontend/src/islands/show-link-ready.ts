@@ -83,6 +83,24 @@ export async function showLinkReady(
         }
     })();
 
+    const extensionLink = clone.querySelector<HTMLAnchorElement>('[data-extension-link]');
+    const ua = navigator.userAgent;
+    if (extensionLink && !isSelfHosted()
+        && /Chrome\//.test(ua) && !/Android|Mobi|iPhone|iPad|iPod|OPR|YaBrowser|SamsungBrowser/i.test(ua)) {
+        void (async () => {
+            try {
+                const {loadSecrets} = await import('../lib/mySecrets.js');
+                if (!loadSecrets().some((entry) => entry.id !== secretId)) return;
+                extensionLink.hidden = false;
+                extensionLink.addEventListener('click', () => {
+                    fetch('/pv?e=ext-link', {keepalive: true, credentials: 'omit'}).catch(() => {});
+                });
+            } catch {
+                // Not knowing the history just keeps the link hidden.
+            }
+        })();
+    }
+
     const copyBtn = clone.querySelector<HTMLButtonElement>('[data-copy]')!;
     const copyStatus = clone.querySelector<HTMLElement>('[data-copy-status]')!;
     let copyTimer: number | undefined;

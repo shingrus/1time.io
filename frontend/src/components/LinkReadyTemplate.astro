@@ -1,5 +1,6 @@
 ---
 import {linkReadyData, ui, type Lang} from '../lib/i18n.js';
+import {chromeStoreUrl} from '../lib/siteConfig.js';
 
 const {lang = 'en', kind = 'secret'} = Astro.props as {lang?: Lang; kind?: 'secret' | 'file'};
 const t = ui[lang];
@@ -60,6 +61,7 @@ const t = ui[lang];
             <button class="btn btn-secondary btn-sm" type="button" data-reset>
                 <span><span data-reset-label>{t.sendAnother}</span><kbd class="btn-kbd" data-reset-hint aria-hidden="true" hidden>↵</kbd></span>
             </button>
+            {lang === 'en' && <a class="link-inline-action" href={chromeStoreUrl} target="_blank" rel="noopener" data-extension-link hidden>Get the Chrome extension</a>}
         </nav>
 
         <div class="link-warning" role="note">
@@ -69,7 +71,6 @@ const t = ui[lang];
         <div class="link-footer-meta" data-footer-meta>
             <span data-reference-wrap hidden>{t.reference} <strong data-reference-name></strong></span>
             {lang === 'en' && <span data-footer-separator aria-hidden="true" hidden>·</span>}
-            {lang === 'en' && <a class="link-extension" href="/my-secrets/">Check if it's been read</a>}
-        </div>
+            {lang === 'en' && <a class="link-extension" href="/my-secrets/">Check if it's been read</a>}        </div>
     </section>
 </template>

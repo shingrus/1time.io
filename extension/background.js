@@ -90,32 +90,65 @@ async function copyToClipboard(text) {
     return copied === true;
 }
 
-async function createOneTimeLink(origin, secret, expiresInSeconds) {
+async function createOneTimeLink(origin, secret, expiresInSeconds, passphrase = '', views = 1) {
     const randomKey = getRandomString(ProtocolConstants.randomKeyLen);
     // v3: upload SHA-256(readToken), never the token. See protocol.mjs.
-    const {encryptedMessage, readTokenHash} = await encryptSecretMessage(secret, randomKey);
+    const {encryptedMessage, readTokenHash} = await encryptSecretMessage(secret, passphrase + randomKey);
 
-    const response = await fetch(buildApiUrl(origin, 'saveSecret?src=ext'), {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({
-            secretMessage: encryptedMessage,
-            readTokenHash,
-            v: ProtocolConstants.saveSchemeVersion,
-            duration: expiresInSeconds,
-        }),
-    });
-
-    if (!response.ok) {
-        throw new Error(`Server responded with ${response.status}`);
+    let response;
+    try {
+        response = await fetch(buildApiUrl(origin, 'saveSecret?src=ext'), {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                secretMessage: encryptedMessage,
+                readTokenHash,
+                v: ProtocolConstants.saveSchemeVersion,
+                duration: expiresInSeconds,
+                ...(views !== 1 && {views}),
+            }),
+        });
+    } catch {
+        throw new Error(`Could not reach ${origin}.`);
     }
 
-    const data = await response.json();
+    if (response.status === 413) {
+        throw new Error('This text is too long.');
+    }
+    if (response.status === 429) {
+        throw new Error('Too many requests — try again in a minute.');
+    }
+    if (!response.ok) {
+        throw new Error(`The server could not save the secret (HTTP ${response.status}).`);
+    }
+
+    const data = await response.json().catch(() => ({}));
     if (data.status !== 'ok' || !data.newId) {
-        throw new Error('The server rejected the secret');
+        throw new Error('The server rejected the secret.');
     }
 
     return buildSecretLink(origin, randomKey, data.newId);
+}
+
+async function createAndCopyLink(secret, passphrase, views) {
+    const {host, expiresInSeconds} = await chrome.storage.local.get(SettingsDefaults);
+    const origin = normalizeOrigin(host);
+
+    const granted = await chrome.permissions.contains({origins: [`${origin}/*`]});
+    if (!granted) {
+        throw new Error(`Save ${origin} in the Settings section of the popup first.`);
+    }
+
+    const link = await createOneTimeLink(origin, secret, expiresInSeconds, passphrase, views);
+    // Keep the link in session storage (in-memory, never on disk, never
+    // synced, not readable by pages) so the popup can show and re-copy it.
+    await chrome.storage.session.set({lastLink: link});
+    const {draft} = await chrome.storage.session.get('draft');
+    if (draft === secret) {
+        await chrome.storage.session.remove('draft');
+    }
+
+    return {link, copied: await copyToClipboard(link)};
 }
 
 // presetSelection is supplied by the context menu (info.selectionText), which
@@ -144,8 +177,6 @@ async function shareSelection(tab, presetSelection) {
         }
 
         const link = await createOneTimeLink(origin, selection, expiresInSeconds);
-        // Keep the link in session storage (in-memory, never on disk, never
-        // synced, not readable by pages) so the popup can show and re-copy it.
         await chrome.storage.session.set({lastLink: link});
 
         const copied = await copyToClipboard(link);
@@ -184,11 +215,12 @@ chrome.commands.onCommand.addListener((command, tab) => {
     }
 });
 
-// Sent by the popup's share button; the popup closes itself right away, so
-// the tab lookup and the toast happen here.
-chrome.runtime.onMessage.addListener((message) => {
-    if (message?.type === 'share-selection') {
-        chrome.tabs.query({active: true, lastFocusedWindow: true})
-            .then(([tab]) => shareSelection(tab));
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    if (message?.type === 'create-secret') {
+        createAndCopyLink(message.text, message.passphrase, message.views)
+            .then(({link, copied}) => sendResponse({ok: true, link, copied}))
+            .catch((error) => sendResponse({ok: false, error: error.message}));
+
+        return true;
     }
 });
