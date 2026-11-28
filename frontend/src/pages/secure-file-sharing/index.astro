@@ -98,6 +98,7 @@ const jsonLd = [
         <nav class="share-mode-nav" aria-label="Choose sharing mode">
             <a href={selfHosted ? '/' : '/share-password-securely/'} class="share-mode-link">Text secret</a>
             <a href="/secure-file-sharing/" class="share-mode-link share-mode-link-active">One-time file</a>
+            {!selfHosted && <a href="/request-password-securely/" class="share-mode-link">Request<span>&nbsp;a secret</span></a>}
         </nav>
 
         <FileShareForm />

@@ -32,6 +32,12 @@
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
 }
 
+@media (max-width: 480px) {
+  .share-mode-link span {
+    display: none;
+  }
+}
+
 .share-flow-page:has(.link-display) .share-mode-nav,
 .share-flow-page:has(.link-display) .whats-new,
 .share-flow-page:has(.link-display) .seo-section {

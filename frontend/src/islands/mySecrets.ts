@@ -1,5 +1,7 @@
-import {loadSecrets, removeSecret} from '../lib/mySecrets.js';
+import {fetchSecretStatuses, loadSecrets, removeSecret} from '../lib/mySecrets.js';
 import {nameForId} from '../lib/secretName.js';
+import {mountRequests} from './my-requests.ts';
+import {REQUEST_KEY_PREFIX, loadRequestEntries} from '../lib/requestStore.js';
 
 type Kind = 'message' | 'file';
 interface Entry {
@@ -20,10 +22,6 @@ const STATUS_META: Record<Status, {label: string; cls: string}> = {
     used: {label: 'All views used', cls: 'is-consumed'},
     unknown: {label: 'Unknown', cls: 'is-muted'},
 };
-
-// Inlined (not via util.js) on purpose: the mySecrets never does crypto, so pulling
-// in util → protocol would drag the whole AES/HKDF bundle onto this route.
-const API_BASE = (import.meta.env.PUBLIC_API_URL as string | undefined) || '/api/';
 
 // A single-view secret flips exists->gone the moment it is read, so the page is
 // only truthful if it re-checks. 30s costs 2 req/min against the api_read limit
@@ -82,25 +80,8 @@ function renderRow(e: Entry): {li: HTMLLIElement; statusEl: HTMLElement} {
     return {li, statusEl};
 }
 
-async function fetchStatuses(ids: string[]): Promise<Record<string, boolean> | null> {
-    if (!ids.length) return {};
-    try {
-        const res = await fetch(`${API_BASE}secretStatus`, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ids}),
-        });
-        if (!res.ok) return null;
-        const data = await res.json();
-        if (data.status !== 'ok' || !data.secrets) return null;
-        return data.secrets as Record<string, boolean>;
-    } catch {
-        return null;
-    }
-}
-
 async function updateStatuses(entries: Entry[], statusEls: Map<string, HTMLElement>): Promise<void> {
-    const secrets = await fetchStatuses(entries.map((e) => e.id));
+    const secrets = await fetchSecretStatuses(entries.map((e) => e.id));
     for (const e of entries) {
         const el = statusEls.get(e.id);
         if (!el) continue;
@@ -125,8 +106,34 @@ if (listEl && emptyEl) {
     const entries = (loadSecrets() as Entry[]).slice().reverse(); // newest first
     loadingEl?.remove();
 
+    let requestsActive = false;
+    const secretsGone = () => {
+        if (!requestsActive) showEmpty();
+    };
+
+    if (import.meta.env.PUBLIC_SELF_HOSTED !== 'true') {
+        let syncRequests: (() => void) | undefined;
+        const showRequests = () => {
+            requestsActive = true;
+            emptyEl.hidden = true;
+            if (createBtn) createBtn.hidden = false;
+            if (syncRequests) {
+                syncRequests();
+                return;
+            }
+            syncRequests = mountRequests(() => {
+                requestsActive = false;
+                if (!entries.length) showEmpty();
+            });
+        };
+        if (loadRequestEntries().length > 0) showRequests();
+        window.addEventListener('storage', (e) => {
+            if (e.key?.startsWith(REQUEST_KEY_PREFIX) && e.key !== REQUEST_KEY_PREFIX && e.newValue && e.oldValue === null) showRequests();
+        });
+    }
+
     if (!entries.length) {
-        showEmpty();
+        secretsGone();
     } else {
         const statusEls = new Map<string, HTMLElement>();
 
@@ -182,7 +189,7 @@ if (listEl && emptyEl) {
             stopTimer();
             if (refreshBtn) refreshBtn.hidden = true;
             listEl.hidden = true;
-            showEmpty();
+            secretsGone();
         };
 
         const frag = document.createDocumentFragment();

@@ -33,8 +33,8 @@ const selfHosted = isSelfHosted();
     </nav>
     ) : (
     <nav class="app-nav">
-        <a href="/password-generator/">Password Generator</a>
-        {!selfHosted && <a href="/blog/">Blog</a>}
+        <a href="/password-generator/">Generator</a>
+        <a href="/my-secrets/">My Secrets</a>
         {!selfHosted && <a href="/developers/">API</a>}
         <a
             class="app-nav-icon"

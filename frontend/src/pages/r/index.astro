@@ -1,0 +1,61 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import InlineCss from '../../components/InlineCss.astro';
+import {siteHost} from '../../lib/siteConfig.js';
+
+const title = `Send a Secret — ${siteHost}`;
+const description = 'Someone asked you to send them a secret. It is encrypted in your browser so only they can open it, once.';
+---
+<BaseLayout
+    title={title}
+    description={description}
+    canonical="/r/"
+    robots="noindex, nofollow"
+    ogTitle="Someone asked you to send them a secret"
+    ogDescription="Type it on this page. It is encrypted in your browser, and only the person who asked can open it, once."
+    ogImage="/1time-og-r.png"
+    ogImageAlt={`${siteHost}: you were asked for a one-time secret`}
+>
+    <InlineCss slot="head" name="view" />
+
+    <form id="answer-request-form" autocomplete="off">
+        <div class="confirm-gate" data-state="compose" hidden>
+            <h1 class="confirm-gate-title">Someone asked you to send them a secret</h1>
+            <div class="alert alert-warning">
+                Only send it if you know who asked you for it. 1time.io never asks for your passwords.
+            </div>
+            <div class="form-field">
+                <textarea
+                    class="form-textarea"
+                    id="answerMessage"
+                    aria-label="Secret to send"
+                    autocomplete="off"
+                    autocapitalize="none"
+                    spellcheck="false"
+                    placeholder="Type the password or secret here"
+                    rows="5"
+                ></textarea>
+            </div>
+            <div class="alert alert-warning" data-send-error role="alert" hidden></div>
+            <button class="btn btn-success btn-lg" type="submit" data-send disabled>Encrypt and send</button>
+        </div>
+
+        <div class="confirm-gate" data-state="sent" hidden>
+            <h2 class="confirm-gate-title">Sent. Only the person who asked can open it, once.</h2>
+            <p class="confirm-gate-desc" data-sent-expiry hidden></p>
+        </div>
+
+        <div class="confirm-gate" data-state="gone" hidden>
+            <h2 class="confirm-gate-title">This request was already answered or has expired.</h2>
+        </div>
+
+        <div class="confirm-gate" data-state="broken-link" hidden>
+            <h2 class="confirm-gate-title">This link is incomplete</h2>
+            <p class="confirm-gate-desc">Go back to the message and copy the whole link.</p>
+        </div>
+    </form>
+
+    <script>
+        import '../../islands/answer-request.ts';
+    </script>
+</BaseLayout>

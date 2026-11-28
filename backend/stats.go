@@ -48,7 +48,14 @@ var (
 	// system share sheet. Whether a link was then sent is not tracked.
 	shareCounter = &hashCounter{
 		dayKeyPrefix: "stats:share:day:",
-		fields:       []string{"tap"},
+		fields:       []string{"tap", "request"},
+	}
+
+	// Request-a-secret lifecycle. Answers are stored as ordinary secrets but
+	// are not counted in the stored-secret totals.
+	requestCounter = &hashCounter{
+		dayKeyPrefix: "stats:request:day:",
+		fields:       []string{"created", "answered", "opened"},
 	}
 )
 

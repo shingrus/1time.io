@@ -211,7 +211,7 @@ def parse_funnel(paths: list[Path]):
     Returns (visitors, savers, recipients), each {YYYY-MM-DD: set(ip)}:
       - visitors:   human GET / (homepage = the create page), bots excluded
       - savers:     POST /api/saveSecret|saveFile (200)
-      - recipients: POST /api/get|getFile (200)
+      - recipients: POST /api/get|getFile (200), a requester opening their own answer (r=1) left out
     """
     visitors: dict[str, set[str]] = defaultdict(set)
     savers: dict[str, set[str]] = defaultdict(set)
@@ -244,7 +244,8 @@ def parse_funnel(paths: list[Path]):
                             if counts_as_save(path, m.group("size"), finished_uploads):
                                 savers[date].add(ip)
                         elif any(path.startswith(rp) for rp in READ_PATHS):
-                            recipients[date].add(ip)
+                            if parse_qs(urlsplit(path).query).get("r") != ["1"]:
+                                recipients[date].add(ip)
         except Exception as e:  # noqa: BLE001
             print(f"warning: failed to read {p}: {e}", file=sys.stderr)
 

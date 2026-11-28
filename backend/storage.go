@@ -11,6 +11,7 @@ import (
 	"log"
 	"os"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -76,12 +77,12 @@ var errConsumeMessageContention = errors.New("message consume contention")
 // Redis failed for any other reason, and errConsumeMessageContention if the
 // retry window ran out. fn may be called more than once, so anything it assigns
 // must be reset at the top of each attempt rather than accumulated.
-func watchWithRetry(client *redis.Client, key string, fn func(tx *redis.Tx) error) error {
+func watchWithRetry(client *redis.Client, key string, fn func(tx *redis.Tx) error, extraKeys ...string) error {
 	deadline := time.Now().Add(consumeMessageRetryWindow)
 	retryDelay := consumeMessageRetryBaseDelay
 
 	for {
-		err := client.Watch(fn, key)
+		err := client.Watch(fn, append([]string{key}, extraKeys...)...)
 		if err == nil {
 			return nil
 		}
@@ -198,6 +199,13 @@ func isValidStorageID(id string) bool {
 	return isBase64URLOfLen(id, storageIDLen)
 }
 
+// requestIDLen is longer than storageIDLen so a request id can never equal a secret or file id.
+var requestIDLen = base64.RawURLEncoding.EncodedLen(17)
+
+func isValidRequestID(id string) bool {
+	return isBase64URLOfLen(id, requestIDLen)
+}
+
 /*
 This function constructs key for messages using format like 'messageKey<id>'
 */
@@ -249,6 +257,32 @@ func secretsExist(ids []string) (map[string]bool, error) {
 		result[id] = cmd.Val() > 0
 	}
 	return result, nil
+}
+
+// requestsPending reports which of the given request ids still wait for an answer.
+func requestsPending(ids []string) ([]string, error) {
+	return requestsPendingWithClient(getRedisClient(), ids)
+}
+
+func requestsPendingWithClient(client *redis.Client, ids []string) ([]string, error) {
+	pipe := client.Pipeline()
+	cmds := make(map[string]*redis.IntCmd, len(ids))
+	for _, id := range ids {
+		if _, seen := cmds[id]; !seen {
+			cmds[id] = pipe.Exists(getRequestKey(id))
+		}
+	}
+	if _, err := pipe.Exec(); err != nil {
+		return nil, err
+	}
+	var pending []string
+	for _, id := range ids {
+		if cmd, ok := cmds[id]; ok && cmd.Val() > 0 {
+			pending = append(pending, id)
+			delete(cmds, id)
+		}
+	}
+	return pending, nil
 }
 
 // Also the partial blob's mtime deadline, so the janitor removes abandoned uploads.
@@ -675,6 +709,213 @@ func consumeMessageFromStorageWithClient(client *redis.Client, key string, hashe
 			return StoredMessage{}, 0, 0, "retry", err
 		}
 		return StoredMessage{}, 0, 0, "error", err
+	}
+	return
+}
+
+const maxRequestDuration = 7 * 86400
+
+const requestIDReuseBlock = 30 * 24 * time.Hour
+
+type SecretRequest struct {
+	ReadTokenHash   string `json:"readTokenHash"`
+	AnswerTokenHash string `json:"answerTokenHash"`
+	Duration        int    `json:"duration"`
+}
+
+const expiryDays = 3968
+const expiryAlphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_"
+
+func parseExpiryDay(code string) (int, bool) {
+	if len(code) != 2 {
+		return 0, false
+	}
+	high, low := strings.IndexByte(expiryAlphabet, code[0]), strings.IndexByte(expiryAlphabet, code[1])
+	if high < 0 || low < 0 || low >= 62 {
+		return 0, false
+	}
+	return high*62 + low, true
+}
+
+// The link's expiry day must agree with the server clock to within a day, as the frontend computes it.
+func expiryDayMatches(clientDay int, now time.Time, duration int) bool {
+	const dayMs = int64(24 * time.Hour / time.Millisecond)
+	serverDay := int((now.UnixMilli() + int64(duration)*1000 + dayMs - 1) / dayMs % expiryDays)
+	distance := (clientDay - serverDay + expiryDays) % expiryDays
+	return distance <= 1 || distance == expiryDays-1
+}
+
+func getRequestKey(id string) string {
+	return "request:" + id
+}
+
+func getRequestSeenKey(id string) string {
+	return "requestSeen:" + id
+}
+
+func saveRequest(id string, request SecretRequest) (string, error) {
+	return saveRequestWithClient(getRedisClient(), id, request)
+}
+
+func saveRequestWithClient(client *redis.Client, id string, request SecretRequest) (status string, err error) {
+	value, err := json.Marshal(request)
+	if err != nil {
+		return "error", err
+	}
+
+	requestKey := getRequestKey(id)
+	seenKey := getRequestSeenKey(id)
+	err = watchWithRetry(client, requestKey, func(tx *redis.Tx) error {
+		taken, existsErr := tx.Exists(requestKey, getStoreKey(id), seenKey).Result()
+		if existsErr != nil {
+			return existsErr
+		}
+		if taken > 0 {
+			status = "exists"
+			return nil
+		}
+
+		if _, txErr := tx.TxPipelined(func(pipe redis.Pipeliner) error {
+			duration := time.Duration(request.Duration) * time.Second
+			pipe.Set(requestKey, value, duration)
+			pipe.Set(seenKey, "1", duration+requestIDReuseBlock)
+			return nil
+		}); txErr != nil {
+			return txErr
+		}
+
+		status = "ok"
+		return nil
+	}, getStoreKey(id), seenKey)
+
+	if err != nil {
+		return "error", err
+	}
+	return status, nil
+}
+
+func cancelRequest(id, readToken string) (string, error) {
+	return cancelRequestWithClient(getRedisClient(), id, readToken)
+}
+
+func cancelRequestWithClient(client *redis.Client, id, readToken string) (status string, err error) {
+	requestKey := getRequestKey(id)
+
+	err = watchWithRetry(client, requestKey, func(tx *redis.Tx) error {
+		status = "error"
+
+		value, getErr := tx.Get(requestKey).Result()
+		if getErr == redis.Nil {
+			status = "no message"
+			return nil
+		}
+		if getErr != nil {
+			return getErr
+		}
+
+		var request SecretRequest
+		if unmarshalErr := json.Unmarshal([]byte(value), &request); unmarshalErr != nil {
+			return unmarshalErr
+		}
+		if !tokenMatchesStored(request.ReadTokenHash, secretSchemeV3, readToken) {
+			status = "wrong key"
+			return nil
+		}
+
+		if _, txErr := tx.TxPipelined(func(pipe redis.Pipeliner) error {
+			pipe.Del(requestKey)
+			return nil
+		}); txErr != nil {
+			return txErr
+		}
+		status = "ok"
+		return nil
+	})
+
+	if err != nil {
+		if errors.Is(err, errConsumeMessageContention) {
+			return "retry", err
+		}
+		return "error", err
+	}
+	return status, nil
+}
+
+func answerRequest(id, answerToken, message string) (status string, expiresIn int, err error) {
+	return answerRequestWithClient(getRedisClient(), id, answerToken, message)
+}
+
+func answerRequestWithClient(client *redis.Client, id, answerToken, message string) (status string, expiresIn int, err error) {
+	requestKey := getRequestKey(id)
+
+	err = watchWithRetry(client, requestKey, func(tx *redis.Tx) error {
+		status = "error"
+
+		value, getErr := tx.Get(requestKey).Result()
+		if getErr == redis.Nil {
+			status = "no message"
+			return nil
+		}
+		if getErr != nil {
+			return getErr
+		}
+
+		answered, existsErr := tx.Exists(getStoreKey(id)).Result()
+		if existsErr != nil {
+			return existsErr
+		}
+		if answered > 0 {
+			status = "no message"
+			return nil
+		}
+
+		var request SecretRequest
+		if unmarshalErr := json.Unmarshal([]byte(value), &request); unmarshalErr != nil {
+			return unmarshalErr
+		}
+
+		remaining, ttlErr := tx.PTTL(requestKey).Result()
+		if ttlErr != nil {
+			return ttlErr
+		}
+		if remaining <= 0 {
+			status = "no message"
+			return nil
+		}
+
+		if !tokenMatchesStored(request.AnswerTokenHash, secretSchemeV3, answerToken) {
+			status = "wrong key"
+			return nil
+		}
+
+		answer, marshalErr := json.Marshal(StoredMessage{
+			Encrypted: true,
+			Message:   message,
+			HashedKey: request.ReadTokenHash,
+			Version:   secretSchemeV3,
+		})
+		if marshalErr != nil {
+			return marshalErr
+		}
+
+		if _, txErr := tx.TxPipelined(func(pipe redis.Pipeliner) error {
+			pipe.Set(getStoreKey(id), answer, remaining)
+			pipe.Del(requestKey)
+			return nil
+		}); txErr != nil {
+			return txErr
+		}
+
+		status = "ok"
+		expiresIn = max(int((remaining+time.Second-1)/time.Second), 1)
+		return nil
+	}, getStoreKey(id))
+
+	if err != nil {
+		if errors.Is(err, errConsumeMessageContention) {
+			return "retry", 0, err
+		}
+		return "error", 0, err
 	}
 	return
 }
